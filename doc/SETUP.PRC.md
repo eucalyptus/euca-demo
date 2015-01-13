@@ -19,7 +19,10 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
     ./user-initialize-prc-host.sh
 
 This downloads the euca-demo repo to a standard location, then adjusts root's PATH
-to include the demo scripts.
+to include the demo scripts. Logout, then login, to pick up profile changes, or you
+can:
+
+    source ~/.bash_profile
 
 You can find the repo at /root/src/eucalyptus/euca-demo
 

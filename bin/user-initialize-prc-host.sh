@@ -51,6 +51,9 @@ chmod og-rwx ~/{bin,log,.ssh}
 sleep 1
 
 echo
+echo "# ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts"
+ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+echo
 echo "# ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts"
 ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
 sleep 1
@@ -95,10 +98,9 @@ echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> 
 echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
 echo "# echo \"[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
 echo "[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
-
-echo "source ~/.bash_profile"
-source ~/.bash_profile
-sleep 2
+echo
+echo "Please logout, then login to pick up profile changes"
+sleep 1
 
 echo
 echo "User PRC modifications complete"
