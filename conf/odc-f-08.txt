@@ -1,0 +1,66 @@
+#
+# This file is for the MCrawford FastStart Demo A Environment
+#
+# This environment consists of the following hosts:
+# - odc-f-08: CLC, UFS, MC, CC, SC, OSP, NC1
+#
+# For multi-node environments, create a single file named after the host which
+# will run the CLC, then for additional hosts, create a symlink named after 
+# them which points to this file, so the relationship is clear.
+#
+# Note these should be variables, NOT ENVIRONMENT VARIABLES
+
+## Change these variables to match your environment #########################
+
+vnet_mode="EDGE"
+vnet_privinterface="em1"
+vnet_pubinterface="em2"
+vnet_bridge="br0"
+vnet_publicips="10.104.8.129-10.104.8.158"
+vnet_subnet="172.44.0.0"
+vnet_netmask="255.255.0.0"
+vnet_addrspernet="32"
+vnet_dns="8.8.8.8"
+
+clc_host_name="odc-f-08"
+clc_domain_name="prc.eucalyptus-systems.com"
+clc_public_ip=10.104.10.50
+clc_private_ip=10.105.10.50
+
+ufs_host_name="odc-f-08"
+ufs_domain_name="prc.eucalyptus-systems.com"
+ufs_public_ip=10.104.10.50
+ufs_private_ip=10.105.10.50
+
+mc_host_name="odc-f-08"
+mc_domain_name="prc.eucalyptus-systems.com"
+mc_public_ip=10.104.10.50
+mc_private_ip=10.105.10.50
+
+cc_host_name="odc-f-08"
+cc_domain_name="prc.eucalyptus-systems.com"
+cc_public_ip=10.104.10.50
+cc_private_ip=10.105.10.50
+
+sc_host_name="odc-f-08"
+sc_domain_name="prc.eucalyptus-systems.com"
+sc_public_ip=10.104.10.50
+sc_private_ip=10.105.10.50
+
+osp_host_name="odc-f-08"
+osp_domain_name="prc.eucalyptus-systems.com"
+osp_public_ip=10.104.10.50
+osp_private_ip=10.105.10.50
+
+nc1_host_name="odc-f-08"
+nc1_domain_name="prc.eucalyptus-systems.com"
+nc1_public_ip=10.104.10.50
+nc1_private_ip=10.105.10.50
+
+dns_host_name="odc-f-21"
+dns_domain_name="prc.eucalyptus-systems.com"
+dns_public_ip=10.104.10.63
+dns_private_ip=10.105.10.63
+dns_base_domain="mjcfa.cs.prc.eucalyptus-systems.com"
+dns_loadbalancer_subdomain="lb"
+dns_instance_subdomain=".cloud"
