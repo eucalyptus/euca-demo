@@ -1,11 +1,7 @@
-#/bin/bash
+#!/bin/bash
 #
-# This script configures Eucalyptus CloudFormation
-#
-# It should only be run once on the Cloud Controller host.
-#
-# It can be run on top of a new FastStart install or once the Cloud Administrator
-# manual install has completed installing the console
+# This script prepares for demos by downloading and installing a CentOS 6.5 image, 
+# and creating a Demo KeyPair
 #
 
 #  1. Initalize Environment
@@ -18,6 +14,8 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
+centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
+
 step=0
 interactive=1
 step_min=0
@@ -26,8 +24,6 @@ step_max=120
 pause_min=0
 pause_wait=2
 pause_max=30
-
-is_installed=n
 
 
 #  2. Define functions
@@ -144,7 +140,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Initialize Administrator credentials"
+echo " $(printf '%2d' $step). Initialize Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -164,14 +160,13 @@ fi
 
 
 ((++step))
-if euca-describe-services | grep -s -q "^SERVICE.cloudformation"; then
+if [ -r /root/centos.raw ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Register CloudFormation service"
-    echo "    - Already Installed!"
-    echo "    - Will skip ahead to validation"
+    echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
+    echo "    - Already Downloaded!"
     echo
     echo "============================================================"
 
@@ -182,76 +177,64 @@ else
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Register CloudFormation service"
+    echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "euca_conf --register-service -T CloudFormation -H $EUCA_UFS_PUBLIC_IP -N cfn"
+    echo "wget $centos_image_url -O /root/centos.raw.xz"
+    echo
+    echo "xz -d /root/centos.raw.xz"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
-        echo "# euca_conf --register-service -T CloudFormation -H $EUCA_UFS_PUBLIC_IP -N cfn"
-        euca_conf --register-service -T CloudFormation -H $EUCA_UFS_PUBLIC_IP -N cfn
+        echo "# wget $centos_image_url -O /root/centos.raw.xz"
+        wget $centos_image_url -O /root/centos.raw.xz
+        pause
+
+        echo "xz -d /root/centos.raw.xz"
+        xz -d /root/centos.raw.xz
 
         choose "Continue"
     fi
+fi
 
 
-    ((++step))
+((++step))
+if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Refresh Administrator Credentials"
-    echo "    - This step is only run on the Cloud Controller host"
-    echo "    - This fixes the OSG not configured warning"
+    echo "$(printf '%2d' $step). Install Image"
+    echo "    - Already Installed!"
+    echo
+    echo "============================================================"
+
+    choose "Continue"
+
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Install Image"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "rm -f /root/admin.zip"
-    echo
-    echo "euca-get-credentials -u admin /root/admin.zip"
-    echo
-    echo "rm -Rf /root/creds/eucalyptus/admin"
-    echo "mkdir -p /root/creds/eucalyptus/admin"
-    echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    echo
-    echo "source /root/creds/eucalyptus/admin/eucarc"
+    echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
-        echo "# rm -f /root/admin.zip"
-        rm -f /root/admin.zip
-        pause
-
-        echo "# euca-get-credentials -u admin /root/admin.zip"
-        euca-get-credentials -u admin /root/admin.zip
-        pause
-
-        echo "# rm -Rf /root/creds/eucalyptus/admin"
-        rm -Rf /root/creds/eucalyptus/admin
-        echo
-        echo "# mkdir -p /root/creds/eucalyptus/admin"
-        mkdir -p /root/creds/eucalyptus/admin
-        echo
-        echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
-        if [ -r /root/eucarc ]; then
-            cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
-        fi
-        pause
-
-        echo "# source /root/creds/eucalyptus/admin/eucarc"
-        source /root/creds/eucalyptus/admin/eucarc
+        echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
+        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
         choose "Continue"
     fi
@@ -259,55 +242,47 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm service status"
-echo "    - You should now see the CloudFormation Service"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-services | cut -f1-5"
-
-choose "Execute"
-
-if [ $choice = y ]; then
+if euca-describe-keypairs | grep -s -q "DemoKey"; then
+    clear
     echo
-    echo "# euca-describe-services | cut -f1-5"
-    euca-describe-services | cut -f1-5
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create a Keypair"
+    echo "    - Already Created!"
+    echo
+    echo "============================================================"
 
     choose "Continue"
-fi
 
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Verify CloudFormation service"
-echo "    - Upon installation, there should be no output (no errors)"
-echo "    - If run after installation, you may see existing Stacks"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-describe-stacks"
-
-choose "Execute"
-
-if [ $choice = y ]; then
+else
+    clear
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create a Keypair"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem"
+    echo
+    echo "chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem"
 
-    choose "Continue"
+    choose "Execute"
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem"
+        euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem
+        echo
+        echo "# chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem"
+        chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem
+
+        choose "Continue"
+    fi
 fi
 
 
 echo
-echo "Eucalyptus CloudFormation configuration complete"
+echo "Eucalyptus configured for demo scripts"

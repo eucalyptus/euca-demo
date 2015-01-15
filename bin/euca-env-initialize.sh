@@ -38,6 +38,8 @@ tmpdir=/var/tmp
 
 step=0
 interactive=1
+step_wait=0
+pause_wait=0
 environment=$(hostname -s)
 valid=y
 
@@ -52,16 +54,19 @@ usage () {
 
 pause() {
     if [ "$interactive" = 1 ]; then
+        echo "#"
         read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
     else
-        sleep 5
+        echo "#"
+        sleep $pause_wait
     fi
 }
 
 choose() {
     if [ "$interactive" = 1 ]; then
         [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed[y]?"
+        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
         echo
         echo -n "$prompt2"
         read choice
@@ -72,7 +77,9 @@ choose() {
                 valid=n;;
         esac
     else
-        sleep 5
+        echo
+        echo "Waiting $step_wait seconds..."
+        sleep $step_wait
         choice=y
     fi
 }
@@ -93,6 +100,26 @@ shift $(($OPTIND - 1))
 
 
 #  4. Validate environment
+
+if [[ $step_wait =~ ^[0-9]+$ ]]; then
+    if ((step_wait < step_min || step_wait > step_max)); then
+        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+        valid=n
+    fi
+else
+    echo "-s $step_wait illegal: must be a positive integer"
+    valid=n
+fi
+
+if [[ $pause_wait =~ ^[0-9]+$ ]]; then
+    if ((pause_wait < pause_min || pause_wait > pause_max)); then
+        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
+        valid=n
+    fi
+else
+    echo "-p $pause_wait illegal: must be a positive integer"
+    valid=n
+fi
 
 if [ $valid = y ]; then
     if [[ $environment =~ ^([a-zA-Z0-9_-]*)$ ]]; then

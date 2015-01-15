@@ -21,6 +21,12 @@ tmpdir=/var/tmp
 
 step=0
 interactive=1
+step_min=0
+step_wait=15
+step_max=120
+pause_min=0
+pause_wait=2
+pause_max=30
 
 is_clc=n
 is_ufs=n
@@ -34,22 +40,27 @@ is_nc=n
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I]"
-    echo "  -I non-interactive"
+    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
+    echo "  -I             non-interactive"
+    echo "  -s step_wait   seconds per step (default: $step_wait)"
+    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
 }
 
 pause() {
     if [ "$interactive" = 1 ]; then
+        echo "#"
         read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
     else
-        sleep 5
+        echo "#"
+        sleep $pause_wait
     fi
 }
 
 choose() {
     if [ "$interactive" = 1 ]; then
         [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed[y]?"
+        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
         echo
         echo -n "$prompt2"
         read choice
@@ -60,7 +71,8 @@ choose() {
                 exit 2;;
         esac
     else
-        sleep 5
+        echo "Waiting $step_wait seconds..."
+        sleep $step_wait
         choice=y
     fi
 }
@@ -68,9 +80,11 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts I arg; do
+while getopts Is:p: arg; do
     case $arg in
     I)  interactive=0;;
+    s)  step_wait="$OPTARG";;
+    p)  pause_wait="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -82,9 +96,28 @@ shift $(($OPTIND - 1))
 #  4. Validate environment
 
 if [ -z $EUCA_VNET_MODE ]; then
-    echo
     echo "Please set environment variables first"
-    exit 1
+    exit 3
+fi
+
+if [[ $step_wait =~ ^[0-9]+$ ]]; then
+    if ((step_wait < step_min || step_wait > step_max)); then
+        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+        exit 5
+    fi
+else
+    echo "-s $step_wait illegal: must be a positive integer"
+    exit 4
+fi
+
+if [[ $pause_wait =~ ^[0-9]+$ ]]; then
+    if ((pause_wait < pause_min || pause_wait > pause_max)); then
+        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
+        exit 7
+    fi
+else
+    echo "-p $pause_wait illegal: must be a positive integer"
+    exit 6
 fi
 
 [ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y
@@ -172,8 +205,8 @@ if [ $choice = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -199,8 +232,8 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -247,8 +280,8 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_cc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -279,8 +312,8 @@ if [ $is_cc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -306,8 +339,8 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -336,8 +369,8 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -363,8 +396,8 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -389,14 +422,18 @@ if [ $is_clc = y ]; then
     fi
 fi
 
+
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Register Node Controller"
+    echo "$(printf '%2d' $step). Register Node Controller host(s)"
     echo "    - This step is only run on the Cloud Controller host"
+    echo "    - NOTE! After completing this step, you will need to run"
+    echo "      the next step on all Node Controller hosts before you"
+    echo "      continue here"
     echo
     echo "============================================================"
     echo
@@ -416,14 +453,17 @@ if [ $is_clc = y ]; then
 fi
 
 
+((++step))
 if [ $is_nc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Start Node Controller service"
     echo "    - This step is only run on the Node Controller host"
+    echo "    - STOP! This step should only be run after the step"
+    echo "      which registers all Node Controller hosts on the"
+    echo "      Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -448,14 +488,17 @@ if [ $is_nc = y ]; then
 fi
 
 
+((++step))
 if [ $is_clc = y ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Confirm service status"
     echo "    - This step is only run on the Cloud Controller host"
+    echo "    - NOTE: This step should only be run after the step"
+    echo "      which starts the Node Controller service on all Node"
+    echo "      Controller hosts"
     echo "    - The following services should be in a NOTREADY state:"
     echo "      - cluster, loadbalancingbackend, imaging"
     echo "    - The following services should be in a BROKEN state:"

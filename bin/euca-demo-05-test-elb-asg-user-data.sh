@@ -21,29 +21,42 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 prefix=demo-05
 
+centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
+
 step=0
 interactive=1
+step_min=0
+step_wait=15
+step_max=120
+pause_min=0
+pause_wait=2
+pause_max=30
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I]"
-    echo "  -I non-interactive"
+    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
+    echo "  -I             non-interactive"
+    echo "  -s step_wait   seconds per step (default: $step_wait)"
+    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
 }
 
 pause() {
     if [ "$interactive" = 1 ]; then
+        echo "#"
         read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
     else
-        sleep 5
+        echo "#"
+        sleep $pause_wait
     fi
 }
 
 choose() {
     if [ "$interactive" = 1 ]; then
         [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed[y]?"
+        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
         echo
         echo -n "$prompt2"
         read choice
@@ -54,7 +67,8 @@ choose() {
                 exit 2;;
         esac
     else
-        sleep 5
+        echo "Waiting $step_wait seconds..."
+        sleep $step_wait
         choice=y
     fi
 }
@@ -62,9 +76,11 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts I arg; do
+while getopts Is:p: arg; do
     case $arg in
     I)  interactive=0;;
+    s)  step_wait="$OPTARG";;
+    p)  pause_wait="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -76,16 +92,36 @@ shift $(($OPTIND - 1))
 #  4. Validate environment
 
 if [ -z $EUCA_VNET_MODE ]; then
-    echo
     echo "Please set environment variables first"
-    exit 1
+    exit 3
+fi
+
+if [[ $step_wait =~ ^[0-9]+$ ]]; then
+    if ((step_wait < step_min || step_wait > step_max)); then
+        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+        exit 5
+    fi
+else
+    echo "-s $step_wait illegal: must be a positive integer"
+    exit 4
+fi
+
+if [[ $pause_wait =~ ^[0-9]+$ ]]; then
+    if ((pause_wait < pause_min || pause_wait > pause_max)); then
+        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
+        exit 7
+    fi
+else
+    echo "-p $pause_wait illegal: must be a positive integer"
+    exit 6
 fi
 
 if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
     echo
     echo "This script should be run only on a Cloud Controller"
-    exit 2
+    exit 10
 fi
+
 
 #  5. Convert FastStart credentials to Course directory structure
 
@@ -100,7 +136,7 @@ elif [ -r /root/admin.zip ]; then
 else
     echo
     echo "Could not find Eucalyptus Administrator credentials!"
-    exit 3
+    exit 20
 fi
 
 
@@ -130,8 +166,8 @@ if [ $choice = y ]; then
 fi
 
 
+((++step))
 if [ -r /root/centos.raw ]; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -144,7 +180,6 @@ if [ -r /root/centos.raw ]; then
     choose "Continue"
 
 else
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -155,7 +190,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "wget http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz -O /root/centos.raw.xz"
+    echo "wget $centos_image_url -O /root/centos.raw.xz"
     echo
     echo "xz -d /root/centos.raw.xz"
 
@@ -163,8 +198,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# wget http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz -O /root/centos.raw.xz"
-        wget http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz -O /root/centos.raw.xz
+        echo "# wget $centos_image_url -O /root/centos.raw.xz"
+        wget $centos_image_url -O /root/centos.raw.xz
         pause
 
         echo "xz -d /root/centos.raw.xz"
@@ -175,8 +210,8 @@ else
 fi
 
 
+((++step))
 if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -189,7 +224,6 @@ if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
     choose "Continue"
 
 else
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -214,8 +248,8 @@ else
 fi
 
 
+((++step))
 if euca-describe-keypairs | grep -s -q "DemoKey"; then
-    ((++step))
     clear
     echo
     echo "============================================================"
@@ -228,7 +262,6 @@ if euca-describe-keypairs | grep -s -q "DemoKey"; then
     choose "Continue"
 
 else
-    ((++step))
     clear
     echo
     echo "============================================================"
