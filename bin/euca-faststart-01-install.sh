@@ -22,7 +22,7 @@ tmpdir=/var/tmp
 step=0
 interactive=1
 step_min=0
-step_wait=15
+step_wait=20
 step_max=120
 pause_min=0
 pause_wait=2
@@ -63,8 +63,17 @@ choose() {
                 exit 2;;
         esac
     else
-        echo "Waiting $step_wait seconds..."
-        sleep $step_wait
+        echo
+        seconds=$step_wait
+        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo
         choice=y
     fi
 }

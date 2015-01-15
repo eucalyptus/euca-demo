@@ -78,8 +78,16 @@ choose() {
         esac
     else
         echo
-        echo "Waiting $step_wait seconds..."
-        sleep $step_wait
+        seconds=$step_wait
+        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo
         choice=y
     fi
 }
