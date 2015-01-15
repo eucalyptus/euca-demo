@@ -31,6 +31,10 @@ step_max=60
 pause_min=0
 pause_wait=2
 pause_max=20
+login_wait=10
+login_attempts=12
+replacement_wait=10
+replacement_attempts=12
 
 
 #  2. Define functions
@@ -812,17 +816,19 @@ echo "ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
 choose "Execute"
 
 if [ $choice = y ]; then
-    tries=0
+    attempt=0
     echo
-    while [ $((tries++)) -le 12 ]; do
+    while ((attempt++ <= $login_attempts)); do
         echo "# ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
         ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip
         RC=$?
         if [ $RC = 0 -o $RC = 1 ]; then
             break
         else
-            echo "Not yet available ($RC). Waiting 10 seconds"
-            sleep 15
+            echo
+            echo "Not available ($RC). Waiting $login_wait seconds"
+            sleep $login_wait
+            echo
         fi
     done
 
@@ -969,21 +975,24 @@ if [ $choice = y ]; then
         euscale-terminate-instance-in-auto-scaling-group $instance -D --show-long
         pause
 
-        tries=0
-        while [ $((tries++)) -le 20 ]; do
+        attempt=0
+        while ((attempt++ <= replacement_attempts)); do
             echo "# euscale-describe-auto-scaling-groups DemoASG"
             euscale-describe-auto-scaling-groups DemoASG
             echo
             echo "# eulb-describe-instance-health DemoELB"
             eulb-describe-instance-health DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
             
-            if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -lt 2 ]; then
-                echo "- Pausing until at least 2 instances are \"InService\""
-                pause    # At least one instance not "InService"
+            if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge 2 ]; then
+                break
             else
-                break    # Continue only once at least 2 instances back in service
+                echo
+                echo "At least 2 instances are not \"InService\". Waiting $replacement_wait seconds"
+                sleep $replacement_wait
+                echo
             fi
         done
+        break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
     done
 
     choose "Continue"
@@ -993,73 +1002,71 @@ fi
 # Initially, I think I'm going to want to bail on this demo at this point,
 # instead of tearing down all resources created to get back to the initial
 # configuration, to save time and move onto the CloudFormation demo.
-# So, parking some of the deletion logic here commented out until I can
-# finish adding it all, as I don't want to show partial rollback.
 
 
-#((++step))
-#echo "============================================================"
-#echo
-#echo "$(printf '%2d' $step). List remaining resources"
-#echo "    - Confirm we are back to our initial set"
-#echo
-#echo "============================================================"
-#echo
-#echo "Commands:"
-#echo
-#echo "euca-describe-images"
-#echo
-#echo "euca-describe-keypairs"
-#echo
-#echo "euca-describe-groups"
-#echo
-#echo "eulb-describe-lbs"
-#echo
-#echo "euca-describe-instances"
-#echo
-#echo "euscale-describe-launch-configs"
-#echo
-#echo "euscale-describe-auto-scaling-groups"
-#echo
-#echo "euwatch-describe-alarms"
-#
-#choose "Execute"
-#
-#if [ $choice = y ]; then
-#    echo
-#    echo "# euca-describe-images"
-#    euca-describe-images
-#    pause
-#
-#    echo "# euca-describe-keypairs"
-#    euca-describe-keypairs
-#    pause
-#
-#    echo "# euca-describe-groups"
-#    euca-describe-groups
-#    pause
-#
-#    echo "# eulb-describe-lbs"
-#    eulb-describe-lbs
-#    pause
-#
-#    echo "# euca-describe-instances"
-#    euca-describe-instances
-#    pause
-#
-#    echo "# euscale-describe-launch-configs"
-#    euscale-describe-launch-configs
-#    pause
-#
-#    echo "# euscale-describe-auto-scaling-groups"
-#    euscale-describe-auto-scaling-groups
-#    pause
-#
-#    echo "# euwatch-describe-alarms"
-#    euwatch-describe-alarms
-#
-#    choose "Continue"
-#fi
+((++step))
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). List remaining resources"
+echo "    - Confirm we are back to our initial set"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-images"
+echo
+echo "euca-describe-keypairs"
+echo
+echo "euca-describe-groups"
+echo
+echo "eulb-describe-lbs"
+echo
+echo "euca-describe-instances"
+echo
+echo "euscale-describe-launch-configs"
+echo
+echo "euscale-describe-auto-scaling-groups"
+echo
+echo "euwatch-describe-alarms"
+
+choose "Execute"
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-describe-images"
+    euca-describe-images
+    pause
+
+    echo "# euca-describe-keypairs"
+    euca-describe-keypairs
+    pause
+
+    echo "# euca-describe-groups"
+    euca-describe-groups
+    pause
+
+    echo "# eulb-describe-lbs"
+    eulb-describe-lbs
+    pause
+
+    echo "# euca-describe-instances"
+    euca-describe-instances
+    pause
+
+    echo "# euscale-describe-launch-configs"
+    euscale-describe-launch-configs
+    pause
+
+    echo "# euscale-describe-auto-scaling-groups"
+    euscale-describe-auto-scaling-groups
+    pause
+
+    echo "# euwatch-describe-alarms"
+    euwatch-describe-alarms
+
+    choose "Continue"
+fi
 
 echo
 echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"

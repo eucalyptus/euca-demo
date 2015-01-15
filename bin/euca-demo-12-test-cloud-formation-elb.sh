@@ -32,6 +32,12 @@ step_max=60
 pause_min=0
 pause_wait=2
 pause_max=20
+create_wait=10
+create_attempts=12
+login_wait=10
+login_attempts=12
+delete_wait=10
+delete_attempts=12
 
 
 #  2. Define functions
@@ -452,7 +458,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events ElbDemoStack"
+echo "euform-describe-stack-events ElbDemoStack | tail -10"
 
 choose "Execute"
 
@@ -462,9 +468,23 @@ if [ $choice = y ]; then
     euform-describe-stacks
     pause
 
-    echo "# euform-describe-stack-events ElbDemoStack"
-    euform-describe-stack-events ElbDemoStack
-    
+    attempt=0
+    echo
+    while ((attempt++ <= create_attempts)); do
+        echo "# euform-describe-stack-events ElbDemoStack | tail -10"
+        euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
+        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q CREATE_COMPLETE
+        RC=$?
+        if [ $RC = 0 ]; then
+            break
+        else
+            echo
+            echo "Not finished ($RC). Waiting $create_wait seconds"
+            sleep $create_wait
+            echo
+        fi
+    done
+
     choose "Continue"
 fi
 
@@ -538,17 +558,19 @@ echo "ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
 choose "Execute"
 
 if [ $choice = y ]; then
-    tries=0
+    attempt=0
     echo
-    while [ $((tries++)) -le 12 ]; do
+    while ((attempt++ <= login_attempts)); do
         echo "# ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
         ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip
         RC=$?
         if [ $RC = 0 -o $RC = 1 ]; then
             break
         else
-            echo "Not yet available ($RC). Waiting 10 seconds"
-            sleep 15
+            echo
+            echo "Not available ($RC). Waiting $login_wait seconds"
+            sleep $login_wait
+            echo
         fi
     done
 
@@ -593,7 +615,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events ElbDemoStack"
+echo "euform-describe-stack-events ElbDemoStack | tail -10"
 
 choose "Execute"
 
@@ -603,8 +625,22 @@ if [ $choice = y ]; then
     euform-describe-stacks
     pause
 
-    echo "# euform-describe-stack-events ElbDemoStack"
-    euform-describe-stack-events ElbDemoStack
+    attempt=0
+    echo
+    while ((attempt++ <= delete_attempts)); do
+        echo "# euform-describe-stack-events ElbDemoStack | tail -10"
+        euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
+        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q DELETE_COMPLETE
+        RC=$?
+        if [ $RC = 0 ]; then
+            break
+        else
+            echo
+            echo "Not finished ($RC). Waiting $delete_wait seconds"
+            sleep $delete_wait
+            echo
+        fi
+    done
 
     choose "Continue"
 fi
