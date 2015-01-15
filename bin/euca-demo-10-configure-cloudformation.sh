@@ -245,12 +245,15 @@ else
         euca-get-credentials -u admin /root/admin.zip
         pause
 
+        # Save and restore the DemoKey.pem if it exists
+        [ -r /root/creds/eucalyptus/admin/DemoKey.pem ] && cp -a /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$
         echo "# rm -Rf /root/creds/eucalyptus/admin"
         rm -Rf /root/creds/eucalyptus/admin
-        echo
+        echo "#"
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        echo
+        [ -r /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
+        echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
