@@ -20,11 +20,11 @@ centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
 step=0
 interactive=1
 step_min=0
-step_wait=20
-step_max=120
+step_wait=10
+step_max=60
 pause_min=0
 pause_wait=2
-pause_max=30
+pause_max=20
 
 is_clc=n
 is_ufs=n
