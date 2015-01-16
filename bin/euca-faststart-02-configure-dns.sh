@@ -2,7 +2,7 @@
 #
 # This script configures Eucalyptus DNS after a Faststart installation
 #
-# Each student MUST run all prior scripts on all nodes prior to this script.
+# This should be run immediately after the Faststart installer completes
 #
 
 #  1. Initalize Environment
@@ -125,6 +125,8 @@ fi
 
 
 #  5. Convert FastStart credentials to Course directory structure
+#     - This logic is at the end of the euca-faststart-01-install.sh script,
+#       but repeated here in case the one-line installer was run independently.
 
 if [ -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Found Eucalyptus Administrator credentials"
@@ -133,7 +135,6 @@ elif [ -r /root/admin.zip ]; then
     mkdir -p /root/creds/eucalyptus/admin
     unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
     sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
-    sleep 2
 else
     echo
     echo "Could not find Eucalyptus Administrator credentials!"
@@ -289,7 +290,7 @@ if [ $choice = y ]; then
     echo "#"
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    [ -r /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
+    [ -r /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
     echo "#"
     echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip /root/admin.zip -d /root/creds/eucalyptus/admin/

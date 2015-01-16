@@ -1,11 +1,9 @@
 #/bin/bash
 #
-# This script configures Eucalyptus CloudFormation
+# This script configures Eucalyptus CloudFormation after a Faststart installation
 #
-# It should only be run once on the Cloud Controller host.
-#
-# It can be run on top of a new FastStart install or once the Cloud Administrator
-# manual install has completed installing the console
+# This should be run after the Faststart installer completes, and the DNS
+# configuration script has also been run.
 #
 
 #  1. Initalize Environment
@@ -245,14 +243,14 @@ else
         euca-get-credentials -u admin /root/admin.zip
         pause
 
-        # Save and restore the DemoKey.pem if it exists
+        # Save and restore the DemoKey.pem if it exists (should not yet)
         [ -r /root/creds/eucalyptus/admin/DemoKey.pem ] && cp -a /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$
         echo "# rm -Rf /root/creds/eucalyptus/admin"
         rm -Rf /root/creds/eucalyptus/admin
         echo "#"
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        [ -r /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
+        [ -r /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
         echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/

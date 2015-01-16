@@ -385,7 +385,7 @@ if [ $is_clc = y ]; then
         echo "#"
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        [ -r /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
+        [ -r /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
         echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
