@@ -273,7 +273,7 @@ if [ $is_clc = y ]; then
     echo "    - NOTE: This step should only be run after the step"
     echo "      which restarts the Node Controller service on all Node"
     echo "      Controller hosts"
-    echo "    - Expect the OSG not configured warning"
+    echo "    - NOTE: Expect the OSG not configured warning"
     echo
     echo "============================================================"
     echo

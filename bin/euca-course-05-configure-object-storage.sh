@@ -147,7 +147,7 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Initialize Administrator credentials"
     echo "    - This step is only run on the Cloud Controller host"
-    echo "    - Expect the OSG not configured warning"
+    echo "    - NOTE: Expect the OSG not configured warning"
     echo
     echo "============================================================"
     echo
