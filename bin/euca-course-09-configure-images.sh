@@ -197,7 +197,7 @@ if [ $is_clc = y ]; then
     echo
     echo "wget $centos_image_url -O /root/centos.raw.xz"
     echo
-    echo "xz -d /root/centos.raw.xz"
+    echo "xz -v -d /root/centos.raw.xz"
 
     choose "Execute"
 
@@ -207,8 +207,8 @@ if [ $is_clc = y ]; then
         wget $centos_image_url -O /root/centos.raw.xz
         pause
 
-        echo "xz -d /root/centos.raw.xz"
-        xz -d /root/centos.raw.xz
+        echo "xz -v -d /root/centos.raw.xz"
+        xz -v -d /root/centos.raw.xz
 
         choose "Continue"
     fi
