@@ -1,4 +1,4 @@
-SETUP PRC Host
+Setup PRC Host
 ==============
 
 Quick instructions to setup a PRC host to easily run these demos.
@@ -17,12 +17,9 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
     wget https://raw.githubusercontent.com/eucalyptus/euca-demo/master/bin/user-initialize-prc-host.sh
     chmod -R 0700 ~/bin
     ./user-initialize-prc-host.sh
-
+    
 This downloads the euca-demo repo to a standard location, then adjusts root's PATH
-to include the demo scripts. Logout, then login, to pick up profile changes, or you
-can:
-
-    source ~/.bash_profile
+to include the demo scripts. Logout, then login, to pick up profile changes.
 
 You can find the repo at /root/src/eucalyptus/euca-demo
 
@@ -38,4 +35,28 @@ with symlinks to this from other hosts in the configuration.
 You can check if an environment configuration file has been created for your
 host by running:
 
-    source euca-env-initialize.sh
+    source euca-env-initialize.sh -I
+
+Install Eucalyptus via Faststart
+--------------------------------
+
+    euca-faststart-01-install.sh
+    euca-faststart-02-configure-cloudformation.sh
+    euca-faststart-03-configure-dns.sh  # not yet working
+
+Initialize Eucalyptus Faststart for use in Demo scripts
+-------------------------------------------------------
+
+    euca-demo-01-initialize.sh
+
+Run Demos
+---------
+
+    euca-demo-05-test-elb-asg-user-data.sh
+    euca-demo-11-test-cloud-formation-simple.sh
+    euca-demo-12-test-cloud-formation-elb.sh
+
+More to come later...
+
+Also see scripts to replicate Cloud Administrator Course, mostly complete as of this writing.
+
