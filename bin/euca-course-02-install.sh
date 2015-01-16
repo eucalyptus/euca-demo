@@ -448,14 +448,14 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca_conf --register-nodes=\"$EUCA_NC_PRIVATE_IP\""
+    echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
-        echo "# euca_conf --register-nodes=\"$EUCA_NC_PRIVATE_IP\""
-        euca_conf --register-nodes="$EUCA_NC_PRIVATE_IP"
+        echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
+        euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
 
         choose "Continue"
     fi
