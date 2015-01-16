@@ -857,7 +857,7 @@ if [ -r /root/creds/demo/developer/eucarc ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
-    echo "    - Already Created!"
+    echo "    - Already Downloaded!"
     echo
     echo "============================================================"
 
@@ -963,11 +963,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-accountlist"
-echo
-echo "euare-describe-images"
+echo "euca-describe-images"
 echo
 echo "euca-describe-keypairs"
+echo
+echo "euare-accountlist"
 echo
 echo "euare-userlistbypath"
 echo
@@ -979,16 +979,16 @@ choose "Execute"
 
 if [ $choice = y ]; then
     echo
-    echo "# euare-accountlist"
-    euare-accountlist
-    pause
-
     echo "# euca-describe-images"
     euca-describe-images
     pause
 
     echo "# euca-describe-keypairs"
     euca-describe-keypairs
+    pause
+
+    echo "# euare-accountlist"
+    euare-accountlist
     pause
 
     echo "# euare-userlistbypath"
