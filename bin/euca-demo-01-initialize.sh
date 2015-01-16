@@ -953,60 +953,58 @@ fi
 
 
 ((++step))
-if [ $is_clc = y ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). List Demo Resources"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-accountlist"
-    echo
-    echo "euare-describe-images"
-    echo
-    echo "euca-describe-keypairs"
-    echo
-    echo "euare-userlistbypath"
-    echo
-    echo "euare-grouplistbypath"
-    echo "euare-grouplistusers -g users"
-    echo "euare-grouplistusers -g developers"
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). List Demo Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-accountlist"
+echo
+echo "euare-describe-images"
+echo
+echo "euca-describe-keypairs"
+echo
+echo "euare-userlistbypath"
+echo
+echo "euare-grouplistbypath"
+echo "euare-grouplistusers -g users"
+echo "euare-grouplistusers -g developers"
 
-    choose "Execute"
+choose "Execute"
 
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-accountlist"
-        euare-accountlist
-        pause
+if [ $choice = y ]; then
+    echo
+    echo "# euare-accountlist"
+    euare-accountlist
+    pause
 
-        echo "# euca-describe-images"
-        euca-describe-images
-        pause
+    echo "# euca-describe-images"
+    euca-describe-images
+    pause
 
-        echo "# euca-describe-keypairs"
-        euca-describe-keypairs
-        pause
+    echo "# euca-describe-keypairs"
+    euca-describe-keypairs
+    pause
 
-        echo "# euare-userlistbypath"
-        euare-userlistbypath
-        pause
+    echo "# euare-userlistbypath"
+    euare-userlistbypath
+    pause
 
-        echo "# euare-grouplistbypath"
-        euare-grouplistbypath
-        echo "#"
-        echo "# euare-grouplistusers -g users
-        euare-grouplistusers -g users
-        echo "#"
-        echo "# euare-grouplistusers -g developers
-        euare-grouplistusers -g developers
+    echo "# euare-grouplistbypath"
+    euare-grouplistbypath
+    echo "#"
+    echo "# euare-grouplistusers -g users
+    euare-grouplistusers -g users
+    echo "#"
+    echo "# euare-grouplistusers -g developers
+    euare-grouplistusers -g developers
 
-        choose "Continue"
-    fi
+    choose "Continue"
 fi
 
 
