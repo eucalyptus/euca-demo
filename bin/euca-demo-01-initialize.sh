@@ -477,30 +477,30 @@ else
     echo
     echo "unzip /root/creds/demo/admin/admin.zip \\"
     echo "      -d /root/creds/demo/admin/"
-    
+
     wait "Execute"
-    
+
     if [ $choice = y ]; then
         echo
         echo "# mkdir -p /root/creds/demo/admin"
         mkdir -p /root/creds/demo/admin
         pause
-    
+
         echo "# euca-get-credentials -u admin -a demo \\"
         echo ">                      /root/creds/demo/admin/admin.zip"
         euca-get-credentials -u admin -a demo \
                              /root/creds/demo/admin/admin.zip
         pause
-    
+
         echo "# unzip /root/creds/demo/admin/admin.zip \\"
         echo ">       -d /root/creds/demo/admin/"
         unzip /root/creds/demo/admin/admin.zip \
               -d /root/creds/demo/admin/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/admin/eucarc    # invisibly fix deprecation message
-    
+
         choose "Continue"
     fi
-if    
+fi
 
 
 # Note: MUST run this step to make sure objects created below owned by demo account
@@ -704,27 +704,27 @@ else
     echo
     echo "unzip /root/creds/demo/user/user.zip \\"
     echo "      -d /root/creds/demo/user/"
-    
+
     choose "Execute"
-    
+
     if [ $choice = y ]; then
         echo
         echo "# mkdir -p /root/creds/demo/user"
         mkdir -p /root/creds/demo/user
         pause
-    
+
         echo "# euca-get-credentials -u user -a demo \\"
         echo ">                      /root/creds/demo/user/user.zip"
         euca-get-credentials -u user -a demo \
                              /root/creds/demo/user/user.zip
         pause
-    
+
         echo "# unzip /root/creds/demo/user/user.zip \\"
         echo ">       -d /root/creds/demo/user/"
         unzip /root/creds/demo/user/user.zip \
               -d /root/creds/demo/user/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/user/eucarc    # invisibly fix deprecation message
-    
+
         choose "Continue"
     fi
 fi
@@ -883,27 +883,27 @@ else
     echo
     echo "unzip /root/creds/demo/developer/developer.zip \\"
     echo "      -d /root/creds/demo/developer/"
-    
+
     choose "Execute"
-    
+
     if [ $choice = y ]; then
         echo
         echo "# mkdir -p /root/creds/demo/developer"
         mkdir -p /root/creds/demo/developer
         pause
-    
+
         echo "# euca-get-credentials -u developer -a demo \\"
         echo ">                      /root/creds/demo/developer/developer.zip"
         euca-get-credentials -u developer -a demo \
                              /root/creds/demo/developer/developer.zip
         pause
-    
+
         echo "# unzip /root/creds/demo/developer/developer.zip \\"
         echo ">       -d /root/creds/demo/developer/"
         unzip /root/creds/demo/developer/developer.zip \
               -d /root/creds/demo/developer/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/developer/eucarc    # invisibly fix deprecation message
-    
+
         choose "Continue"
     fi
 fi
