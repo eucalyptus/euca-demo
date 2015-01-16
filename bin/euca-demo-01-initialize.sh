@@ -405,76 +405,105 @@ fi
 
 
 ((++step))
-account=$(euare-accountlist | grep -s -q "^demo" | cut -f2)
+account=$(euare-accountlist | grep "^demo" | cut -f2)
 image=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
 
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Authorize Demo Account use of Demo Image"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-modify-image-attribute -l -a $account $image"
-
-choose "Execute"
-
-if [ $choice = y ]; then
+if euca-describe-images -x $account | grep -s -q $image; then
+    clear
     echo
-    echo "# euca-modify-image-attribute -l -a $account $image"
-    euca-modify-image-attribute -l -a $account $image
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Authorize Demo Account use of Demo Image"
+    echo "    - Already Authorized!"
+    echo
+    echo "============================================================"
 
     choose "Continue"
+
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Authorize Demo Account use of Demo Image"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-modify-image-attribute -l -a $account $image"
+
+    choose "Execute"
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-image-attribute -l -a $account $image"
+        euca-modify-image-attribute -l -a $account $image
+
+        choose "Continue"
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Download Demo Account Administrator Credentials"
-echo "    - This allows the Demo Account Administrator to run API commands"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "mkdir -p /root/creds/demo/admin"
-echo
-echo "euca-get-credentials -u admin -a demo \\"
-echo "                     /root/creds/demo/admin/admin.zip"
-echo
-echo "unzip /root/creds/demo/admin/admin.zip \\"
-echo "      -d /root/creds/demo/admin/"
-
-choose "Execute"
-
-if [ $choice = y | ! -r /root/creds/demo/admin/eucarc ]; then
+if [ -r /root/creds/demo/admin/eucarc ]; then
+    clear
     echo
-    echo "# mkdir -p /root/creds/demo/admin"
-    mkdir -p /root/creds/demo/admin
-    pause
-
-    echo "# euca-get-credentials -u admin -a demo \\"
-    echo ">                      /root/creds/demo/admin/admin.zip"
-    euca-get-credentials -u admin -a demo \
-                         /root/creds/demo/admin/admin.zip
-    pause
-
-    echo "# unzip /root/creds/demo/admin/admin.zip \\"
-    echo ">       -d /root/creds/demo/admin/"
-    unzip /root/creds/demo/admin/admin.zip \
-          -d /root/creds/demo/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/admin/eucarc    # invisibly fix deprecation message
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Download Demo Account Administrator Credentials"
+    echo "    - Already Downloaded!"
+    echo
+    echo "============================================================"
 
     choose "Continue"
-fi
+
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Download Demo Account Administrator Credentials"
+    echo "    - This allows the Demo Account Administrator to run API commands"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p /root/creds/demo/admin"
+    echo
+    echo "euca-get-credentials -u admin -a demo \\"
+    echo "                     /root/creds/demo/admin/admin.zip"
+    echo
+    echo "unzip /root/creds/demo/admin/admin.zip \\"
+    echo "      -d /root/creds/demo/admin/"
+    
+    wait "Execute"
+    
+    if [ $choice = y ]; then
+        echo
+        echo "# mkdir -p /root/creds/demo/admin"
+        mkdir -p /root/creds/demo/admin
+        pause
+    
+        echo "# euca-get-credentials -u admin -a demo \\"
+        echo ">                      /root/creds/demo/admin/admin.zip"
+        euca-get-credentials -u admin -a demo \
+                             /root/creds/demo/admin/admin.zip
+        pause
+    
+        echo "# unzip /root/creds/demo/admin/admin.zip \\"
+        echo ">       -d /root/creds/demo/admin/"
+        unzip /root/creds/demo/admin/admin.zip \
+              -d /root/creds/demo/admin/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/admin/eucarc    # invisibly fix deprecation message
+    
+        choose "Continue"
+    fi
+if    
 
 
+# Note: MUST run this step to make sure objects created below owned by demo account
 ((++step))
 clear
 echo
@@ -567,7 +596,7 @@ fi
 
 
 ((++step))
-if euare-userlistbypath | grep -s -q "^user"; then
+if euare-userlistbypath | grep -s -q ":user/user$"; then
     clear
     echo
     echo "============================================================"
@@ -644,51 +673,65 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Download Demo Account User Credentials"
-echo "    - This allows the Demo Account User to run API commands"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "mkdir -p /root/creds/demo/user"
-echo
-echo "euca-get-credentials -u user -a demo \\"
-echo "                     /root/creds/demo/user/user.zip"
-echo
-echo "unzip /root/creds/demo/user/user.zip \\"
-echo "      -d /root/creds/demo/user/"
-
-choose "Execute"
-
-if [ $choice = y | ! -r /root/creds/demo/user/eucarc ]; then
+if [ -r /root/creds/demo/user/eucarc ]; then
+    clear
     echo
-    echo "# mkdir -p /root/creds/demo/user"
-    mkdir -p /root/creds/demo/user
-    pause
-
-    echo "# euca-get-credentials -u user -a demo \\"
-    echo ">                      /root/creds/demo/user/user.zip"
-    euca-get-credentials -u user -a demo \
-                         /root/creds/demo/user/user.zip
-    pause
-
-    echo "# unzip /root/creds/demo/user/user.zip \\"
-    echo ">       -d /root/creds/demo/user/"
-    unzip /root/creds/demo/user/user.zip \
-          -d /root/creds/demo/user/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/user/eucarc    # invisibly fix deprecation message
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create Demo Account User Login Profile"
+    echo "    - Already Created!"
+    echo
+    echo "============================================================"
 
     choose "Continue"
+
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Download Demo Account User Credentials"
+    echo "    - This allows the Demo Account User to run API commands"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p /root/creds/demo/user"
+    echo
+    echo "euca-get-credentials -u user -a demo \\"
+    echo "                     /root/creds/demo/user/user.zip"
+    echo
+    echo "unzip /root/creds/demo/user/user.zip \\"
+    echo "      -d /root/creds/demo/user/"
+    
+    choose "Execute"
+    
+    if [ $choice = y ]; then
+        echo
+        echo "# mkdir -p /root/creds/demo/user"
+        mkdir -p /root/creds/demo/user
+        pause
+    
+        echo "# euca-get-credentials -u user -a demo \\"
+        echo ">                      /root/creds/demo/user/user.zip"
+        euca-get-credentials -u user -a demo \
+                             /root/creds/demo/user/user.zip
+        pause
+    
+        echo "# unzip /root/creds/demo/user/user.zip \\"
+        echo ">       -d /root/creds/demo/user/"
+        unzip /root/creds/demo/user/user.zip \
+              -d /root/creds/demo/user/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/user/eucarc    # invisibly fix deprecation message
+    
+        choose "Continue"
+    fi
 fi
 
 
 ((++step))
-if euare-grouplistbypath | grep -s -q "^users"; then
+if euare-grouplistbypath | grep -s -q ":group/users$"; then
     clear
     echo
     echo "============================================================"
@@ -731,7 +774,7 @@ fi
 
 
 ((++step))
-if euare-userlistbypath | grep -s -q "^developer"; then
+if euare-userlistbypath | grep -s -q ":user/developer$"; then
     clear
     echo
     echo "============================================================"
@@ -799,8 +842,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-useraddloginprofile -u user -p $demo_developer_password"
-        euare-useraddloginprofile -u user -p $demo_developer_password
+        echo "# euare-useraddloginprofile -u developer -p $demo_developer_password"
+        euare-useraddloginprofile -u developer -p $demo_developer_password
 
         choose "Continue"
     fi
@@ -808,51 +851,66 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
-echo "    - This allows the Demo Account Developer to run API commands"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "mkdir -p /root/creds/demo/developer"
-echo
-echo "euca-get-credentials -u developer -a demo \\"
-echo "                     /root/creds/demo/developer/developer.zip"
-echo
-echo "unzip /root/creds/demo/developer/developer.zip \\"
-echo "      -d /root/creds/demo/developer/"
-
-choose "Execute"
-
-if [ $choice = y | ! -r /root/creds/demo/developer/eucarc ]; then
+if [ -r /root/creds/demo/developer/eucarc ]; then
+    clear
     echo
-    echo "# mkdir -p /root/creds/demo/developer"
-    mkdir -p /root/creds/demo/developer
-    pause
-
-    echo "# euca-get-credentials -u developer -a demo \\"
-    echo ">                      /root/creds/demo/developer/developer.zip"
-    euca-get-credentials -u developer -a demo \
-                         /root/creds/demo/developer/developer.zip
-    pause
-
-    echo "# unzip /root/creds/demo/developer/developer.zip \\"
-    echo ">       -d /root/creds/demo/developer/"
-    unzip /root/creds/demo/developer/developer.zip \
-          -d /root/creds/demo/developer/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/developer/eucarc    # invisibly fix deprecation message
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
+    echo "    - Already Created!"
+    echo
+    echo "============================================================"
 
     choose "Continue"
+
+else
+    clear
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
+    echo "    - This allows the Demo Account Developer to run API commands"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p /root/creds/demo/developer"
+    echo
+    echo "euca-get-credentials -u developer -a demo \\"
+    echo "                     /root/creds/demo/developer/developer.zip"
+    echo
+    echo "unzip /root/creds/demo/developer/developer.zip \\"
+    echo "      -d /root/creds/demo/developer/"
+    
+    choose "Execute"
+    
+    if [ $choice = y ]; then
+        echo
+        echo "# mkdir -p /root/creds/demo/developer"
+        mkdir -p /root/creds/demo/developer
+        pause
+    
+        echo "# euca-get-credentials -u developer -a demo \\"
+        echo ">                      /root/creds/demo/developer/developer.zip"
+        euca-get-credentials -u developer -a demo \
+                             /root/creds/demo/developer/developer.zip
+        pause
+    
+        echo "# unzip /root/creds/demo/developer/developer.zip \\"
+        echo ">       -d /root/creds/demo/developer/"
+        unzip /root/creds/demo/developer/developer.zip \
+              -d /root/creds/demo/developer/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/developer/eucarc    # invisibly fix deprecation message
+    
+        choose "Continue"
+    fi
 fi
 
 
 ((++step))
-if euare-grouplistbypath | grep -s -q "^developers"; then
+if euare-grouplistbypath | grep -s -q ":group/developers$"; then
     clear
     echo
     echo "============================================================"
