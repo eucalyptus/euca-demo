@@ -1,0 +1,93 @@
+[root@odc-c-23 bin]# euca-course-03-configure-networking.sh 
+
+============================================================
+
+ 1. Configure Eucalyptus Networking
+    - We'll save the original file first
+    - Then we'll use sed to quickly change parameters
+    - Then we'll diff the modified and original files to show changes
+
+============================================================
+
+Commands:
+
+cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"MANAGED-NOVLAN\"/" \
+       -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+       -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+       -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" \
+       -e "s/^#VNET_PUBLICIPS=.*$/VNET_PUBLICIPS=\"10.104.44.1-10.104.44.254\"/" \
+       -e "s/^#VNET_SUBNET=.*$/VNET_SUBNET=\"172.44.0.0\"/" \
+       -e "s/^#VNET_NETMASK=.*$/VNET_NETMASK=\"255.255.0.0\"/" \
+       -e "s/^#VNET_ADDRSPERNET=.*$/VNET_ADDRSPERNET=\"32\"/" \
+       -e "s/^#VNET_DNS.*$/VNET_DNS=\"8.8.8.8\"/" /etc/eucalyptus/eucalyptus.conf
+
+diff /etc/eucalyptus/eucalyptus.conf{,.orig}
+
+Execute (y,n,q)[y]
+
+# cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+#
+# sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"MANAGED-NOVLAN\"/" \
+>        -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+>        -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+>        -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" \
+>        -e "s/^#VNET_PUBLICIPS=.*$/VNET_PUBLICIPS=\"10.104.44.1-10.104.44.254\"/" \
+>        -e "s/^#VNET_SUBNET=.*$/VNET_SUBNET=\"172.44.0.0\"/" \
+>        -e "s/^#VNET_NETMASK=.*$/VNET_NETMASK=\"255.255.0.0\"/" \
+>        -e "s/^#VNET_ADDRSPERNET=.*$/VNET_ADDRSPERNET=\"32\"/" \
+>        -e "s/^#VNET_DNS.*$/VNET_DNS=\"8.8.8.8\"/" /etc/eucalyptus/eucalyptus.conf
+#
+# diff /etc/eucalyptus/eucalyptus.conf{,.orig}
+168c168
+< VNET_PRIVINTERFACE="em1"
+---
+> VNET_PRIVINTERFACE="eth0"
+178c178
+< VNET_PUBINTERFACE="em2"
+---
+> VNET_PUBINTERFACE="eth0"
+189c189
+< VNET_PUBLICIPS="10.104.44.1-10.104.44.254"
+---
+> #VNET_PUBLICIPS="your-free-public-ip-1 your-free-public-ip-2 ..."
+194,195c194,195
+< VNET_SUBNET="172.44.0.0"
+< VNET_NETMASK="255.255.0.0"
+---
+> #VNET_SUBNET="192.168.0.0"
+> #VNET_NETMASK="255.255.0.0"
+203c203
+< VNET_ADDRSPERNET="32"
+---
+> #VNET_ADDRSPERNET="32"
+208c208
+< VNET_DNS="8.8.8.8"
+---
+> #VNET_DNS="your-dns-server-ip"
+
+Continue (y,n,q)[y]
+
+============================================================
+
+ 3. Restart the Node Controller service
+    - This step is only run on Node Controller hosts
+    - STOP! This step should only be run after the step
+      which restarts the Cluster Controller service on the
+      Cluster Controller host
+
+============================================================
+
+Commands:
+
+service eucalyptus-nc restart
+
+Execute (y,n,q)[y]
+
+# service eucalyptus-nc restart
+Restarting Eucalyptus services: done.
+
+Continue (y,n,q)[y]
+
+Network configuration complete

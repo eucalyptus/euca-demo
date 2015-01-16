@@ -1,0 +1,440 @@
+[root@odc-c-21 bin]# euca-course-03-configure-networking.sh 
+
+============================================================
+
+ 1. Configure Eucalyptus Networking
+    - We'll save the original file first
+    - Then we'll use sed to quickly change parameters
+    - Then we'll diff the modified and original files to show changes
+
+============================================================
+
+Commands:
+
+cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"MANAGED-NOVLAN\"/" \
+       -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+       -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+       -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" \
+       -e "s/^#VNET_PUBLICIPS=.*$/VNET_PUBLICIPS=\"10.104.44.1-10.104.44.254\"/" \
+       -e "s/^#VNET_SUBNET=.*$/VNET_SUBNET=\"172.44.0.0\"/" \
+       -e "s/^#VNET_NETMASK=.*$/VNET_NETMASK=\"255.255.0.0\"/" \
+       -e "s/^#VNET_ADDRSPERNET=.*$/VNET_ADDRSPERNET=\"32\"/" \
+       -e "s/^#VNET_DNS.*$/VNET_DNS=\"8.8.8.8\"/" /etc/eucalyptus/eucalyptus.conf
+
+diff /etc/eucalyptus/eucalyptus.conf{,.orig}
+
+Execute (y,n,q)[y]
+
+# cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+#
+# sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"MANAGED-NOVLAN\"/" \
+>        -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+>        -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+>        -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" \
+>        -e "s/^#VNET_PUBLICIPS=.*$/VNET_PUBLICIPS=\"10.104.44.1-10.104.44.254\"/" \
+>        -e "s/^#VNET_SUBNET=.*$/VNET_SUBNET=\"172.44.0.0\"/" \
+>        -e "s/^#VNET_NETMASK=.*$/VNET_NETMASK=\"255.255.0.0\"/" \
+>        -e "s/^#VNET_ADDRSPERNET=.*$/VNET_ADDRSPERNET=\"32\"/" \
+>        -e "s/^#VNET_DNS.*$/VNET_DNS=\"8.8.8.8\"/" /etc/eucalyptus/eucalyptus.conf
+#
+# diff /etc/eucalyptus/eucalyptus.conf{,.orig}
+168c168
+< VNET_PRIVINTERFACE="em1"
+---
+> VNET_PRIVINTERFACE="eth0"
+178c178
+< VNET_PUBINTERFACE="em2"
+---
+> VNET_PUBINTERFACE="eth0"
+189c189
+< VNET_PUBLICIPS="10.104.44.1-10.104.44.254"
+---
+> #VNET_PUBLICIPS="your-free-public-ip-1 your-free-public-ip-2 ..."
+194,195c194,195
+< VNET_SUBNET="172.44.0.0"
+< VNET_NETMASK="255.255.0.0"
+---
+> #VNET_SUBNET="192.168.0.0"
+> #VNET_NETMASK="255.255.0.0"
+203c203
+< VNET_ADDRSPERNET="32"
+---
+> #VNET_ADDRSPERNET="32"
+208c208
+< VNET_DNS="8.8.8.8"
+---
+> #VNET_DNS="your-dns-server-ip"
+
+Continue (y,n,q)[y]
+
+============================================================
+
+ 2. Restart the Cluster Controller service
+    - This step is only run on the Cluster Controller host
+    - NOTE! After completing this step, you will need to run
+      the next step on all Node Controller hosts before you
+      continue here
+
+============================================================
+
+Commands:
+
+service eucalyptus-cc restart
+
+Execute (y,n,q)[y]
+
+# service eucalyptus-cc restart
+Restarting Eucalyptus cluster controller: done.
+
+Continue (y,n,q)[y]
+
+============================================================
+
+ 4. Use Administrator Credentials
+    - This step is only run on the Cloud Controller host
+    - NOTE: This step should only be run after the step
+      which restarts the Node Controller service on all Node
+      Controller hosts
+    - NOTE: Expect the OSG not configured warning
+
+============================================================
+
+Commands:
+
+euca_conf --get-credentials /root/admin.zip
+
+mkdir -p /root/creds/eucalyptus/admin
+unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+
+source /root/creds/eucalyptus/admin/eucarc
+
+Execute (y,n,q)[y]
+
+# euca_conf --get-credentials /root/admin.zip
+#
+# mkdir -p /root/creds/eucalyptus/admin
+# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+Archive:  /root/admin.zip
+To setup the environment run: source /path/to/eucarc
+  inflating: /root/creds/eucalyptus/admin/eucarc  
+  inflating: /root/creds/eucalyptus/admin/iamrc  
+  inflating: /root/creds/eucalyptus/admin/cloud-cert.pem  
+  inflating: /root/creds/eucalyptus/admin/jssecacerts  
+  inflating: /root/creds/eucalyptus/admin/euca2-admin-f40af6fc-pk.pem  
+  inflating: /root/creds/eucalyptus/admin/euca2-admin-f40af6fc-cert.pem  
+#
+# source /root/creds/eucalyptus/admin/eucarc
+WARN: An OSG is either not registered or not configured. S3_URL is not set. Please register an OSG and/or set a valid s3 endpoint and download credentials again. Or set S3_URL manually to http://OSG-IP:8773/services/objectstorage
+
+Continue (y,n,q)[y]
+
+============================================================
+
+ 5. Confirm Public IP addresses
+    - This step is only run on the Cloud Controller host
+
+============================================================
+
+Commands:
+
+euca-describe-addresses verbose
+
+Execute (y,n,q)[y]
+
+# euca-describe-addresses verbose
+ADDRESS 10.104.44.101   nobody  standard
+ADDRESS 10.104.44.202   nobody  standard
+ADDRESS 10.104.44.234   nobody  standard
+ADDRESS 10.104.44.86    nobody  standard
+ADDRESS 10.104.44.224   nobody  standard
+ADDRESS 10.104.44.213   nobody  standard
+ADDRESS 10.104.44.126   nobody  standard
+ADDRESS 10.104.44.156   nobody  standard
+ADDRESS 10.104.44.22    nobody  standard
+ADDRESS 10.104.44.29    nobody  standard
+ADDRESS 10.104.44.27    nobody  standard
+ADDRESS 10.104.44.73    nobody  standard
+ADDRESS 10.104.44.174   nobody  standard
+ADDRESS 10.104.44.50    nobody  standard
+ADDRESS 10.104.44.12    nobody  standard
+ADDRESS 10.104.44.90    nobody  standard
+ADDRESS 10.104.44.112   nobody  standard
+ADDRESS 10.104.44.151   nobody  standard
+ADDRESS 10.104.44.133   nobody  standard
+ADDRESS 10.104.44.169   nobody  standard
+ADDRESS 10.104.44.57    nobody  standard
+ADDRESS 10.104.44.176   nobody  standard
+ADDRESS 10.104.44.109   nobody  standard
+ADDRESS 10.104.44.85    nobody  standard
+ADDRESS 10.104.44.204   nobody  standard
+ADDRESS 10.104.44.165   nobody  standard
+ADDRESS 10.104.44.160   nobody  standard
+ADDRESS 10.104.44.88    nobody  standard
+ADDRESS 10.104.44.18    nobody  standard
+ADDRESS 10.104.44.30    nobody  standard
+ADDRESS 10.104.44.247   nobody  standard
+ADDRESS 10.104.44.182   nobody  standard
+ADDRESS 10.104.44.198   nobody  standard
+ADDRESS 10.104.44.233   nobody  standard
+ADDRESS 10.104.44.232   nobody  standard
+ADDRESS 10.104.44.107   nobody  standard
+ADDRESS 10.104.44.134   nobody  standard
+ADDRESS 10.104.44.219   nobody  standard
+ADDRESS 10.104.44.127   nobody  standard
+ADDRESS 10.104.44.180   nobody  standard
+ADDRESS 10.104.44.25    nobody  standard
+ADDRESS 10.104.44.113   nobody  standard
+ADDRESS 10.104.44.167   nobody  standard
+ADDRESS 10.104.44.171   nobody  standard
+ADDRESS 10.104.44.35    nobody  standard
+ADDRESS 10.104.44.36    nobody  standard
+ADDRESS 10.104.44.189   nobody  standard
+ADDRESS 10.104.44.254   nobody  standard
+ADDRESS 10.104.44.55    nobody  standard
+ADDRESS 10.104.44.230   nobody  standard
+ADDRESS 10.104.44.170   nobody  standard
+ADDRESS 10.104.44.215   nobody  standard
+ADDRESS 10.104.44.5     nobody  standard
+ADDRESS 10.104.44.185   nobody  standard
+ADDRESS 10.104.44.211   nobody  standard
+ADDRESS 10.104.44.93    nobody  standard
+ADDRESS 10.104.44.248   nobody  standard
+ADDRESS 10.104.44.228   nobody  standard
+ADDRESS 10.104.44.214   nobody  standard
+ADDRESS 10.104.44.74    nobody  standard
+ADDRESS 10.104.44.137   nobody  standard
+ADDRESS 10.104.44.110   nobody  standard
+ADDRESS 10.104.44.7     nobody  standard
+ADDRESS 10.104.44.192   nobody  standard
+ADDRESS 10.104.44.62    nobody  standard
+ADDRESS 10.104.44.8     nobody  standard
+ADDRESS 10.104.44.162   nobody  standard
+ADDRESS 10.104.44.59    nobody  standard
+ADDRESS 10.104.44.56    nobody  standard
+ADDRESS 10.104.44.116   nobody  standard
+ADDRESS 10.104.44.103   nobody  standard
+ADDRESS 10.104.44.146   nobody  standard
+ADDRESS 10.104.44.250   nobody  standard
+ADDRESS 10.104.44.26    nobody  standard
+ADDRESS 10.104.44.14    nobody  standard
+ADDRESS 10.104.44.2     nobody  standard
+ADDRESS 10.104.44.164   nobody  standard
+ADDRESS 10.104.44.208   nobody  standard
+ADDRESS 10.104.44.97    nobody  standard
+ADDRESS 10.104.44.140   nobody  standard
+ADDRESS 10.104.44.71    nobody  standard
+ADDRESS 10.104.44.83    nobody  standard
+ADDRESS 10.104.44.100   nobody  standard
+ADDRESS 10.104.44.33    nobody  standard
+ADDRESS 10.104.44.207   nobody  standard
+ADDRESS 10.104.44.252   nobody  standard
+ADDRESS 10.104.44.91    nobody  standard
+ADDRESS 10.104.44.6     nobody  standard
+ADDRESS 10.104.44.53    nobody  standard
+ADDRESS 10.104.44.195   nobody  standard
+ADDRESS 10.104.44.119   nobody  standard
+ADDRESS 10.104.44.196   nobody  standard
+ADDRESS 10.104.44.201   nobody  standard
+ADDRESS 10.104.44.175   nobody  standard
+ADDRESS 10.104.44.152   nobody  standard
+ADDRESS 10.104.44.81    nobody  standard
+ADDRESS 10.104.44.154   nobody  standard
+ADDRESS 10.104.44.187   nobody  standard
+ADDRESS 10.104.44.142   nobody  standard
+ADDRESS 10.104.44.10    nobody  standard
+ADDRESS 10.104.44.220   nobody  standard
+ADDRESS 10.104.44.199   nobody  standard
+ADDRESS 10.104.44.105   nobody  standard
+ADDRESS 10.104.44.43    nobody  standard
+ADDRESS 10.104.44.188   nobody  standard
+ADDRESS 10.104.44.210   nobody  standard
+ADDRESS 10.104.44.16    nobody  standard
+ADDRESS 10.104.44.149   nobody  standard
+ADDRESS 10.104.44.179   nobody  standard
+ADDRESS 10.104.44.84    nobody  standard
+ADDRESS 10.104.44.168   nobody  standard
+ADDRESS 10.104.44.181   nobody  standard
+ADDRESS 10.104.44.246   nobody  standard
+ADDRESS 10.104.44.178   nobody  standard
+ADDRESS 10.104.44.60    nobody  standard
+ADDRESS 10.104.44.40    nobody  standard
+ADDRESS 10.104.44.172   nobody  standard
+ADDRESS 10.104.44.31    nobody  standard
+ADDRESS 10.104.44.148   nobody  standard
+ADDRESS 10.104.44.129   nobody  standard
+ADDRESS 10.104.44.75    nobody  standard
+ADDRESS 10.104.44.95    nobody  standard
+ADDRESS 10.104.44.155   nobody  standard
+ADDRESS 10.104.44.13    nobody  standard
+ADDRESS 10.104.44.166   nobody  standard
+ADDRESS 10.104.44.249   nobody  standard
+ADDRESS 10.104.44.89    nobody  standard
+ADDRESS 10.104.44.49    nobody  standard
+ADDRESS 10.104.44.72    nobody  standard
+ADDRESS 10.104.44.122   nobody  standard
+ADDRESS 10.104.44.38    nobody  standard
+ADDRESS 10.104.44.237   nobody  standard
+ADDRESS 10.104.44.92    nobody  standard
+ADDRESS 10.104.44.58    nobody  standard
+ADDRESS 10.104.44.23    nobody  standard
+ADDRESS 10.104.44.177   nobody  standard
+ADDRESS 10.104.44.68    nobody  standard
+ADDRESS 10.104.44.135   nobody  standard
+ADDRESS 10.104.44.194   nobody  standard
+ADDRESS 10.104.44.45    nobody  standard
+ADDRESS 10.104.44.15    nobody  standard
+ADDRESS 10.104.44.217   nobody  standard
+ADDRESS 10.104.44.106   nobody  standard
+ADDRESS 10.104.44.136   nobody  standard
+ADDRESS 10.104.44.242   nobody  standard
+ADDRESS 10.104.44.205   nobody  standard
+ADDRESS 10.104.44.243   nobody  standard
+ADDRESS 10.104.44.173   nobody  standard
+ADDRESS 10.104.44.222   nobody  standard
+ADDRESS 10.104.44.221   nobody  standard
+ADDRESS 10.104.44.61    nobody  standard
+ADDRESS 10.104.44.41    nobody  standard
+ADDRESS 10.104.44.3     nobody  standard
+ADDRESS 10.104.44.193   nobody  standard
+ADDRESS 10.104.44.239   nobody  standard
+ADDRESS 10.104.44.114   nobody  standard
+ADDRESS 10.104.44.245   nobody  standard
+ADDRESS 10.104.44.64    nobody  standard
+ADDRESS 10.104.44.236   nobody  standard
+ADDRESS 10.104.44.51    nobody  standard
+ADDRESS 10.104.44.47    nobody  standard
+ADDRESS 10.104.44.28    nobody  standard
+ADDRESS 10.104.44.163   nobody  standard
+ADDRESS 10.104.44.80    nobody  standard
+ADDRESS 10.104.44.244   nobody  standard
+ADDRESS 10.104.44.141   nobody  standard
+ADDRESS 10.104.44.19    nobody  standard
+ADDRESS 10.104.44.120   nobody  standard
+ADDRESS 10.104.44.130   nobody  standard
+ADDRESS 10.104.44.124   nobody  standard
+ADDRESS 10.104.44.17    nobody  standard
+ADDRESS 10.104.44.226   nobody  standard
+ADDRESS 10.104.44.99    nobody  standard
+ADDRESS 10.104.44.42    nobody  standard
+ADDRESS 10.104.44.121   nobody  standard
+ADDRESS 10.104.44.96    nobody  standard
+ADDRESS 10.104.44.227   nobody  standard
+ADDRESS 10.104.44.200   nobody  standard
+ADDRESS 10.104.44.39    nobody  standard
+ADDRESS 10.104.44.253   nobody  standard
+ADDRESS 10.104.44.54    nobody  standard
+ADDRESS 10.104.44.67    nobody  standard
+ADDRESS 10.104.44.216   nobody  standard
+ADDRESS 10.104.44.21    nobody  standard
+ADDRESS 10.104.44.159   nobody  standard
+ADDRESS 10.104.44.251   nobody  standard
+ADDRESS 10.104.44.20    nobody  standard
+ADDRESS 10.104.44.108   nobody  standard
+ADDRESS 10.104.44.131   nobody  standard
+ADDRESS 10.104.44.229   nobody  standard
+ADDRESS 10.104.44.82    nobody  standard
+ADDRESS 10.104.44.238   nobody  standard
+ADDRESS 10.104.44.70    nobody  standard
+ADDRESS 10.104.44.79    nobody  standard
+ADDRESS 10.104.44.24    nobody  standard
+ADDRESS 10.104.44.235   nobody  standard
+ADDRESS 10.104.44.218   nobody  standard
+ADDRESS 10.104.44.118   nobody  standard
+ADDRESS 10.104.44.37    nobody  standard
+ADDRESS 10.104.44.186   nobody  standard
+ADDRESS 10.104.44.128   nobody  standard
+ADDRESS 10.104.44.191   nobody  standard
+ADDRESS 10.104.44.145   nobody  standard
+ADDRESS 10.104.44.52    nobody  standard
+ADDRESS 10.104.44.223   nobody  standard
+ADDRESS 10.104.44.197   nobody  standard
+ADDRESS 10.104.44.184   nobody  standard
+ADDRESS 10.104.44.66    nobody  standard
+ADDRESS 10.104.44.63    nobody  standard
+ADDRESS 10.104.44.11    nobody  standard
+ADDRESS 10.104.44.144   nobody  standard
+ADDRESS 10.104.44.206   nobody  standard
+ADDRESS 10.104.44.117   nobody  standard
+ADDRESS 10.104.44.231   nobody  standard
+ADDRESS 10.104.44.76    nobody  standard
+ADDRESS 10.104.44.158   nobody  standard
+ADDRESS 10.104.44.44    nobody  standard
+ADDRESS 10.104.44.32    nobody  standard
+ADDRESS 10.104.44.9     nobody  standard
+ADDRESS 10.104.44.143   nobody  standard
+ADDRESS 10.104.44.161   nobody  standard
+ADDRESS 10.104.44.87    nobody  standard
+ADDRESS 10.104.44.183   nobody  standard
+ADDRESS 10.104.44.78    nobody  standard
+ADDRESS 10.104.44.132   nobody  standard
+ADDRESS 10.104.44.190   nobody  standard
+ADDRESS 10.104.44.102   nobody  standard
+ADDRESS 10.104.44.125   nobody  standard
+ADDRESS 10.104.44.139   nobody  standard
+ADDRESS 10.104.44.209   nobody  standard
+ADDRESS 10.104.44.104   nobody  standard
+ADDRESS 10.104.44.34    nobody  standard
+ADDRESS 10.104.44.46    nobody  standard
+ADDRESS 10.104.44.225   nobody  standard
+ADDRESS 10.104.44.157   nobody  standard
+ADDRESS 10.104.44.138   nobody  standard
+ADDRESS 10.104.44.48    nobody  standard
+ADDRESS 10.104.44.111   nobody  standard
+ADDRESS 10.104.44.153   nobody  standard
+ADDRESS 10.104.44.203   nobody  standard
+ADDRESS 10.104.44.4     nobody  standard
+ADDRESS 10.104.44.69    nobody  standard
+ADDRESS 10.104.44.147   nobody  standard
+ADDRESS 10.104.44.212   nobody  standard
+ADDRESS 10.104.44.77    nobody  standard
+ADDRESS 10.104.44.98    nobody  standard
+ADDRESS 10.104.44.1     nobody  standard
+ADDRESS 10.104.44.240   nobody  standard
+ADDRESS 10.104.44.123   nobody  standard
+ADDRESS 10.104.44.115   nobody  standard
+ADDRESS 10.104.44.241   nobody  standard
+ADDRESS 10.104.44.150   nobody  standard
+ADDRESS 10.104.44.65    nobody  standard
+ADDRESS 10.104.44.94    nobody  standard
+
+Continue (y,n,q)[y]
+
+============================================================
+
+ 6. Confirm Instance Types
+    - This step is only run on the Cloud Controller host
+
+============================================================
+
+Commands:
+
+euca-describe-instance-types --show-capacity
+
+Execute (y,n,q)[y]
+
+# euca-describe-instance-types --show-capacity
+INSTANCETYPE    Name         CPUs  Memory (MiB)  Disk (GiB)  Used / Total  Used %
+INSTANCETYPE    m1.small        1           256           5     0 /     4      0%
+INSTANCETYPE    t1.micro        1           256           5     0 /     4      0%
+INSTANCETYPE    m1.medium       1           512          10     0 /     4      0%
+INSTANCETYPE    c1.medium       2           512          10     0 /     2      0%
+INSTANCETYPE    m1.large        2           512          10     0 /     2      0%
+INSTANCETYPE    m1.xlarge       2          1024          10     0 /     2      0%
+INSTANCETYPE    c1.xlarge       2          2048          10     0 /     2      0%
+INSTANCETYPE    m2.xlarge       2          2048          10     0 /     2      0%
+INSTANCETYPE    m3.xlarge       4          2048          15     0 /     1      0%
+INSTANCETYPE    m2.2xlarge      2          4096          30     0 /     1      0%
+INSTANCETYPE    m3.2xlarge      4          4096          30     0 /     1      0%
+INSTANCETYPE    cc1.4xlarge     8          3072          60     0 /     0        
+INSTANCETYPE    m2.4xlarge      8          4096          60     0 /     0        
+INSTANCETYPE    hi1.4xlarge     8          6144         120     0 /     0        
+INSTANCETYPE    cc2.8xlarge    16          6144         120     0 /     0        
+INSTANCETYPE    cg1.4xlarge    16         12288         200     0 /     0        
+INSTANCETYPE    cr1.8xlarge    16         16384         240     0 /     0        
+INSTANCETYPE    hs1.8xlarge    48        119808       24000     0 /     0        
+
+Continue (y,n,q)[y]
+
+Network configuration complete
