@@ -329,17 +329,30 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Register Walrus as the Object Storage Provider"
     echo "    - This step is only run on the Cloud Controller host"
+    if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "    - Scan for the host key to prevent ssh unknown host prompt"
+    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+        echo
+    fi
     echo "euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
+        if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
+            echo "# ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
+            pause
+        fi
+
         echo "# euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
         euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus
 
@@ -359,17 +372,30 @@ if [ $is_clc = y ]; then
     echo "    - It is normal to see ERRORs for objectstorage, imaging"
     echo "      and loadbalancingbackend at this point, as they require"
     echo "      further configuration"
+    if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "    - Scan for the host key to prevent ssh unknown host prompt"
+    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+        echo
+    fi
     echo "euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
+        if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
+            echo "# ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
+            pause
+        fi
+
         echo "# euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
         euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI
 
@@ -386,17 +412,30 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Register Cluster Controller service"
     echo "    - This step is only run on the Cloud Controller host"
+    if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "    - Scan for the host key to prevent ssh unknown host prompt"
+    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+        echo
+    fi
     echo "euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_HOST_PUBLIC_IP --component PODCC"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
+        if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
+            echo "# ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
+            pause
+        fi
+
         echo "# euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC"
         euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC
 
@@ -413,17 +452,30 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Register Storage Controller service"
     echo "    - This step is only run on the Cloud Controller host"
+    if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "    - Scan for the host key to prevent ssh unknown host prompt"
+    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
+        echo "ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+        echo
+    fi
     echo "euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
+        if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
+            echo "# ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
+            pause
+        fi
+
         echo "# euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
         euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC
 
@@ -443,17 +495,30 @@ if [ $is_clc = y ]; then
     echo "    - NOTE! After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
+    if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
+        echo "    - Scan for the host key to prevent ssh unknown host prompt"
+    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
+        echo "ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
+        echo
+    fi
     echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
+        if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
+            echo "# ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
+            pause
+        fi
+
         echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
         euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
 
