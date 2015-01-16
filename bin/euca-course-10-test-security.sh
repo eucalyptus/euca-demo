@@ -151,7 +151,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Initialize Ops Account Administrator credentials"
+    echo "$(printf '%2d' $step). Use Ops Account Administrator credentials"
     echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"

@@ -268,7 +268,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Initialize Administrator Credentials"
+    echo "$(printf '%2d' $step). Use Administrator Credentials"
     echo "    - This step is only run on the Cloud Controller host"
     echo "    - NOTE: This step should only be run after the step"
     echo "      which restarts the Node Controller service on all Node"

@@ -151,7 +151,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Initialize Administrator credentials"
+    echo "$(printf '%2d' $step). Use Administrator credentials"
     echo "    - This step is only run on the Cloud Controller host"
     echo "    - NOTE: Expect the OSG not configured warning"
     echo
@@ -384,14 +384,14 @@ if [ $is_clc = y ]; then
         euca-get-credentials -u admin /root/admin.zip
         pause
 
-        # Save and restore the DemoKey.pem if it exists
-        [ -r /root/creds/eucalyptus/admin/DemoKey.pem ] && cp -a /root/creds/eucalyptus/admin/DemoKey.pem /tmp/DemoKey.pem_$$
+        # Save and restore the admin-demo.pem if it exists
+        [ -r /root/creds/eucalyptus/admin/admin-demo.pem ] && cp -a /root/creds/eucalyptus/admin/admin-demo.pem /tmp/admin-demo.pem_$$
         echo "# rm -Rf /root/creds/eucalyptus/admin"
         rm -Rf /root/creds/eucalyptus/admin
         echo "#"
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        [ -r /tmp/DemoKey.pem_$$ ] && cp -a /tmp/DemoKey.pem_$$ /root/creds/eucalyptus/admin/DemoKey.pem; rm -f /tmp/DemoKey.pem_$$
+        [ -r /tmp/admin-demo.pem_$$ ] && cp -a /tmp/admin-demo.pem_$$ /root/creds/eucalyptus/admin/admin-demo.pem; rm -f /tmp/admin-demo.pem_$$
         echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/

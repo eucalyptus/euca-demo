@@ -143,11 +143,22 @@ else
     exit 10
 fi
 
-
 if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
     echo
     echo "This script should be run only on a Cloud Controller"
     exit 20
+fi
+
+demo_initialized=y
+[ -r /root/centos.raw ] || demo_initialized=n
+euca-describe-images | grep -s -q "centos.raw.manifest.xml" || demo_initialized=n
+euca-describe-keypairs | grep -s -q "admin-demo" || demo_initialized=n
+
+if [ $demo_initialized = n ]; then
+    echo
+    echo "At least one prerequisite for this script was not met."
+    echo "Please re-run euca-demo-01-initialize.sh script."
+    exit 30
 fi
 
 
@@ -158,7 +169,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Initialize Administrator credentials"
+echo "$(printf '%2d' $step). Use Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -174,131 +185,6 @@ if [ $choice = y ]; then
     source /root/creds/eucalyptus/admin/eucarc
 
     choose "Continue"
-fi
-
-
-((++step))
-if [ -r /root/centos.raw ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
-    echo "    - Already Downloaded!"
-    echo
-    echo "============================================================"
-
-    choose "Continue"
-
-else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "wget $centos_image_url -O /root/centos.raw.xz"
-    echo
-    echo "xz -d /root/centos.raw.xz"
-
-    choose "Execute"
-
-    if [ $choice = y ]; then
-        echo
-        echo "# wget $centos_image_url -O /root/centos.raw.xz"
-        wget $centos_image_url -O /root/centos.raw.xz
-        pause
-
-        echo "xz -d /root/centos.raw.xz"
-        xz -d /root/centos.raw.xz
-
-        choose "Continue"
-    fi
-fi
-
-
-((++step))
-if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Install Image"
-    echo "    - Already Installed!"
-    echo
-    echo "============================================================"
-
-    choose "Continue"
-
-else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Install Image"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-
-    choose "Execute"
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
-
-        choose "Continue"
-    fi
-fi
-
-
-((++step))
-if euca-describe-keypairs | grep -s -q "DemoKey"; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create a Keypair"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-
-    choose "Continue"
-
-else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create a Keypair"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem"
-    echo
-    echo "chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem"
-
-    choose "Execute"
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem"
-        euca-create-keypair DemoKey | tee > /root/creds/eucalyptus/admin/DemoKey.pem
-        echo
-        echo "# chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem"
-        chmod 0600 /root/creds/eucalyptus/admin/DemoKey.pem
-
-        choose "Continue"
-    fi
 fi
 
 
@@ -529,7 +415,7 @@ echo
 echo "Commands:"
 echo
 echo "euscale-create-launch-config DemoLC --image-id $image --instance-type m1.small --monitoring-enabled \\"
-echo "                                    --key=DemoKey --group=DemoSG \\"
+echo "                                    --key=admin-demo --group=DemoSG \\"
 echo "                                    --user-data-file=$scriptsdir/$prefix-user-data.sh"
 echo
 echo "euscale-describe-launch-configs DemoLC"
@@ -539,10 +425,10 @@ choose "Execute"
 if [ $choice = y ]; then
     echo
     echo "# euscale-create-launch-config DemoLC --image-id $image --instance-type m1.small --monitoring-enabled \\"
-    echo ">                                     --key=DemoKey --group=DemoSG \\"
+    echo ">                                     --key=admin-demo --group=DemoSG \\"
     echo ">                                     --user-data-file=$scriptsdir/$prefix-user-data.sh"
     euscale-create-launch-config DemoLC --image-id $image --instance-type m1.small --monitoring-enabled \
-                                        --key=DemoKey --group=DemoSG \
+                                        --key=admin-demo --group=DemoSG \
                                         --user-data-file=$scriptsdir/$prefix-user-data.sh
     pause
 
@@ -809,7 +695,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
+echo "ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip"
 
 choose "Execute"
 
@@ -817,8 +703,8 @@ if [ $choice = y ]; then
     attempt=0
     echo
     while ((attempt++ <= $login_attempts)); do
-        echo "# ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip"
-        ssh -i /root/creds/eucalyptus/admin/DemoKey.pem $user@$public_ip
+        echo "# ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip"
+        ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip
         RC=$?
         if [ $RC = 0 -o $RC = 1 ]; then
             break
@@ -879,7 +765,7 @@ echo
 echo "Commands:"
 echo
 echo "euscale-create-launch-config DemoLC-2 --image-id $image --instance-type m1.small --monitoring-enabled \\"
-echo "                                      --key=DemoKey --group=DemoSG \\"
+echo "                                      --key=admin-demo --group=DemoSG \\"
 echo "                                      --user-data-file=$scriptsdir/$prefix-user-data-2.sh"
 echo
 echo "euscale-describe-launch-configs DemoLC"
@@ -890,10 +776,10 @@ choose "Execute"
 if [ $choice = y ]; then
     echo
     echo "# euscale-create-launch-config DemoLC-2 --image-id $image --instance-type m1.small --monitoring-enabled \\"
-    echo ">                                       --key=DemoKey --group=DemoSG \\"
+    echo ">                                       --key=admin-demo --group=DemoSG \\"
     echo ">                                       --user-data-file=$scriptsdir/$prefix-user-data-2.sh"
     euscale-create-launch-config DemoLC-2 --image-id $image --instance-type m1.small --monitoring-enabled \
-                                          --key=DemoKey --group=DemoSG \
+                                          --key=admin-demo --group=DemoSG \
                                           --user-data-file=$scriptsdir/$prefix-user-data-2.sh
     pause
 
