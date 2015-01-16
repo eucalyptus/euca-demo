@@ -181,6 +181,10 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "mkdir -p /root/creds/eucalyptus/admin"
+echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+echo
+echo "source /root/creds/eucalyptus/admin/eucarc"
 
 choose "Execute"
 
@@ -188,11 +192,66 @@ if [ $choice = y ]; then
     echo
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    echo "#"
     echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
     sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+    pause
+
+    echo "# source /root/creds/eucalyptus/admin/eucarc"
+    source /root/creds/eucalyptus/admin/eucarc
+
+    choose "Continue"
 fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Public IP addresses"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-addresses verbose"
+
+choose "Execute"
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-describe-addresses verbose"
+    euca-describe-addresses verbose
+
+    choose "Continue"
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm service status"
+echo "    - Truncating normal output for readability"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-services | cut -f1-5"
+
+choose "Execute"
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-describe-services | cut -f1-5"
+    euca-describe-services | cut -f1-5
+
+    choose "Continue"
+fi
+
 
 echo
 echo "Eucalyptus installed"
