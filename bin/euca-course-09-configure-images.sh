@@ -25,6 +25,8 @@ step_max=60
 pause_min=0
 pause_wait=2
 pause_max=20
+login_wait=10
+login_attempts=12
 
 is_clc=n
 is_ufs=n
@@ -503,19 +505,19 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.priv"
+    echo "euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
     echo
-    echo "chmod 0600 /root/creds/ops/admin/ops-admin.priv"
+    echo "chmod 0600 /root/creds/ops/admin/ops-admin.pem"
 
     choose "Execute"
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.priv"
-        euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.priv
+        echo "# euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
+        euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem
         echo
-        echo "# chmod 0600 /root/creds/ops/admin/ops-admin.priv"
-        chmod 0600 /root/creds/ops/admin/ops-admin.priv
+        echo "# chmod 0600 /root/creds/ops/admin/ops-admin.pem"
+        chmod 0600 /root/creds/ops/admin/ops-admin.pem
 
         choose "Continue"
     fi
@@ -642,6 +644,9 @@ if [ $is_clc = y ]; then
     instance=$(grep INSTANCE /var/tmp/9-15-euca-run-instances.out | cut -f2)
     public_ip=$(euca-describe-instances | grep $instance | cut -f4)
 
+    sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+    ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+
     clear
     echo
     echo "============================================================"
@@ -660,14 +665,26 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -i /root/creds/ops/admin/ops-admin.priv root@$public_ip"
+    echo "ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip"
 
     choose "Execute"
 
     if [ $choice = y ]; then
+        attempt=0
         echo
-        echo "# ssh -i /root/creds/ops/admin/ops-admin.priv root@$public_ip"
-        ssh -i /root/creds/ops/admin/ops-admin.priv root@$public_ip
+        while ((attempt++ <=  login_attempts)); do
+            echo "# ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip"
+            ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip
+            RC=$?
+            if [ $RC = 0 -o $RC = 1 ]; then
+                break
+            else
+                echo
+                echo "Not available ($RC). Waiting $login_wait seconds"
+                sleep $login_wait
+                echo
+            fi
+        done
 
         choose "Continue"
     fi
