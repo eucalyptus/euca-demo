@@ -166,5 +166,33 @@ if [ $choice = y ]; then
     choose "Continue"
 fi
 
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Move Credentials into Demo Directory Structure"
+echo "    - We need to create additional accounts and users, so move"
+echo "      the Eucalyptus Administrator credentials into a more"
+echo "      hierarchical credentials storage directory structure"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+
+choose "Execute"
+
+if [ $choice = y ]; then
+    echo
+    echo "# mkdir -p /root/creds/eucalyptus/admin"
+    mkdir -p /root/creds/eucalyptus/admin
+    echo "#"
+    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+fi
+
 echo
 echo "Eucalyptus installed"
