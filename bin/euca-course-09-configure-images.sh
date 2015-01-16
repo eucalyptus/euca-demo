@@ -38,10 +38,11 @@ is_nc=n
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
+    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]] [-u image_url]"
     echo "  -I             non-interactive"
     echo "  -s step_wait   seconds per step (default: $step_wait)"
     echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
+    echo "  -u image_url   URL to CentOS image (default: $centos_image_url)"
 }
 
 pause() {
@@ -87,11 +88,12 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Is:p: arg; do
+while getopts Is:p:u: arg; do
     case $arg in
     I)  interactive=0;;
     s)  step_wait="$OPTARG";;
     p)  pause_wait="$OPTARG";;
+    u)  centos_image_url="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -125,6 +127,18 @@ if [[ $pause_wait =~ ^[0-9]+$ ]]; then
 else
     echo "-p $pause_wait illegal: must be a positive integer"
     exit 6
+fi
+
+if ! curl -s --head $centos_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo
+    echo "-u $centos_image_url invalid: attempts to reach this URL failed"
+    exit 8
+fi
+
+if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+    echo
+    echo "Could not find Eucalyptus Administrator credentials!"
+    exit 10
 fi
 
 [ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y

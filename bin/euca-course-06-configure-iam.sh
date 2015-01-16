@@ -125,6 +125,12 @@ else
     exit 6
 fi
 
+if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+    echo
+    echo "Could not find Eucalyptus Administrator credentials!"
+    exit 10
+fi
+
 [ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y
 [ "$(hostname -s)" = "$EUCA_UFS_HOST_NAME" ] && is_ufs=y
 [ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y
@@ -147,7 +153,6 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Initialize Administrator credentials"
     echo "    - This step is only run on the Cloud Controller host"
-    echo "    - NOTE: Expect the OSG not configured warning"
     echo
     echo "============================================================"
     echo
@@ -488,6 +493,7 @@ if [ $is_clc = y ]; then
 
         echo "# euca-describe-volumes"
         euca-describe-volumes
+        pause
 
         echo "# source /root/creds/eucalyptus/admin/eucarc"
         source /root/creds/eucalyptus/admin/eucarc

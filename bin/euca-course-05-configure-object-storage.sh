@@ -125,6 +125,12 @@ else
     exit 6
 fi
 
+if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+    echo
+    echo "Could not find Eucalyptus Administrator credentials!"
+    exit 10
+fi
+
 [ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y
 [ "$(hostname -s)" = "$EUCA_UFS_HOST_NAME" ] && is_ufs=y
 [ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y

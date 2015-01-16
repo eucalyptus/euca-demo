@@ -132,15 +132,6 @@ else
     exit 6
 fi
 
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
-    echo "This script should be run only on a Cloud Controller"
-    exit 10
-fi
-
-
-#  5. Convert FastStart credentials to Course directory structure
-
 if [ -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Found Eucalyptus Administrator credentials"
 elif [ -r /root/admin.zip ]; then
@@ -152,11 +143,17 @@ elif [ -r /root/admin.zip ]; then
 else
     echo
     echo "Could not find Eucalyptus Administrator credentials!"
+    exit 10
+fi
+
+if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
+    echo
+    echo "This script should be run only on a Cloud Controller"
     exit 20
 fi
 
 
-#  6. Execute Demo
+#  5. Execute Demo
 
 ((++step))
 clear

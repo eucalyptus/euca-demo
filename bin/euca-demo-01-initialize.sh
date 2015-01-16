@@ -132,15 +132,15 @@ if ! curl -s --head $centos_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > 
     exit 8
 fi
 
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
-    echo "This script should be run only on a Cloud Controller"
-    exit 10
-fi
-
 if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo
     echo "Could not find Eucalyptus Administrator credentials!"
+    exit 10
+fi
+
+if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
+    echo
+    echo "This script should be run only on a Cloud Controller"
     exit 20
 fi
 
