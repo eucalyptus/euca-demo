@@ -22,51 +22,58 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
-#centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
-centos_image_url=http://odc-f-38.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
-#centos_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
-
 demo_admin_password=demo123
 demo_user_password=user456
 demo_developer_password=developer789
 
 step=0
+percent_min=0
+percent_max=500
+run_default=10
+pause_default=2
+next_default=10
+create_attempts=12
+create_default=10
+login_attempts=12
+login_default=10
+delete_attempts=12
+delete_default=10
+
 interactive=1
-step_min=0
-step_wait=10
-step_max=60
-pause_min=0
-pause_wait=2
-pause_max=20
+demo_account=demo
+#image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
+image_url=http://odc-f-38.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
+#image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
+run_percent=100
+pause_percent=100
+next_percent=100
+create_percent=100
+login_percent=100
+delete_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]] [-u image_url]"
-    echo "  -I             non-interactive"
-    echo "  -s step_wait   seconds per step (default: $step_wait)"
-    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
-    echo "  -u image_url   URL to CentOS image (default: $centos_image_url)"
+    echo "Usage: $(basename $0) [-a demo_account] [-u image_url]"
+    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
+    echo "  -a demo_account   account to create for use in demos (default: $demo_account)"
+    echo "  -u image_url      URL to Demo CentOS image (default: $image_url)"
+    echo "  -I                non-interactive"
+    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
+    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
+    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ]; then
+        ((seconds=$run_default * $run_percent / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=$1 * $run_percent / 100))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -76,52 +83,76 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
-        echo
+        echo " Done"
         choice=y
     fi
 }
 
-wait() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt3="$1 (y)[y]"
-        [ -z "$1" ] && prompt3="Proceed (y)[y]"
+pause() {
+    if [ -z $1 ]; then
+        ((seconds=$pause_default * $pause_percent / 100))
+    else
+        ((seconds=$1 * $pause_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ]; then
+        ((seconds=$next_default * $next_percent / 100))
+    else
+        ((seconds=$1 * $next_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt3"
-        read alwaysyes
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                exit 2;;
+        esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
-        echo
+        echo " Done"
+        choice=y
     fi
-    choice=y
 }
 
 
 #  3. Parse command line options
 
-while getopts Is:p:u: arg; do
+while getopts a:u:Ir:p:n:? arg; do
     case $arg in
+    a)  demo_account="$OPTARG";;
+    u)  image_url="$OPTARG";;
     I)  interactive=0;;
-    s)  step_wait="$OPTARG";;
-    p)  pause_wait="$OPTARG";;
-    u)  centos_image_url="$OPTARG";;
+    r)  run_percent="$OPTARG";;
+    p)  pause_percent="$OPTARG";;
+    n)  next_percent="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -137,35 +168,45 @@ if [ -z $EUCA_VNET_MODE ]; then
     exit 3
 fi
 
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+if [[ $run_percent =~ ^[0-9]+$ ]]; then
+    if ((run_percent < percent_min || run_percent > percent_max)); then
+        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
         exit 5
     fi
 else
-    echo "-s $step_wait illegal: must be a positive integer"
+    echo "-r $run_percent illegal: must be a positive integer"
     exit 4
 fi
 
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
-        exit 7
+if [[ $pause_percent =~ ^[0-9]+$ ]]; then
+    if ((pause_percent < percent_min || pause_percent > percent_max)); then
+        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
     fi
 else
-    echo "-p $pause_wait illegal: must be a positive integer"
-    exit 6
+    echo "-p $pause_percent illegal: must be a positive integer"
+    exit 4
 fi
 
-if ! curl -s --head $centos_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+if [[ $next_percent =~ ^[0-9]+$ ]]; then
+    if ((next_percent < percent_min || next_percent > percent_max)); then
+        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
+    fi
+else
+    echo "-r $next_percent illegal: must be a positive integer"
+    exit 4
+fi
+
+if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
     echo
-    echo "-u $centos_image_url invalid: attempts to reach this URL failed"
+    echo "-u $image_url invalid: attempts to reach this URL failed"
     exit 8
 fi
 
 if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
-    echo
-    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Could not find Eucalyptus Account Administrator credentials!"
+    echo "   Expected to find: /root/creds/eucalyptus/admin/eucarc"
     exit 10
 fi
 
@@ -191,19 +232,17 @@ echo "Commands:"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
-wait "Execute"
+next 5
 
-if [ $choice = y ]; then
-    echo
-    echo "# source /root/creds/eucalyptus/admin/eucarc"
-    source /root/creds/eucalyptus/admin/eucarc
+echo
+echo "# source /root/creds/eucalyptus/admin/eucarc"
+source /root/creds/eucalyptus/admin/eucarc
 
-    choose "Continue"
-fi
+next 2
 
 
 ((++step))
-if euca-describe-keypairs | grep -s -q "admin-demo"; then
+if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/eucalyptus/admin/admin-demo.pem ]; then
     clear
     echo
     echo "============================================================"
@@ -213,9 +252,12 @@ if euca-describe-keypairs | grep -s -q "admin-demo"; then
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
+    euca-delete-keypair admin-demo
+    rm -f /root/creds/eucalyptus/admin/admin-demo.pem
+
     clear
     echo
     echo "============================================================"
@@ -230,7 +272,7 @@ else
     echo
     echo "chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -240,84 +282,84 @@ else
         echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
         chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-if euare-accountlist | grep -s -q "^demo"; then
+if euare-accountlist | grep -s -q "^$demo_account"; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account"
+    echo "$(printf '%2d' $step). Create Demo (\"$demo_account\") Account"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account"
+    echo "$(printf '%2d' $step). Create Demo (\"$demo_account\") Account"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "euare-accountcreate -a demo"
+    echo "euare-accountcreate -a $demo_account"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-accountcreate -a demo"
-        euare-accountcreate -a demo
+        echo "# euare-accountcreate -a $demo_account"
+        euare-accountcreate -a $demo_account
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-if euare-usergetloginprofile -u admin --as-account demo &> /dev/null; then
+if euare-usergetloginprofile -u admin --as-account $demo_account &> /dev/null; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Administrator Login Profile"
+    echo "$(printf '%2d' $step). Create Demo (\"$demo_account\") Account Administrator Login Profile"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Administrator Login Profile"
-    echo "    - This allows the Demo Account Administrator to login to the console"
+    echo "$(printf '%2d' $step). Create Demo (\"$demo_account\") Account Administrator Login Profile"
+    echo "    - This allows the Demo (\"$demo_account\") Account Administrator to login to the console"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account demo"
+    echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $demo_account"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usermodloginprofile -u admin -p $demo_admin_password --as-account demo"
-        euare-usermodloginprofile -u admin -p $demo_admin_password --as-account demo
+        echo "# euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account"
+        euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -333,7 +375,7 @@ if [ -r /root/centos.raw ]; then
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
@@ -346,22 +388,22 @@ else
     echo
     echo "Commands:"
     echo
-    echo "wget $centos_image_url -O /root/centos.raw.xz"
+    echo "wget $image_url -O /root/centos.raw.xz"
     echo
     echo "xz -v -d /root/centos.raw.xz"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $centos_image_url -O /root/centos.raw.xz"
-        wget $centos_image_url -O /root/centos.raw.xz
+        echo "# wget $image_url -O /root/centos.raw.xz"
+        wget $image_url -O /root/centos.raw.xz
         pause
 
         echo "xz -v -d /root/centos.raw.xz"
         xz -v -d /root/centos.raw.xz
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -377,7 +419,7 @@ if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
@@ -392,113 +434,113 @@ else
     echo
     echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
         euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-account=$(euare-accountlist | grep "^demo" | cut -f2)
-image=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+demo_account_id=$(euare-accountlist | grep "^$demo_account" | cut -f2)
+image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
 
-if euca-describe-images -x $account | grep -s -q $image; then
+if euca-describe-images -x $demo_account_id | grep -s -q $image_id; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Authorize Demo Account use of Demo Image"
+    echo "$(printf '%2d' $step). Authorize Demo (\"$account\") Account use of Demo Image"
     echo "    - Already Authorized!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Authorize Demo Account use of Demo Image"
+    echo "$(printf '%2d' $step). Authorize Demo (\"$account\") Account use of Demo Image"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "euca-modify-image-attribute -l -a $account $image"
+    echo "euca-modify-image-attribute -l -a $demo_account_id $image_id"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-image-attribute -l -a $account $image"
-        euca-modify-image-attribute -l -a $account $image
+        echo "# euca-modify-image-attribute -l -a $demo_account_id $image_id"
+        euca-modify-image-attribute -l -a $demo_account_id $image_id
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-if [ -r /root/creds/demo/admin/eucarc ]; then
+if [ -r /root/creds/$demo_account/admin/eucarc ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Account Administrator Credentials"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account Administrator Credentials"
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Account Administrator Credentials"
-    echo "    - This allows the Demo Account Administrator to run API commands"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account Administrator Credentials"
+    echo "    - This allows the Demo (\"$account\") Account Administrator to run API commands"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/demo/admin"
+    echo "mkdir -p /root/creds/$demo_account/admin"
     echo
-    echo "euca-get-credentials -u admin -a demo \\"
-    echo "                     /root/creds/demo/admin/admin.zip"
+    echo "euca-get-credentials -u admin -a $demo_account \\"
+    echo "                     /root/creds/$demo_account/admin/admin.zip"
     echo
-    echo "unzip /root/creds/demo/admin/admin.zip \\"
-    echo "      -d /root/creds/demo/admin/"
+    echo "unzip /root/creds/$demo_account/admin/admin.zip \\"
+    echo "      -d /root/creds/$demo_account/admin/"
 
-    wait "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/demo/admin"
-        mkdir -p /root/creds/demo/admin
+        echo "# mkdir -p /root/creds/$demo_account/admin"
+        mkdir -p /root/creds/$demo_account/admin
         pause
 
-        echo "# euca-get-credentials -u admin -a demo \\"
-        echo ">                      /root/creds/demo/admin/admin.zip"
-        euca-get-credentials -u admin -a demo \
-                             /root/creds/demo/admin/admin.zip
+        echo "# euca-get-credentials -u admin -a $demo_account \\"
+        echo ">                      /root/creds/$demo_account/admin/admin.zip"
+        euca-get-credentials -u admin -a $demo_account \
+                             /root/creds/$demo_account/admin/admin.zip
         pause
 
-        echo "# unzip /root/creds/demo/admin/admin.zip \\"
-        echo ">       -d /root/creds/demo/admin/"
-        unzip /root/creds/demo/admin/admin.zip \
-              -d /root/creds/demo/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/admin/eucarc    # invisibly fix deprecation message
+        echo "# unzip /root/creds/$demo_account/admin/admin.zip \\"
+        echo ">       -d /root/creds/$demo_account/admin/"
+        unzip /root/creds/$demo_account/admin/admin.zip \
+              -d /root/creds/$demo_account/admin/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/admin/eucarc    # invisibly fix deprecation message
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -509,23 +551,21 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Use Demo Account Administrator credentials"
+echo " $(printf '%2d' $step). Use Demo (\"$account\") Account Administrator credentials"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "source /root/creds/demo/admin/eucarc"
+echo "source /root/creds/$demo_account/admin/eucarc"
 
-wait "Execute"
+next 5
 
-if [ $choice = y ]; then
-    echo
-    echo "# source /root/creds/demo/admin/eucarc"
-    source /root/creds/demo/admin/eucarc
+echo
+echo "# source /root/creds/$demo_account/admin/eucarc"
+source /root/creds/$demo_account/admin/eucarc
 
-    choose "Continue"
-fi
+next 2
 
 
 ((++step))
@@ -533,7 +573,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). List Images available to Demo Account Administrator"
+echo "$(printf '%2d' $step). List Images available to Demo (\"$account\") Account Administrator"
 echo
 echo "============================================================"
 echo
@@ -541,14 +581,14 @@ echo "Commands:"
 echo
 echo "euca-describe-images -a"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# euca-describe-images -a"
     euca-describe-images -a
 
-    choose "Continue"
+    next 5
 fi
 
 
@@ -558,39 +598,39 @@ if euca-describe-keypairs | grep -s -q "admin-demo"; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Administrator Demo Keypair"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Administrator Demo Keypair"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Administrator Demo Keypair"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Administrator Demo Keypair"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee > /root/creds/demo/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee > /root/creds/$demo_account/admin/admin-demo.pem"
     echo
-    echo "chmod 0600 /root/creds/demo/admin/admin-demo.pem"
+    echo "chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee > /root/creds/demo/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee > /root/creds/demo/admin/admin-demo.pem
+        echo "# euca-create-keypair admin-demo | tee > /root/creds/$demo_account/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee > /root/creds/$demo_account/admin/admin-demo.pem
         echo
-        echo "# chmod 0600 /root/creds/demo/admin/admin-demo.pem"
-        chmod 0600 /root/creds/demo/admin/admin-demo.pem
+        echo "# chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem"
+        chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -601,19 +641,19 @@ if euare-userlistbypath | grep -s -q ":user/user$"; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account User"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account User"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account User"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account User"
     echo
     echo "============================================================"
     echo
@@ -621,14 +661,14 @@ else
     echo
     echo "euare-usercreate -u user"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euare-usercreate -u user"
         euare-usercreate -u user
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -639,20 +679,20 @@ if euare-usergetloginprofile -u user &> /dev/null; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account User Login Profile"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account User Login Profile"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account User Login Profile"
-    echo "    - This allows the Demo Account User to login to the console"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account User Login Profile"
+    echo "    - This allows the Demo (\"$account\") Account User to login to the console"
     echo
     echo "============================================================"
     echo
@@ -660,72 +700,72 @@ else
     echo
     echo "euare-useraddloginprofile -u user -p $demo_user_password"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euare-useraddloginprofile -u user -p $demo_user_password"
         euare-useraddloginprofile -u user -p $demo_user_password
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-if [ -r /root/creds/demo/user/eucarc ]; then
+if [ -r /root/creds/$demo_account/user/eucarc ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account User Login Profile"
-    echo "    - Already Created!"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account User Credentials"
+    echo "    - Already Downloaded!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Account User Credentials"
-    echo "    - This allows the Demo Account User to run API commands"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account User Credentials"
+    echo "    - This allows the Demo (\"$account\") Account User to run API commands"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/demo/user"
+    echo "mkdir -p /root/creds/$demo_account/user"
     echo
-    echo "euca-get-credentials -u user -a demo \\"
-    echo "                     /root/creds/demo/user/user.zip"
+    echo "euca-get-credentials -u user -a $demo_account \\"
+    echo "                     /root/creds/$demo_account/user/user.zip"
     echo
-    echo "unzip /root/creds/demo/user/user.zip \\"
-    echo "      -d /root/creds/demo/user/"
+    echo "unzip /root/creds/$demo_account/user/user.zip \\"
+    echo "      -d /root/creds/$demo_account/user/"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/demo/user"
-        mkdir -p /root/creds/demo/user
+        echo "# mkdir -p /root/creds/$demo_account/user"
+        mkdir -p /root/creds/$demo_account/user
         pause
 
-        echo "# euca-get-credentials -u user -a demo \\"
-        echo ">                      /root/creds/demo/user/user.zip"
-        euca-get-credentials -u user -a demo \
-                             /root/creds/demo/user/user.zip
+        echo "# euca-get-credentials -u user -a $demo_account \\"
+        echo ">                      /root/creds/$demo_account/user/user.zip"
+        euca-get-credentials -u user -a $demo_account \
+                             /root/creds/$demo_account/user/user.zip
         pause
 
-        echo "# unzip /root/creds/demo/user/user.zip \\"
-        echo ">       -d /root/creds/demo/user/"
-        unzip /root/creds/demo/user/user.zip \
-              -d /root/creds/demo/user/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/user/eucarc    # invisibly fix deprecation message
+        echo "# unzip /root/creds/$demo_account/user/user.zip \\"
+        echo ">       -d /root/creds/$demo_account/user/"
+        unzip /root/creds/$demo_account/user/user.zip \
+              -d /root/creds/$demo_account/user/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/user/eucarc    # invisibly fix deprecation message
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -736,19 +776,19 @@ if euare-grouplistbypath | grep -s -q ":group/users$"; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Users Group"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Users Group"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Users Group"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Users Group"
     echo
     echo "============================================================"
     echo
@@ -758,7 +798,7 @@ else
     echo
     echo "euare-groupadduser -g users -u user"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -768,7 +808,7 @@ else
         echo "# euare-groupadduser -g users -u user"
         euare-groupadduser -g users -u user
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -779,19 +819,19 @@ if euare-userlistbypath | grep -s -q ":user/developer$"; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developer"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developer"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developer"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developer"
     echo
     echo "============================================================"
     echo
@@ -799,14 +839,14 @@ else
     echo
     echo "euare-usercreate -u developer"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euare-usercreate -u developer"
         euare-usercreate -u developer
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -817,20 +857,20 @@ if euare-usergetloginprofile -u developer &> /dev/null; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developer Login Profile"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developer Login Profile"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developer Login Profile"
-    echo "    - This allows the Demo Account Developer to login to the console"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developer Login Profile"
+    echo "    - This allows the Demo (\"$account\") Account Developer to login to the console"
     echo
     echo "============================================================"
     echo
@@ -838,30 +878,30 @@ else
     echo
     echo "euare-useraddloginprofile -u developer -p $demo_developer_password"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euare-useraddloginprofile -u developer -p $demo_developer_password"
         euare-useraddloginprofile -u developer -p $demo_developer_password
 
-        choose "Continue"
+        next 2
     fi
 fi
 
 
 ((++step))
-if [ -r /root/creds/demo/developer/eucarc ]; then
+if [ -r /root/creds/$demo_account/developer/eucarc ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account Developer Credentials"
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
@@ -869,42 +909,42 @@ else
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Account Developer Credentials"
-    echo "    - This allows the Demo Account Developer to run API commands"
+    echo "$(printf '%2d' $step). Download Demo (\"$account\") Account Developer Credentials"
+    echo "    - This allows the Demo (\"$account\") Account Developer to run API commands"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/demo/developer"
+    echo "mkdir -p /root/creds/$demo_account/developer"
     echo
-    echo "euca-get-credentials -u developer -a demo \\"
-    echo "                     /root/creds/demo/developer/developer.zip"
+    echo "euca-get-credentials -u developer -a $demo_account \\"
+    echo "                     /root/creds/$demo_account/developer/developer.zip"
     echo
-    echo "unzip /root/creds/demo/developer/developer.zip \\"
-    echo "      -d /root/creds/demo/developer/"
+    echo "unzip /root/creds/$demo_account/developer/developer.zip \\"
+    echo "      -d /root/creds/$demo_account/developer/"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/demo/developer"
-        mkdir -p /root/creds/demo/developer
+        echo "# mkdir -p /root/creds/$demo_account/developer"
+        mkdir -p /root/creds/$demo_account/developer
         pause
 
-        echo "# euca-get-credentials -u developer -a demo \\"
-        echo ">                      /root/creds/demo/developer/developer.zip"
-        euca-get-credentials -u developer -a demo \
-                             /root/creds/demo/developer/developer.zip
+        echo "# euca-get-credentials -u developer -a $demo_account \\"
+        echo ">                      /root/creds/$demo_account/developer/developer.zip"
+        euca-get-credentials -u developer -a $demo_account \
+                             /root/creds/$demo_account/developer/developer.zip
         pause
 
-        echo "# unzip /root/creds/demo/developer/developer.zip \\"
-        echo ">       -d /root/creds/demo/developer/"
-        unzip /root/creds/demo/developer/developer.zip \
-              -d /root/creds/demo/developer/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/demo/developer/eucarc    # invisibly fix deprecation message
+        echo "# unzip /root/creds/$demo_account/developer/developer.zip \\"
+        echo ">       -d /root/creds/$demo_account/developer/"
+        unzip /root/creds/$demo_account/developer/developer.zip \
+              -d /root/creds/$demo_account/developer/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/developer/eucarc    # invisibly fix deprecation message
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -915,19 +955,19 @@ if euare-grouplistbypath | grep -s -q ":group/developers$"; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developers Group"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developers Group"
     echo "    - Already Created!"
     echo
     echo "============================================================"
 
-    choose "Continue"
+    next 2
 
 else
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Create Demo Account Developers Group"
+    echo "$(printf '%2d' $step). Create Demo (\"$account\") Account Developers Group"
     echo
     echo "============================================================"
     echo
@@ -937,7 +977,7 @@ else
     echo
     echo "euare-groupadduser -g developers -u developer"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -947,7 +987,7 @@ else
         echo "# euare-groupadduser -g developers -u developer"
         euare-groupadduser -g developers -u developer
 
-        choose "Continue"
+        next 2
     fi
 fi
 
@@ -975,7 +1015,7 @@ echo "euare-grouplistbypath"
 echo "euare-grouplistusers -g users"
 echo "euare-grouplistusers -g developers"
 
-choose "Execute"
+run
 
 if [ $choice = y ]; then
     echo
@@ -1004,7 +1044,7 @@ if [ $choice = y ]; then
     echo "# euare-grouplistusers -g developers
     euare-grouplistusers -g developers
 
-    choose "Continue"
+    next 20
 fi
 
 

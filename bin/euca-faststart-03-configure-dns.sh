@@ -16,41 +16,39 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
+percent_min=0
+percent_max=500
+run_default=10
+pause_default=2
+next_default=10
+
 interactive=1
-step_min=0
-step_wait=10
-step_max=60
-pause_min=0
-pause_wait=2
-pause_max=20
+account=eucalyptus
+run_percent=100
+pause_percent=100
+next_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
-    echo "  -I             non-interactive"
-    echo "  -s step_wait   seconds per step (default: $step_wait)"
-    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
+    echo "Usage: $(basename $0)"
+    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
+    echo "  -I                non-interactive"
+    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
+    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
+    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ]; then
+        ((seconds=$run_default * $run_percent / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=$1 * $run_percent / 100))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -60,16 +58,61 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
+        echo " Done"
+        choice=y
+    fi
+}
+
+pause() {
+    if [ -z $1 ]; then
+        ((seconds=$pause_default * $pause_percent / 100))
+    else
+        ((seconds=$1 * $pause_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ]; then
+        ((seconds=$next_default * $next_percent / 100))
+    else
+        ((seconds=$1 * $next_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
         echo
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                exit 2;;
+        esac
+    else
+        echo
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo " Done"
         choice=y
     fi
 }
@@ -77,11 +120,12 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Is:p: arg; do
+while getopts Ir:p:n:? arg; do
     case $arg in
     I)  interactive=0;;
-    s)  step_wait="$OPTARG";;
-    p)  pause_wait="$OPTARG";;
+    r)  run_percent="$OPTARG";;
+    p)  pause_percent="$OPTARG";;
+    n)  next_percent="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -97,59 +141,68 @@ if [ -z $EUCA_VNET_MODE ]; then
     exit 3
 fi
 
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+if [[ $run_percent =~ ^[0-9]+$ ]]; then
+    if ((run_percent < percent_min || run_percent > percent_max)); then
+        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
         exit 5
     fi
 else
-    echo "-s $step_wait illegal: must be a positive integer"
+    echo "-r $run_percent illegal: must be a positive integer"
     exit 4
 fi
 
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
-        exit 7
+if [[ $pause_percent =~ ^[0-9]+$ ]]; then
+    if ((pause_percent < percent_min || pause_percent > percent_max)); then
+        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
     fi
 else
-    echo "-p $pause_wait illegal: must be a positive integer"
-    exit 6
+    echo "-p $pause_percent illegal: must be a positive integer"
+    exit 4
+fi
+
+if [[ $next_percent =~ ^[0-9]+$ ]]; then
+    if ((next_percent < percent_min || next_percent > percent_max)); then
+        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
+    fi
+else
+    echo "-r $next_percent illegal: must be a positive integer"
+    exit 4
+fi
+
+if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
+    sleep 2
+
+    if [ -r /root/admin.zip ]; then
+        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
+        mkdir -p /root/creds/eucalyptus/admin
+        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+        sleep 2
+    else
+        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
+        echo "Expected to find: /root/admin.zip"
+        exit 10
+    fi
 fi
 
 if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
     echo "This script should be run only on a Cloud Controller"
-    exit 10
-fi
-
-
-#  5. Convert FastStart credentials to Course directory structure
-#     - This logic is at the end of the euca-faststart-01-install.sh script,
-#       but repeated here in case the one-line installer was run independently.
-
-if [ -r /root/creds/eucalyptus/admin/eucarc ]; then
-    echo "Found Eucalyptus Administrator credentials"
-elif [ -r /root/admin.zip ]; then
-    echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-    mkdir -p /root/creds/eucalyptus/admin
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
-else
-    echo
-    echo "Could not find Eucalyptus Administrator credentials!"
     exit 20
 fi
 
 
-#  6. Execute Demo
+#  5. Execute Demo
 
 ((++step))
 clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Use Administrator credentials"
+echo " $(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -157,14 +210,36 @@ echo "Commands:"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
-choose "Execute"
+next 5
+
+echo
+echo "# source /root/creds/eucalyptus/admin/eucarc"
+source /root/creds/eucalyptus/admin/eucarc
+
+next 2
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Configure Parent DNS Server"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_DNS_PUBLIC_IP"
+
+run 5
 
 if [ $choice = y ]; then
     echo
-    echo "# source /root/creds/eucalyptus/admin/eucarc"
-    source /root/creds/eucalyptus/admin/eucarc
+    echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
+    euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP
 
-    choose "Continue"
+    next 5
 fi
 
 
@@ -183,7 +258,7 @@ echo "euca-modify-property -p system.dns.dnsdomain = $EUCA_DNS_BASE_DOMAIN"
 echo
 echo "euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -193,7 +268,7 @@ if [ $choice = y ]; then
     echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
     euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
 
-    choose "Continue"
+    next 5
 fi
 
 
@@ -212,7 +287,7 @@ echo "euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
 echo
 echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -222,7 +297,7 @@ if [ $choice = y ]; then
     echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
     euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
 
-    choose "Continue"
+    next 5
 fi
 
 
@@ -239,14 +314,14 @@ echo "Commands:"
 echo
 echo "euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
     euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
 
-    choose "Continue"
+    next 5
 fi
 
 
@@ -271,7 +346,7 @@ echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
-choose "Execute"
+run
 
 if [ $choice = y ]; then
     echo
@@ -304,7 +379,7 @@ if [ $choice = y ]; then
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
 
-    choose "Continue"
+    next 5
 fi
 
 

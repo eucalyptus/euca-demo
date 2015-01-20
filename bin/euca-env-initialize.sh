@@ -20,7 +20,7 @@
 # run after validation. This changes some of the conventions and functions
 # in this script, so it's different than all others in this project.
 
-if [ "$0" = "$BASH_SOURCE" ]; then
+if [ $0 = $BASH_SOURCE ]; then
     echo "You must source this script to set the ENV variables for other demo scripts"
     exit 1
 fi
@@ -37,38 +37,41 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
-interactive=1
-step_wait=0
-pause_wait=0
-environment=$(hostname -s)
 valid=y
+percent_min=0
+percent_max=500
+run_default=10
+pause_default=2
+next_default=10
+
+interactive=1
+environment=$(hostname -s)
+run_percent=100
+pause_percent=100
+next_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I] [-e environment]"
-    echo "  -I             non-interactive"
-    echo "  -e environment environment configuration (default: $environment)"
+    echo "Usage: $(basename $0) [-e environment]"
+    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
+    echo "  -e environment    environment configuration (default: $environment)"
+    echo "  -I                non-interactive"
+    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
+    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
+    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ]; then
+        ((seconds=$run_default * $run_percent / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=$1 * $run_percent / 100))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -78,16 +81,61 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
+        echo " Done"
+        choice=y
+    fi
+}
+
+pause() {
+    if [ -z $1 ]; then
+        ((seconds=$pause_default * $pause_percent / 100))
+    else
+        ((seconds=$1 * $pause_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ]; then
+        ((seconds=$next_default * $next_percent / 100))
+    else
+        ((seconds=$1 * $next_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
         echo
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                valid=n;;
+        esac
+    else
+        echo
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo " Done"
         choice=y
     fi
 }
@@ -95,10 +143,15 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Ie: arg; do
+OPTIND=1 # workaround needed when sourcing a script for getopts to work as expected
+
+while getopts e:Ir:p:n:? arg; do
     case $arg in
-    I)  interactive=0;;
     e)  environment="$OPTARG";;
+    I)  interactive=0;;
+    r)  run_percent="$OPTARG";;
+    p)  pause_percent="$OPTARG";;
+    n)  next_percent="$OPTARG";;
     ?)  usage
         valid=n;;
     esac
@@ -109,23 +162,33 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+if [[ $run_percent =~ ^[0-9]+$ ]]; then
+    if ((run_percent < percent_min || run_percent > percent_max)); then
+        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
         valid=n
     fi
 else
-    echo "-s $step_wait illegal: must be a positive integer"
+    echo "-r $run_percent illegal: must be a positive integer"
     valid=n
 fi
 
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
+if [[ $pause_percent =~ ^[0-9]+$ ]]; then
+    if ((pause_percent < percent_min || pause_percent > percent_max)); then
+        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
         valid=n
     fi
 else
-    echo "-p $pause_wait illegal: must be a positive integer"
+    echo "-p $pause_percent illegal: must be a positive integer"
+    valid=n
+fi
+
+if [[ $next_percent =~ ^[0-9]+$ ]]; then
+    if ((next_percent < percent_min || next_percent > percent_max)); then
+        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
+        valid=n
+    fi
+else
+    echo "-r $next_percent illegal: must be a positive integer"
     valid=n
 fi
 
@@ -224,7 +287,7 @@ if [ $valid = y ]; then
     echo
     echo "env | sort | grep ^EUCA_"
 
-    choose "Execute"
+    run 5
 
     if [ $choice = y ]; then
         echo
@@ -349,7 +412,7 @@ if [ $valid = y ]; then
         echo "# env | sort | grep ^EUCA_"
         env | sort | grep ^EUCA_
 
-        choose "Continue"
+        next 2
     fi
 
     echo

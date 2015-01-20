@@ -22,50 +22,50 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 prefix=demo-12
 
-centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
-
 step=0
-interactive=1
-step_min=0
-step_wait=10
-step_max=60
-pause_min=0
-pause_wait=2
-pause_max=20
-create_wait=10
+percent_min=0
+percent_max=500
+run_default=10
+pause_default=2
+next_default=10
 create_attempts=12
-login_wait=10
+create_default=10
 login_attempts=12
-delete_wait=10
+login_default=10
 delete_attempts=12
+delete_default=10
+
+interactive=1
+demo_account=demo
+run_percent=100
+pause_percent=100
+next_percent=100
+create_percent=100
+login_percent=100
+delete_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
-    echo "  -I             non-interactive"
-    echo "  -s step_wait   seconds per step (default: $step_wait)"
-    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
+    echo "Usage: $(basename $0) [-a demo_account]"
+    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
+    echo "  -a demo_account   account to use in demo (default: $demo_account)"
+    echo "  -I                non-interactive"
+    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
+    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
+    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ]; then
+        ((seconds=$run_default * $run_percent / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=$1 * $run_percent / 100))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -75,16 +75,61 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
+        echo " Done"
+        choice=y
+    fi
+}
+
+pause() {
+    if [ -z $1 ]; then
+        ((seconds=$pause_default * $pause_percent / 100))
+    else
+        ((seconds=$1 * $pause_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ]; then
+        ((seconds=$next_default * $next_percent / 100))
+    else
+        ((seconds=$1 * $next_percent / 100))
+    fi
+    if [ $interactive = 1 ]; then
         echo
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                exit 2;;
+        esac
+    else
+        echo
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo " Done"
         choice=y
     fi
 }
@@ -92,11 +137,13 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Is:p: arg; do
+while getopts a:Ir:p:n:? arg; do
     case $arg in
+    a)  demo_account="$OPTARG";;
     I)  interactive=0;;
-    s)  step_wait="$OPTARG";;
-    p)  pause_wait="$OPTARG";;
+    r)  run_percent="$OPTARG";;
+    p)  pause_percent="$OPTARG";;
+    n)  next_percent="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -112,56 +159,45 @@ if [ -z $EUCA_VNET_MODE ]; then
     exit 3
 fi
 
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
+if [[ $run_percent =~ ^[0-9]+$ ]]; then
+    if ((run_percent < percent_min || run_percent > percent_max)); then
+        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
         exit 5
     fi
 else
-    echo "-s $step_wait illegal: must be a positive integer"
+    echo "-r $run_percent illegal: must be a positive integer"
     exit 4
 fi
 
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
-        exit 7
+if [[ $pause_percent =~ ^[0-9]+$ ]]; then
+    if ((pause_percent < percent_min || pause_percent > percent_max)); then
+        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
     fi
 else
-    echo "-p $pause_wait illegal: must be a positive integer"
-    exit 6
+    echo "-p $pause_percent illegal: must be a positive integer"
+    exit 4
 fi
 
-if [ -r /root/creds/eucalyptus/admin/eucarc ]; then
-    echo "Found Eucalyptus Administrator credentials"
-elif [ -r /root/admin.zip ]; then
-    echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-    mkdir -p /root/creds/eucalyptus/admin
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
-    sleep 2
+if [[ $next_percent =~ ^[0-9]+$ ]]; then
+    if ((next_percent < percent_min || next_percent > percent_max)); then
+        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
+        exit 5
+    fi
 else
-    echo
-    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "-r $next_percent illegal: must be a positive integer"
+    exit 4
+fi
+
+if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
+    echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
+    echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
     exit 10
 fi
 
 if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
     echo "This script should be run only on a Cloud Controller"
     exit 20
-fi
-
-demo_initialized=y
-[ -r /root/centos.raw ] || demo_initialized=n
-euca-describe-images | grep -s -q "centos.raw.manifest.xml" || demo_initialized=n
-euca-describe-keypairs | grep -s -q "admin-demo" || demo_initialized=n
-
-if [ $demo_initialized = n ]; then
-    echo
-    echo "At least one prerequisite for this script was not met."
-    echo "Please re-run euca-demo-01-initialize.sh script."
-    exit 30
 fi
 
 
@@ -172,23 +208,57 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Administrator credentials"
+echo "$(printf '%2d' $step). Use Demo (\"$demo_account\") Account Administrator credentials"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "source /root/creds/eucalyptus/admin/eucarc"
+echo "source /root/creds/$demo_account/admin/eucarc"
 
-choose "Execute"
+next 5
 
-if [ $choice = y ]; then
+echo
+echo "# source /root/creds/$demo_account/admin/eucarc"
+source /root/creds/$demo_account/admin/eucarc
+
+next 2
+
+
+((++step))
+demo_initialized=y
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-images | grep \"centos.raw.manifest.xml\""
+echo
+echo "euca-describe-keypairs | grep \"admin-demo\""
+
+next 5
+
+echo
+echo "# euca-describe-images | grep \"centos.raw.manifest.xml\""
+euca-describe-images | grep -s -q "centos.raw.manifest.xml" || demo_initialized=n
+pause
+
+echo "# euca-describe-keypairs | grep \"admin-demo\""
+euca-describe-keypairs | grep -s -q "admin-demo" || demo_initialized=n
+
+if [ $demo_initialized = n ]; then
     echo
-    echo "# source /root/creds/eucalyptus/admin/eucarc"
-    source /root/creds/eucalyptus/admin/eucarc
-
-    choose "Continue"
+    echo "At least one prerequisite for this script was not met."
+    echo "Please re-run euca-demo-01-initialize.sh script."
+    exit 30
 fi
+
+next 2
 
 
 ((++step))
@@ -213,7 +283,7 @@ echo "eulb-describe-lbs"
 echo
 echo "euca-describe-instances"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -236,7 +306,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
     
-    choose "Continue"
+    next
 fi
 
 
@@ -253,14 +323,14 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# euform-describe-stacks"
     euform-describe-stacks
 
-    choose "Continue"
+    next 2
 fi
 
 
@@ -280,32 +350,21 @@ echo "Commands:"
 echo
 echo "cat $templatesdir/elb.template"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# cat $templatesdir/elb.template"
     cat $templatesdir/elb.template
 
-    choose "Continue"
+    next 60
 fi
 
-
-# Prefer the centos image, but fallback to the default image installed by FastStart
-image=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
-user=root
-
-if [ -z $image ]; then
-    image=$(euca-describe-images | grep default.img.manifest.xml | cut -f2)
-    user=cirros
-fi
-
-if [ -z $image ]; then
-    echo "centos and default images missing; run earlier step to download and install centos image before re-running this step, exiting"
-    exit 10
-fi
 
 ((++step))
+image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+user=root
+
 clear
 echo
 echo "============================================================"
@@ -316,16 +375,16 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image ElbDemoStack"
+echo "euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack"
 
-choose "Execute"
+run
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image ElbDemoStack"
-    euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image ElbDemoStack
+    echo "# euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack"
+    euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack
     
-    choose "Continue"
+    next 2
 fi
 
 
@@ -344,7 +403,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events ElbDemoStack | tail -10"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -353,23 +412,24 @@ if [ $choice = y ]; then
     pause
 
     attempt=0
+    ((seconds=$create_default * $create_percent / 100))
     echo
     while ((attempt++ <= create_attempts)); do
         echo "# euform-describe-stack-events ElbDemoStack | tail -10"
         euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
-        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q CREATE_COMPLETE
+        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "CREATE_COMPLETE"
         RC=$?
         if [ $RC = 0 ]; then
             break
         else
             echo
-            echo "Not finished ($RC). Waiting $create_wait seconds"
-            sleep $create_wait
-            echo
+            echo "Not finished ($RC). Wait $seconds seconds..."
+            sleep $seconds
+            echo " Done"
         fi
     done
 
-    choose "Continue"
+    next 2
 fi
 
 
@@ -391,7 +451,7 @@ echo "eulb-describe-lbs"
 echo
 echo "euca-describe-instances"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -406,27 +466,26 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
 
-    choose "Continue"
+    next
 fi
 
 
+((++step))
 # This is a shortcut assuming no other activity on the system - find the most recently launched instance
 result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
-instance=${result%:*}
+instance_id=${result%:*}
 public_ip=${result#*:}
 
 sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
 ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
-
-((++step))
 clear
 echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Confirm ability to login to Instance"
 echo "    - If unable to login, view instance console output with:"
-echo "      # euca-get-console-output $instance"
+echo "      # euca-get-console-output $instance_id"
 echo "    - If able to login, first show the private IP with:"
 echo "      # ifconfig"
 echo "    - Then view meta-data about the public IP with:"
@@ -437,28 +496,29 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip"
+echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     attempt=0
+    ((seconds=$login_default * $login_percent / 100))
     echo
     while ((attempt++ <= login_attempts)); do
-        echo "# ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip"
-        ssh -i /root/creds/eucalyptus/admin/admin-demo.pem $user@$public_ip
+        echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+        ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
         RC=$?
         if [ $RC = 0 -o $RC = 1 ]; then
             break
         else
             echo
-            echo "Not available ($RC). Waiting $login_wait seconds"
-            sleep $login_wait
-            echo
+            echo "Not available ($RC). Wait $seconds seconds..."
+            sleep $seconds
+            echo " Done"
         fi
     done
 
-    choose "Continue"
+    next 2
 fi
 
 
@@ -475,14 +535,14 @@ echo "Commands:"
 echo
 echo "euform-delete-stack ElbDemoStack"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# euform-delete-stack ElbDemoStack"
     euform-delete-stack ElbDemoStack
    
-    choose "Continue"
+    next 2
 fi
 
 
@@ -501,7 +561,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events ElbDemoStack | tail -10"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -510,23 +570,24 @@ if [ $choice = y ]; then
     pause
 
     attempt=0
+    ((seconds=$delete_default * $delete_percent / 100))
     echo
     while ((attempt++ <= delete_attempts)); do
         echo "# euform-describe-stack-events ElbDemoStack | tail -10"
         euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
-        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q DELETE_COMPLETE
+        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "DELETE_COMPLETE"
         RC=$?
         if [ $RC = 0 ]; then
             break
         else
             echo
-            echo "Not finished ($RC). Waiting $delete_wait seconds"
-            sleep $delete_wait
-            echo
+            echo "Not finished ($RC). Wait $seconds seconds..."
+            sleep $seconds
+            echo " Done"
         fi
     done
 
-    choose "Continue"
+    next 2
 fi
 
 
@@ -552,7 +613,7 @@ echo "eulb-describe-lbs"
 echo
 echo "euca-describe-instances"
 
-choose "Execute"
+run 5
 
 if [ $choice = y ]; then
     echo
@@ -575,7 +636,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances
 
-    choose "Continue"
+    next
 fi
 
 
