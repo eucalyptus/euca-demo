@@ -208,7 +208,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Demo (\"$demo_account\") Account Administrator credentials"
+echo "$(printf '%2d' $step). Use Demo ($demo_account) Account Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -245,11 +245,11 @@ next 5
 
 echo
 echo "# euca-describe-images | grep \"centos.raw.manifest.xml\""
-euca-describe-images | grep -s -q "centos.raw.manifest.xml" || demo_initialized=n
+euca-describe-images | grep "centos.raw.manifest.xml" || demo_initialized=n
 pause
 
 echo "# euca-describe-keypairs | grep \"admin-demo\""
-euca-describe-keypairs | grep -s -q "admin-demo" || demo_initialized=n
+euca-describe-keypairs | grep "admin-demo" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
@@ -303,8 +303,6 @@ if [ $choice = y ]; then
     next
 fi
 
-
-exit
 
 ((++step))
 clear

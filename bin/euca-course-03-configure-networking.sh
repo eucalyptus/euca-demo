@@ -210,7 +210,7 @@ if [ $is_cc = y ]; then
     echo
     echo "$(printf '%2d' $step). Restart the Cluster Controller service"
     echo "    - This step is only run on the Cluster Controller host"
-    echo "    - NOTE! After completing this step, you will need to run"
+    echo "    - NOTE: After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
     echo

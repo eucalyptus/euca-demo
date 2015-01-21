@@ -701,7 +701,7 @@ if [ $is_clc = y ]; then
     echo "    - This step is only run on the Cloud Controller host"
     echo "    - The Eucalyptus Administrator can see instances in other accounts"
     echo "      with the verbose parameter"
-    echo "    - NOTE! After completing this step, you will need to run"
+    echo "    - NOTE: After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
     echo

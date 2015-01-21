@@ -492,7 +492,7 @@ if [ $is_clc = y ]; then
     echo
     echo "$(printf '%2d' $step). Register Node Controller host(s)"
     echo "    - This step is only run on the Cloud Controller host"
-    echo "    - NOTE! After completing this step, you will need to run"
+    echo "    - NOTE: After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
     if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
