@@ -224,20 +224,25 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Configure Parent DNS Server"
+echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_DNS_PUBLIC_IP"
+echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
 
 run 5
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
-    euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP
+    echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
+    euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
+    echo "#"
+    echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
+    euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
 
     next 5
 fi
@@ -264,7 +269,7 @@ if [ $choice = y ]; then
     echo
     echo "# euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN"
     euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN
-    echo
+    echo "#"
     echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
     euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
 
@@ -293,7 +298,7 @@ if [ $choice = y ]; then
     echo
     echo "# euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
     euca-modify-property -p bootstrap.webservices.use_instance_dns=true
-    echo
+    echo "#"
     echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
     euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
 
@@ -380,6 +385,49 @@ if [ $choice = y ]; then
 
     next 5
 fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
+echo "    - This is an example of what changes need to be made on the"
+echo "      parent DNS server which will delgate DNS to Eucalyptus"
+echo "      for Eucalyptus DNS names used for instances, ELBs and"
+echo "      services"
+echo "    - You should make these changes to the parent DNS server"
+echo "      manually, once, outside of creating and running demos"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "# Create the zone file on the parent DNS server"
+echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+echo "> $TTL    300"
+echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
+echo ">                                 $(date +%Y%m%d01)      ; Serial"
+echo ">                                 1h              ; Refresh"
+echo ">                                 5m              ; Retry"
+echo ">                                 5m              ; Expire"
+echo ">                                 5m )            ; Negative Cache TTL"
+echo "> "
+echo "> @               IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+echo "> "
+echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+echo "> "
+echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
+echo "> EOF"
+echo "#"
+echo "# Add these lines to /etc/named.conf on the parent DNS server"
+echo "         zone "$EUCA_DNS_BASE_DOMAIN" IN"
+echo "         {"
+echo "                 type master;"
+echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+echo "         };"
 
 
 echo
