@@ -19,7 +19,9 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
     ./user-initialize-prc-host.sh
     
 This downloads the euca-demo repo to a standard location, then adjusts root's PATH
-to include the demo scripts. Logout, then login, to pick up profile changes.
+to include the demo scripts.
+
+Logout, then login - to pick up profile changes.
 
 You can find the repo at /root/src/eucalyptus/euca-demo
 
@@ -42,12 +44,13 @@ Install Eucalyptus via Faststart
 
     euca-faststart-01-install.sh
     euca-faststart-02-configure-cloudformation.sh
-    euca-faststart-03-configure-dns.sh  # not yet working
+    euca-faststart-03-configure-dns.sh
 
 Initialize Eucalyptus Faststart for use in Demo scripts
 -------------------------------------------------------
 
-    euca-demo-01-initialize.sh
+    euca-demo-01-initialize-account.sh
+    euca-demo-02-initialize-dependencies.sh
 
 Run Demos
 ---------

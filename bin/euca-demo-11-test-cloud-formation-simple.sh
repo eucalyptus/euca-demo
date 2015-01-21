@@ -36,7 +36,8 @@ delete_attempts=12
 delete_default=10
 
 interactive=1
-demo_account=demo
+#demo_account=demo    # The goal is to use a non-eucalyptus account, but this is currently broken due to a bug
+demo_account=eucalyptus
 run_percent=100
 pause_percent=100
 next_percent=100
@@ -208,7 +209,11 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Demo ($demo_account) Account Administrator credentials"
+if [ $demo_account = eucalyptus ]; then
+    echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
+else
+    echo "$(printf '%2d' $step). Use Demo ($demo_account) Account Administrator credentials"
+fi
 echo
 echo "============================================================"
 echo
@@ -258,7 +263,7 @@ if [ $demo_initialized = n ]; then
     exit 30
 fi
 
-next 2
+next 5
 
 
 ((++step))
@@ -300,7 +305,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
     
-    next
+    next 5
 fi
 
 
@@ -324,7 +329,7 @@ if [ $choice = y ]; then
     echo "# euform-describe-stacks"
     euform-describe-stacks
 
-    next 2
+    next 5
 fi
 
 
@@ -342,16 +347,30 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat $templatesdir/simple.template"
+echo "more $templatesdir/simple.template"
 
 run 5
 
 if [ $choice = y ]; then
     echo
-    echo "# cat $templatesdir/simple.template"
-    cat $templatesdir/simple.template
+    echo "# more $templatesdir/simple.template"
+    if [ $interactive = 1 ]; then
+        more $templatesdir/simple.template
+    else
+        # This will iterate over the file in a manner similar to more, but non-interactive
+        ((rows=$(tput lines)-2))
+        lineno=0
+        while IFS= read line; do
+            echo "$line"
+            if [ $((++lineno % rows)) = 0 ]; then
+                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Wait 10 seconds...)"
+                sleep 10
+                echo -e -n "\r                             \r"
+            fi
+        done < $templatesdir/simple.template
+    fi
 
-    next 60
+    next 30
 fi
 
 
@@ -371,14 +390,14 @@ echo "Commands:"
 echo
 echo "euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack"
 
-run
+run 5
 
 if [ $choice = y ]; then
     echo
     echo "# euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack"
     euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack
     
-    next 2
+    next 5
 fi
 
 
@@ -417,13 +436,13 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo "Not finished ($RC). Wait $seconds seconds..."
+            echo -n "Not finished ($RC). Wait $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 2
+    next 5
 fi
 
 
@@ -454,7 +473,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
 
-    next
+    next 5
 fi
 
 
@@ -463,9 +482,6 @@ fi
 result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
 instance_id=${result%:*}
 public_ip=${result#*:}
-
-sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
-ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
 clear
 echo
@@ -493,6 +509,9 @@ if [ $choice = y ]; then
     ((seconds=$login_default * $login_percent / 100))
     echo
     while ((attempt++ <=  login_attempts)); do
+        sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+        ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+
         echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
         ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
         RC=$?
@@ -500,13 +519,13 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo "Not available ($RC). Wait $seconds seconds..."
+            echo -n "Not available ($RC). Wait $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 2
+    next 5
 fi
 
 
@@ -530,7 +549,7 @@ if [ $choice = y ]; then
     echo "# euform-delete-stack SimpleDemoStack"
     euform-delete-stack SimpleDemoStack
    
-    next 2
+    next 5
 fi
 
 
@@ -569,13 +588,13 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo "Not finished ($RC). Wait $seconds seconds..."
+            echo -n "Not finished ($RC). Wait $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 2
+    next 5
 fi
 
 

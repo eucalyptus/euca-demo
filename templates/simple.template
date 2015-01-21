@@ -7,7 +7,7 @@
     "DemoKeyPair": {
       "Description":"Key Pair",
       "Type":"String",
-      "Default":"DemoKey"
+      "Default":"admin-demo"
     }
   },
   "Resources" : {
