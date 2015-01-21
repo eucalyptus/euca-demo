@@ -769,8 +769,8 @@ run 20
 if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $login_percent / 100))
-    echo
     while ((attempt++ <= $login_attempts)); do
+        echo
         echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
         ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
         RC=$?
@@ -778,7 +778,7 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo "Not available ($RC). Wait $seconds seconds..."
+            echo -n "Not available ($RC). Wait $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
@@ -934,6 +934,7 @@ if [ $choice = y ]; then
         attempt=0
         ((seconds=$replace_default * $replace_percent / 100))
         while ((attempt++ <= replace_attempts)); do
+            echo
             echo "# euscale-describe-auto-scaling-groups DemoASG"
             euscale-describe-auto-scaling-groups DemoASG
             echo
@@ -944,7 +945,7 @@ if [ $choice = y ]; then
                 break
             else
                 echo
-                echo "At least 2 instances are not \"InService\". Wait $seconds seconds..."
+                echo -n "At least 2 instances are not \"InService\". Wait $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi

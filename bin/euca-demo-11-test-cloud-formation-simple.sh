@@ -426,8 +426,8 @@ if [ $choice = y ]; then
 
     attempt=0
     ((seconds=$create_default * $create_percent / 100))
-    echo
     while ((attempt++ <= create_attempts)); do
+        echo
         echo "# euform-describe-stack-events SimpleDemoStack | tail -10"
         euform-describe-stack-events SimpleDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
         tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "CREATE_COMPLETE"
@@ -507,8 +507,8 @@ run 5
 if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $login_percent / 100))
-    echo
     while ((attempt++ <=  login_attempts)); do
+        echo
         sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
@@ -578,8 +578,8 @@ if [ $choice = y ]; then
 
     attempt=0
     ((seconds=$delete_default * $delete_percent / 100))
-    echo
     while ((attempt++ <= delete_attempts)); do
+        echo
         echo "# euform-describe-stack-events SimpleDemoStack | tail -10"
         euform-describe-stack-events SimpleDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
         tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "DELETE_COMPLETE"
