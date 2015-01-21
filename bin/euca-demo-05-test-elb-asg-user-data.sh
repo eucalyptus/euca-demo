@@ -472,7 +472,6 @@ fi
 
 ((++step))
 image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
-user=root
 
 clear
 echo
@@ -739,9 +738,7 @@ fi
 result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
 instance_id=${result%:*}
 public_ip=${result#*:}
-
-sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
-ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+user=root
 
 clear
 echo
@@ -764,16 +761,34 @@ echo "Commands:"
 echo
 echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
 
-run 20
+run
 
 if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $login_percent / 100))
     while ((attempt++ <= $login_attempts)); do
+        sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+        ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+
         echo
         echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
-        ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
-        RC=$?
+        echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+        if [ $interactive = 1 ]; then
+            ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
+            RC=$?
+        else
+            ssh -T -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip << EOF
+echo "# ifconfig"
+ifconfig
+sleep 5
+echo
+echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
+cat /tmp/public-ip4
+sleep 5
+EOF
+            RC=$?
+        fi
         if [ $RC = 0 -o $RC = 1 ]; then
             break
         else
@@ -784,7 +799,7 @@ if [ $choice = y ]; then
         fi
     done
 
-    next 2
+    next 5
 fi
 
 
