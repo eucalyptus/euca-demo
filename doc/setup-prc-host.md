@@ -17,6 +17,7 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
     wget https://raw.githubusercontent.com/eucalyptus/euca-demo/master/bin/user-initialize-prc-host.sh
     chmod -R 0700 ~/bin
     ./user-initialize-prc-host.sh
+    exit
     
 This downloads the euca-demo repo to a standard location, then adjusts root's PATH
 to include the demo scripts.
@@ -59,7 +60,19 @@ Run Demos
     euca-demo-11-test-cloud-formation-simple.sh
     euca-demo-12-test-cloud-formation-elb.sh
 
-More to come later...
+Run Cloud Administrator Course
+------------------------------
+    euca-course-01-initialize-dependencies.sh
+    euca-course-02-install.sh
+    euca-course-03-configure-networking.sh
+    euca-course-04-configure-ebs-storage.sh
+    euca-course-05-configure-object-storage.sh
+    euca-course-06-configure-iam.sh
+    euca-course-07-configure-tools.sh
+    euca-course-08-configure-console.sh
+    euca-course-09-configure-images.sh
+    euca-course-10-test-security.sh
+    euca-course-11-test-permissions.sh
 
-Also see scripts to replicate Cloud Administrator Course, mostly complete as of this writing.
+More to come later...
 
