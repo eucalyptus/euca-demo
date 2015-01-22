@@ -21,9 +21,9 @@ fi
 [ "$(hostname -s)" = "$EUCA_SC_HOST_NAME" ]  && is_sc=y  || is_sc=n
 [ "$(hostname -s)" = "$EUCA_OSP_HOST_NAME" ] && is_osp=y || is_osp=n
 [ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y  || is_nc=n
-[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y  || is_nc=n
-[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y  || is_nc=n
-[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y  || is_nc=n
+[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y
+[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y
+[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y
  
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
