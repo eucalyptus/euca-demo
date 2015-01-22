@@ -11,19 +11,31 @@
 # record what was done.
 #
 
+step=0
+
+((++step))
 echo
-echo " 1. Configure Sudo"
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Configure Sudo"
 echo "    - This makes CentOS 6.x behave like CentOS 7.x"
 echo "      - Members of wheel can sudo with a password"
+echo
+echo "============================================================"
 echo
 echo "# sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers"
 sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
 sleep 1
 
+
+((++step))
 echo
+echo "============================================================"
 echo
-echo " 2. Setup local aliases"
+echo " $(printf '%2d' $step). Setup local aliases"
 echo "    - alias lsa='ls -lAF'"
+echo
+echo "============================================================"
 echo
 echo "# echo \"alias lsa='ls -lAF'\" > /etc/profile.d/local.sh"
 echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
@@ -31,74 +43,106 @@ echo "source /etc/profile.d/local.sh"
 source /etc/profile.d/local.sh
 sleep 1
 
+
+((++step))
 echo
+echo "============================================================"
 echo
-echo " 3. Configure root user"
+echo " $(printf '%2d' $step). Configure root user"
 echo "    - Identify mail sent by root as the hostname"
 echo "    - Create ~/bin, ~/doc, ~/log and ~/.ssh directories"
 echo "    - Populate ssh host keys for github.com and bitbucket.org"
 echo "    - Create ~/.gitconfig"
 echo
+echo "============================================================"
+echo
 echo "# sed -i -e \"1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/\" /etc/passwd"
 sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
 sleep 1
 
-echo
+echo "#"
 echo "# mkdir -p ~/{bin,doc,log,.ssh}"
 mkdir -p ~/{bin,doc,log,.ssh}
 echo "# chmod og-rwx ~/{bin,log,.ssh}"
 chmod og-rwx ~/{bin,log,.ssh}
 sleep 1
 
-echo
+echo "#"
 echo "# ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts"
 ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
-echo
+echo "#"
 echo "# ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts"
 ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
 sleep 1
 
-echo 
+echo "#"
 echo "# cat << EOF > /root/.gitconfig"
 echo "> [user]"
 echo ">         name = Administrator"
 echo ">         email = admin@eucalyptus.com"
+echo "> [push]"
+echo ">         default = simple"
 echo "> EOF"
+tab="$(printf '\t')"
 cat << EOF > /root/.gitconfig
 [user]
-        name = Administrator
-        email = admin@eucalyptus.com
+${tab}name = Administrator
+${tab}email = admin@eucalyptus.com
+[push]
+${tab}default = simple
 EOF
 sleep 1
 
+
+((++step))
 echo
+echo "============================================================"
 echo
-echo " 4. Download euca-demo git project"
+echo " $(printf '%2d' $step). Install git"
 echo
-echo "yum install -y git"
+echo "============================================================"
+echo
+echo "# yum install -y git"
 yum install -y git
 sleep 1
 
+
+((++step))
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Download euca-demo git project"
+echo
+echo "============================================================"
 echo
 echo "# mkdir -p ~/src/eucalyptus"
 mkdir -p ~/src/eucalyptus
 echo "# cd ~/src/eucalyptus"
 cd ~/src/eucalyptus
+echo "#"
 echo "# git clone https://github.com/eucalyptus/euca-demo.git"
 git clone https://github.com/eucalyptus/euca-demo.git
 sleep 1
 
+
+((++step))
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Add euca-demo scripts to PATH"
+echo
+echo "============================================================"
 echo
 echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile"
 sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile
-echo
+echo "#"
 echo "# echo >> /root/.bash_profile"
 echo >> /root/.bash_profile
 echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> /root/.bash_profile"
 echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
 echo "# echo \"[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
 echo "[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
-echo
+echo "#"
 echo "Please logout, then login to pick up profile changes"
 sleep 1
 
