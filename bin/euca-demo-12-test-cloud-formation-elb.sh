@@ -35,12 +35,12 @@ run_default=10
 pause_default=2
 next_default=5
 
-create_attempts=12
-create_default=10
-login_attempts=12
-login_default=10
-delete_attempts=12
-delete_default=10
+create_attempts=6
+create_default=20
+login_attempts=6
+login_default=20
+delete_attempts=6
+delete_default=20
 
 interactive=1
 speed=100
@@ -377,6 +377,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack creation"
+echo "    - NOTE: This can take about 60 - 80 seconds"
 echo
 echo "============================================================"
 echo
@@ -472,6 +473,7 @@ echo "      # ifconfig"
 echo "    - Then view meta-data about the public IP with:"
 echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
 echo "    - Logout of instance once login ability confirmed"
+echo "    - NOTE: This can take about 00 - 40 seconds"
 echo
 echo "============================================================"
 echo
@@ -550,6 +552,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack deletion"
+echo "    - NOTE: This can take about 120 - 180 seconds"
 echo
 echo "============================================================"
 echo
