@@ -42,6 +42,10 @@ host by running:
 
 Install Eucalyptus via Faststart
 --------------------------------
+Note that for DNS to work, additional configuration must be done on the DNS server
+used for the cs.prc.eucalyptus-systems.com domain. If you are unable to do this,
+either skip this step, or modify this script for your alternate DNS server, or running
+this script will break the remaining script due to partial DNS configuration.
 
     euca-faststart-01-install.sh
     euca-faststart-02-configure-cloudformation.sh
