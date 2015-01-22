@@ -11,6 +11,13 @@
 
 #  1. Initalize Environment
 
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
@@ -20,35 +27,29 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
-percent_min=0
-percent_max=500
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
 
 interactive=1
-account=eucalyptus
-run_percent=100
-pause_percent=100
-next_percent=100
+speed=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0)"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "  -I  non-interactive"
+    echo "  -s  slower: increase pauses by 25%"
+    echo "  -f  faster: reduce pauses by 25%"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -76,10 +77,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -92,10 +93,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -124,12 +125,11 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Ir:p:n:? arg; do
+while getopts Isf? arg; do
     case $arg in
     I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
     ?)  usage
         exit 1;;
     esac
@@ -140,48 +140,15 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo "This script should be run only on a Cloud Controller"
-    exit 20
+if [ $is_clc = n ]; then
+    echo "This script should only be run on the Cloud Controller host"
+    exit 10
 fi
 
 
 #  5. Execute Demo
+
+start=$(date +%s)
 
 ((++step))
 clear
@@ -207,7 +174,7 @@ echo "Commands:"
 echo
 echo "bash <(curl -Ls eucalyptus.com/install)"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -216,7 +183,7 @@ if [ $choice = y ]; then
     bash <(curl -Ls eucalyptus.com/install)
     popd &> /dev/null
 
-    next 5
+    next 50
 fi
 
 
@@ -239,7 +206,7 @@ echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -253,7 +220,7 @@ if [ $choice = y ]; then
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
 
-    next 5
+    next 50
 fi
 
 
@@ -270,14 +237,14 @@ echo "Commands:"
 echo
 echo "euca-describe-addresses verbose"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euca-describe-addresses verbose"
     euca-describe-addresses verbose
 
-    next 5
+    next
 fi
 
 
@@ -295,16 +262,18 @@ echo "Commands:"
 echo
 echo "euca-describe-services | cut -f1-5"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euca-describe-services | cut -f1-5"
     euca-describe-services | cut -f1-5
 
-    next
+    next 200
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Eucalyptus installed"
+echo "Eucalyptus installed (time: $(date -u -d @$((end-start)) +"%T"))"

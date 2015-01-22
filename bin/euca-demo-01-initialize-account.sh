@@ -18,6 +18,13 @@
 
 #  1. Initalize Environment
 
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
@@ -29,40 +36,35 @@ tmpdir=/var/tmp
 demo_admin_password=demo123
 
 step=0
-percent_min=0
-percent_max=500
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
 
 interactive=1
+speed=100
 demo_account=demo
 #image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
 image_url=http://odc-f-38.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
 #image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
-run_percent=100
-pause_percent=100
-next_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-a demo_account] [-u image_url]"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account] [-u image_url]"
+    echo "  -I  non-interactive"
+    echo "  -s  slower: increase pauses by 25%"
+    echo "  -f  faster: reduce pauses by 25%"
     echo "  -a demo_account   account to create for use in demos (default: $demo_account)"
     echo "  -u image_url      URL to Demo CentOS image (default: $image_url)"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -90,10 +92,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -106,10 +108,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -138,14 +140,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts a:u:Ir:p:n:? arg; do
+while getopts Isfa:u:? arg; do
     case $arg in
+    I)  interactive=0;;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
     a)  demo_account="$OPTARG";;
     u)  image_url="$OPTARG";;
-    I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -156,61 +157,26 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    exit 4
-fi
-
 if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo
     echo "-u $image_url invalid: attempts to reach this URL failed"
-    exit 8
+    exit 5
+fi
+ 
+if [ $is_clc = n ]; then
+    echo "This script should only be run on the Cloud Controller host"
+    exit 10
 fi
 
 if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Account Administrator credentials!"
-    echo "   Expected to find: /root/creds/eucalyptus/admin/eucarc"
-    exit 10
-fi
-
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
-    echo "This script should be run only on a Cloud Controller"
+    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
     exit 20
 fi
 
 
 #  5. Prepare Eucalyptus for Demos
+
+start=$(date +%s)
 
 ((++step))
 clear
@@ -225,13 +191,13 @@ echo "Commands:"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
-next 5
+next
 
 echo
 echo "# source /root/creds/eucalyptus/admin/eucarc"
 source /root/creds/eucalyptus/admin/eucarc
 
-next 2
+next 50
 
 
 ((++step))
@@ -245,7 +211,7 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/eucalypt
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     euca-delete-keypair admin-demo
@@ -265,7 +231,7 @@ else
     echo
     echo "chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -275,7 +241,7 @@ else
         echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
         chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
 
-        next 2
+        next 50
     fi
 fi
 
@@ -291,7 +257,7 @@ if euare-accountlist | grep -s -q "^$demo_account"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -306,14 +272,14 @@ else
     echo
     echo "euare-accountcreate -a $demo_account"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-accountcreate -a $demo_account"
         euare-accountcreate -a $demo_account
 
-        next 2
+        next 50
     fi
 fi
 
@@ -329,7 +295,7 @@ if euare-usergetloginprofile -u admin --as-account $demo_account &> /dev/null; t
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -345,14 +311,14 @@ else
     echo
     echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $demo_account"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account"
         euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account
 
-        next 2
+        next 50
     fi
 fi
 
@@ -368,7 +334,7 @@ if [ -r /root/creds/$demo_account/admin/eucarc ]; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -390,7 +356,7 @@ else
     echo "unzip /root/creds/$demo_account/admin/admin.zip \\"
     echo "      -d /root/creds/$demo_account/admin/"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -410,7 +376,7 @@ else
               -d /root/creds/$demo_account/admin/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/admin/eucarc    # invisibly fix deprecation message
 
-        next 2
+        next 50
     fi
 fi
 
@@ -426,7 +392,7 @@ if [ -r /root/centos.raw ]; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -443,7 +409,7 @@ else
     echo
     echo "xz -v -d /root/centos.raw.xz"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -454,7 +420,7 @@ else
         echo "xz -v -d /root/centos.raw.xz"
         xz -v -d /root/centos.raw.xz
 
-        next 2
+        next 50
     fi
 fi
 
@@ -470,7 +436,7 @@ if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -486,14 +452,14 @@ else
     echo
     echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
         euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
-        next 2
+        next 50
     fi
 fi
 
@@ -512,7 +478,7 @@ if euca-describe-images -x $demo_account_id | grep -s -q $image_id; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -527,14 +493,14 @@ else
     echo
     echo "euca-modify-image-attribute -l -a $demo_account_id $image_id"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-modify-image-attribute -l -a $demo_account_id $image_id"
         euca-modify-image-attribute -l -a $demo_account_id $image_id
 
-        next 2
+        next 50
     fi
 fi
 
@@ -556,7 +522,7 @@ echo "euca-describe-keypairs"
 echo
 echo "euare-accountlist"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -571,11 +537,13 @@ if [ $choice = y ]; then
     echo "# euare-accountlist"
     euare-accountlist
 
-    next 20
+    next
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Eucalyptus Account configured for demo scripts"
+echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $demo_account = demo ] || a=" -a $demo_account"
 echo "Please run \"euca-demo-02-initialize-dependencies$a\" to complete demo initialization"

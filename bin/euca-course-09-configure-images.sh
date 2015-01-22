@@ -2,10 +2,23 @@
 #
 # This script configures Eucalyptus Images and creates some Instances
 #
-# Each student MUST run all prior scripts on all nodes prior to this script.
+# This script should only be run on the Cloud Controller and Node Controller hosts
+#
+# Each student MUST run all prior scripts on relevant hosts prior to this script.
 #
 
 #  1. Initalize Environment
+
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y  || is nc=n
+[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y  || is nc=n
+[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y  || is nc=n
+[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y  || is nc=n
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
@@ -15,55 +28,41 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
-centos_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
-
 step=0
-interactive=1
-step_min=0
-step_wait=10
-step_max=60
-pause_min=0
-pause_wait=2
-pause_max=20
-login_wait=10
-login_attempts=12
+speed_max=400
+run_default=10
+pause_default=2
+next_default=5
 
-is_clc=n
-is_ufs=n
-is_mc=n
-is_cc=n
-is_sc=n
-is_osp=n
-is_nc=n
+login_attempts=12
+login_default=10
+
+interactive=1
+speed=100
+#image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
+image_url=http://odc-f-38.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
+#image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]] [-u image_url]"
-    echo "  -I             non-interactive"
-    echo "  -s step_wait   seconds per step (default: $step_wait)"
-    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
-    echo "  -u image_url   URL to CentOS image (default: $centos_image_url)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-u image_url]"
+    echo "  -I            non-interactive"
+    echo "  -s            slower: increase pauses by 25%"
+    echo "  -f            faster: reduce pauses by 25%"
+    echo "  -u image_url  URL to Demo CentOS image (default: $image_url)"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=run_default * $1 * speed / 10000))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -73,16 +72,61 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
+        echo " Done"
+        choice=y
+    fi
+}
+
+pause() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
+    else
+        ((seconds=pause_default * $1 * speed / 10000))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
+    else
+        ((seconds=next_default * $1 * speed / 10000))
+    fi
+    if [ $interactive = 1 ]; then
         echo
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                exit 2;;
+        esac
+    else
+        echo
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo " Done"
         choice=y
     fi
 }
@@ -90,12 +134,12 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Is:p:u: arg; do
+while getopts Isfu:? arg; do
     case $arg in
     I)  interactive=0;;
-    s)  step_wait="$OPTARG";;
-    p)  pause_wait="$OPTARG";;
-    u)  centos_image_url="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    u)  image_url="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -106,56 +150,26 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
+if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "-u $image_url invalid: attempts to reach this URL failed"
+    exit 5
 fi
 
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
-        exit 5
-    fi
-else
-    echo "-s $step_wait illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
-        exit 7
-    fi
-else
-    echo "-p $pause_wait illegal: must be a positive integer"
-    exit 6
-fi
-
-if ! curl -s --head $centos_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo
-    echo "-u $centos_image_url invalid: attempts to reach this URL failed"
-    exit 8
-fi
-
-if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
-    echo
-    echo "Could not find Eucalyptus Administrator credentials!"
+if [ $is_clc = n -a $is_nc = n ]; then
+    echo "This script should be run only on the Cloud Controller or a Node Controller host"
     exit 10
 fi
 
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y
-[ "$(hostname -s)" = "$EUCA_UFS_HOST_NAME" ] && is_ufs=y
-[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y
-[ "$(hostname -s)" = "$EUCA_CC_HOST_NAME" ] && is_cc=y
-[ "$(hostname -s)" = "$EUCA_SC_HOST_NAME" ] && is_sc=y
-[ "$(hostname -s)" = "$EUCA_OSP_HOST_NAME" ] && is_osp=y
-[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y
+if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
+    exit 20
+fi
 
 
 #  5. Execute Course Lab
+
+start=$(date +%s)
 
 ((++step))
 if [ $is_clc = y ]; then
@@ -163,8 +177,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Use Administrator credentials"
-    echo "    - This step is only run on the Cloud Controller host"
+    echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
     echo
     echo "============================================================"
     echo
@@ -172,15 +185,13 @@ if [ $is_clc = y ]; then
     echo
     echo "source /root/creds/eucalyptus/admin/eucarc"
 
-    choose "Execute"
+    next
 
-    if [ $choice = y ]; then
-        echo
-        echo "# source /root/creds/eucalyptus/admin/eucarc"
-        source /root/creds/eucalyptus/admin/eucarc
+    echo
+    echo "# source /root/creds/eucalyptus/admin/eucarc"
+    source /root/creds/eucalyptus/admin/eucarc
 
-        choose "Continue"
-    fi
+    next 50
 fi
 
 
@@ -191,28 +202,27 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "wget $centos_image_url -O /root/centos.raw.xz"
+    echo "wget $image_url -O /root/centos.raw.xz"
     echo
     echo "xz -v -d /root/centos.raw.xz"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $centos_image_url -O /root/centos.raw.xz"
-        wget $centos_image_url -O /root/centos.raw.xz
+        echo "# wget $image_url -O /root/centos.raw.xz"
+        wget $image_url -O /root/centos.raw.xz
         pause
 
         echo "xz -v -d /root/centos.raw.xz"
         xz -v -d /root/centos.raw.xz
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -224,7 +234,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Install Image"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -232,14 +241,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
         euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee /var/tmp/9-3-euca-install-image.out
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -251,9 +260,9 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Images"
-    echo "    - This step is only run on the Cloud Controller host"
-    echo "    - You will notice the imaging and loadbalancing images as well as the image"
-    echo "      just uploaded"
+    echo "    - NOTE: Notice the imaging and loadbalancing images in addition"
+    echo "      to the image just uploaded. Such internal images are only"
+    echo "      visible to the Eucalyptus Administrator"
     echo
     echo "============================================================"
     echo
@@ -261,14 +270,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-describe-images"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-images"
         euca-describe-images
 
-        choose "Continue"
+        next 200
     fi
 fi
 
@@ -280,7 +289,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Instance Types"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo 
@@ -288,14 +296,14 @@ if [ $is_clc = y ]; then
     echo 
     echo "euca-describe-instance-types"
     
-    choose "Execute"
+    run 50
     
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-instance-types"
         euca-describe-instance-types
 
-        choose "Continue"
+        next 200
     fi
 fi
 
@@ -307,7 +315,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Modify an Instance Type"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - Change the 1.small instance type to use 1 GB Ram instead"
     echo "      of the 256 MB default"
     echo
@@ -317,14 +324,14 @@ if [ $is_clc = y ]; then
     echo 
     echo "euca-modify-instance-type -c 1 -d 5 -m 1024 m1.small"
     
-    choose "Execute"
+    run
     
     if [ $choice = y ]; then
         echo
         echo "# euca-modify-instance-type -c 1 -d 5 -m 1024 m1.small"
         euca-modify-instance-type -c 1 -d 5 -m 1024 m1.small
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -336,7 +343,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Confirm Instance type modification"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo 
@@ -344,14 +350,14 @@ if [ $is_clc = y ]; then
     echo 
     echo "euca-describe-instance-types"
     
-    choose "Execute"
+    run 50
     
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-instance-types"
         euca-describe-instance-types
 
-        choose "Continue"
+        next 200
     fi
 fi
 
@@ -363,7 +369,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Find the Account ID of the Ops Account"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -371,14 +376,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euare-accountlist | grep ops"
    
-    choose "Execute"
+    run 50
    
     if [ $choice = y ]; then
         echo
         echo "# euare-accountlist | grep ops"
         euare-accountlist | tee /var/tmp/9-8-euare-accountlist.out
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -393,7 +398,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Allow the Ops Account to use the new image"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -401,14 +405,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-modify-image-attribute -l -a $account $image"
    
-    choose "Execute"
+    run 50
    
     if [ $choice = y ]; then
         echo
         echo "# euca-modify-image-attribute -l -a $account $image"
         euca-modify-image-attribute -l -a $account $image
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -420,7 +424,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Download and Source the Ops Account Administrator Credentials"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -436,7 +439,7 @@ if [ $is_clc = y ]; then
     echo
     echo "source /root/creds/ops/admin/eucarc"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -460,7 +463,7 @@ if [ $is_clc = y ]; then
         echo "# source /root/creds/ops/admin/eucarc"
         source /root/creds/ops/admin/eucarc
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -472,7 +475,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Images visible to the Ops Account Administrator"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -480,14 +482,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-describe-images -a"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-images -a"
         euca-describe-images -a
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -499,7 +501,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Create Keypair"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -509,17 +510,17 @@ if [ $is_clc = y ]; then
     echo
     echo "chmod 0600 /root/creds/ops/admin/ops-admin.pem"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
         euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem
-        echo
+        echo "#"
         echo "# chmod 0600 /root/creds/ops/admin/ops-admin.pem"
         chmod 0600 /root/creds/ops/admin/ops-admin.pem
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -531,7 +532,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Security Groups"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -540,14 +540,14 @@ if [ $is_clc = y ]; then
     echo "euca-describe-groups"
     echo
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-groups"
         euca-describe-groups
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -559,7 +559,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Modify default Security Group to allow SSH"
-    echo "    - This step is only run on the Cloud Controller host"
     echo
     echo "============================================================"
     echo
@@ -567,14 +566,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-authorize -P tcp -p 22 -s 0.0.0.0/0 default"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-authorize -P tcp -p 22 -s 0.0.0.0/0 default"
         euca-authorize -P tcp -p 22 -s 0.0.0.0/0 default
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -588,7 +587,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Launch Instance"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - Using the new keypair and uploaded image"
     echo
     echo "============================================================"
@@ -597,14 +595,14 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-run-instances -k ops-admin $image -t m1.small"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# euca-run-instances -k ops-admin $image -t m1.small"
         euca-run-instances -k ops-admin $image -t m1.small | tee /var/tmp/9-15-euca-run-instances.out
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -616,7 +614,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Instances"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - This shows instances running in the Ops Account"
     echo "    - Public IP will be in the $EUCA_VNET_PUBLICIPS range"
     echo "    - Private IP will be in the $EUCA_VNET_SUBNET/$EUCA_VNET_NETMASK subnet"
@@ -627,34 +624,31 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-describe-instances"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-instances"
         euca-describe-instances
 
-        choose "Continue"
+        next 200
     fi
 fi
 
 
 ((++step))
 if [ $is_clc = y ]; then
-    instance=$(grep INSTANCE /var/tmp/9-15-euca-run-instances.out | cut -f2)
-    public_ip=$(euca-describe-instances | grep $instance | cut -f4)
-
-    sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
-    ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+    instance_id=$(grep INSTANCE /var/tmp/9-15-euca-run-instances.out | cut -f2)
+    public_ip=$(euca-describe-instances | grep $instance_id | cut -f4)
+    user=root
 
     clear
     echo
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Confirm ability to login to Instance"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - If unable to login, view instance console output with:"
-    echo "      # euca-get-console-output $instance"
+    echo "      # euca-get-console-output $instance_id"
     echo "    - If able to login, show private IP with:"
     echo "      # ifconfig"
     echo "    - Then view meta-data about instance type with:"
@@ -665,28 +659,46 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip"
+    echo "ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         attempt=0
-        echo
+        ((seconds=$login_default * $login_percent / 100))
         while ((attempt++ <=  login_attempts)); do
-            echo "# ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip"
-            ssh -i /root/creds/ops/admin/ops-admin.pem root@$public_ip
-            RC=$?
+            sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+            ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+
+            echo
+            echo "# ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip"
+            if [ $interactive = 1 ]; then
+                ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip
+                RC=$?
+            else
+                ssh -T -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip << EOF
+echo "# ifconfig"
+ifconfig
+sleep 5
+echo
+echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
+echo $(cat /tmp/public-ip4)
+sleep 5
+EOF
+                RC=$?
+            fi
             if [ $RC = 0 -o $RC = 1 ]; then
                 break
             else
                 echo
-                echo "Not available ($RC). Waiting $login_wait seconds"
-                sleep $login_wait
-                echo
+                echo -n "Not available ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
             fi
         done
 
-        choose "Continue"
+        next 200
     fi
 fi
 
@@ -698,7 +710,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List All Instances as Eucalyptus Administrator"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - The Eucalyptus Administrator can see instances in other accounts"
     echo "      with the verbose parameter"
     echo "    - NOTE: After completing this step, you will need to run"
@@ -713,7 +724,7 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-describe-instances verbose"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -724,7 +735,9 @@ if [ $is_clc = y ]; then
         echo "# euca-describe-instances verbose"
         euca-describe-instances verbose
 
-        choose "Continue"
+        echo
+        echo "Please run next step on all Node Controller services at this time"
+        next 400
     fi
 fi
 
@@ -736,7 +749,6 @@ if [ $is_nc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Overcommit CPUs on Node Controller host"
-    echo "    - This step is only run on Node Controller hosts"
     echo "    - STOP! This step should be run prior to the step"
     echo "      which confirms CPU overcommit on the Cloud Controller host"
     echo
@@ -748,7 +760,7 @@ if [ $is_nc = y ]; then
     echo
     echo "service eucalyptus-nc restart"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -759,7 +771,7 @@ if [ $is_nc = y ]; then
         echo "# service eucalyptus-nc restart"
         service eucalyptus-nc restart
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -771,7 +783,6 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Confirm CPU Overcommit"
-    echo "    - This step is only run on the Cloud Controller host"
     echo "    - NOTE: This step should only be run after the step"
     echo "      which first adjusts MAX_CORES, then restarts the Node"
     echo "      Controller service on all Node Controller hosts"
@@ -784,17 +795,19 @@ if [ $is_clc = y ]; then
     echo
     echo "euca-describe-instance-types --show-capacity"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euca-describe-instance-types --show-capacity"
         euca-describe-instance-types --show-capacity
 
-        choose "Continue"
+        next 200
     fi
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Image and Instance configuration and testing complete"
+echo "Image and Instance configuration and testing complete (time: $(date -u -d @$((end-start)) +"%T"))"

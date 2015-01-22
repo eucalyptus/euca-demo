@@ -12,6 +12,13 @@
 
 #  1. Initalize Environment
 
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
@@ -22,11 +29,11 @@ tmpdir=/var/tmp
 prefix=demo-05
 
 step=0
-percent_min=0
-percent_max=500
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
+
 create_attempts=12
 create_default=10
 login_attempts=12
@@ -37,33 +44,25 @@ delete_attempts=12
 delete_default=10
 
 interactive=1
+speed=100
 demo_account=demo
-run_percent=100
-pause_percent=100
-next_percent=100
-create_percent=100
-login_percent=100
-replace_percent=100
-delete_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-a demo_account]"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
-    echo "  -a demo_account   account to use in demos (default: $demo_account)"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account]"
+    echo "  -I               non-interactive"
+    echo "  -s               slower: increase pauses by 25%"
+    echo "  -f               faster: reduce pauses by 25%"
+    echo "  -a demo_account  account to use in demos (default: $demo_account)"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -91,10 +90,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -107,10 +106,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -139,13 +138,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts a:Ir:p:n:? arg; do
+while getopts Isfa:? arg; do
     case $arg in
-    a)  demo_account="$OPTARG";;
     I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    a)  demo_account="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -156,54 +154,21 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    exit 4
+if [ $is_clc = n ]; then
+    echo "This script should only be run on the Cloud Controller host"
+    exit 10
 fi
 
 if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
     echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
-    exit 10
-fi
-
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo "This script should be run only on a Cloud Controller"
-    exit 20
+    exit 21
 fi
 
 
 #  5. Execute Demo
+
+start=$(date +%s)
 
 ((++step))
 clear
@@ -218,13 +183,13 @@ echo "Commands:"
 echo
 echo "source /root/creds/$demo_account/admin/eucarc"
 
-next 5
+next
 
 echo
 echo "# source /root/creds/$demo_account/admin/eucarc"
 source /root/creds/$demo_account/admin/eucarc
 
-next 2
+next 50
 
 
 ((++step))
@@ -243,7 +208,7 @@ echo "euca-describe-images | grep \"centos.raw.manifest.xml\""
 echo
 echo "euca-describe-keypairs | grep \"admin-demo\""
 
-next 5
+next
 
 echo
 echo "# euca-describe-images | grep \"centos.raw.manifest.xml\""
@@ -256,11 +221,11 @@ euca-describe-keypairs | grep "admin-demo" || demo_initialized=n
 if [ $demo_initialized = n ]; then
     echo
     echo "At least one prerequisite for this script was not met."
-    echo "Please re-run euca-demo-01-initialize.sh script."
-    exit 30
+    echo "Please re-run euca-demo-02-initialize-dependencies.sh script."
+    exit 99
 fi
 
-next 2
+next 50
 
 
 ((++step))
@@ -293,7 +258,7 @@ echo "euscale-describe-policies"
 echo
 echo "euwatch-describe-alarms"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -358,7 +323,7 @@ echo "euca-authorize -P tcp -p 80 -s 0.0.0.0/0 DemoSG"
 echo
 echo "euca-describe-groups DemoSG"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -400,7 +365,7 @@ echo "eulb-create-lb -z default -l \"lb-port=80, protocol=HTTP, instance-port=80
 echo
 echo "eulb-describe-lbs DemoELB"
 
-run 20
+run
 
 if [ $choice = y ]; then
     echo
@@ -429,7 +394,7 @@ echo
 echo "eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \\"
 echo "                           --target http:80/index.html DemoELB"
 
-run 30
+run
 
 if [ $choice = y ]; then
     echo
@@ -459,14 +424,14 @@ echo "Commands:"
 echo
 echo "cat $scriptsdir/$prefix-user-data.sh"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# cat $scriptsdir/$prefix-user-data.sh"
     cat $scriptsdir/$prefix-user-data.sh
 
-    next 60
+    next 150
 fi
 
 
@@ -489,7 +454,7 @@ echo "                                    --user-data-file=$scriptsdir/$prefix-u
 echo
 echo "euscale-describe-launch-configs DemoLC"
 
-run 60
+run 150
 
 if [ $choice = y ]; then
     echo
@@ -532,7 +497,7 @@ echo "euscale-describe-auto-scaling-groups DemoASG"
 echo
 echo "eulb-describe-instance-health DemoELB"
 
-run 60
+run 150
 
 if [ $choice = y ]; then
     echo
@@ -582,7 +547,7 @@ echo
 echo "euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\""
 echo
 echo "euscale-describe-policies"
-pause 30
+pause 200
 
 echo "euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
 echo "                                           --namespace \"AWS/EC2\" --statistic Average \\"
@@ -600,7 +565,7 @@ echo "                                           --evaluation-periods 2 --alarm-
 echo
 echo "euwatch-describe-alarms"
 
-run 60
+run 200
 
 if [ $choice = y ]; then
     echo
@@ -622,7 +587,7 @@ if [ $choice = y ]; then
 
     echo "# euscale-describe-policies"
     euscale-describe-policies
-    pause 20
+    pause 200
 
     high_policy=$(cat $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-high.out)
     echo "# euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
@@ -657,7 +622,7 @@ if [ $choice = y ]; then
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms
 
-    next 20
+    next 200
 fi
 
 
@@ -690,7 +655,7 @@ echo "euscale-describe-policies"
 echo
 echo "euwatch-describe-alarms"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -729,7 +694,7 @@ if [ $choice = y ]; then
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
 
-    next 30
+    next 200
 fi
 
 
@@ -761,17 +726,16 @@ echo "Commands:"
 echo
 echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
 
-run
+run 50
 
 if [ $choice = y ]; then
     attempt=0
-    ((seconds=$login_default * $login_percent / 100))
+    ((seconds=$login_default * $speed / 100))
     while ((attempt++ <= $login_attempts)); do
         sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
         echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
         if [ $interactive = 1 ]; then
             ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
@@ -793,13 +757,13 @@ EOF
             break
         else
             echo
-            echo -n "Not available ($RC). Wait $seconds seconds..."
+            echo -n "Not available ($RC). Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 5
+    next
 fi
 
 
@@ -823,14 +787,14 @@ echo "Commands:"
 echo
 echo "cat $scriptsdir/$prefix-user-data-2.sh"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# cat $scriptsdir/$prefix-user-data-2.sh"
     cat $scriptsdir/$prefix-user-data-2.sh
 
-    next 30
+    next 150
 fi
 
 
@@ -857,7 +821,7 @@ echo
 echo "euscale-describe-launch-configs DemoLC"
 echo "euscale-describe-launch-configs DemoLC-2"
 
-run 30
+run
 
 if [ $choice = y ]; then
     echo
@@ -895,7 +859,7 @@ echo "euscale-update-auto-scaling-group DemoASG --launch-configuration DemoLC-2"
 echo
 echo "euscale-describe-auto-scaling-groups DemoASG"
 
-run 30
+run
 
 if [ $choice = y ]; then
     echo
@@ -906,7 +870,7 @@ if [ $choice = y ]; then
     echo "# euscale-describe-auto-scaling-groups DemoASG"
     euscale-describe-auto-scaling-groups DemoASG
 
-    next
+    next 50
 fi
 
 
@@ -937,7 +901,7 @@ for instance_id in $instance_ids; do
     break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
 done
 
-choose "Execute"
+run 150
 
 if [ $choice = y ]; then
     for instance_id in $instance_ids; do
@@ -947,7 +911,7 @@ if [ $choice = y ]; then
         pause
 
         attempt=0
-        ((seconds=$replace_default * $replace_percent / 100))
+        ((seconds=$replace_default * $speed / 100))
         while ((attempt++ <= replace_attempts)); do
             echo
             echo "# euscale-describe-auto-scaling-groups DemoASG"
@@ -960,7 +924,7 @@ if [ $choice = y ]; then
                 break
             else
                 echo
-                echo -n "At least 2 instances are not \"InService\". Wait $seconds seconds..."
+                echo -n "At least 2 instances are not \"InService\". Waiting $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi
@@ -968,7 +932,7 @@ if [ $choice = y ]; then
         break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
     done
 
-    next 30
+    next 50
 fi
 
 
@@ -976,9 +940,11 @@ fi
 # instead of tearing down all resources created to get back to the initial
 # configuration, to save time and move onto the CloudFormation demo.
 
+end=$(date +%s)
+
 echo
 echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"
-echo "           AutoScalingGroup and User-Data Script testing complete"
+echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
 exit
 
 # Add steps to unwind demo objects here, by deleting everything created above in reverse order
@@ -1011,7 +977,7 @@ echo "euscale-describe-auto-scaling-groups"
 echo
 echo "euwatch-describe-alarms"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -1046,9 +1012,12 @@ if [ $choice = y ]; then
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms
 
-    next 60
+    next 200
 fi
+
+
+end=$(date +%s)
 
 echo
 echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"
-echo "           AutoScalingGroup and User-Data Script testing complete"
+echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))"

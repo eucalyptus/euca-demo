@@ -13,6 +13,13 @@
 
 #  1. Initalize Environment
 
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
@@ -23,11 +30,11 @@ tmpdir=/var/tmp
 prefix=demo-11
 
 step=0
-percent_min=0
-percent_max=500
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
+
 create_attempts=12
 create_default=10
 login_attempts=12
@@ -36,32 +43,25 @@ delete_attempts=12
 delete_default=10
 
 interactive=1
+speed=100
 demo_account=demo
-run_percent=100
-pause_percent=100
-next_percent=100
-create_percent=100
-login_percent=100
-delete_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-a demo_account]"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
-    echo "  -a demo_account   account to use in demo (default: $demo_account)"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account]"
+    echo "  -I               non-interactive"
+    echo "  -s               slower: increase pauses by 25%"
+    echo "  -f               faster: reduce pauses by 25%"
+    echo "  -a demo_account  account to use in demo (default: $demo_account)"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -89,10 +89,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -105,10 +105,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -137,13 +137,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts a:Ir:p:n:? arg; do
+while getopts Isfa:? arg; do
     case $arg in
-    a)  demo_account="$OPTARG";;
     I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    a)  demo_account="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -154,54 +153,21 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    exit 4
+if [ $is_clc = n ]; then
+    echo "This script should only be run on the Cloud Controller host"
+    exit 10
 fi
 
 if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
     echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
-    exit 10
-fi
-
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo "This script should be run only on a Cloud Controller"
-    exit 20
+    exit 21
 fi
 
 
 #  5. Execute Demo
+
+start=$(date +%s)
 
 ((++step))
 clear
@@ -220,13 +186,13 @@ echo "Commands:"
 echo
 echo "source /root/creds/$demo_account/admin/eucarc"
 
-next 5
+next
 
 echo
 echo "# source /root/creds/$demo_account/admin/eucarc"
 source /root/creds/$demo_account/admin/eucarc
 
-next 2
+next 50
 
 
 ((++step))
@@ -245,7 +211,7 @@ echo "euca-describe-images | grep \"centos.raw.manifest.xml\""
 echo
 echo "euca-describe-keypairs | grep \"admin-demo\""
 
-next 5
+next
 
 echo
 echo "# euca-describe-images | grep \"centos.raw.manifest.xml\""
@@ -258,11 +224,11 @@ euca-describe-keypairs | grep "admin-demo" || demo_initialized=n
 if [ $demo_initialized = n ]; then
     echo
     echo "At least one prerequisite for this script was not met."
-    echo "Please re-run euca-demo-01-initialize.sh script."
-    exit 30
+    echo "Please re-run euca-demo-02-initialize-dependencies.sh script."
+    exit 99
 fi
 
-next 5
+next 50
 
 
 ((++step))
@@ -285,7 +251,7 @@ echo "euca-describe-groups"
 echo
 echo "euca-describe-instances"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -304,7 +270,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
     
-    next 5
+    next
 fi
 
 
@@ -321,14 +287,14 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euform-describe-stacks"
     euform-describe-stacks
 
-    next 5
+    next 50
 fi
 
 
@@ -348,7 +314,7 @@ echo "Commands:"
 echo
 echo "more $templatesdir/simple.template"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -362,14 +328,14 @@ if [ $choice = y ]; then
         while IFS= read line; do
             echo "$line"
             if [ $((++lineno % rows)) = 0 ]; then
-                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Wait 10 seconds...)"
+                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
                 sleep 10
-                echo -e -n "\r                             \r"
+                echo -e -n "\r                                \r"
             fi
         done < $templatesdir/simple.template
     fi
 
-    next 20
+    next 200
 fi
 
 
@@ -388,14 +354,14 @@ echo "Commands:"
 echo
 echo "euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack"
     euform-create-stack --template-file $templatesdir/simple.template -p DemoImageId=$image_id SimpleDemoStack
     
-    next 5
+    next
 fi
 
 
@@ -414,7 +380,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events SimpleDemoStack | tail -10"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -423,7 +389,7 @@ if [ $choice = y ]; then
     pause
 
     attempt=0
-    ((seconds=$create_default * $create_percent / 100))
+    ((seconds=$create_default * $speed / 100))
     while ((attempt++ <= create_attempts)); do
         echo
         echo "# euform-describe-stack-events SimpleDemoStack | tail -10"
@@ -434,13 +400,13 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo -n "Not finished ($RC). Wait $seconds seconds..."
+            echo -n "Not finished ($RC). Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 5
+    next
 fi
 
 
@@ -460,7 +426,7 @@ echo "euca-describe-groups"
 echo
 echo "euca-describe-instances"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -471,7 +437,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
 
-    next 5
+    next
 fi
 
 
@@ -501,11 +467,11 @@ echo "Commands:"
 echo
 echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     attempt=0
-    ((seconds=$login_default * $login_percent / 100))
+    ((seconds=$login_default * $speed / 100))
     while ((attempt++ <=  login_attempts)); do
         sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
@@ -532,13 +498,13 @@ EOF
             break
         else
             echo
-            echo -n "Not available ($RC). Wait $seconds seconds..."
+            echo -n "Not available ($RC). Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 5
+    next
 fi
 
 
@@ -555,14 +521,14 @@ echo "Commands:"
 echo
 echo "euform-delete-stack SimpleDemoStack"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euform-delete-stack SimpleDemoStack"
     euform-delete-stack SimpleDemoStack
    
-    next 5
+    next
 fi
 
 
@@ -581,7 +547,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events SimpleDemoStack | tail -10"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -590,7 +556,7 @@ if [ $choice = y ]; then
     pause
 
     attempt=0
-    ((seconds=$delete_default * $delete_percent / 100))
+    ((seconds=$delete_default * $speed / 100))
     while ((attempt++ <= delete_attempts)); do
         echo
         echo "# euform-describe-stack-events SimpleDemoStack | tail -10"
@@ -601,13 +567,13 @@ if [ $choice = y ]; then
             break
         else
             echo
-            echo -n "Not finished ($RC). Wait $seconds seconds..."
+            echo -n "Not finished ($RC). Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
     done
 
-    next 5
+    next 50
 fi
 
 
@@ -631,7 +597,7 @@ echo "euca-describe-groups"
 echo
 echo "euca-describe-instances"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -650,9 +616,11 @@ if [ $choice = y ]; then
     echo "# euca-describe-instances"
     euca-describe-instances
 
-    next
+    next 200
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Eucalyptus CloudFormation simple template testing complete"
+echo "Eucalyptus CloudFormation simple template testing complete (time: $(date -u -d @$((end-start)) +"%T"))"

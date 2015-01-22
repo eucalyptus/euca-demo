@@ -20,6 +20,13 @@
 
 #  1. Initalize Environment
 
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
@@ -37,36 +44,31 @@ demo_developer_password=${demo_developer}123
 demo_developers=developers
 
 step=0
-percent_min=0
-percent_max=500
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
 
 interactive=1
+speed=100
 demo_account=demo
-run_percent=100
-pause_percent=100
-next_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-a demo_account]"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
-    echo "  -a demo_account   account to create for use in demos (default: $demo_account)"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account]"
+    echo "  -I              non-interactive"
+    echo "  -s              slower: increase pauses by 25%"
+    echo "  -f              faster: reduce pauses by 25%"
+    echo "  -a demo_account account to create for use in demos (default: $demo_account)"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -94,10 +96,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -110,10 +112,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -142,13 +144,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts a:Ir:p:n:? arg; do
+while getopts Isfa:? arg; do
     case $arg in
-    a)  demo_account="$OPTARG";;
     I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    a)  demo_account="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -159,55 +160,21 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        exit 5
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    exit 4
+if [ $is_clc = n ]; then
+    echo "This script should only be run on the Cloud Controller host"
+    exit 10
 fi
 
 if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
     echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
-    exit 10
-fi
-
-if [ $(hostname -s) != $EUCA_CLC_HOST_NAME ]; then
-    echo
-    echo "This script should be run only on a Cloud Controller"
-    exit 20
+    exit 21
 fi
 
 
 #  5. Prepare Eucalyptus Demo Account for Demos
+
+start=$(date +%s)
 
 ((++step))
 clear
@@ -222,13 +189,13 @@ echo "Commands:"
 echo
 echo "source /root/creds/$demo_account/admin/eucarc"
 
-next 5
+next
 
 echo
 echo "# source /root/creds/$demo_account/admin/eucarc"
 source /root/creds/$demo_account/admin/eucarc
 
-next 2
+next 50
 
 
 ((++step))
@@ -244,14 +211,14 @@ echo "Commands:"
 echo
 echo "euca-describe-images -a"
 
-run 5
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# euca-describe-images -a"
     euca-describe-images -a
 
-    next 5
+    next 50
 fi
 
 
@@ -266,7 +233,7 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/$demo_ac
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     euca-delete-keypair admin-demo
@@ -286,7 +253,7 @@ else
     echo
     echo "chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -296,7 +263,7 @@ else
         echo "# chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem"
         chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem
 
-        next 2
+        next 50
     fi
 fi
 
@@ -312,7 +279,7 @@ if euare-userlistbypath | grep -s -q ":user/$demo_user$"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -327,14 +294,14 @@ else
     echo
     echo "euare-usercreate -u $demo_user"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-usercreate -u $demo_user"
         euare-usercreate -u $demo_user
 
-        next 2
+        next 50
     fi
 fi
 
@@ -350,7 +317,7 @@ if euare-usergetloginprofile -u $demo_user &> /dev/null; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -366,14 +333,14 @@ else
     echo
     echo "euare-useraddloginprofile -u $demo_user -p $demo_user_password"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-useraddloginprofile -u $demo_user -p $demo_user_password"
         euare-useraddloginprofile -u $demo_user -p $demo_user_password
 
-        next 2
+        next 50
     fi
 fi
 
@@ -389,7 +356,7 @@ if [ -r /root/creds/$demo_account/$demo_user/eucarc ]; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -411,7 +378,7 @@ else
     echo "unzip /root/creds/$demo_account/$demo_user/$demo_user.zip \\"
     echo "      -d /root/creds/$demo_account/$demo_user/"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -431,7 +398,7 @@ else
               -d /root/creds/$demo_account/$demo_user/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_user/eucarc    # invisibly fix deprecation message
 
-        next 2
+        next 50
     fi
 fi
 
@@ -447,7 +414,7 @@ if euare-grouplistbypath | grep -s -q ":group/$demo_users$"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -464,7 +431,7 @@ else
     echo
     echo "euare-groupadduser -g $demo_users -u $demo_user"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -474,7 +441,7 @@ else
         echo "# euare-groupadduser -g $demo_users -u $demo_user"
         euare-groupadduser -g $demo_users -u $demo_user
 
-        next 2
+        next 50
     fi
 fi
 
@@ -490,7 +457,7 @@ if euare-userlistbypath | grep -s -q ":user/$demo_developer$"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -505,14 +472,14 @@ else
     echo
     echo "euare-usercreate -u $demo_developer"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-usercreate -u $demo_developer"
         euare-usercreate -u $demo_developer
 
-        next 2
+        next 50
     fi
 fi
 
@@ -528,7 +495,7 @@ if euare-usergetloginprofile -u $demo_developer &> /dev/null; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -544,14 +511,14 @@ else
     echo
     echo "euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
         euare-useraddloginprofile -u $demo_developer -p $demo_developer_password
 
-        next 2
+        next 50
     fi
 fi
 
@@ -567,7 +534,7 @@ if [ -r /root/creds/$demo_account/$demo_developer/eucarc ]; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -590,7 +557,7 @@ else
     echo "unzip /root/creds/$demo_account/$demo_developer/$demo_developer.zip \\"
     echo "      -d /root/creds/$demo_account/$demo_developer/"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -610,7 +577,7 @@ else
               -d /root/creds/$demo_account/$demo_developer/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_developer/eucarc    # invisibly fix deprecation message
 
-        next 2
+        next 50
     fi
 fi
 
@@ -626,7 +593,7 @@ if euare-grouplistbypath | grep -s -q ":group/$demo_developers$"; then
     echo
     echo "============================================================"
 
-    next 2
+    next 50
 
 else
     clear
@@ -643,7 +610,7 @@ else
     echo
     echo "euare-groupadduser -g $demo_developers -u $demo_developer"
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -653,7 +620,7 @@ else
         echo "# euare-groupadduser -g $demo_developers -u $demo_developer"
         euare-groupadduser -g $demo_developers -u $demo_developer
 
-        next 2
+        next 50
     fi
 fi
 
@@ -681,7 +648,7 @@ echo "euare-grouplistbypath"
 echo "euare-grouplistusers -g $demo_users"
 echo "euare-grouplistusers -g $demo_developers"
 
-run
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -710,9 +677,11 @@ if [ $choice = y ]; then
     echo "# euare-grouplistusers -g $demo_developers"
     euare-grouplistusers -g $demo_developers
 
-    next 20
+    next
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Eucalyptus Demo Account configured for demo scripts"
+echo "Eucalyptus Demo Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"

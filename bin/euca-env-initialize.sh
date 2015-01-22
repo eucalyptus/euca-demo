@@ -19,14 +19,14 @@
 # error, so we must use the "valid" variable to test if the logic should be
 # run after validation. This changes some of the conventions and functions
 # in this script, so it's different than all others in this project.
+#
+
+#  1. Initalize Environment
 
 if [ $0 = $BASH_SOURCE ]; then
     echo "You must source this script to set the ENV variables for other demo scripts"
     exit 1
 fi
-
-
-#  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
@@ -36,38 +36,33 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
-step=0
 valid=y
-percent_min=0
-percent_max=500
+step=0
+speed_max=400
 run_default=10
 pause_default=2
-next_default=10
+next_default=5
 
 interactive=1
+speed=100
 environment=$(hostname -s)
-run_percent=100
-pause_percent=100
-next_percent=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-e environment]"
-    echo "           [-I [-r run_percent] [-p pause_percent] [-n next_percent]]"
-    echo "  -e environment    environment configuration (default: $environment)"
-    echo "  -I                non-interactive"
-    echo "  -r run_percent    run prompt timing adjustment % (default: $run_percent)"
-    echo "  -p pause_percent  pause delay timing adjustment % (default: $pause_percent)"
-    echo "  -n next_percent   next prompt timing adjustment % (default: $next_percent)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-e environment]"
+    echo "  -I              non-interactive"
+    echo "  -s              slower: increase pauses by 25%"
+    echo "  -f              faster: reduce pauses by 25%"
+    echo "  -e environment  environment configuration (default: $environment)"
 }
 
 run() {
-    if [ -z $1 ]; then
-        ((seconds=$run_default * $run_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        ((seconds=$1 * $run_percent / 100))
+        ((seconds=run_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -95,10 +90,10 @@ run() {
 }
 
 pause() {
-    if [ -z $1 ]; then
-        ((seconds=$pause_default * $pause_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
     else
-        ((seconds=$1 * $pause_percent / 100))
+        ((seconds=pause_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo "#"
@@ -111,10 +106,10 @@ pause() {
 }
 
 next() {
-    if [ -z $1 ]; then
-        ((seconds=$next_default * $next_percent / 100))
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
     else
-        ((seconds=$1 * $next_percent / 100))
+        ((seconds=next_default * $1 * speed / 10000))
     fi
     if [ $interactive = 1 ]; then
         echo
@@ -145,13 +140,12 @@ next() {
 
 OPTIND=1 # workaround needed when sourcing a script for getopts to work as expected
 
-while getopts e:Ir:p:n:? arg; do
+while getopts Isfe:? arg; do
     case $arg in
-    e)  environment="$OPTARG";;
     I)  interactive=0;;
-    r)  run_percent="$OPTARG";;
-    p)  pause_percent="$OPTARG";;
-    n)  next_percent="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    e)  environment="$OPTARG";;
     ?)  usage
         valid=n;;
     esac
@@ -161,36 +155,6 @@ shift $(($OPTIND - 1))
 
 
 #  4. Validate environment
-
-if [[ $run_percent =~ ^[0-9]+$ ]]; then
-    if ((run_percent < percent_min || run_percent > percent_max)); then
-        echo "-r $run_percent invalid: value must be between $percent_min and $percent_max"
-        valid=n
-    fi
-else
-    echo "-r $run_percent illegal: must be a positive integer"
-    valid=n
-fi
-
-if [[ $pause_percent =~ ^[0-9]+$ ]]; then
-    if ((pause_percent < percent_min || pause_percent > percent_max)); then
-        echo "-p $pause_percent invalid: value must be between $percent_min and $percent_max"
-        valid=n
-    fi
-else
-    echo "-p $pause_percent illegal: must be a positive integer"
-    valid=n
-fi
-
-if [[ $next_percent =~ ^[0-9]+$ ]]; then
-    if ((next_percent < percent_min || next_percent > percent_max)); then
-        echo "-r $next_percent invalid: value must be between $percent_min and $percent_max"
-        valid=n
-    fi
-else
-    echo "-r $next_percent illegal: must be a positive integer"
-    valid=n
-fi
 
 if [ $valid = y ]; then
     if [[ $environment =~ ^([a-zA-Z0-9_-]*)$ ]]; then
@@ -208,6 +172,8 @@ fi
 
 
 #  5. Initialize Demo Environment
+
+start=$(date +%s)
 
 if [ $valid = y ]; then
     source $envfile
@@ -287,7 +253,7 @@ if [ $valid = y ]; then
     echo
     echo "env | sort | grep ^EUCA_"
 
-    run 5
+    run 50
 
     if [ $choice = y ]; then
         echo
@@ -412,9 +378,12 @@ if [ $valid = y ]; then
         echo "# env | sort | grep ^EUCA_"
         env | sort | grep ^EUCA_
 
-        next 2
+        next 50
     fi
 
+
+    end=$(date +%s)
+
     echo
-    echo "Environment configured"
+    echo "Environment configured (time: $(date -u -d @$((end-start)) +"%T"))"
 fi

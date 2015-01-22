@@ -2,10 +2,29 @@
 #
 # This script initializes dependencies prior to installing Eucalyptus
 #
+# This script should be run on all hosts.
+#
 # This script isn't smart enough to figure out various network modes, and is
 # currently hard-coded for the course's use of the MANANGED-NOVLAN mode
+#
 
 #  1. Initalize Environment
+
+if [ -z $EUCA_VNET_MODE ]; then
+    echo "Please set environment variables first"
+    exit 3
+fi
+
+[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
+[ "$(hostname -s)" = "$EUCA_UFS_HOST_NAME" ] && is_ufs=y || is_ufs=n
+[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ]  && is_mc=y  || is_mc=n
+[ "$(hostname -s)" = "$EUCA_CC_HOST_NAME" ]  && is_cc=y  || is_cc=n
+[ "$(hostname -s)" = "$EUCA_SC_HOST_NAME" ]  && is_sc=y  || is_sc=n
+[ "$(hostname -s)" = "$EUCA_OSP_HOST_NAME" ] && is_osp=y || is_osp=n
+[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y  || is_nc=n
+[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y  || is_nc=n
+[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y  || is_nc=n
+[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y  || is_nc=n
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
@@ -16,49 +35,33 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
-interactive=1
-step_min=0
-step_wait=10
-step_max=60
-pause_min=0
-pause_wait=2
-pause_max=20
+speed_max=400
+run_default=10
+pause_default=2
+next_default=5
 
-is_clc=n
-is_ufs=n
-is_mc=n
-is_cc=n
-is_sc=n
-is_osp=n
-is_nc=n
+interactive=1
+speed=100
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: $(basename $0) [-I [-s step_wait] [-p pause_wait]]"
-    echo "  -I             non-interactive"
-    echo "  -s step_wait   seconds per step (default: $step_wait)"
-    echo "  -p pause_wait  seconds per pause (default: $pause_wait)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "  -I  non-interactive"
+    echo "  -s  slower: increase pauses by 25%"
+    echo "  -f  faster: reduce pauses by 25%"
 }
 
-pause() {
-    if [ "$interactive" = 1 ]; then
-        echo "#"
-        read pause
-        echo -en "\033[1A\033[2K"    # undo newline from read
+run() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=run_default * speed / 100))
     else
-        echo "#"
-        sleep $pause_wait
+        ((seconds=run_default * $1 * speed / 10000))
     fi
-}
-
-choose() {
-    if [ "$interactive" = 1 ]; then
-        [ -n "$1" ] && prompt2="$1 (y,n,q)[y]"
-        [ -z "$1" ] && prompt2="Proceed (y,n,q)[y]"
+    if [ $interactive = 1 ]; then
         echo
-        echo -n "$prompt2"
+        echo -n "Run? [Y/n/q]"
         read choice
         case "$choice" in
             "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
@@ -68,16 +71,61 @@ choose() {
         esac
     else
         echo
-        seconds=$step_wait
-        echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
         while ((seconds > 0)); do
             if ((seconds < 10 || seconds % 10 == 0)); then
-                echo -n -e "Continuing in $(printf '%2d' $seconds) seconds...\r"
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
             fi
             sleep 1
             ((seconds--))
         done
+        echo " Done"
+        choice=y
+    fi
+}
+
+pause() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=pause_default * speed / 100))
+    else
+        ((seconds=pause_default * $1 * speed / 10000))
+    fi
+    if [ $interactive = 1 ]; then
+        echo "#"
+        read pause
+        echo -en "\033[1A\033[2K"    # undo newline from read
+    else
+        echo "#"
+        sleep $seconds
+    fi
+}
+
+next() {
+    if [ -z $1 ] || (($1 % 25 != 0)); then
+        ((seconds=next_default * speed / 100))
+    else
+        ((seconds=next_default * $1 * speed / 10000))
+    fi
+    if [ $interactive = 1 ]; then
         echo
+        echo -n "Next? [Y/q]"
+        read choice
+        case "$choice" in
+            "" | "y" | "Y" | "yes" | "Yes") choice=y ;;
+             *) echo "cancelled"
+                exit 2;;
+        esac
+    else
+        echo
+        echo -n -e "Waiting $(printf '%2d' $seconds) seconds..."
+        while ((seconds > 0)); do
+            if ((seconds < 10 || seconds % 10 == 0)); then
+                echo -n -e "\rWaiting $(printf '%2d' $seconds) seconds..."
+            fi
+            sleep 1
+            ((seconds--))
+        done
+        echo " Done"
         choice=y
     fi
 }
@@ -85,11 +133,11 @@ choose() {
 
 #  3. Parse command line options
 
-while getopts Is:p: arg; do
+while getopts Isf? arg; do
     case $arg in
     I)  interactive=0;;
-    s)  step_wait="$OPTARG";;
-    p)  pause_wait="$OPTARG";;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
     ?)  usage
         exit 1;;
     esac
@@ -100,44 +148,10 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if [[ $step_wait =~ ^[0-9]+$ ]]; then
-    if ((step_wait < step_min || step_wait > step_max)); then
-        echo "-s $step_wait invalid: value must be between $step_min and $step_max seconds"
-        exit 5
-    fi
-else
-    echo "-s $step_wait illegal: must be a positive integer"
-    exit 4
-fi
-
-if [[ $pause_wait =~ ^[0-9]+$ ]]; then
-    if ((pause_wait < pause_min || pause_wait > pause_max)); then
-        echo "-p $pause_wait invalid: value must be between $pause_min and $pause_max seconds"
-        exit 7
-    fi
-else
-    echo "-p $pause_wait illegal: must be a positive integer"
-    exit 6
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y
-[ "$(hostname -s)" = "$EUCA_UFS_HOST_NAME" ] && is_ufs=y
-[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y
-[ "$(hostname -s)" = "$EUCA_CC_HOST_NAME" ] && is_cc=y
-[ "$(hostname -s)" = "$EUCA_SC_HOST_NAME" ] && is_sc=y
-[ "$(hostname -s)" = "$EUCA_OSP_HOST_NAME" ] && is_osp=y
-[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y
-[ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y
-
 
 #  5. Execute Course Lab
+
+start=$(date +%s)
 
 ((++step))
 if [ $is_cc = y -o $is_nc = y ]; then
@@ -146,7 +160,6 @@ if [ $is_cc = y -o $is_nc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Install bridge utilities package"
-    echo "    - This step is only run on the cluster and node controller hosts"
     echo
     echo "============================================================"
     echo
@@ -154,14 +167,14 @@ if [ $is_cc = y -o $is_nc = y ]; then
     echo
     echo "yum -y install bridge-utils"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
         echo "# yum -y install bridge-utils"
         yum -y install bridge-utils
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -173,7 +186,6 @@ if [ $is_nc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Create bridge"
-    echo "    - This step is only run on the node controller host"
     echo "    - This bridge connects between the public ethernet adapter"
     echo "      and virtual machine instance virtual ethernet adapters"
     echo
@@ -190,7 +202,7 @@ if [ $is_nc = y ]; then
     echo "DELAY=0"
     echo "EOF"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -209,7 +221,7 @@ if [ $is_nc = y ]; then
         echo "ONBOOT=yes"               >> /etc/sysconfig/network-scripts/ifcfg-$EUCA_VNET_BRIDGE
         echo "DELAY=0"                  >> /etc/sysconfig/network-scripts/ifcfg-$EUCA_VNET_BRIDGE
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -221,7 +233,6 @@ if [ $is_nc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Adjust public ethernet interface"
-    echo "    - This step is only run on the node controller host"
     echo "    - Associate the interface with the bridge"
     echo "    - Remove the interface's IP address (moves to bridge)"
     echo
@@ -234,7 +245,7 @@ if [ $is_nc = y ]; then
     echo "       -e \"/^PERSISTENT_DHCLIENT=/d\" \\"
     echo "       -e \"/^DNS.=/d\" /etc/sysconfig/network-scripts/ifcfg-$EUCA_VNET_PRIVINTERFACE"
 
-    choose "Execute"
+    run
 
     if [ $choice = y ]; then
         echo
@@ -247,7 +258,7 @@ if [ $is_nc = y ]; then
                -e "/^PERSISTENT_DHCLIENT=/d" \
                -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$EUCA_VNET_PRIVINTERFACE
 
-        choose "Continue"
+        next
     fi
 fi
 
@@ -259,7 +270,6 @@ if [ $is_nc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Restart networking"
-    echo "    - This step is only run on the node controller host"
     echo "    - Can lose connectivity here, make sure you have alternate way in"
     echo
     echo "============================================================"
@@ -268,14 +278,14 @@ if [ $is_nc = y ]; then
     echo
     echo "service network restart"
 
-    choose "Execute"
+    run 50
 
     if [ $choice = y ]; then
         echo
         echo "# service network restart"
         service network restart
 
-        choose "Continue"
+        next 50
     fi
 fi
 
@@ -295,14 +305,14 @@ echo "Commands:"
 echo
 echo "service iptables stop"
 
-choose "Execute"
+run 50
 
 if [ $choice = y ]; then
     echo
     echo "# service iptables stop"
     service iptables stop
 
-    choose "Continue"
+    next 50
 fi
 
 
@@ -321,7 +331,7 @@ echo "sed -i -e \"/^SELINUX=/s/=.*\$/=permissive/\" /etc/selinux/config"
 echo
 echo "setenforce 0"
 
-choose "Execute"
+run 50
 
 if [ $choice = y ]; then
     echo
@@ -332,7 +342,7 @@ if [ $choice = y ]; then
     echo "# setenforce 0"
     setenforce 0
 
-    choose "Continue"
+    next 50
 fi
 
 
@@ -356,7 +366,7 @@ echo
 echo "ntpdate -u  0.centos.pool.ntp.org"
 echo "hwclock --systohc"
 
-choose "Execute"
+run
 
 if [ $choice = y ]; then
     echo
@@ -375,7 +385,7 @@ if [ $choice = y ]; then
     echo "# hwclock --systohc"
     hwclock --systohc
 
-    choose "Continue"
+    next 50
 fi
 
 
@@ -408,7 +418,7 @@ if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
     echo "cat /proc/sys/net/bridge/bridge-nf-call-iptables"
 fi
 
-choose "Execute"
+run
 
 if [ $choice = y ]; then
     echo
@@ -431,9 +441,11 @@ if [ $choice = y ]; then
         cat /proc/sys/net/bridge/bridge-nf-call-iptables
     fi
 
-    choose "Continue"
+    next
 fi
 
 
+end=$(date +%s)
+
 echo
-echo "Dependencies initialized"
+echo "Dependencies initialized (time: $(date -u -d @$((end-start)) +"%T"))"
