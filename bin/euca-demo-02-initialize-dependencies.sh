@@ -218,7 +218,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-images -a"
     euca-describe-images -a
 
-    next 50
+    next
 fi
 
 
@@ -263,7 +263,7 @@ else
         echo "# chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem"
         chmod 0600 /root/creds/$demo_account/admin/admin-demo.pem
 
-        next 50
+        next
     fi
 fi
 
@@ -301,7 +301,7 @@ else
         echo "# euare-usercreate -u $demo_user"
         euare-usercreate -u $demo_user
 
-        next 50
+        next
     fi
 fi
 
@@ -340,7 +340,7 @@ else
         echo "# euare-useraddloginprofile -u $demo_user -p $demo_user_password"
         euare-useraddloginprofile -u $demo_user -p $demo_user_password
 
-        next 50
+        next
     fi
 fi
 
@@ -398,7 +398,7 @@ else
               -d /root/creds/$demo_account/$demo_user/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_user/eucarc    # invisibly fix deprecation message
 
-        next 50
+        next
     fi
 fi
 
@@ -441,7 +441,7 @@ else
         echo "# euare-groupadduser -g $demo_users -u $demo_user"
         euare-groupadduser -g $demo_users -u $demo_user
 
-        next 50
+        next
     fi
 fi
 
@@ -479,7 +479,7 @@ else
         echo "# euare-usercreate -u $demo_developer"
         euare-usercreate -u $demo_developer
 
-        next 50
+        next
     fi
 fi
 
@@ -518,7 +518,7 @@ else
         echo "# euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
         euare-useraddloginprofile -u $demo_developer -p $demo_developer_password
 
-        next 50
+        next
     fi
 fi
 
@@ -577,7 +577,7 @@ else
               -d /root/creds/$demo_account/$demo_developer/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_developer/eucarc    # invisibly fix deprecation message
 
-        next 50
+        next
     fi
 fi
 
@@ -620,7 +620,7 @@ else
         echo "# euare-groupadduser -g $demo_developers -u $demo_developer"
         euare-groupadduser -g $demo_developers -u $demo_developer
 
-        next 50
+        next
     fi
 fi
 
@@ -677,7 +677,7 @@ if [ $choice = y ]; then
     echo "# euare-grouplistusers -g $demo_developers"
     euare-grouplistusers -g $demo_developers
 
-    next
+    next 200
 fi
 
 

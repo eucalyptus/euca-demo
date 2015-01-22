@@ -225,7 +225,7 @@ if [ $demo_initialized = n ]; then
     exit 99
 fi
 
-next 50
+next
 
 
 ((++step))
@@ -297,7 +297,7 @@ if [ $choice = y ]; then
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
 
-    next
+    next 200
 fi
 
 
@@ -547,7 +547,7 @@ echo
 echo "euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\""
 echo
 echo "euscale-describe-policies"
-pause 200
+pause 250
 
 echo "euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
 echo "                                           --namespace \"AWS/EC2\" --statistic Average \\"
@@ -565,7 +565,7 @@ echo "                                           --evaluation-periods 2 --alarm-
 echo
 echo "euwatch-describe-alarms"
 
-run 200
+run 150
 
 if [ $choice = y ]; then
     echo
@@ -587,7 +587,7 @@ if [ $choice = y ]; then
 
     echo "# euscale-describe-policies"
     euscale-describe-policies
-    pause 200
+    pause 250
 
     high_policy=$(cat $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-high.out)
     echo "# euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
@@ -622,7 +622,7 @@ if [ $choice = y ]; then
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms
 
-    next 200
+    next
 fi
 
 
@@ -870,7 +870,7 @@ if [ $choice = y ]; then
     echo "# euscale-describe-auto-scaling-groups DemoASG"
     euscale-describe-auto-scaling-groups DemoASG
 
-    next 50
+    next
 fi
 
 
@@ -932,7 +932,7 @@ if [ $choice = y ]; then
         break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
     done
 
-    next 50
+    next
 fi
 
 

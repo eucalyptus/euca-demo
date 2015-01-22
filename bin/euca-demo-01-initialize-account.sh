@@ -241,7 +241,7 @@ else
         echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
         chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
 
-        next 50
+        next
     fi
 fi
 
@@ -279,7 +279,7 @@ else
         echo "# euare-accountcreate -a $demo_account"
         euare-accountcreate -a $demo_account
 
-        next 50
+        next
     fi
 fi
 
@@ -318,7 +318,7 @@ else
         echo "# euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account"
         euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $demo_account
 
-        next 50
+        next
     fi
 fi
 
@@ -376,7 +376,7 @@ else
               -d /root/creds/$demo_account/admin/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/admin/eucarc    # invisibly fix deprecation message
 
-        next 50
+        next
     fi
 fi
 
@@ -420,7 +420,7 @@ else
         echo "xz -v -d /root/centos.raw.xz"
         xz -v -d /root/centos.raw.xz
 
-        next 50
+        next
     fi
 fi
 
@@ -459,7 +459,7 @@ else
         echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
         euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
-        next 50
+        next
     fi
 fi
 
@@ -500,7 +500,7 @@ else
         echo "# euca-modify-image-attribute -l -a $demo_account_id $image_id"
         euca-modify-image-attribute -l -a $demo_account_id $image_id
 
-        next 50
+        next
     fi
 fi
 
@@ -537,7 +537,7 @@ if [ $choice = y ]; then
     echo "# euare-accountlist"
     euare-accountlist
 
-    next
+    next 200
 fi
 
 

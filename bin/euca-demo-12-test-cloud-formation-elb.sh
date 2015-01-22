@@ -228,7 +228,7 @@ if [ $demo_initialized = n ]; then
     exit 99
 fi
 
-next 50
+next
 
 
 ((++step))
@@ -300,7 +300,7 @@ if [ $choice = y ]; then
     echo "# euform-describe-stacks"
     euform-describe-stacks
 
-    next 50
+    next
 fi
 
 
@@ -585,7 +585,7 @@ if [ $choice = y ]; then
         fi
     done
 
-    next 50
+    next
 fi
 
 
