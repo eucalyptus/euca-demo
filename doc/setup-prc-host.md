@@ -5,11 +5,11 @@ Quick instructions to setup a PRC host to easily run these demos.
 
 Initialize New Host
 -------------------
-There's a script named ./bin/user-initialize-prc-host.sh which does this, but a
+There is a script named ./bin/user-initialize-prc-host.sh which does this, but a
 chicken-and-egg problem of getting this onto the host in question so that you
 can run it.
 
-Here's one way, after logging in as root on a PRC host which has just been
+Here is one way, after logging in as root on a PRC host which has just been
 kickstarted with the qa-centos6-x86_64-striped-drives profile:
 
     mkdir ~/bin
@@ -19,12 +19,22 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
     ./user-initialize-prc-host.sh
     exit
     
-This downloads the euca-demo repo to a standard location, then adjusts root's PATH
+This downloads the euca-demo repo to a standard location, then adjusts the root PATH
 to include the demo scripts.
 
 Logout, then login - to pick up profile changes.
 
 You can find the repo at /root/src/eucalyptus/euca-demo
+
+Changes to this project
+-----------------------
+If you need to edit and push changes back to GitHub, on CentOS 7, an attempt to push
+will prompt for both your GitHub username and password, so no changes are necessary.
+
+However, on CentOS 6, you will get a 403 Forbidden error, unless you run the following
+statement (replacing $github_username):
+
+    git remote set-url origin https://$github_username@github.com/eucalyptus/euca-demo.git
 
 Configure Environment Variables
 -------------------------------
