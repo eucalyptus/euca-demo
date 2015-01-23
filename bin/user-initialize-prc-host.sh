@@ -39,7 +39,7 @@ echo "============================================================"
 echo
 echo "# echo \"alias lsa='ls -lAF'\" > /etc/profile.d/local.sh"
 echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
-echo "source /etc/profile.d/local.sh"
+echo "# source /etc/profile.d/local.sh"
 source /etc/profile.d/local.sh
 sleep 1
 
@@ -80,16 +80,12 @@ echo "# cat << EOF > /root/.gitconfig"
 echo "> [user]"
 echo ">         name = Administrator"
 echo ">         email = admin@eucalyptus.com"
-echo "> [push]"
-echo ">         default = simple"
 echo "> EOF"
 tab="$(printf '\t')"
 cat << EOF > /root/.gitconfig
 [user]
 ${tab}name = Administrator
 ${tab}email = admin@eucalyptus.com
-[push]
-${tab}default = simple
 EOF
 sleep 1
 
