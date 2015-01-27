@@ -43,10 +43,12 @@ echo "    - alias lsa='ls -lAF'"
 echo
 echo "============================================================"
 echo
-echo "# echo \"alias lsa='ls -lAF'\" > /etc/profile.d/local.sh"
-echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
-echo "# source /etc/profile.d/local.sh"
-source /etc/profile.d/local.sh
+if [ ! -r /etc/profile.d/local.sh ]; then
+    echo "# echo \"alias lsa='ls -lAF'\" > /etc/profile.d/local.sh"
+    echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
+    echo "# source /etc/profile.d/local.sh"
+    source /etc/profile.d/local.sh
+fi
 sleep 1
 
 
@@ -73,26 +75,33 @@ echo "# chmod og-rwx ~/{bin,log,.ssh}"
 chmod og-rwx ~/{bin,log,.ssh}
 sleep 1
 
-echo "#"
-echo "# ssh-keyscan github.com 2> /dev/null >> ~/.ssh/known_hosts"
-ssh-keyscan github.com 2> /dev/null >> ~/.ssh/known_hosts
-echo "#"
-echo "# ssh-keyscan bitbucket.org 2> /dev/null >> ~/.ssh/known_hosts"
-ssh-keyscan bitbucket.org 2> /dev/null >> ~/.ssh/known_hosts
+if ! grep -s -q "^github.com" /root/.ssh/known_hosts; then
+    echo "#"
+    echo "# ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts"
+    ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+fi
+if ! grep -s -q "^bitbucket.org" /root/.ssh/known_hosts; then
+    echo "#"
+    echo "# ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts"
+    ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
+fi
 sleep 1
 
-echo "#"
-echo "# cat << EOF > ~/.gitconfig"
-echo "> [user]"
-echo ">         name = Administrator"
-echo ">         email = admin@eucalyptus.com"
-echo "> EOF"
-tab="$(printf '\t')"
-cat << EOF > ~/.gitconfig
+
+if [ ! -r /root/.gitconfig ]; then
+    echo "#"
+    echo "# cat << EOF > /root/.gitconfig"
+    echo "> [user]"
+    echo ">         name = Administrator"
+    echo ">         email = admin@eucalyptus.com"
+    echo "> EOF"
+    tab="$(printf '\t')"
+    cat << EOF > /root/.gitconfig
 [user]
 ${tab}name = Administrator
 ${tab}email = admin@eucalyptus.com
 EOF
+fi
 sleep 1
 
 
@@ -104,8 +113,10 @@ echo " $(printf '%2d' $step). Install git"
 echo
 echo "============================================================"
 echo
-echo "# yum install -y git"
-yum install -y git
+if ! rpm -q --quiet ruby; then
+    echo "# yum install -y git"
+    yum install -y git
+fi
 sleep 1
 
 
@@ -113,17 +124,19 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Download euca-demo git project"
+echo " $(printf '%2d' $step). Clone euca-demo git project"
 echo
 echo "============================================================"
 echo
-echo "# mkdir -p ~/src/eucalyptus"
-mkdir -p ~/src/eucalyptus
-echo "# cd ~/src/eucalyptus"
-cd ~/src/eucalyptus
-echo "#"
-echo "# git clone https://github.com/eucalyptus/euca-demo.git"
-git clone https://github.com/eucalyptus/euca-demo.git
+if [ ! -r /root/src/eucalyptus/euca-demo/README.md ]; then
+    echo "# mkdir -p /root/src/eucalyptus"
+    mkdir -p /root/src/eucalyptus
+    echo "# cd /root/src/eucalyptus"
+    cd /root/src/eucalyptus
+    echo "#"
+    echo "# git clone https://github.com/eucalyptus/euca-demo.git"
+    git clone https://github.com/eucalyptus/euca-demo.git
+fi
 sleep 1
 
 
@@ -135,16 +148,20 @@ echo " $(printf '%2d' $step). Add euca-demo scripts to PATH"
 echo
 echo "============================================================"
 echo
-echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile"
-sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
-echo "#"
-echo "# echo >> ~/.bash_profile"
-echo >> ~/.bash_profile
-echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> ~/.bash_profile"
-echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
-echo "# echo \"[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc\" >> ~/.bash_profile"
-echo "[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc" >> ~/.bash_profile
-echo "#"
+if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" /root/.bash_profile; then
+    echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile"
+    sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile
+fi
+if ! grep -s -q "Source Eucalyptus Administrator credentials" /root/.bash_profile; then
+    echo "#"
+    echo "# echo >> /root/.bash_profile"
+    echo >> /root/.bash_profile
+    echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> /root/.bash_profile"
+    echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
+    echo "# echo \"[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source \$HOME/creds/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
+    echo "[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source $\HOME/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
+fi
+echo
 echo "Please logout, then login to pick up profile changes"
 sleep 1
 
