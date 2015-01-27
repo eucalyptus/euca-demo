@@ -318,15 +318,15 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "more $templatesdir/elb.template"
+echo "more $templatesdir/elb.template.json"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# more $templatesdir/elb.template"
+    echo "# more $templatesdir/elb.template.json"
     if [ $interactive = 1 ]; then
-        more $templatesdir/elb.template
+        more $templatesdir/elb.template.json
     else
         # This will iterate over the file in a manner similar to more, but non-interactive
         ((rows=$(tput lines)-2))
@@ -338,7 +338,7 @@ if [ $choice = y ]; then
                 sleep 10
                 echo -e -n "\r                                \r"
             fi
-        done < $templatesdir/elb.template
+        done < $templatesdir/elb.template.json
     fi
 
     next 200
@@ -358,14 +358,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack"
+echo "euform-create-stack --template-file $templatesdir/elb.template.json -p WebServerImageId=$image_id ElbDemoStack"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack"
-    euform-create-stack --template-file $templatesdir/elb.template -p WebServerImageId=$image_id ElbDemoStack
+    echo "# euform-create-stack --template-file $templatesdir/elb.template.json -p WebServerImageId=$image_id ElbDemoStack"
+    euform-create-stack --template-file $templatesdir/elb.template.json -p WebServerImageId=$image_id ElbDemoStack
     
     next
 fi
