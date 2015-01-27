@@ -14,9 +14,9 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
 
     mkdir ~/bin
     cd ~/bin
-    wget https://raw.githubusercontent.com/eucalyptus/euca-demo/master/bin/user-initialize-prc-host.sh
+    wget https://raw.githubusercontent.com/eucalyptus/euca-demo/master/bin/root-initialize-prc-host.sh
     chmod -R 0700 ~/bin
-    ./user-initialize-prc-host.sh
+    ./root-initialize-prc-host.sh
     exit
     
 This downloads the euca-demo repo to a standard location, then adjusts the root PATH

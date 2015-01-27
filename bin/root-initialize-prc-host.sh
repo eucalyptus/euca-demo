@@ -13,6 +13,12 @@
 
 step=0
 
+# Verify we are logged on as root
+if [ $(id -u) != 0 ]; then
+    echo "You must be root to execute this script."
+    exit 1
+fi
+
 ((++step))
 echo
 echo "============================================================"
@@ -68,21 +74,21 @@ chmod og-rwx ~/{bin,log,.ssh}
 sleep 1
 
 echo "#"
-echo "# ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts"
-ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+echo "# ssh-keyscan github.com 2> /dev/null >> ~/.ssh/known_hosts"
+ssh-keyscan github.com 2> /dev/null >> ~/.ssh/known_hosts
 echo "#"
-echo "# ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts"
-ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
+echo "# ssh-keyscan bitbucket.org 2> /dev/null >> ~/.ssh/known_hosts"
+ssh-keyscan bitbucket.org 2> /dev/null >> ~/.ssh/known_hosts
 sleep 1
 
 echo "#"
-echo "# cat << EOF > /root/.gitconfig"
+echo "# cat << EOF > ~/.gitconfig"
 echo "> [user]"
 echo ">         name = Administrator"
 echo ">         email = admin@eucalyptus.com"
 echo "> EOF"
 tab="$(printf '\t')"
-cat << EOF > /root/.gitconfig
+cat << EOF > ~/.gitconfig
 [user]
 ${tab}name = Administrator
 ${tab}email = admin@eucalyptus.com
@@ -129,18 +135,18 @@ echo " $(printf '%2d' $step). Add euca-demo scripts to PATH"
 echo
 echo "============================================================"
 echo
-echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile"
-sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile
+echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile"
+sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
 echo "#"
-echo "# echo >> /root/.bash_profile"
-echo >> /root/.bash_profile
-echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> /root/.bash_profile"
-echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
-echo "# echo \"[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
-echo "[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
+echo "# echo >> ~/.bash_profile"
+echo >> ~/.bash_profile
+echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> ~/.bash_profile"
+echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
+echo "# echo \"[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc\" >> ~/.bash_profile"
+echo "[ -r ~/creds/eucalyptus/admin/eucarc ] && source ~/creds/eucalyptus/admin/eucarc" >> ~/.bash_profile
 echo "#"
 echo "Please logout, then login to pick up profile changes"
 sleep 1
 
 echo
-echo "User PRC modifications complete"
+echo "Root PRC modifications complete"
