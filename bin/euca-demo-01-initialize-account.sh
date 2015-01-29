@@ -361,6 +361,8 @@ else
     echo
     echo "unzip /root/creds/$demo_account/admin/admin.zip \\"
     echo "      -d /root/creds/$demo_account/admin/"
+    echo
+    echo "cat /root/creds/$demo_account/admin/eucarc"
 
     run 50
 
@@ -381,6 +383,10 @@ else
         unzip /root/creds/$demo_account/admin/admin.zip \
               -d /root/creds/$demo_account/admin/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/admin/eucarc    # invisibly fix deprecation message
+        pause
+
+        echo "# cat /root/creds/$demo_account/admin/eucarc"
+        cat /root/creds/$demo_account/admin/eucarc
 
         next
     fi
