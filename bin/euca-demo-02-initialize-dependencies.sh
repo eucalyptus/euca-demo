@@ -383,6 +383,8 @@ else
     echo
     echo "unzip /root/creds/$demo_account/$demo_user/$demo_user.zip \\"
     echo "      -d /root/creds/$demo_account/$demo_user/"
+    echo
+    echo "cat /root/creds/$demo_account/$demo_user/eucarc"
 
     run 50
 
@@ -403,6 +405,10 @@ else
         unzip /root/creds/$demo_account/$demo_user/$demo_user.zip \
               -d /root/creds/$demo_account/$demo_user/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_user/eucarc    # invisibly fix deprecation message
+        pause
+
+        echo "# source /root/creds/$demo_account/$demo_user/eucarc"
+        source /root/creds/$demo_account/$demo_user/eucarc
 
         next
     fi
@@ -562,6 +568,8 @@ else
     echo
     echo "unzip /root/creds/$demo_account/$demo_developer/$demo_developer.zip \\"
     echo "      -d /root/creds/$demo_account/$demo_developer/"
+    echo
+    echo "cat /root/creds/$demo_account/$demo_developer/eucarc"
 
     run 50
 
@@ -582,6 +590,10 @@ else
         unzip /root/creds/$demo_account/$demo_developer/$demo_developer.zip \
               -d /root/creds/$demo_account/$demo_developer/
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_developer/eucarc    # invisibly fix deprecation message
+        pause
+
+        echo "# source /root/creds/$demo_account/$demo_developer/eucarc"
+        source /root/creds/$demo_account/$demo_developer/eucarc
 
         next
     fi
