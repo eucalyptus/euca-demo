@@ -159,7 +159,7 @@ if ! grep -s -q "Source Eucalyptus Administrator credentials" /root/.bash_profil
     echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> /root/.bash_profile"
     echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
     echo "# echo \"[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source \$HOME/creds/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
-    echo "[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source $\HOME/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
+    echo "[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source \$HOME/creds/eucalyptus/admin/eucarc" >> /root/.bash_profile
 fi
 echo
 echo "Please logout, then login to pick up profile changes"
