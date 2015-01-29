@@ -30,15 +30,19 @@ next_default=5
 
 interactive=1
 speed=100
+showdnsconfig=0
+extended=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-e]"
     echo "  -I  non-interactive"
     echo "  -s  slower: increase pauses by 25%"
     echo "  -f  faster: reduce pauses by 25%"
+    echo "  -d  display parent DNS server sample configuration"
+    echo "  -e  extended confirmation of API calls"
 }
 
 run() {
@@ -121,11 +125,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isf? arg; do
+while getopts Isfde? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    d)  showdnsconfig=1;;
+    e)  extended=1;;
     ?)  usage
         exit 1;;
     esac
@@ -428,110 +434,113 @@ fi
 
 
 ((++step))
-if [ $EUCA_DNS_MODE = "CLC" ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
-    echo "    - This is an example of what changes need to be made on the"
-    echo "      parent DNS server which will delgate DNS to Eucalyptus"
-    echo "      for Eucalyptus DNS names used for instances, ELBs and"
-    echo "      services"
-    echo "    - You should make these changes to the parent DNS server"
-    echo "      manually, once, outside of creating and running demos"
-    echo "    - Instances will use the Cloud Controller's DNS Server directly"
-    echo "    - This configuration is based on the BIND configuration"
-    echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "# Add these lines to /etc/named.conf on the parent DNS server"
-    echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
-    echo "         {"
-    echo "                 type master;"
-    echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
-    echo "         };"
-    echo "#"
-    echo "# Create the zone file on the parent DNS server"
-    echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
-    echo "> $TTL    300"
-    echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
-    echo ">                                 $(date +%Y%m%d01)      ; Serial"
-    echo ">                                 1h              ; Refresh"
-    echo ">                                 5m              ; Retry"
-    echo ">                                 5m              ; Expire"
-    echo ">                                 5m )            ; Negative Cache TTL"
-    echo ">"
-    echo "> @               IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-    echo ">"
-    echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-    echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-    echo ">"
-    echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
-    echo "> EOF"
-
-    next 200
-else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
-    echo "    - This is an example of what changes need to be made on the"
-    echo "      parent DNS server which will delgate DNS to Eucalyptus"
-    echo "      for Eucalyptus DNS names used for instances, ELBs and"
-    echo "      services"
-    echo "    - You should make these changes to the parent DNS server"
-    echo "      manually, once, outside of creating and running demos"
-    echo "    - Instances will use the parent DNS Server, which will delegate"
-    echo "      Eucalyptus zones to the Cloud Controller DNS Server"
-    echo "    - This configuration is based on the BIND configuration"
-    echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "# Add these lines to /etc/named.conf on the parent DNS server"
-    echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
-    echo "         {"
-    echo "                 type master;"
-    echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
-    echo "         };"
-    echo "#"
-    echo "# Create the zone file on the parent DNS server"
-    echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
-    echo "> $TTL    300"
-    echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
-    echo ">                                 $(date +%Y%m%d01)      ; Serial"
-    echo ">                                 1h              ; Refresh"
-    echo ">                                 5m              ; Retry"
-    echo ">                                 5m              ; Expire"
-    echo ">                                 5m )            ; Negative Cache TTL"
-    echo ">"
-    echo "> @               IN      NS      ns1.cs.prc.eucalyptus-systems.com."
-    echo ">"
-    echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
-    echo "> ufs             IN      A       $EUCA_UFS_PUBLIC_IP"
-    echo "> compute         IN      CNAME   ufs"
-    echo "> objectstorage   IN      CNAME   ufs"
-    echo "> euare           IN      CNAME   ufs"
-    echo "> tokens          IN      CNAME   ufs"
-    echo "> autoscaling     IN      CNAME   ufs"
-    echo "> cloudformation  IN      CNAME   ufs"
-    echo "> cloudwatch      IN      CNAME   ufs"
-    echo "> loadbalancing   IN      CNAME   ufs"
-    echo ">"
-    echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-    echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-    echo "> EOF"
-
-    next 200
+if [ $showdnsconfig = 1 ]; then
+    if [ $EUCA_DNS_MODE = "CLC" ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
+        echo "    - This is an example of what changes need to be made on the"
+        echo "      parent DNS server which will delgate DNS to Eucalyptus"
+        echo "      for Eucalyptus DNS names used for instances, ELBs and"
+        echo "      services"
+        echo "    - You should make these changes to the parent DNS server"
+        echo "      manually, once, outside of creating and running demos"
+        echo "    - Instances will use the Cloud Controller's DNS Server directly"
+        echo "    - This configuration is based on the BIND configuration"
+        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "# Add these lines to /etc/named.conf on the parent DNS server"
+        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
+        echo "         {"
+        echo "                 type master;"
+        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+        echo "         };"
+        echo "#"
+        echo "# Create the zone file on the parent DNS server"
+        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+        echo "> $TTL    300"
+        echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
+        echo ">                                 $(date +%Y%m%d01)      ; Serial"
+        echo ">                                 1h              ; Refresh"
+        echo ">                                 5m              ; Retry"
+        echo ">                                 5m              ; Expire"
+        echo ">                                 5m )            ; Negative Cache TTL"
+        echo ">"
+        echo "> @               IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo ">"
+        echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo ">"
+        echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
+        echo "> EOF"
+    
+        next 200
+    else
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
+        echo "    - This is an example of what changes need to be made on the"
+        echo "      parent DNS server which will delgate DNS to Eucalyptus"
+        echo "      for Eucalyptus DNS names used for instances, ELBs and"
+        echo "      services"
+        echo "    - You should make these changes to the parent DNS server"
+        echo "      manually, once, outside of creating and running demos"
+        echo "    - Instances will use the parent DNS Server, which will delegate"
+        echo "      Eucalyptus zones to the Cloud Controller DNS Server"
+        echo "    - This configuration is based on the BIND configuration"
+        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "# Add these lines to /etc/named.conf on the parent DNS server"
+        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
+        echo "         {"
+        echo "                 type master;"
+        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+        echo "         };"
+        echo "#"
+        echo "# Create the zone file on the parent DNS server"
+        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+        echo "> $TTL    300"
+        echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
+        echo ">                                 $(date +%Y%m%d01)      ; Serial"
+        echo ">                                 1h              ; Refresh"
+        echo ">                                 5m              ; Retry"
+        echo ">                                 5m              ; Expire"
+        echo ">                                 5m )            ; Negative Cache TTL"
+        echo ">"
+        echo "> @               IN      NS      ns1.cs.prc.eucalyptus-systems.com."
+        echo ">"
+        echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
+        echo "> ufs             IN      A       $EUCA_UFS_PUBLIC_IP"
+        echo "> compute         IN      CNAME   ufs"
+        echo "> objectstorage   IN      CNAME   ufs"
+        echo "> euare           IN      CNAME   ufs"
+        echo "> tokens          IN      CNAME   ufs"
+        echo "> autoscaling     IN      CNAME   ufs"
+        echo "> cloudformation  IN      CNAME   ufs"
+        echo "> cloudwatch      IN      CNAME   ufs"
+        echo "> loadbalancing   IN      CNAME   ufs"
+        echo ">"
+        echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo "> EOF"
+    
+        next 200
+    fi
 fi
 
+    
 ((++step))
 clear
 echo
@@ -594,6 +603,139 @@ if [ $choice = y ]; then
 
     echo "# dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN"
     dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Confirm API commands work with new URLs"
+echo "    - Confirm service describe commands still work"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-regions"
+if [ $extended = 1 ]; then
+    echo
+    echo "euca-describe-availability-zones"
+    echo
+    echo "euca-describe-keypairs"
+    echo
+    echo "euca-describe-images"
+    echo
+    echo "euca-describe-instance-types"
+    echo
+    echo "euca-describe-instances"
+    echo
+    echo "euca-describe-instance-status"
+    echo
+    echo "euca-describe-groups"
+    echo
+    echo "euca-describe-volumes"
+    echo
+    echo "euca-describe-snapshots"
+fi
+echo
+echo "eulb-describe-lbs"
+echo
+echo "euform-describe-stacks"
+echo
+echo "euscale-describe-auto-scaling-groups"
+if [ $extended = 1 ]; then
+    echo
+    echo "euscale-describe-launch-configs"
+    echo
+    echo "euscale-describe-auto-scaling-instances"
+    echo
+    echo "euscale-describe-policies"
+fi
+echo
+echo "euwatch-describe-alarms"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-describe-regions"
+    euca-describe-regions
+    pause
+
+    if [ $extended = 1 ]; then
+        echo "# euca-describe-availability-zones"
+        euca-describe-availability-zones
+        pause
+
+        echo "# euca-describe-keypairs"
+        euca-describe-keypairs
+        pause
+
+        echo "# euca-describe-images"
+        euca-describe-images
+        pause
+
+        echo "# euca-describe-instance-types"
+        euca-describe-instance-types
+        pause
+
+        echo "# euca-describe-instances"
+        euca-describe-instances
+        pause
+
+        echo "# euca-describe-instance-status"
+        euca-describe-instance-status
+        pause
+
+        echo "# euca-describe-groups"
+        euca-describe-groups
+        pause
+
+        echo "# euca-describe-volumes"
+        euca-describe-volumes
+        pause
+
+        echo "# euca-describe-snapshots"
+        euca-describe-snapshots
+        pause
+    fi
+
+    echo
+    echo "# eulb-describe-lbs"
+    eulb-describe-lbs
+    pause
+
+    echo
+    echo "# euform-describe-stacks"
+    euform-describe-stacks
+    pause
+
+    echo
+    echo "# euscale-describe-auto-scaling-groups"
+    euscale-describe-auto-scaling-groups
+    pause
+
+    if [ $extended = 1 ]; then
+        echo "# euscale-describe-launch-configs"
+        euscale-describe-launch-configs
+        pause
+
+        echo "# euscale-describe-auto-scaling-instances"
+        euscale-describe-auto-scaling-instances
+        pause
+
+        echo "# euscale-describe-policies"
+        euscale-describe-policies
+        pause
+    fi
+
+    echo
+    echo "# euwatch-describe-alarms"
+    euwatch-describe-alarms
 
     next
 fi
