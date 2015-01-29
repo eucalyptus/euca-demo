@@ -57,13 +57,13 @@ nc1_domain_name="prc.eucalyptus-systems.com"
 nc1_public_ip=10.104.10.75
 nc1_private_ip=10.105.10.75
 
-dns_host_name="odc-f-21"
+dns_host_name="odc-f-38"
 dns_domain_name="prc.eucalyptus-systems.com"
-dns_public_ip=10.104.10.63
-dns_private_ip=10.105.10.63
+dns_public_ip=10.104.10.80
+dns_private_ip=10.105.10.80
 dns_mode="CLC"
 dns_timeout="30"
 dns_loadbalancer_ttl="15"
-dns_base_domain="mjcfb.cs.prc.eucalyptus-systems.com"
+dns_base_domain="fb.mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
