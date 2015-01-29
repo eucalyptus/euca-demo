@@ -204,6 +204,8 @@ echo
 echo "mkdir -p /root/creds/eucalyptus/admin"
 echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
+echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
 run 50
@@ -217,10 +219,14 @@ if [ $choice = y ]; then
     sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
     pause
 
+    echo "# cat /root/creds/eucalyptus/admin/eucarc"
+    cat /root/creds/eucalyptus/admin/eucarc
+    pause
+
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
 
-    next 50
+    next
 fi
 
 

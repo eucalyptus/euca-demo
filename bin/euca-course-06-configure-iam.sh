@@ -165,15 +165,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 
 next
 
 echo
+echo "# cat /root/creds/eucalyptus/admin/eucarc"
+cat /root/creds/eucalyptus/admin/eucarc
+pause
+
 echo "# source /root/creds/eucalyptus/admin/eucarc"
 source /root/creds/eucalyptus/admin/eucarc
 
-next 50
+next
 
 
 ((++step))
@@ -442,9 +448,13 @@ echo "euca-create-volume -s 1 -z AZ1"
 echo
 echo "euca-describe-volumes"
 echo
+echo "cat /root/creds/engineering/admin/eucarc"
+echo
 echo "source /root/creds/engineering/admin/eucarc"
 echo
 echo "euca-describe-volumes"
+echo
+echo "cat /root/creds/eucalyptus/admin/eucarc"
 echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 echo
@@ -468,12 +478,20 @@ if [ $choice = y ]; then
     euca-describe-volumes
     pause
 
+    echo "# cat /root/creds/engineering/admin/eucarc"
+    cat /root/creds/engineering/admin/eucarc
+    pause
+
     echo "# source /root/creds/engineering/admin/eucarc"
     source /root/creds/engineering/admin/eucarc
     pause
 
     echo "# euca-describe-volumes"
     euca-describe-volumes
+    pause
+
+    echo "# cat /root/creds/eucalyptus/admin/eucarc"
+    cat /root/creds/eucalyptus/admin/eucarc
     pause
 
     echo "# source /root/creds/eucalyptus/admin/eucarc"
@@ -493,7 +511,7 @@ if [ $choice = y ]; then
     echo "# euca-describe-volumes"
     euca-describe-volumes
 
-    next
+    next 200
 fi
 
 
@@ -508,6 +526,8 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "cat /root/creds/engineering/admin/eucarc"
+echo
 echo "source /root/creds/engineering/admin/eucarc"
 echo
 echo "euare-groupcreate -g describe"
@@ -517,6 +537,10 @@ run 50
 
 if [ $choice = y ]; then
     echo
+    echo "# cat /root/creds/engineering/admin/eucarc"
+    cat /root/creds/engineering/admin/eucarc
+    pause
+
     echo "# source /root/creds/engineering/admin/eucarc"
     source /root/creds/engineering/admin/eucarc
     pause
@@ -526,7 +550,7 @@ if [ $choice = y ]; then
     echo "# euare-groupcreate -g full"
     euare-groupcreate -g full
 
-    next 50
+    next
 fi
 
 
@@ -572,6 +596,8 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo
 echo "source /root/creds/eucalyptus/admin/eucarc"
 echo
 echo "euare-usermodloginprofile –u admin --as-account ops –p password123"
@@ -580,6 +606,10 @@ run 50
 
 if [ $choice = y ]; then
     echo
+    echo "# cat /root/creds/eucalyptus/admin/eucarc"
+    cat /root/creds/eucalyptus/admin/eucarc
+    pause
+
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
     pause
@@ -587,7 +617,7 @@ if [ $choice = y ]; then
     echo "# euare-usermodloginprofile -u admin -p password123 --as-account ops"
     euare-usermodloginprofile -u admin -p password123 --as-account ops
 
-    next 50
+    next
 fi
 
 

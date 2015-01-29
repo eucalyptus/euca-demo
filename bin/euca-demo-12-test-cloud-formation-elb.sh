@@ -184,11 +184,17 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "cat /root/creds/$demo_account/admin/eucarc"
+echo
 echo "source /root/creds/$demo_account/admin/eucarc"
 
 next
 
 echo
+echo "# cat /root/creds/$demo_account/admin/eucarc"
+cat /root/creds/$demo_account/admin/eucarc
+pause
+
 echo "# source /root/creds/$demo_account/admin/eucarc"
 source /root/creds/$demo_account/admin/eucarc
 

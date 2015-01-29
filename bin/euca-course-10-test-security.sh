@@ -166,15 +166,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "cat /root/creds/ops/admin/eucarc"
+echo
 echo "source /root/creds/ops/admin/eucarc"
 
 next
 
 echo
+echo "# cat /root/creds/ops/admin/eucarc"
+cat /root/creds/ops/admin/eucarc
+pause
+
 echo "# source /root/creds/ops/admin/eucarc"
 source /root/creds/ops/admin/eucarc
 
-next 50
+next
 
 
 ((++step))
