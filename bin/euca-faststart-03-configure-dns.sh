@@ -544,56 +544,56 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "dig compute.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short compute.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig objectstorage.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig euare.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short euare.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig tokens.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short tokens.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig autoscaling.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig cloudformation.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig cloudwatch.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN"
 echo
-echo "dig loadbalancing.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# dig compute.$EUCA_DNS_BASE_DOMAIN"
-    dig compute.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short compute.$EUCA_DNS_BASE_DOMAIN"
+    dig +short compute.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig objectstorage.$EUCA_DNS_BASE_DOMAIN"
-    dig objectstorage.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN"
+    dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig euare.$EUCA_DNS_BASE_DOMAIN"
-    dig euare.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short euare.$EUCA_DNS_BASE_DOMAIN"
+    dig +short euare.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig tokens.$EUCA_DNS_BASE_DOMAIN"
-    dig tokens.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short tokens.$EUCA_DNS_BASE_DOMAIN"
+    dig +short tokens.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig autoscaling.$EUCA_DNS_BASE_DOMAIN"
-    dig autoscaling.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN"
+    dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig cloudformation.$EUCA_DNS_BASE_DOMAIN"
-    dig cloudformation.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN"
+    dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig cloudwatch.$EUCA_DNS_BASE_DOMAIN"
-    dig cloudwatch.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN"
+    dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN
     pause
 
-    echo "# dig loadbalancing.$EUCA_DNS_BASE_DOMAIN"
-    dig loadbalancing.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN"
+    dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN
 
     next
 fi
