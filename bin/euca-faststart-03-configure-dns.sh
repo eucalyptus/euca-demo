@@ -187,29 +187,90 @@ next 50
 
 
 ((++step))
+if [ $EUCA_DNS_MODE = "CLC" ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
+    echo "    - Instances will use the Cloud Controller's DNS Server directly"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
+    echo
+    echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
+    
+    run 50
+    
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
+        euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
+        echo "#"
+        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
+        euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
+    
+        next 50
+    fi
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
+    echo "    - Instances will use the parent DNS Server, which will delegate"
+    echo "      Eucalyptus zones to the Cloud Controller DNS Server"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
+    echo
+    echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
+        euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
+        echo "#"
+        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
+        euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
+
+        next 50
+    fi
+fi
+
+
+((++step))
 clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
+echo " $(printf '%2d' $step). Configure DNS Timeout and TTL"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
+echo "euca-modify-property -p dns.tcp.timeout_seconds = $EUCA_DNS_TIMEOUT"
 echo
-echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
+echo "euca-modify-property -p loadbalancing.loadbalancer_dns_ttl = $EUCA_DNS_LOADBALANCER_TTL"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
-    euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
+    echo "# euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT"
+    euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT
     echo "#"
-    echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
-    euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
+    echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
+    euca-modify-property -p loadbalancing.loadbalancer_dns_ttl=$EUCA_DNS_LOADBALANCER_TTL
 
     next 50
 fi
@@ -220,15 +281,13 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Configure DNS Domain and SubDomain"
+echo " $(printf '%2d' $step). Configure DNS Domain"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
 echo "euca-modify-property -p system.dns.dnsdomain = $EUCA_DNS_BASE_DOMAIN"
-echo
-echo "euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
 
 run 50
 
@@ -236,6 +295,32 @@ if [ $choice = y ]; then
     echo
     echo "# euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN"
     euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Configure DNS Sub-Domains"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
+echo
+echo "euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
+    euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
     echo "#"
     echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
     euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
@@ -249,7 +334,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Turn on IP Mapping"
+echo " $(printf '%2d' $step). Enable DNS"
 echo
 echo "============================================================"
 echo
@@ -257,7 +342,7 @@ echo "Commands:"
 echo
 echo "euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
 echo
-echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
+echo "euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
 
 run 50
 
@@ -266,30 +351,6 @@ if [ $choice = y ]; then
     echo "# euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
     euca-modify-property -p bootstrap.webservices.use_instance_dns=true
     echo "#"
-    echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
-    euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
-
-    next 50
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo " $(printf '%2d' $step). Enable DNS Delegation"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
     echo "# euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
     euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
 
@@ -366,11 +427,20 @@ echo "      for Eucalyptus DNS names used for instances, ELBs and"
 echo "      services"
 echo "    - You should make these changes to the parent DNS server"
 echo "      manually, once, outside of creating and running demos"
+echo "    - This currently shows only the CLC method as used on the"
+echo "      cs.prc.eucalyptus-systems.com" DNS server"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo "# Add these lines to /etc/named.conf on the parent DNS server"
+echo "         zone "$EUCA_DNS_BASE_DOMAIN" IN"
+echo "         {"
+echo "                 type master;"
+echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+echo "         };"
+echo "#"
 echo "# Create the zone file on the parent DNS server"
 echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
 echo "> $TTL    300"
@@ -389,13 +459,99 @@ echo "> "
 echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
 echo "> EOF"
 echo "#"
-echo "# Add these lines to /etc/named.conf on the parent DNS server"
-echo "         zone "$EUCA_DNS_BASE_DOMAIN" IN"
-echo "         {"
-echo "                 type master;"
-echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
-echo "         };"
 
+next 200
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Confirm DNS resolution for Services"
+echo "    - Confirm service URLS in eucarc resolve"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "dig compute.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig objectstorage.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig euare.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig tokens.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig autoscaling.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig cloudformation.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig cloudwatch.$EUCA_DNS_BASE_DOMAIN"
+echo
+echo "dig loadbalancing.$EUCA_DNS_BASE_DOMAIN"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# dig compute.$EUCA_DNS_BASE_DOMAIN"
+    dig compute.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig objectstorage.$EUCA_DNS_BASE_DOMAIN"
+    dig objectstorage.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig euare.$EUCA_DNS_BASE_DOMAIN"
+    dig euare.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig tokens.$EUCA_DNS_BASE_DOMAIN"
+    dig tokens.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig autoscaling.$EUCA_DNS_BASE_DOMAIN"
+    dig autoscaling.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig cloudformation.$EUCA_DNS_BASE_DOMAIN"
+    dig cloudformation.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig cloudwatch.$EUCA_DNS_BASE_DOMAIN"
+    dig cloudwatch.$EUCA_DNS_BASE_DOMAIN
+    pause
+
+    echo "# dig loadbalancing.$EUCA_DNS_BASE_DOMAIN"
+    dig loadbalancing.$EUCA_DNS_BASE_DOMAIN
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Confirm DNS resolution for Instances"
+echo "    - Confirm instance URLS in command output resolve"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "TBD"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# TBD"
+
+    next 
+fi
 
 end=$(date +%s)
 
