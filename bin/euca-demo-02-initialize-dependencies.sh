@@ -407,8 +407,8 @@ else
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_user/eucarc    # invisibly fix deprecation message
         pause
 
-        echo "# source /root/creds/$demo_account/$demo_user/eucarc"
-        source /root/creds/$demo_account/$demo_user/eucarc
+        echo "# cat /root/creds/$demo_account/$demo_user/eucarc"
+        cat /root/creds/$demo_account/$demo_user/eucarc
 
         next
     fi
@@ -592,8 +592,8 @@ else
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$demo_account/$demo_developer/eucarc    # invisibly fix deprecation message
         pause
 
-        echo "# source /root/creds/$demo_account/$demo_developer/eucarc"
-        source /root/creds/$demo_account/$demo_developer/eucarc
+        echo "# cat /root/creds/$demo_account/$demo_developer/eucarc"
+        cat /root/creds/$demo_account/$demo_developer/eucarc
 
         next
     fi
