@@ -272,7 +272,7 @@ echo "Commands:"
 echo
 echo "euca-modify-property -p dns.tcp.timeout_seconds = $EUCA_DNS_TIMEOUT"
 echo
-echo "euca-modify-property -p loadbalancing.loadbalancer_dns_ttl = $EUCA_DNS_LOADBALANCER_TTL"
+echo "euca-modify-property -p services.loadbalancing.dns_ttl = $EUCA_DNS_LOADBALANCER_TTL"
 
 run 50
 
@@ -281,8 +281,8 @@ if [ $choice = y ]; then
     echo "# euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT"
     euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT
     echo "#"
-    echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
-    euca-modify-property -p loadbalancing.loadbalancer_dns_ttl=$EUCA_DNS_LOADBALANCER_TTL
+    echo "# euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
+    euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL
 
     next 50
 fi
@@ -325,7 +325,7 @@ echo "Commands:"
 echo
 echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
 echo
-echo "euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
+echo "euca-modify-property -p services.loadbalancing.dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
 
 run 50
 
@@ -334,8 +334,8 @@ if [ $choice = y ]; then
     echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
     euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
     echo "#"
-    echo "# euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
-    euca-modify-property -p loadbalancing.loadbalancer_dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
+    echo "# euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
+    euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
 
     next 50
 fi
