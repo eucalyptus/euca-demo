@@ -168,7 +168,7 @@ if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
     exit 21
 fi
 
-if [ ! rpm -q --quiet w3m ]; then
+if ! rpm -q --quiet w3m; then
     echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
     exit 98
 fi
