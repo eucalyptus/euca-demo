@@ -410,6 +410,7 @@ if [ $choice = y ]; then
         echo "# dig +short $lb_name"
         lb_public_ip=$(dig +short $lb_name)
         if [ -n "$lb_public_ip" ]; then
+            echo $lb_public_ip
             break
         else
             echo
