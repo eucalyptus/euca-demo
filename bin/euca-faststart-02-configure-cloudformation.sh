@@ -228,9 +228,23 @@ else
 
         next 50
     fi
+fi
 
 
-    ((++step))
+((++step))
+if grep -s -q "AWS_CLOUDFORMATION_URL=" /root/creds/eucalyptus/admin/eucarc; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Refresh Administrator Credentials"
+    echo "    - Unnecessary! Credentials contain Cloudformation URL"
+    echo
+    echo "============================================================"
+
+    next 50
+
+else
     clear
     echo
     echo "============================================================"
@@ -248,6 +262,8 @@ else
     echo "rm -Rf /root/creds/eucalyptus/admin"
     echo "mkdir -p /root/creds/eucalyptus/admin"
     echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+    echo
+    echo "cat /root/creds/eucalyptus/admin/eucarc"
     echo
     echo "source /root/creds/eucalyptus/admin/eucarc"
 
@@ -278,6 +294,10 @@ else
         if [ -r /root/eucarc ]; then
             cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
         fi
+        pause
+
+        echo "# cat /root/creds/eucalyptus/admin/eucarc"
+        cat /root/creds/eucalyptus/admin/eucarc
         pause
 
         echo "# source /root/creds/eucalyptus/admin/eucarc"
