@@ -741,30 +741,5 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo " $(printf '%2d' $step). Confirm DNS resolution for Instances"
-echo "    - Confirm instance URLS in command output resolve"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "TBD"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# TBD"
-
-    next 
-fi
-
-end=$(date +%s)
-
 echo
 echo "Eucalyptus DNS configured (time: $(date -u -d @$((end-start)) +"%T"))"
