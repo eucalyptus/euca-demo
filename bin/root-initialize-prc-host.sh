@@ -124,6 +124,21 @@ sleep 1
 echo
 echo "============================================================"
 echo
+echo " $(printf '%2d' $step). Install w3m"
+echo
+echo "============================================================"
+echo
+if ! rpm -q --quiet w3m; then
+    echo "# yum install -y w3m"
+    yum install -y w3m
+fi
+sleep 1
+
+
+((++step))
+echo
+echo "============================================================"
+echo
 echo " $(printf '%2d' $step). Clone euca-demo git project"
 echo
 echo "============================================================"
