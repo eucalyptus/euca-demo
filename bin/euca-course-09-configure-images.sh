@@ -183,15 +183,21 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
+    echo "cat /root/creds/eucalyptus/admin/eucarc"
+    echo
     echo "source /root/creds/eucalyptus/admin/eucarc"
 
     next
 
     echo
+    echo "# cat /root/creds/eucalyptus/admin/eucarc"
+    cat /root/creds/eucalyptus/admin/eucarc
+    pause
+
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
 
-    next 50
+    next
 fi
 
 
@@ -437,6 +443,8 @@ if [ $is_clc = y ]; then
     echo "unzip /root/creds/ops/admin/ops-admin.zip \\"
     echo "      -d /root/creds/ops/admin/"
     echo
+    echo "cat /root/creds/ops/admin/eucarc"
+    echo
     echo "source /root/creds/ops/admin/eucarc"
 
     run 50
@@ -460,10 +468,14 @@ if [ $is_clc = y ]; then
         sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/ops/admin/eucarc    # invisibly fix deprecation message
         pause
 
+        echo "# cat /root/creds/ops/admin/eucarc"
+        cat /root/creds/ops/admin/eucarc
+        pause
+
         echo "# source /root/creds/ops/admin/eucarc"
         source /root/creds/ops/admin/eucarc
 
-        next 50
+        next
     fi
 fi
 
@@ -720,6 +732,8 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
+    echo "cat /root/creds/eucalyptus/admin/eucarc"
+    echo
     echo "source /root/creds/eucalyptus/admin/eucarc"
     echo
     echo "euca-describe-instances verbose"
@@ -728,6 +742,10 @@ if [ $is_clc = y ]; then
 
     if [ $choice = y ]; then
         echo
+        echo "# cat /root/creds/eucalyptus/admin/eucarc"
+        cat /root/creds/eucalyptus/admin/eucarc
+        pause
+
         echo "# source /root/creds/eucalyptus/admin/eucarc"
         source /root/creds/eucalyptus/admin/eucarc
         pause
@@ -737,6 +755,7 @@ if [ $is_clc = y ]; then
 
         echo
         echo "Please run next step on all Node Controller services at this time"
+
         next 400
     fi
 fi

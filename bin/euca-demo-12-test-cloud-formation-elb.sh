@@ -44,17 +44,17 @@ delete_default=20
 
 interactive=1
 speed=100
-demo_account=demo
+account=demo
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account]"
-    echo "  -I               non-interactive"
-    echo "  -s               slower: increase pauses by 25%"
-    echo "  -f               faster: reduce pauses by 25%"
-    echo "  -a demo_account  account to use in demo (default: $demo_account)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account]"
+    echo "  -I          non-interactive"
+    echo "  -s          slower: increase pauses by 25%"
+    echo "  -f          faster: reduce pauses by 25%"
+    echo "  -a account  account to use in demo (default: $account)"
 }
 
 run() {
@@ -142,7 +142,7 @@ while getopts Isfa:? arg; do
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    a)  demo_account="$OPTARG";;
+    a)  account="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -158,9 +158,9 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
-    echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
-    echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
+if [ ! -r /root/creds/$account/admin/eucarc ]; then
+    echo "-a $account invalid: Could not find Account Administrator credentials!"
+    echo "   Expected to find: /root/creds/$account/admin/eucarc"
     exit 21
 fi
 
@@ -174,23 +174,29 @@ clear
 echo
 echo "============================================================"
 echo
-if [ $demo_account = eucalyptus ]; then
+if [ $account = eucalyptus ]; then
     echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 else
-    echo "$(printf '%2d' $step). Use Demo ($demo_account) Account Administrator credentials"
+    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
 fi
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "source /root/creds/$demo_account/admin/eucarc"
+echo "cat /root/creds/$account/admin/eucarc"
+echo
+echo "source /root/creds/$account/admin/eucarc"
 
 next
 
 echo
-echo "# source /root/creds/$demo_account/admin/eucarc"
-source /root/creds/$demo_account/admin/eucarc
+echo "# cat /root/creds/$account/admin/eucarc"
+cat /root/creds/$account/admin/eucarc
+pause
+
+echo "# source /root/creds/$account/admin/eucarc"
+source /root/creds/$account/admin/eucarc
 
 next 50
 
@@ -479,7 +485,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
 
 run 50
 
@@ -491,12 +497,12 @@ if [ $choice = y ]; then
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
         if [ $interactive = 1 ]; then
-            ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
+            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip
             RC=$?
         else
-            ssh -T -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip << EOF
+            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5

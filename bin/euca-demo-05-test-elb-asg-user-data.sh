@@ -34,28 +34,30 @@ run_default=10
 pause_default=2
 next_default=5
 
-create_attempts=6
+create_attempts=12
 create_default=20
-login_attempts=6
+login_attempts=12
 login_default=20
 replace_attempts=12
 replace_default=20
-delete_attempts=6
+delete_attempts=12
 delete_default=20
 
 interactive=1
 speed=100
-demo_account=demo
+account=demo
+gui=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a demo_account]"
-    echo "  -I               non-interactive"
-    echo "  -s               slower: increase pauses by 25%"
-    echo "  -f               faster: reduce pauses by 25%"
-    echo "  -a demo_account  account to use in demos (default: $demo_account)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g]"
+    echo "  -I          non-interactive"
+    echo "  -s          slower: increase pauses by 25%"
+    echo "  -f          faster: reduce pauses by 25%"
+    echo "  -a account  account to use in demos (default: $account)"
+    echo "  -g          add steps and time to demo GUI in another window"
 }
 
 run() {
@@ -138,12 +140,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:? arg; do
+while getopts Isfa:g? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    a)  demo_account="$OPTARG";;
+    a)  account="$OPTARG";;
+    g)  gui=1;;
     ?)  usage
         exit 1;;
     esac
@@ -159,10 +162,15 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/$demo_account/admin/eucarc ]; then
-    echo "-a $demo_account invalid: Could not find Account Administrator credentials!"
-    echo "   Expected to find: /root/creds/$demo_account/admin/eucarc"
+if [ ! -r /root/creds/$account/admin/eucarc ]; then
+    echo "-a $account invalid: Could not find Account Administrator credentials!"
+    echo "   Expected to find: /root/creds/$account/admin/eucarc"
     exit 21
+fi
+
+if ! rpm -q --quiet w3m; then
+    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+    exit 98
 fi
 
 
@@ -175,21 +183,27 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Demo ($demo_account) Account Administrator credentials"
+echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "source /root/creds/$demo_account/admin/eucarc"
+echo "cat /root/creds/$account/admin/eucarc"
+echo
+echo "source /root/creds/$account/admin/eucarc"
 
 next
 
 echo
-echo "# source /root/creds/$demo_account/admin/eucarc"
-source /root/creds/$demo_account/admin/eucarc
+echo "# cat /root/creds/$account/admin/eucarc"
+cat /root/creds/$account/admin/eucarc
+pause
 
-next 50
+echo "# source /root/creds/$account/admin/eucarc"
+source /root/creds/$account/admin/eucarc
+
+next
 
 
 ((++step))
@@ -235,6 +249,9 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List initial resources"
 echo "    - So we can compare with what this demo creates"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -298,6 +315,14 @@ if [ $choice = y ]; then
     euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
 
     next 200
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
@@ -356,6 +381,8 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create an ElasticLoadBalancer"
+echo "    - Wait for ELB to become available"
+echo "    - NOTE: This can take about 100 - 140 seconds"
 echo
 echo "============================================================"
 echo
@@ -375,6 +402,23 @@ if [ $choice = y ]; then
 
     echo "# eulb-describe-lbs DemoELB"
     eulb-describe-lbs DemoELB
+
+    lb_name=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out)
+    ((seconds=$create_default * $speed / 100))
+    while ((attempt++ <= $create_attempts)); do
+        echo
+        echo "# dig +short $lb_name"
+        lb_public_ip=$(dig +short $lb_name)
+        if [ -n "$lb_public_ip" ]; then
+            echo $lb_public_ip
+            break
+        else
+            echo
+            echo -n "Not available. Waiting $seconds seconds..."
+            sleep $seconds
+            echo " Done"
+        fi
+    done
 
     next
 fi
@@ -436,7 +480,7 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+image_id=$(euca-describe-images | grep "centos.raw.manifest.xml" | cut -f2)
 
 clear
 echo
@@ -632,6 +676,9 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List updated resources"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -695,6 +742,14 @@ if [ $choice = y ]; then
     euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
 
     next 200
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
@@ -725,7 +780,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
 
 run 50
 
@@ -737,19 +792,18 @@ if [ $choice = y ]; then
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip"
+        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
         if [ $interactive = 1 ]; then
-            ssh -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip
+            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip
             RC=$?
         else
-            ssh -T -i /root/creds/$demo_account/admin/admin-demo.pem $user@$public_ip << EOF
+            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
 echo
 echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
-cat /tmp/public-ip4
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4; echo
 sleep 5
 EOF
             RC=$?
@@ -763,6 +817,76 @@ EOF
             echo " Done"
         fi
     done
+
+    next
+fi
+
+
+((++step))
+instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+unset instance_names
+for instance_id in $instance_ids; do
+    instance_names="$instance_names $(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)"
+done
+instance_names=${instance_names# *}
+
+lb_name=$(eulb-describe-lbs | cut -f3)
+lb_public_ip=$(dig +short $lb_name)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm webpage is visible"
+echo "    - Wait for both instances to be \"InService\""
+echo "    - Attempt to display webpage first directly via instances,"
+echo "      then through the ELB"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+for instance_name in $instance_names; do
+    echo
+    echo "w3m -dump $instance_name"
+done
+if [ -n "$lb_public_ip" ]; then
+    echo
+    echo "w3m -dump $lb_name"
+    echo "w3m -dump $lb_name"
+fi
+
+run 50
+
+if [ $choice = y ]; then
+    attempt=0
+    ((seconds=$create_default * $speed / 100))
+    while ((attempt++ <= create_attempts)); do
+        echo
+        echo "# eulb-describe-instance-health DemoELB"
+        eulb-describe-instance-health DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
+
+        if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge 2 ]; then
+            break
+        else
+            echo
+            echo -n "At least 2 instances are not yet \"InService\". Waiting $seconds seconds..."
+            sleep $seconds
+            echo " Done"
+        fi
+    done
+
+    echo
+    for instance_name in $instance_names; do
+        echo "# w3m -dump $instance_name"
+        w3m -dump $instance_name
+        pause
+    done
+    if [ -n "$lb_public_ip" ]; then
+        echo "# w3m -dump $lb_name"
+        w3m -dump $lb_name
+        echo "# w3m -dump $lb_name"
+        w3m -dump $lb_name
+    fi
 
     next
 fi
@@ -800,7 +924,7 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+image_id=$(euca-describe-images | grep "centos.raw.manifest.xml" | cut -f2)
 user=root
 
 clear
@@ -883,12 +1007,17 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Trigger AutoScalingGroup Instance Replacement"
-echo "    - We will terminate existing Instances of the AutoScalingGroup,"
-echo "      and confirm replacement Instances are created with the new"
+echo "    - We will terminate an existing Instance of the AutoScalingGroup,"
+echo "      and confirm a replacement Instance is created with the new"
 echo "      LaunchConfiguration and User-Data Script"
-echo "    - Wait for a replacement instance to be \"InService\" before"
-echo "      terminating the next Instance"
-echo "    - NOTE: This can take about 120 - 180 seconds"
+echo "    - Wait for a replacement instance to be \"InService\""
+echo "    - When done, one instance will use the new LaunchConfiguration,"
+echo "      while the other will still use the old LaunchConfiguration"
+echo "      (normally we'd iterate through all instances when updating the application)"
+echo "    - NOTE: This can take about 140 - 200 seconds (per instance)"
+if [ $gui = 1 ];  then
+    echo "    - After confirming replacement here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -900,7 +1029,7 @@ for instance_id in $instance_ids; do
     echo "euscale-describe-auto-scaling-groups DemoASG"
     echo
     echo "eulb-describe-instance-health DemoELB (repeat until both instances are back is \"InService\")"
-    break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
+    break    # delete only one at this time
 done
 
 run 150
@@ -931,33 +1060,237 @@ if [ $choice = y ]; then
                 echo " Done"
             fi
         done
-        break    # breaking here due to an apparent fidelity bug, deleting one instance, deletes the second once the first is back in service
+        break    # delete only one at this time
+    done
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
+fi
+
+
+((++step))
+instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+unset instance_names
+for instance_id in $instance_ids; do
+    instance_names="$instance_names $(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)"
+done
+instance_names=${instance_names# *}
+
+lb_name=$(eulb-describe-lbs | cut -f3)
+lb_public_ip=$(dig +short $lb_name)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm updated webpage is visible"
+echo "    - Attempt to display webpage first directly via instances,"
+echo "      then through the ELB"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+for instance_name in $instance_names; do
+    echo
+    echo "w3m -dump $instance_name"
+done
+if [ -n "$lb_public_ip" ]; then
+    echo
+    echo "w3m -dump $lb_name"
+    echo "w3m -dump $lb_name"
+fi
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    for instance_name in $instance_names; do
+        echo "# w3m -dump $instance_name"
+        w3m -dump $instance_name
+        pause
+    done
+    if [ -n "$lb_public_ip" ]; then
+        echo "# w3m -dump $lb_name"
+        w3m -dump $lb_name
+        echo "# w3m -dump $lb_name"
+        w3m -dump $lb_name
+    fi
+
+    next
+fi
+
+
+((++step))
+instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Delete the AutoScalingGroup"
+echo "    - We must first reduce sizes to zero"
+echo "    - Pause a bit longer for changes to be acted upon"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0"
+echo 
+echo "euscale-delete-auto-scaling-group DemoASG"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0"
+    euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0
+
+    attempt=0
+    ((seconds=$delete_default * $speed / 100))
+    while ((attempt++ <= delete_attempts)); do
+        echo
+        echo "# euca-describe-instances $instance_ids"
+        euca-describe-instances $instance_ids | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
+
+        if [ $(grep -c "terminated" $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out) -ge 2 ]; then
+            break
+        else
+            echo
+            echo -n "Instances not yet \"terminated\". Waiting $seconds seconds..."
+            sleep $seconds
+            echo " Done"
+        fi
+    done
+
+    echo "# euscale-delete-auto-scaling-group DemoASG"
+    euscale-delete-auto-scaling-group DemoASG
+    pause
+
+    # While the instances are deleted by deletion of the ASG, which removes the terminated results from listings
+    for instance_id in $instance_ids; do
+        euca-terminate-instances $instance_id &> /dev/null
     done
 
     next
 fi
 
 
-# Initially, I think I'm going to want to bail on this demo at this point,
-# instead of tearing down all resources created to get back to the initial
-# configuration, to save time and move onto the CloudFormation demo.
-
-end=$(date +%s)
-
+((++step))
+clear
 echo
-echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"
-echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
-exit
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Delete the Alarms"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euwatch-delete-alarms DemoAddNodesAlarm"
+echo "euwatch-delete-alarms DemoDelNodesAlarm"
 
-# Add steps to unwind demo objects here, by deleting everything created above in reverse order
-# Then list remaining resources to insure system is as it was before starting demo, so this demo
-# is repeatable in the same account
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euwatch-delete-alarms DemoAddNodesAlarm"
+    euwatch-delete-alarms DemoAddNodesAlarm
+    echo "# euwatch-delete-alarms DemoDelNodesAlarm"
+    euwatch-delete-alarms DemoDelNodesAlarm
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Delete the LaunchConfigurations"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euscale-delete-launch-config DemoLC"
+echo "euscale-delete-launch-config DemoLC-2"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euscale-delete-launch-config DemoLC"
+    euscale-delete-launch-config DemoLC
+    echo "# euscale-delete-launch-config DemoLC-2"
+    euscale-delete-launch-config DemoLC-2
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Delete the ElasticLoadBalancer"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "eulb-delete-lb DemoELB"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# eulb-delete-lb DemoELB"
+    eulb-delete-lb DemoELB
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Delete the Security Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-delete-group DemoSG"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-delete-group DemoSG"
+    euca-delete-group DemoSG
+
+    next
+fi
+
 
 ((++step))
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List remaining resources"
 echo "    - Confirm we are back to our initial set"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -976,6 +1309,8 @@ echo
 echo "euscale-describe-launch-configs"
 echo
 echo "euscale-describe-auto-scaling-groups"
+echo
+echo "euscale-describe-policies"
 echo
 echo "euwatch-describe-alarms"
 
@@ -1011,10 +1346,22 @@ if [ $choice = y ]; then
     euscale-describe-auto-scaling-groups
     pause
 
+    echo "# euscale-describe-policies"
+    euscale-describe-policies
+    pause
+
     echo "# euwatch-describe-alarms"
     euwatch-describe-alarms
 
     next 200
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
