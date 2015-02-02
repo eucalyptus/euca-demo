@@ -113,7 +113,7 @@ echo " $(printf '%2d' $step). Install git"
 echo
 echo "============================================================"
 echo
-if ! rpm -q --quiet ruby; then
+if ! rpm -q --quiet git; then
     echo "# yum install -y git"
     yum install -y git
 fi
