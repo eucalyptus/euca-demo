@@ -441,9 +441,9 @@ fi
 ((++step))
 if [ $is_clc = y ]; then
     nodes="$EUCA_NC1_PRIVATE_IP"
-    [ -n $EUCA_NC2_PRIVATE_IP ] && nodes="$nodes $EUCA_NC2_PRIVATE_IP"
-    [ -n $EUCA_NC3_PRIVATE_IP ] && nodes="$nodes $EUCA_NC3_PRIVATE_IP"
-    [ -n $EUCA_NC4_PRIVATE_IP ] && nodes="$nodes $EUCA_NC4_PRIVATE_IP"
+    [ -z $EUCA_NC2_PRIVATE_IP ] || nodes="$nodes $EUCA_NC2_PRIVATE_IP"
+    [ -z $EUCA_NC3_PRIVATE_IP ] || nodes="$nodes $EUCA_NC3_PRIVATE_IP"
+    [ -z $EUCA_NC4_PRIVATE_IP ] || nodes="$nodes $EUCA_NC4_PRIVATE_IP"
 
     clear
     echo

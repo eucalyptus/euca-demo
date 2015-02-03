@@ -161,10 +161,10 @@ if [ $is_clc = y ]; then
     [[ $need_ips =~ .*${EUCA_CC_PUBLIC_IP//./\.}.* ]]  || need_ips="$need_ips $EUCA_CC_PUBLIC_IP"
     [[ $need_ips =~ .*${EUCA_SC_PUBLIC_IP//./\.}.* ]]  || need_ips="$need_ips $EUCA_SC_PUBLIC_IP"
     [[ $need_ips =~ .*${EUCA_OSP_PUBLIC_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_OSP_PUBLIC_IP"
-    [[ $need_ips =~ .*${EUCA_NC1_PUBLIC_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC1_PUBLIC_IP"
-    [[ $need_ips =~ .*${EUCA_NC2_PUBLIC_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC2_PUBLIC_IP"
-    [[ $need_ips =~ .*${EUCA_NC3_PUBLIC_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC3_PUBLIC_IP"
-    [[ $need_ips =~ .*${EUCA_NC4_PUBLIC_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC4_PUBLIC_IP"
+    [[ $need_ips =~ .*${EUCA_NC1_PRIVATE_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC1_PRIVATE_IP"
+    [[ $need_ips =~ .*${EUCA_NC2_PRIVATE_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC2_PRIVATE_IP"
+    [[ $need_ips =~ .*${EUCA_NC3_PRIVATE_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC3_PRIVATE_IP"
+    [[ $need_ips =~ .*${EUCA_NC4_PRIVATE_IP//./\.}.* ]] || need_ips="$need_ips $EUCA_NC4_PRIVATE_IP"
 
     ips=""
     for ip in $need_ips; do 
