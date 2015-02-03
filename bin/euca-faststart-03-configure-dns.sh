@@ -752,5 +752,7 @@ if [ $choice = y ]; then
 fi
 
 
+end=$(date +%s)
+
 echo
 echo "Eucalyptus DNS configured (time: $(date -u -d @$((end-start)) +"%T"))"
