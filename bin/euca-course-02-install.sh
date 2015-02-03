@@ -162,7 +162,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Configure yum repositories"
-echo "    - Install the required release RPMs for ELREPO, EPEL,"
+echo "    - Install the required release RPMs for EPEL,"
 echo "      Eucalyptus and Euca2ools"
 echo
 echo "============================================================"
@@ -170,25 +170,22 @@ echo
 echo "Commands:"
 echo
 echo "yum install -y \\"
-echo "    http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/eucalyptus-release-4.0-1.el6.noarch.rpm \\"
-echo "    http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
-echo "    http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \\"
-echo "    http://downloads.eucalyptus.com/software/euca2ools/3.1/centos/6Server/x86_64/euca2ools-release-3.1-1.el6.noarch.rpm"
+echo "    http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
+echo "    http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
+echo "    http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm"
 
 run
 
 if [ $choice = y ]; then
     echo
     echo "# yum install -y \\"
-    echo ">     http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/eucalyptus-release-4.0-1.el6.noarch.rpm \\"
-    echo ">     http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
-    echo ">     http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \\"
-    echo ">     http://downloads.eucalyptus.com/software/euca2ools/3.1/centos/6Server/x86_64/euca2ools-release-3.1-1.el6.noarch.rpm"
+    echo ">     http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
+    echo ">     http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
+    echo ">     http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm"
     yum install -y \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/eucalyptus-release-4.0-1.el6.noarch.rpm \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.0/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \
-        http://downloads.eucalyptus.com/software/euca2ools/3.1/centos/6Server/x86_64/euca2ools-release-3.1-1.el6.noarch.rpm
+        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
+        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
     next 50
 fi
@@ -506,6 +503,11 @@ if [ $is_clc = y ]; then
     if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
         echo "    - Scan for the host key to prevent ssh unknown host prompt"
     fi
+    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
+        if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
+            echo "    - Scan for the host key to prevent ssh unknown host prompt"
+        fi
+    fi
     echo
     echo "============================================================"
     echo
@@ -515,7 +517,17 @@ if [ $is_clc = y ]; then
         echo "ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
         echo
     fi
-    echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
+    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
+        if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
+            echo "ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
+            echo
+        fi
+    fi
+    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
+        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP\""
+    else
+        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
+    fi
 
     run 50
 
@@ -526,12 +538,25 @@ if [ $is_clc = y ]; then
             ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
             pause
         fi
+        if [ -n $EUCA_NC2_PRIVATE_IP ]; then
+            if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
+                echo "# ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
+                ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
+                pause
+            fi
+        fi
 
-        echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
-        euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
+        if [ -n $EUCA_NC2_PRIVATE_IP ]; then
+            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP\""
+            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP"
+        else
+            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
+            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
+        fi
 
         echo
         echo "Please re-start all Node Controller services at this time"
+
         next 400
     fi
 fi
