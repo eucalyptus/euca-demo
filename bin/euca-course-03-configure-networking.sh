@@ -312,7 +312,6 @@ if [ $is_clc = y ]; then
         mkdir -p /root/creds/eucalyptus/admin
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
         pause
 
         echo "# cat /root/creds/eucalyptus/admin/eucarc"

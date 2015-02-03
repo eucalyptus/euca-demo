@@ -404,7 +404,6 @@ else
         echo ">       -d /root/creds/$account/$demo_user/"
         unzip /root/creds/$account/$demo_user/$demo_user.zip \
               -d /root/creds/$account/$demo_user/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$account/$demo_user/eucarc    # invisibly fix deprecation message
         pause
 
         echo "# cat /root/creds/$account/$demo_user/eucarc"
@@ -589,7 +588,6 @@ else
         echo ">       -d /root/creds/$account/$demo_developer/"
         unzip /root/creds/$account/$demo_developer/$demo_developer.zip \
               -d /root/creds/$account/$demo_developer/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/$account/$demo_developer/eucarc    # invisibly fix deprecation message
         pause
 
         echo "# cat /root/creds/$account/$demo_developer/eucarc"

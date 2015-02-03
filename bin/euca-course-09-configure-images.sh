@@ -465,7 +465,6 @@ if [ $is_clc = y ]; then
         echo ">       -d /root/creds/ops/admin/"
         unzip /root/creds/ops/admin/ops-admin.zip \
               -d /root/creds/ops/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/ops/admin/eucarc    # invisibly fix deprecation message
         pause
 
         echo "# cat /root/creds/ops/admin/eucarc"

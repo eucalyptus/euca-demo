@@ -151,7 +151,6 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
         mkdir -p /root/creds/eucalyptus/admin
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -290,7 +289,6 @@ else
         echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
         if [ -r /root/eucarc ]; then
             cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
         fi
