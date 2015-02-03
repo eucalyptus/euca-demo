@@ -22,7 +22,7 @@ vnet_publicips="10.104.44.1-10.104.44.254"
 vnet_subnet="172.44.0.0"
 vnet_netmask="255.255.0.0"
 vnet_addrspernet="32"
-vnet_dns="8.8.8.8"
+vnet_dns="10.104.10.80"
 
 clc_host_name="odc-c-21"
 clc_domain_name="prc.eucalyptus-systems.com"
@@ -64,13 +64,13 @@ nc2_domain_name="prc.eucalyptus-systems.com"
 nc2_public_ip=10.104.10.37
 nc2_private_ip=10.105.10.37
 
-dns_host_name="odc-f-21"
+dns_host_name="odc-f-38"
 dns_domain_name="prc.eucalyptus-systems.com"
-dns_public_ip=10.104.10.63
-dns_private_ip=10.105.10.63
-dns_mode="CLC"
+dns_public_ip=10.104.10.80
+dns_private_ip=10.105.10.80
+dns_mode="PARENT"
 dns_timeout="30"
 dns_loadbalancer_ttl="15"
-dns_base_domain="mjcc.cs.prc.eucalyptus-systems.com"
+dns_base_domain="c.mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"

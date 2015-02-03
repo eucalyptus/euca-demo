@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# This script configures Eucalyptus DNS after a Faststart installation
+# This script configures Eucalyptus DNS
 #
-# This should be run immediately after the Faststart installer completes
+# This script should only be run on the Cloud Controller host
+#
+# Each student MUST run all prior scripts on relevant hosts prior to this script.
 #
 
 #  1. Initalize Environment
@@ -150,22 +152,11 @@ fi
 if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Administrator credentials!"
     echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
-    sleep 2
-
-    if [ -r /root/admin.zip ]; then
-        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-        mkdir -p /root/creds/eucalyptus/admin
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sleep 2
-    else
-        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
-        echo "Expected to find: /root/admin.zip"
-        exit 29
-    fi
+    exit 20
 fi
 
 
-#  5. Execute Demo
+#  5. Execute Course Lab
 
 start=$(date +%s)
 
@@ -374,7 +365,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Refresh Administrator Credentials"
+echo " $(printf '%2d' $step). Refresh Eucalyptus Administrator credentials"
 echo
 echo "============================================================"
 echo

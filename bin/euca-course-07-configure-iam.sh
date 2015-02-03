@@ -316,7 +316,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Administrator Credentials"
+echo "$(printf '%2d' $step). Download Engineering Account Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -348,7 +348,6 @@ if [ $choice = y ]; then
     echo ">       -d /root/creds/engineering/admin/"
     unzip /root/creds/engineering/admin/eng-admin.zip \
           -d /root/creds/engineering/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/engineering/admin/eucarc    # invisibly fix deprecation message
 
     next 50
 fi
@@ -359,7 +358,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Sally User Credentials"
+echo "$(printf '%2d' $step). Download Engineering Account Sally User credentials"
 echo
 echo "============================================================"
 echo
@@ -391,7 +390,6 @@ if [ $choice = y ]; then
     echo ">       -d /root/creds/ops/sally/"
     unzip /root/creds/ops/sally/ops-sally.zip \
           -d /root/creds/ops/sally/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/ops/sally/eucarc    # invisibly fix deprecation message
 
     next 50
 fi

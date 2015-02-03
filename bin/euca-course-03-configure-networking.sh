@@ -281,7 +281,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Use Administrator Credentials"
+    echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
     echo "    - NOTE: This step should only be run after the step"
     echo "      which restarts the Node Controller service on all Node"
     echo "      Controller hosts"
@@ -312,7 +312,7 @@ if [ $is_clc = y ]; then
         mkdir -p /root/creds/eucalyptus/admin
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         pause
 
         echo "# cat /root/creds/eucalyptus/admin/eucarc"

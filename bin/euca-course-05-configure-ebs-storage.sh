@@ -1,6 +1,6 @@
 #/bin/bash
 #
-# This script configures Eucalyptus object storage
+# This script configures Eucalyptus EBS storage
 #
 # This script should only be run on the Cloud Controller host
 #
@@ -188,309 +188,23 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Set the Eucalyptus Object Storage Provider to Walrus"
+echo "$(printf '%2d' $step). Set the Eucalyptus Storage Controller backend"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p objectstorage.providerclient=walrus"
+echo "euca-modify-property -p AZ1.storage.blockstoragemanager=overlay"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p objectstorage.providerclient=walrus"
-    euca-modify-property -p objectstorage.providerclient=walrus
+    echo "# euca-modify-property -p AZ1.storage.blockstoragemanager=overlay"
+    euca-modify-property -p AZ1.storage.blockstoragemanager=overlay
 
     echo
-    echo "Waiting 10 seconds for property change to become effective"
-    sleep 10
-
-    next 50
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm service status"
-echo "    - The following services should now be in an ENABLED state:"
-echo "      - cluster, objectstorage"
-echo "    - The following services should be in a NOTREADY state:"
-echo "      - loadbalancingbackend, imaging"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-services | cut -f1-5"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-describe-services | cut -f1-5"
-    euca-describe-services | cut -f1-5
-
-    next 200
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Snapshot Creation"
-echo "    - First we create a volume"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-create-volume -z AZ1 -s 1"
-echo
-echo "euca-describe-volumes"
-echo
-echo "euca-create-snapshot vol-xxxxxx"
-echo
-echo "euca-describe-snapshots"
-
-run
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-create-volume -z AZ1 -s 1"
-    euca-create-volume -z AZ1 -s 1 | tee /var/tmp/5-4-euca-create-volume.out
-
-    echo -n "Waiting 30 seconds..."
-    sleep 30
-    echo " Done"
-    pause
-
-    echo "# euca-describe-volumes"
-    euca-describe-volumes
-    pause
-
-    echo "# euca-create-snapshot $vol"
-    volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-    euca-create-snapshot $volume | tee /var/tmp/5-4-euca-create-snapshot.out
-
-    echo -n "Waiting 30 seconds..."
-    sleep 30
-    echo " Done"
-    pause
-
-    echo "# euca-describe-snapshots"
-    euca-describe-snapshots
-
-    next
-fi
-
-
-((++step))
-snapshot=$(cut -f2 /var/tmp/5-4-euca-create-snapshot.out)
-volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Snapshot Deletion"
-echo "    - Last we remove the volume"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-delete-snapshot $snapshot"
-echo
-echo "euca-describe-snapshots"
-echo
-echo "euca-delete-volume $volume"
-echo
-echo "euca-describe-volumes"
-
-run
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-delete-snapshot $snapshot"
-    euca-delete-snapshot $snapshot
-
-    echo -n "Waiting 30 seconds..."
-    sleep 30
-    echo " Done"
-    pause
-
-    echo "# euca-describe-snapshots"
-    euca-describe-snapshots
-    pause
-
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
-
-    echo -n "Waiting 30 seconds..."
-    sleep 30
-    echo " Done"
-    pause
-
-    echo "# euca-describe-volumes"
-    euca-describe-volumes
-    euca-delete-volume $volume &> /dev/null    # hidden to clear deleting state
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Refresh Administrator Credentials"
-echo "    - This fixes the OSG not configured warning"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "rm -f /root/admin.zip"
-echo
-echo "euca-get-credentials -u admin /root/admin.zip"
-echo
-echo "rm -Rf /root/creds/eucalyptus/admin"
-echo "mkdir -p /root/creds/eucalyptus/admin"
-echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-echo
-echo "cat /root/creds/eucalyptus/admin/eucarc"
-echo
-echo "source /root/creds/eucalyptus/admin/eucarc"
-
-run
-
-if [ $choice = y ]; then
-    echo
-    echo "# rm -f /root/admin.zip"
-    rm -f /root/admin.zip
-    pause
-
-    echo "# euca-get-credentials -u admin /root/admin.zip"
-    euca-get-credentials -u admin /root/admin.zip
-    pause
-
-    # Save and restore the admin-demo.pem if it exists
-    [ -r /root/creds/eucalyptus/admin/admin-demo.pem ] && cp -a /root/creds/eucalyptus/admin/admin-demo.pem /tmp/admin-demo.pem_$$
-    echo "# rm -Rf /root/creds/eucalyptus/admin"
-    rm -Rf /root/creds/eucalyptus/admin
-    echo "#"
-    echo "# mkdir -p /root/creds/eucalyptus/admin"
-    mkdir -p /root/creds/eucalyptus/admin
-    [ -r /tmp/admin-demo.pem_$$ ] && cp -a /tmp/admin-demo.pem_$$ /root/creds/eucalyptus/admin/admin-demo.pem; rm -f /tmp/admin-demo.pem_$$
-    echo "#"
-    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
-    pause
-
-    echo "# cat /root/creds/eucalyptus/admin/eucarc"
-    cat /root/creds/eucalyptus/admin/eucarc
-    pause
-
-    echo "# source /root/creds/eucalyptus/admin/eucarc"
-    source /root/creds/eucalyptus/admin/eucarc
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Properties"
-echo "    - Confirm S3_URL is now configured, should be:"
-echo "      http://$EUCA_OSP_PUBLIC_IP:8773/services/objectstorage"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-properties | more"
-echo
-echo "echo \$S3_URL"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-describe-properties | more"
-    euca-describe-properties | more
-    pause
-
-    echo "echo \$S3_URL"
-    echo $S3_URL
-
-    next 200
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Install Load Balancer and Imaging Worker image packages"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
-    yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image
-
-    next 50
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Install the images into Eucalyptus"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-install-load-balancer --install-default"
-echo
-echo "euca-install-imaging-worker --install-default"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-install-load-balancer --install-default"
-    euca-install-load-balancer --install-default
-    pause
-
-    echo "# euca-install-imaging-worker --install-default"
-    euca-install-imaging-worker --install-default
-
-    echo
-    echo -n "Waiting 10 seconds for service changes to stabilize..."
+    echo -n "Waiting 10 seconds for property change to become effective..."
     sleep 10
     echo " Done"
 
@@ -505,8 +219,12 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Confirm service status"
 echo "    - The following service should now be in an ENABLED state:"
-echo "      - loadbalancingbackend, imaging"
-echo "    - All services should now be in the ENABLED state!"
+echo "      - storage"
+echo "    - The following services should be in a NOTREADY state:"
+echo "      - imagingbackend, loadbalancingbackend"
+echo "    - The following services should be in a BROKEN state:"
+echo "      - objectstorage"
+echo "    - This is normal at this point in time, with partial configuration"
 echo
 echo "============================================================"
 echo
@@ -525,7 +243,231 @@ if [ $choice = y ]; then
 fi
 
 
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Volume Creation"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-create-volume -z AZ1 -s 1"
+echo
+echo "euca-describe-volumes"
+echo
+echo "ls -l /var/lib/eucalyptus/volumes"
+
+run 50
+
+if [ $choice = y ]; then
+
+    echo
+    echo "# euca-create-volume -z AZ1 -s 1"
+    euca-create-volume -z AZ1 -s 1 | tee /var/tmp/4-4-euca-create-volume.out
+    pause
+
+    echo "# euca-describe-volumes"
+    euca-describe-volumes
+    pause
+
+    echo "# ls -l /var/lib/eucalyptus/volumes"
+    ls -lh /var/lib/eucalyptus/volumes
+
+    next
+fi
+
+
+((++step))
+volume=$(cut -f2 /var/tmp/4-4-euca-create-volume.out)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Volume Deletion"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-delete-volume $volume"
+echo
+echo "euca-describe-volumes"
+echo 
+echo "ls -lh /var/lib/eucalyptus/volumes"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-delete-volume $volume"
+    euca-delete-volume $volume
+    pause
+
+    echo "# euca-describe-volumes"
+    euca-describe-volumes
+    pause
+
+    echo "# ls -lh /var/lib/eucalyptus/volumes"
+    ls -lh /var/lib/eucalyptus/volumes
+
+    next
+fi
+
+
+((++step))
+volume=$(cut -f2 /var/tmp/4-4-euca-create-volume.out)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Flush Volume Resource Information"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-delete-volume $volume"
+echo 
+echo "euca-describe-volumes"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-delete-volume $volume"
+    euca-delete-volume $volume
+    pause
+
+    echo "# euca-describe-volumes"
+    euca-describe-volumes
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Volume Quota"
+echo "    - This step should fail with quota exceeded error"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-create-volume -z AZ1 -s 20"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-create-volume -z AZ1 -s 20"
+    euca-create-volume -z AZ1 -s 20
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Increase Volume Quota"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-property -p AZ1.storage.maxvolumesizeingb=20"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-modify-property -p AZ1.storage.maxvolumesizeingb=20"
+    euca-modify-property -p AZ1.storage.maxvolumesizeingb=20
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Increased Volume Quota"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-create-volume -z AZ1 -s 20"
+echo
+echo "euca-describe-volumes"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-create-volume -z AZ1 -s 20"
+    euca-create-volume -z AZ1 -s 20 | tee /var/tmp/4-7-euca-create-volume.out
+    pause
+
+    echo "# euca-describe-volumes"
+    euca-describe-volumes
+
+    next
+fi
+
+
+((++step))
+volume=$(cut -f2 /var/tmp/4-7-euca-create-volume.out)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm Larger Volume Deletion"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-delete-volume $volume"
+echo
+echo "euca-describe-volumes"
+echo
+echo "ls -lh /var/lib/eucalyptus/volumes"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-delete-volume $volume"
+    euca-delete-volume $volume
+    pause
+
+    echo "# euca-describe-volumes"
+    euca-describe-volumes
+    pause
+
+    echo "# ls -lh /var/lib/eucalyptus/volumes"
+    ls -lh /var/lib/eucalyptus/volumes
+
+    next
+fi
+
+
 end=$(date +%s)
 
 echo
-echo "Object Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+echo "EBS Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"

@@ -151,7 +151,7 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
         mkdir -p /root/creds/eucalyptus/admin
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -290,7 +290,7 @@ else
         echo "#"
         echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         if [ -r /root/eucarc ]; then
             cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
         fi
