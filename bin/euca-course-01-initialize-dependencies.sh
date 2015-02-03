@@ -154,6 +154,54 @@ shift $(($OPTIND - 1))
 start=$(date +%s)
 
 ((++step))
+if [ $is_clc = y ]; then
+    ips="$EUCA_CLC_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_UFS_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_UFS_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_MC_PUBLIC_IP//./\.}.* ]]  || ips="$ips $EUCA_MC_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_CC_PUBLIC_IP//./\.}.* ]]  || ips="$ips $EUCA_CC_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_SC_PUBLIC_IP//./\.}.* ]]  || ips="$ips $EUCA_SC_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_OSP_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_OSP_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_NC1_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_NC1_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_NC2_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_NC2_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_NC3_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_NC3_PUBLIC_IP"
+    [[ $ips =~ .*${EUCA_NC4_PUBLIC_IP//./\.}.* ]] || ips="$ips $EUCA_NC4_PUBLIC_IP"
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Scan for unknown SSH host keys"
+    echo "    - Scan for and collect any unknown SSH host keys associated"
+    echo "      with other hosts in the cluster, to prevent \"Unknown host\""
+    echo "      warnings with acceptance prompts during the install"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    for ip in $ips; do
+        if ! grep -s -q $ip /root/.ssh/known_hosts; then
+            echo "ssh-keyscan $ip 2> /dev/null >> /root/.ssh/known_hosts"
+            echo
+        fi
+    fi
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        for ip in $ips; do
+            if ! grep -s -q $ip /root/.ssh/known_hosts; then
+                echo "# ssh-keyscan $ip 2> /dev/null >> /root/.ssh/known_hosts"
+                ssh-keyscan $ip 2> /dev/null >> /root/.ssh/known_hosts
+            fi
+        done
+
+        next 50
+    fi
+fi
+
+
+((++step))
 if [ $is_cc = y -o $is_nc = y ]; then
     clear
     echo

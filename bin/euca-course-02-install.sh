@@ -338,30 +338,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Walrus as the Object Storage Provider"
-    if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
         euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus
 
@@ -380,30 +367,17 @@ if [ $is_clc = y ]; then
     echo "    - It is normal to see ERRORs for objectstorage, imaging"
     echo "      and loadbalancingbackend at this point, as they require"
     echo "      further configuration"
-    if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
         euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI
 
@@ -419,30 +393,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Cluster Controller service"
-    if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_HOST_PUBLIC_IP --component PODCC"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC"
         euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC
 
@@ -458,30 +419,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Storage Controller service"
-    if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
         euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC
 
@@ -492,6 +440,11 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
+    nodes="$EUCA_NC1_PRIVATE_IP"
+    [ -n $EUCA_NC2_PRIVATE_IP ] && nodes="$nodes $EUCA_NC2_PRIVATE_IP"
+    [ -n $EUCA_NC3_PRIVATE_IP ] && nodes="$nodes $EUCA_NC3_PRIVATE_IP"
+    [ -n $EUCA_NC4_PRIVATE_IP ] && nodes="$nodes $EUCA_NC4_PRIVATE_IP"
+
     clear
     echo
     echo "============================================================"
@@ -500,59 +453,18 @@ if [ $is_clc = y ]; then
     echo "    - NOTE: After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
-    if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
-    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-        if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
-            echo "    - Scan for the host key to prevent ssh unknown host prompt"
-        fi
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
-    echo
-    if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
-    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-        if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
-            echo "ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            echo
-        fi
-    fi
-    if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP\""
-    else
-        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
-    fi
+    echo "euca_conf --register-nodes=\"$nodes\""
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-            echo "# ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-        if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-            if ! grep -s -q $EUCA_NC2_PRIVATE_IP /root/.ssh/known_hosts; then
-                echo "# ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-                ssh-keyscan $EUCA_NC2_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
-                pause
-            fi
-        fi
-
-        if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP\""
-            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP"
-        else
-            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
-            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
-        fi
+        echo "# euca_conf --register-nodes=\"$nodes\""
+        euca_conf --register-nodes="$nodes"
 
         echo
         echo "Please re-start all Node Controller services at this time"
