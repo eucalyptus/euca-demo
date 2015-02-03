@@ -220,7 +220,7 @@ if [ $is_clc = y ]; then
             for ip in $ips; do
                 if ! sudo grep -s -q $ip /root/.ssh/known_hosts; then
                     echo "# sudo ssh-keyscan $ip 2> /dev/null >> /root/.ssh/known_hosts"
-                    sudo ssh-keyscan $ip 2> /dev/null >> /root/.ssh/known_hosts
+                    sudo ssh-keyscan $ip 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
                 fi
             done
 
