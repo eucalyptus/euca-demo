@@ -218,9 +218,9 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Confirm service status"
 echo "    - The following services should now be in an ENABLED state:"
-echo "      - cluster, objectstorage"
+echo "      - objectstorage"
 echo "    - The following services should be in a NOTREADY state:"
-echo "      - loadbalancingbackend, imaging"
+echo "      - imagingbackend, loadbalancingbackend"
 echo
 echo "============================================================"
 echo
