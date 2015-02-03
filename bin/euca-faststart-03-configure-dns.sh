@@ -156,7 +156,6 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
         mkdir -p /root/creds/eucalyptus/admin
         unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -199,35 +198,7 @@ next
 
 
 ((++step))
-if [ $EUCA_DNS_MODE = "CLC" ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
-    echo "    - Instances will use the Cloud Controller's DNS Server directly"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
-    echo
-    echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
-    
-    run 50
-    
-    if [ $choice = y ]; then
-        echo
-        echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
-        euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
-        echo "#"
-        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
-        euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
-    
-        next 50
-    fi
-else
+if [ $EUCA_DNS_MODE = "PARENT" ]; then
     clear
     echo
     echo "============================================================"
@@ -240,12 +211,40 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-modify-property -p system.dns.nameserver = clc.$EUCA_DNS_BASE_DOMAIN"
+    echo "euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME"
     echo
-    echo "euca-modify-property -p system.dns.nameserveraddress = $EUCA_CLC_PUBLIC_IP"
+    echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
 
     run 50
 
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME"
+        euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME
+        echo "#"
+        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
+        euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP
+
+        next 50
+    fi
+else
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
+    echo "    - Instances will use the Cloud Controller's DNS Server directly"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
+    echo
+    echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
+    
+    run 50
+    
     if [ $choice = y ]; then
         echo
         echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
@@ -253,7 +252,7 @@ else
         echo "#"
         echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
         euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
-
+    
         next 50
     fi
 fi
@@ -270,9 +269,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p dns.tcp.timeout_seconds = $EUCA_DNS_TIMEOUT"
+echo "euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT"
 echo
-echo "euca-modify-property -p services.loadbalancing.dns_ttl = $EUCA_DNS_LOADBALANCER_TTL"
+echo "euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
 
 run 50
 
@@ -299,7 +298,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.dnsdomain = $EUCA_DNS_BASE_DOMAIN"
+echo "euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN"
 
 run 50
 
@@ -325,7 +324,7 @@ echo "Commands:"
 echo
 echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
 echo
-echo "euca-modify-property -p services.loadbalancing.dns_subdomain = $EUCA_DNS_LOADBALANCER_SUBDOMAIN"
+echo "euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
 
 run 50
 
@@ -416,7 +415,6 @@ if [ $choice = y ]; then
     echo "#"
     echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e 's/EUARE_URL=/AWS_IAM_URL=/' /root/creds/eucalyptus/admin/eucarc    # invisibly fix deprecation message
     if [ -r /root/eucarc ]; then
         cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
     fi
@@ -435,53 +433,7 @@ fi
 
 ((++step))
 if [ $showdnsconfig = 1 ]; then
-    if [ $EUCA_DNS_MODE = "CLC" ]; then
-        clear
-        echo
-        echo "============================================================"
-        echo
-        echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
-        echo "    - This is an example of what changes need to be made on the"
-        echo "      parent DNS server which will delgate DNS to Eucalyptus"
-        echo "      for Eucalyptus DNS names used for instances, ELBs and"
-        echo "      services"
-        echo "    - You should make these changes to the parent DNS server"
-        echo "      manually, once, outside of creating and running demos"
-        echo "    - Instances will use the Cloud Controller's DNS Server directly"
-        echo "    - This configuration is based on the BIND configuration"
-        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
-        echo
-        echo "============================================================"
-        echo
-        echo "Commands:"
-        echo
-        echo "# Add these lines to /etc/named.conf on the parent DNS server"
-        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
-        echo "         {"
-        echo "                 type master;"
-        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
-        echo "         };"
-        echo "#"
-        echo "# Create the zone file on the parent DNS server"
-        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
-        echo "> $TTL    300"
-        echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
-        echo ">                                 $(date +%Y%m%d01)      ; Serial"
-        echo ">                                 1h              ; Refresh"
-        echo ">                                 5m              ; Retry"
-        echo ">                                 5m              ; Expire"
-        echo ">                                 5m )            ; Negative Cache TTL"
-        echo ">"
-        echo "> @               IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-        echo ">"
-        echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-        echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-        echo ">"
-        echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
-        echo "> EOF"
-    
-        next 200
-    else
+    if [ $EUCA_DNS_MODE = "PARENT" ]; then
         clear
         echo
         echo "============================================================"
@@ -511,29 +463,88 @@ if [ $showdnsconfig = 1 ]; then
         echo "#"
         echo "# Create the zone file on the parent DNS server"
         echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
-        echo "> $TTL    300"
-        echo "> @               IN      SOA     clc.$EUCA_DNS_BASE_DOMAIN. root.$EUCA_DNS_BASE_DOMAIN. ("
-        echo ">                                 $(date +%Y%m%d01)      ; Serial"
-        echo ">                                 1h              ; Refresh"
-        echo ">                                 5m              ; Retry"
-        echo ">                                 5m              ; Expire"
-        echo ">                                 5m )            ; Negative Cache TTL"
+        echo "> ;"
+        echo "> ; DNS zone for $EUCA_DNS_BASE_DOMAIN"
+        echo "> ; - Eucalyptus configured to use Parent DNS server"
         echo ">"
-        echo "> @               IN      NS      ns1.cs.prc.eucalyptus-systems.com."
+        echo "> $TTL 1M"
+        echo "> $ORIGIN $EUCA_DNS_BASE_DOMAIN"
+        echo "> @                       SOA     ns1.${EUCA_DNS_BASE_DOMAIN#*.}. root.${EUCA_DNS_BASE_DOMAIN#*.}. ("
+        echo ">                                 $(date +%Y%m%d)01      ; Serial"
+        echo ">                                 1H              ; Refresh"
+        echo ">                                 10M             ; Retry"
+        echo ">                                 1D              ; Expire"
+        echo ">                                 1H )            ; Negative Cache TTL"
         echo ">"
-        echo "> clc             IN      A       $EUCA_CLC_PUBLIC_IP"
-        echo "> ufs             IN      A       $EUCA_UFS_PUBLIC_IP"
-        echo "> compute         IN      CNAME   ufs"
-        echo "> objectstorage   IN      CNAME   ufs"
-        echo "> euare           IN      CNAME   ufs"
-        echo "> tokens          IN      CNAME   ufs"
-        echo "> autoscaling     IN      CNAME   ufs"
-        echo "> cloudformation  IN      CNAME   ufs"
-        echo "> cloudwatch      IN      CNAME   ufs"
-        echo "> loadbalancing   IN      CNAME   ufs"
+        echo ">                         NS      ns1.${EUCA_DNS_BASE_DOMAIN#*.}."
         echo ">"
-        echo "> cloud           IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
-        echo "> lb              IN      NS      clc.$EUCA_DNS_BASE_DOMAIN."
+        echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
+        echo ">"
+        echo "> clc                     A       $EUCA_CLC_PUBLIC_IP"
+        echo "> ufs                     A       $EUCA_UFS_PUBLIC_IP"
+        echo ">
+        echo "> autoscaling             A       $EUCA_UFS_PUBLIC_IP"
+        echo "> cloudformation          A       $EUCA_UFS_PUBLIC_IP"
+        echo "> cloudwatch              A       $EUCA_UFS_PUBLIC_IP"
+        echo "> compute                 A       $EUCA_UFS_PUBLIC_IP"
+        echo "> euare                   A       $EUCA_UFS_PUBLIC_IP"
+        echo "> loadbalancing           A       $EUCA_UFS_PUBLIC_IP"
+        echo "> objectstorage           A       $EUCA_UFS_PUBLIC_IP"
+        echo "> tokens                  A       $EUCA_UFS_PUBLIC_IP"
+        echo ">"
+        echo "> cloud                   NS      ns1"
+        echo "> lb                      NS      ns1"
+        echo "> EOF"
+
+        next 200
+else
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
+        echo "    - This is an example of what changes need to be made on the"
+        echo "      parent DNS server which will delgate DNS to Eucalyptus"
+        echo "      for Eucalyptus DNS names used for instances, ELBs and"
+        echo "      services"
+        echo "    - You should make these changes to the parent DNS server"
+        echo "      manually, once, outside of creating and running demos"
+        echo "    - Instances will use the Cloud Controller's DNS Server directly"
+        echo "    - This configuration is based on the BIND configuration"
+        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "# Add these lines to /etc/named.conf on the parent DNS server"
+        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
+        echo "         {"
+        echo "                 type master;"
+        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+        echo "         };"
+        echo "#"
+        echo "# Create the zone file on the parent DNS server"
+        echo "> ;"
+        echo "> ; DNS zone for $EUCA_DNS_BASE_DOMAIN"
+        echo "> ; - Eucalyptus configured to use CLC as DNS server"
+        echo ">"
+        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+        echo "> $TTL 1M"
+        echo "> $ORIGIN $EUCA_DNS_BASE_DOMAIN"
+        echo "> @                       SOA     ns1 root ("
+        echo ">                                 $(date +%Y%m%d)01      ; Serial"
+        echo ">                                 1H              ; Refresh"
+        echo ">                                 10M             ; Retry"
+        echo ">                                 1D              ; Expire"
+        echo ">                                 1H )            ; Negative Cache TTL"
+        echo ">"
+        echo ">                         NS      ns1"
+        echo ">"
+        echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
+        echo ">"
+        echo "> cloud                   NS      ns1"
+        echo "> lb                      NS      ns1"
         echo "> EOF"
     
         next 200
