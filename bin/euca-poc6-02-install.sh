@@ -168,7 +168,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Configure yum repositories"
-echo "    - Install the required release RPMs for ELREPO, EPEL,"
+echo "    - Install the required release RPMs for EPEL,"
 echo "      Eucalyptus and Euca2ools"
 echo
 echo "============================================================"
@@ -176,9 +176,8 @@ echo
 echo "Commands:"
 echo
 echo "sudo yum install -y \\"
-echo "         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
 echo "         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
-echo "         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \\"
+echo "         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
 echo "         http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm"
 
 run
@@ -186,14 +185,12 @@ run
 if [ $choice = y ]; then
     echo
     echo "# sudo yum install -y \\"
-    echo ">          http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
     echo ">          http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \\"
-    echo ">          http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \\"
+    echo ">          http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \\"
     echo ">          http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm"
     sudo yum install -y \
-             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
              http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/elrepo-release-6-6.el6.elrepo.noarch.rpm \
+             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
              http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
     next 50
@@ -282,7 +279,7 @@ if [ $is_clc = y ]; then
         echo
         echo "# sudo chkconfig eucalyptus-cloud on"
         sudo chkconfig eucalyptus-cloud on
-        echo 
+        echo "#"
         echo "# sudo service eucalyptus-cloud start"
         sudo service eucalyptus-cloud start
 
@@ -332,7 +329,7 @@ if [ $is_cc = y ]; then
         echo
         echo "# sudo chkconfig eucalyptus-cc on"
         sudo chkconfig eucalyptus-cc on
-        echo
+        echo "#"
         echo "# sudo service eucalyptus-cc start"
         sudo service eucalyptus-cc start
 
@@ -348,30 +345,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Walrus as the Object Storage Provider"
-    if ! sudo grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! sudo grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "sudo ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "sudo euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! sudo grep -s -q $EUCA_OSP_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# sudo ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            sudo ssh-keyscan $EUCA_OSP_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# sudo euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus"
         sudo euca_conf --register-walrusbackend --partition walrus --host $EUCA_OSP_PUBLIC_IP --component walrus
 
@@ -387,33 +371,20 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register User-Facing services"
-    echo "    - It is normal to see ERRORs for objectstorage, imaging"
+    echo "    - It is normal to see ERRORs for objectstorage, imagingbackend"
     echo "      and loadbalancingbackend at this point, as they require"
     echo "      further configuration"
-    if ! sudo grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! sudo grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "sudo ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "sudo euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! sudo grep -s -q $EUCA_UFS_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# sudo ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            sudo ssh-keyscan $EUCA_UFS_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# sudo euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI"
         sudo euca_conf --register-service -T user-api -H $EUCA_UFS_PUBLIC_IP -N PODAPI
 
@@ -429,30 +400,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Cluster Controller service"
-    if ! sudo grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! sudo grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "sudo euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_HOST_PUBLIC_IP --component PODCC"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! sudo grep -s -q $EUCA_CC_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# sudo ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            sudo ssh-keyscan $EUCA_CC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# sudo euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC"
         sudo euca_conf --register-cluster --partition AZ1 --host $EUCA_CC_PUBLIC_IP --component PODCC
 
@@ -468,30 +426,17 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Register Storage Controller service"
-    if ! sudo grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! sudo grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-        echo "sudo ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
     echo "sudo euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! sudo grep -s -q $EUCA_SC_PUBLIC_IP /root/.ssh/known_hosts; then
-            echo "# sudo ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            sudo ssh-keyscan $EUCA_SC_PUBLIC_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
         echo "# sudo euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC"
         sudo euca_conf --register-sc --partition AZ1 --host $EUCA_SC_PUBLIC_IP --component PODSC
 
@@ -502,6 +447,11 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
+    nodes="$EUCA_NC1_PRIVATE_IP"
+    [ -z $EUCA_NC2_PRIVATE_IP ] || nodes="$nodes $EUCA_NC2_PRIVATE_IP"
+    [ -z $EUCA_NC3_PRIVATE_IP ] || nodes="$nodes $EUCA_NC3_PRIVATE_IP"
+    [ -z $EUCA_NC4_PRIVATE_IP ] || nodes="$nodes $EUCA_NC4_PRIVATE_IP"
+
     clear
     echo
     echo "============================================================"
@@ -510,35 +460,23 @@ if [ $is_clc = y ]; then
     echo "    - NOTE: After completing this step, you will need to run"
     echo "      the next step on all Node Controller hosts before you"
     echo "      continue here"
-    if ! sudo grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-        echo "    - Scan for the host key to prevent ssh unknown host prompt"
-    fi
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    if ! sudo grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-        echo "sudo ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-        echo
-    fi
-    echo "sudo euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
+    echo "sudo euca_conf --register-nodes=\"$nodes\""
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        if ! sudo grep -s -q $EUCA_NC1_PRIVATE_IP /root/.ssh/known_hosts; then
-            echo "# sudo ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts"
-            sudo ssh-keyscan $EUCA_NC1_PRIVATE_IP 2> /dev/null >> /root/.ssh/known_hosts
-            pause
-        fi
-
-        echo "# sudo euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
-        sudo euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
+        echo "# sudo euca_conf --register-nodes=\"$nodes\""
+        sudo euca_conf --register-nodes="$nodes"
 
         echo
         echo "Please re-start all Node Controller services at this time"
+
         next 400
     fi
 fi
@@ -569,7 +507,7 @@ if [ $is_nc = y ]; then
         echo
         echo "# sudo chkconfig eucalyptus-nc on"
         sudo chkconfig eucalyptus-nc on
-        echo
+        echo "#"
         echo "# sudo service eucalyptus-nc start"
         sudo service eucalyptus-nc start
 
@@ -599,14 +537,14 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-describe-services | cut -f 1-5"
+    echo "sudo euca-describe-services | cut -f 1-5"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-describe-services | cut -f 1-5"
-        euca-describe-services | cut -f 1-5
+        echo "# sudo euca-describe-services | cut -f 1-5"
+        sudo euca-describe-services | cut -f 1-5
 
         next 200
     fi
