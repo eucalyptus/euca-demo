@@ -524,7 +524,7 @@ if [ $is_clc = y ]; then
         fi
     fi
     if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP\""
+        echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP\""
     else
         echo "euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
     fi
@@ -547,8 +547,8 @@ if [ $is_clc = y ]; then
         fi
 
         if [ -n $EUCA_NC2_PRIVATE_IP ]; then
-            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP\""
-            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP,$EUCA_NC2_PRIVATE_IP"
+            echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP\""
+            euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP $EUCA_NC2_PRIVATE_IP"
         else
             echo "# euca_conf --register-nodes=\"$EUCA_NC1_PRIVATE_IP\""
             euca_conf --register-nodes="$EUCA_NC1_PRIVATE_IP"
