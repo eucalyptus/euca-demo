@@ -465,6 +465,7 @@ if [ $is_clc = y ]; then
         echo ">       -d /root/creds/ops/admin/"
         unzip /root/creds/ops/admin/ops-admin.zip \
               -d /root/creds/ops/admin/
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         pause
 
         echo "# cat /root/creds/ops/admin/eucarc"

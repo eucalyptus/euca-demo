@@ -404,6 +404,7 @@ else
         echo ">       -d /root/creds/$account/$demo_user/"
         unzip /root/creds/$account/$demo_user/$demo_user.zip \
               -d /root/creds/$account/$demo_user/
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         pause
 
         echo "# cat /root/creds/$account/$demo_user/eucarc"
@@ -588,6 +589,7 @@ else
         echo ">       -d /root/creds/$account/$demo_developer/"
         unzip /root/creds/$account/$demo_developer/$demo_developer.zip \
               -d /root/creds/$account/$demo_developer/
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         pause
 
         echo "# cat /root/creds/$account/$demo_developer/eucarc"

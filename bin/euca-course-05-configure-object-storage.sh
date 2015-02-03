@@ -393,6 +393,7 @@ if [ $choice = y ]; then
     echo "#"
     echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
     pause
 
     echo "# cat /root/creds/eucalyptus/admin/eucarc"

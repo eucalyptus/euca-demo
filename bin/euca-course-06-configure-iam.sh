@@ -348,6 +348,7 @@ if [ $choice = y ]; then
     echo ">       -d /root/creds/engineering/admin/"
     unzip /root/creds/engineering/admin/eng-admin.zip \
           -d /root/creds/engineering/admin/
+    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
 
     next 50
 fi
@@ -390,6 +391,7 @@ if [ $choice = y ]; then
     echo ">       -d /root/creds/ops/sally/"
     unzip /root/creds/ops/sally/ops-sally.zip \
           -d /root/creds/ops/sally/
+    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
 
     next 50
 fi

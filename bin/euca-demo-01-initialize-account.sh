@@ -383,6 +383,7 @@ else
         echo ">       -d /root/creds/$account/admin/"
         unzip /root/creds/$account/admin/admin.zip \
               -d /root/creds/$account/admin/
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
         pause
 
         echo "# cat /root/creds/$account/admin/eucarc"
