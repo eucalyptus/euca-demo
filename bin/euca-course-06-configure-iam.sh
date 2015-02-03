@@ -316,7 +316,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Administrator Credentials"
+echo "$(printf '%2d' $step). Download Engineering Account Administrator credentials"
 echo
 echo "============================================================"
 echo
@@ -358,7 +358,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Sally User Credentials"
+echo "$(printf '%2d' $step). Download Engineering Account Sally User credentials"
 echo
 echo "============================================================"
 echo

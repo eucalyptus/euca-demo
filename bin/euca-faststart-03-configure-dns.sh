@@ -239,7 +239,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
+    echo "euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN"
     echo
     echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
     
@@ -247,8 +247,8 @@ else
     
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN"
-        euca-modify-property -p system.dns.nameserver=clc.$EUCA_DNS_BASE_DOMAIN
+        echo "# euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN"
+        euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN
         echo "#"
         echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
         euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP

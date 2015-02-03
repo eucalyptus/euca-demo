@@ -429,7 +429,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download and Source the Ops Account Administrator Credentials"
+    echo "$(printf '%2d' $step). Download and use Ops Account Administrator credentials"
     echo
     echo "============================================================"
     echo

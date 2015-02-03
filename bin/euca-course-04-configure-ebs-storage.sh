@@ -159,7 +159,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Administrator credentials"
+echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 echo "    - NOTE: Expect the OSG not configured warning"
 echo
 echo "============================================================"

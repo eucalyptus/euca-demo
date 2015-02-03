@@ -281,7 +281,7 @@ if [ $is_clc = y ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Use Administrator Credentials"
+    echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
     echo "    - NOTE: This step should only be run after the step"
     echo "      which restarts the Node Controller service on all Node"
     echo "      Controller hosts"

@@ -351,7 +351,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Refresh Administrator Credentials"
+echo "$(printf '%2d' $step). Refresh Eucalyptus Administrator credentials"
 echo "    - This fixes the OSG not configured warning"
 echo
 echo "============================================================"
