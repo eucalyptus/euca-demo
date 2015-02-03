@@ -466,7 +466,7 @@ if [ $showdnsconfig = 1 ]; then
         echo "> ;"
         echo "> ; DNS zone for $EUCA_DNS_BASE_DOMAIN"
         echo "> ; - Eucalyptus configured to use Parent DNS server"
-        echo ">"
+        echo "> ;"
         echo "> $TTL 1M"
         echo "> $ORIGIN $EUCA_DNS_BASE_DOMAIN"
         echo "> @                       SOA     ns1.${EUCA_DNS_BASE_DOMAIN#*.}. root.${EUCA_DNS_BASE_DOMAIN#*.}. ("
@@ -482,7 +482,7 @@ if [ $showdnsconfig = 1 ]; then
         echo ">"
         echo "> clc                     A       $EUCA_CLC_PUBLIC_IP"
         echo "> ufs                     A       $EUCA_UFS_PUBLIC_IP"
-        echo ">
+        echo ">"
         echo "> autoscaling             A       $EUCA_UFS_PUBLIC_IP"
         echo "> cloudformation          A       $EUCA_UFS_PUBLIC_IP"
         echo "> cloudwatch              A       $EUCA_UFS_PUBLIC_IP"
@@ -492,8 +492,8 @@ if [ $showdnsconfig = 1 ]; then
         echo "> objectstorage           A       $EUCA_UFS_PUBLIC_IP"
         echo "> tokens                  A       $EUCA_UFS_PUBLIC_IP"
         echo ">"
-        echo "> cloud                   NS      ns1"
-        echo "> lb                      NS      ns1"
+        echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
+        echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
         echo "> EOF"
 
         next 200
@@ -543,8 +543,8 @@ else
         echo ">"
         echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
         echo ">"
-        echo "> cloud                   NS      ns1"
-        echo "> lb                      NS      ns1"
+        echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
+        echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
         echo "> EOF"
     
         next 200
