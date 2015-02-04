@@ -157,10 +157,12 @@ if [ $is_clc = n -a $is_nc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
-    echo "Could not find Eucalyptus Administrator credentials!"
-    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
-    exit 20
+if [ $is_clc = y ]; then
+    if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+        echo "Could not find Eucalyptus Administrator credentials!"
+        echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
+        exit 20
+    fi
 fi
 
 if [ $local = 1 ]; then
@@ -211,61 +213,90 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "wget $image_url -O /root/centos.raw.xz"
-    echo
-    echo "xz -v -d /root/centos.raw.xz"
-
-    run 50
-
-    if [ $choice = y ]; then
+    if [ -r /root/centos.raw ]; then
+        clear
         echo
-        echo "# wget $image_url -O /root/centos.raw.xz"
-        wget $image_url -O /root/centos.raw.xz
-        pause
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
+        echo "    - Already Downloaded!"
+        echo
+        echo "============================================================"
+        echo
 
+        next 50
+
+    else
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Download a CentOS 6.5 image"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "wget $image_url -O /root/centos.raw.xz"
+        echo
         echo "xz -v -d /root/centos.raw.xz"
-        xz -v -d /root/centos.raw.xz
 
-        next
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# wget $image_url -O /root/centos.raw.xz"
+            wget $image_url -O /root/centos.raw.xz
+            pause
+
+            echo "xz -v -d /root/centos.raw.xz"
+            xz -v -d /root/centos.raw.xz
+
+            next
+        fi
     fi
 fi
 
 
 ((++step))
 if [ $is_clc = y ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Install Image"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-
-    run 50
-
-    if [ $choice = y ]; then
+    if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
+        clear
         echo
-        echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Install Image"
+        echo "    - Already Installed!"
+        echo
+        echo "============================================================"
+        echo
 
-        next
+        next 50
+
+    else
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Install Image"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
+
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
+            euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+
+            next
+        fi
     fi
 fi
-image_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out)
 
 
 ((++step))
@@ -401,10 +432,12 @@ if [ $is_clc = y ]; then
         next
     fi
 fi
-account_id=$(grep ops $tmpdir/$prefix-$(printf '%02d' $step)-euare-accountlist.out | cut -f2)
 
 
 ((++step))
+account_id=$(euare-accountlist | grep ops | cut -f2)
+image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+
 if [ $is_clc = y ]; then
     clear
     echo
@@ -526,31 +559,49 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Keypair"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
-    echo
-    echo "chmod 0600 /root/creds/ops/admin/ops-admin.pem"
-
-    run 50
-
-    if [ $choice = y ]; then
+    if euca-describe-keypairs | grep -s -q "ops-admin" && [ -r /root/creds/ops/admin/ops-admin.pem ]; then
+        clear
         echo
-        echo "# euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
-        euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem
-        echo "#"
-        echo "# chmod 0600 /root/creds/ops/admin/ops-admin.pem"
-        chmod 0600 /root/creds/ops/admin/ops-admin.pem
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Create Ops Account Administrator Keypair"
+        echo "    - Already Created!"
+        echo
+        echo "============================================================"
+        echo
 
-        next
+        next 50
+
+    else
+        euca-delete-keypair ops-admin
+        rm -f /root/creds/ops/admin/ops-admin.pem
+
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Create Ops Account Administrator Keypair"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
+        echo
+        echo "chmod 0600 /root/creds/ops/admin/ops-admin.pem"
+
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem"
+            euca-create-keypair ops-admin | tee /root/creds/ops/admin/ops-admin.pem
+            echo "#"
+            echo "# chmod 0600 /root/creds/ops/admin/ops-admin.pem"
+            chmod 0600 /root/creds/ops/admin/ops-admin.pem
+
+            next
+        fi
     fi
 fi
 
