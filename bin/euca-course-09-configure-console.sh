@@ -163,7 +163,9 @@ echo "Commands:"
 echo
 echo "sed -i -e \"/#elb.host=10.20.30.40/d\" \\"
 echo "       -e \"/#elb.port=443/d\" \\"
-echo "       -e \"/For each, you can specify a different host/a\\"
+echo "       -e \"/#s3.host=<your host IP or name>/d\" \\"
+echo "       -e \"/^clchost = localhost\$/s/localhost/$EUCA_CLC_PUBLIC_IP/\" \\"
+echo "       -e \"/For each service, you can specify a different host and\/or port, for example;/a\\"
 echo "ec2.host=$EUCA_UFS_PUBLIC_IP\\n\\"
 echo "ec2.port=8773\\n\\"
 echo "autoscale.host=$EUCA_UFS_PUBLIC_IP\\n\\"
@@ -175,7 +177,9 @@ echo "elb.port=8773\\n\\"
 echo "iam.host=$EUCA_UFS_PUBLIC_IP\\n\\"
 echo "iam.port=8773\\n\\"
 echo "sts.host=$EUCA_UFS_PUBLIC_IP\\n\\"
-echo "sts.port=8773\" /etc/eucaconsole/console.ini"
+echo "sts.port=8773\" \\"
+echo "       -e \"/that won't work from client's browsers./a\\"
+echo "s3.host=$EUCA_OSP_PUBLIC_IP\" /etc/eucaconsole/console.ini"
 echo
 echo "more /etc/eucaconsole/console.ini"
 
@@ -185,7 +189,9 @@ if [ $choice = y ]; then
     echo
     echo "# sed -i -e \"/#elb.host=10.20.30.40/d\" \\"
     echo ">        -e \"/#elb.port=443/d\" \\"
-    echo ">        -e \"/For each, you can specify a different host/a\\"
+    echo ">        -e \"/#s3.host=<your host IP or name>/d\" \\"
+    echo ">        -e \"/^clchost = localhost\$/s/localhost/$EUCA_CLC_PUBLIC_IP/\" \\"
+    echo ">        -e \"/For each service, you can specify a different host and\/or port, for example;/a\\"
     echo "> ec2.host=$EUCA_UFS_PUBLIC_IP\\n\\"
     echo "> ec2.port=8773\\n\\"
     echo "> autoscale.host=$EUCA_UFS_PUBLIC_IP\\n\\"
@@ -197,10 +203,14 @@ if [ $choice = y ]; then
     echo "> iam.host=$EUCA_UFS_PUBLIC_IP\\n\\"
     echo "> iam.port=8773\\n\\"
     echo "> sts.host=$EUCA_UFS_PUBLIC_IP\\n\\"
-    echo "> sts.port=8773\" /etc/eucaconsole/console.ini"
+    echo "> sts.port=8773\" \\"
+    echo ">        -e \"/that won't work from client's browsers./a\\"
+    echo "> s3.host=$EUCA_OSP_PUBLIC_IP\" /etc/eucaconsole/console.ini"
     sed -i -e "/#elb.host=10.20.30.40/d" \
            -e "/#elb.port=443/d" \
-           -e "/For each, you can specify a different host/a\
+           -e "/#s3.host=<your host IP or name>/d" \
+           -e "/^clchost = localhost$/s/localhost/$EUCA_CLC_PUBLIC_IP/" \
+           -e "/For each service, you can specify a different host and\/or port, for example;/a\
 ec2.host=$EUCA_UFS_PUBLIC_IP\n\
 ec2.port=8773\n\
 autoscale.host=$EUCA_UFS_PUBLIC_IP\n\
@@ -212,7 +222,9 @@ elb.port=8773\n\
 iam.host=$EUCA_UFS_PUBLIC_IP\n\
 iam.port=8773\n\
 sts.host=$EUCA_UFS_PUBLIC_IP\n\
-sts.port=8773" /etc/eucaconsole/console.ini
+sts.port=8773" \
+           -e "/that won't work from client's browsers./a\
+s3.host=$EUCA_OSP_PUBLIC_IP" /etc/eucaconsole/console.ini
     pause
 
     echo "more /etc/eucaconsole/console.ini"
