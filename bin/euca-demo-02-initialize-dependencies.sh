@@ -255,7 +255,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee > /root/creds/$account/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem"
     echo
     echo "chmod 0600 /root/creds/$account/admin/admin-demo.pem"
 
@@ -263,9 +263,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee > /root/creds/$account/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee > /root/creds/$account/admin/admin-demo.pem
-        echo
+        echo "# euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem
+        echo "#"
         echo "# chmod 0600 /root/creds/$account/admin/admin-demo.pem"
         chmod 0600 /root/creds/$account/admin/admin-demo.pem
 

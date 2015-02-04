@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -266,7 +267,7 @@ if [ $choice = y ]; then
 
     echo
     echo "# euca-create-volume -z AZ1 -s 1"
-    euca-create-volume -z AZ1 -s 1 | tee /var/tmp/4-4-euca-create-volume.out
+    euca-create-volume -z AZ1 -s 1 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
     pause
 
     echo "# euca-describe-volumes"
@@ -278,11 +279,10 @@ if [ $choice = y ]; then
 
     next
 fi
+volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
 
 
 ((++step))
-volume=$(cut -f2 /var/tmp/4-4-euca-create-volume.out)
-
 clear
 echo
 echo "============================================================"
@@ -293,7 +293,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-delete-volume $volume"
+echo "euca-delete-volume $volume1_id"
 echo
 echo "euca-describe-volumes"
 echo 
@@ -303,8 +303,8 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
     pause
 
     echo "# euca-describe-volumes"
@@ -319,8 +319,6 @@ fi
 
 
 ((++step))
-volume=$(cut -f2 /var/tmp/4-4-euca-create-volume.out)
-
 clear
 echo
 echo "============================================================"
@@ -331,7 +329,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-delete-volume $volume"
+echo "euca-delete-volume $volume1_id"
 echo 
 echo "euca-describe-volumes"
 
@@ -339,8 +337,8 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
     pause
 
     echo "# euca-describe-volumes"
@@ -419,7 +417,7 @@ run 50
 if [ $choice = y ]; then
     echo
     echo "# euca-create-volume -z AZ1 -s 20"
-    euca-create-volume -z AZ1 -s 20 | tee /var/tmp/4-7-euca-create-volume.out
+    euca-create-volume -z AZ1 -s 20 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
     pause
 
     echo "# euca-describe-volumes"
@@ -427,10 +425,10 @@ if [ $choice = y ]; then
 
     next
 fi
+volume2_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
 
 
 ((++step))
-volume=$(cut -f2 /var/tmp/4-7-euca-create-volume.out)
 
 clear
 echo
@@ -442,7 +440,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-delete-volume $volume"
+echo "euca-delete-volume $volume2_id"
 echo
 echo "euca-describe-volumes"
 echo
@@ -452,8 +450,8 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume2_id"
+    euca-delete-volume $volume2_id
     pause
 
     echo "# euca-describe-volumes"

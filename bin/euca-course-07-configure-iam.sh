@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -501,7 +502,7 @@ run
 if [ $choice = y ]; then
     echo
     echo "# euca-create-volume -s 1 -z AZ1"
-    euca-create-volume -s 1 -z AZ1 | tee /var/tmp/6-9-euca-create-volume.out
+    euca-create-volume -s 1 -z AZ1 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -532,10 +533,10 @@ if [ $choice = y ]; then
     source /root/creds/eucalyptus/admin/eucarc
     pause
 
-    volume=$(cut -f2 /var/tmp/6-9-euca-create-volume.out)
+    volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
 
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30

@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -264,7 +265,7 @@ run
 if [ $choice = y ]; then
     echo
     echo "# euca-create-volume -z AZ1 -s 1"
-    euca-create-volume -z AZ1 -s 1 | tee /var/tmp/5-4-euca-create-volume.out
+    euca-create-volume -z AZ1 -s 1 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -275,9 +276,9 @@ if [ $choice = y ]; then
     euca-describe-volumes
     pause
 
-    echo "# euca-create-snapshot $vol"
-    volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-    euca-create-snapshot $volume | tee /var/tmp/5-4-euca-create-snapshot.out
+    volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
+    echo "# euca-create-snapshot $volume1_id"
+    euca-create-snapshot $volume1_id | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-snapshot.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -289,12 +290,11 @@ if [ $choice = y ]; then
 
     next
 fi
+volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
+snapshot1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-snapshot.out)
 
 
 ((++step))
-snapshot=$(cut -f2 /var/tmp/5-4-euca-create-snapshot.out)
-volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-
 clear
 echo
 echo "============================================================"
@@ -306,11 +306,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-delete-snapshot $snapshot"
+echo "euca-delete-snapshot $snapshot1_id"
 echo
 echo "euca-describe-snapshots"
 echo
-echo "euca-delete-volume $volume"
+echo "euca-delete-volume $volume1_id"
 echo
 echo "euca-describe-volumes"
 
@@ -318,8 +318,8 @@ run
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-delete-snapshot $snapshot"
-    euca-delete-snapshot $snapshot
+    echo "# euca-delete-snapshot $snapshot1_id"
+    euca-delete-snapshot $snapshot1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -330,8 +330,8 @@ if [ $choice = y ]; then
     euca-describe-snapshots
     pause
 
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -340,7 +340,7 @@ if [ $choice = y ]; then
 
     echo "# euca-describe-volumes"
     euca-describe-volumes
-    euca-delete-volume $volume &> /dev/null    # hidden to clear deleting state
+    euca-delete-volume $volume1_id &> /dev/null    # hidden to clear deleting state
 
     next
 fi

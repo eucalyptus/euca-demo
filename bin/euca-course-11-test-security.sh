@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -184,7 +185,11 @@ next
 
 
 ((++step))
-public_ip=$(grep INSTANCE /var/tmp/9-15-euca-run-instance.out | cut -f4)
+# This is a shortcut assuming no other activity on the system - find the most recently launched instance
+result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
+instance_id=${result%:*}
+public_ip=${result#*:}
+user=root
 
 clear
 echo

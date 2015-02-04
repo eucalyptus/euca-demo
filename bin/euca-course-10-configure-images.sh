@@ -15,7 +15,7 @@ if [ -z $EUCA_VNET_MODE ]; then
 fi
 
 [ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
-[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y  || is nc=n
+[ "$(hostname -s)" = "$EUCA_NC1_HOST_NAME" ] && is_nc=y  || is_nc=n
 [ "$(hostname -s)" = "$EUCA_NC2_HOST_NAME" ] && is_nc=y
 [ "$(hostname -s)" = "$EUCA_NC3_HOST_NAME" ] && is_nc=y
 [ "$(hostname -s)" = "$EUCA_NC4_HOST_NAME" ] && is_nc=y
@@ -27,6 +27,10 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
+
+external_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
+internal_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
 
 step=0
 speed_max=400
@@ -39,19 +43,17 @@ login_default=10
 
 interactive=1
 speed=100
-#image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
-image_url=http://odc-f-38.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
-#image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
+image_url=$external_image_url
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-u image_url]"
-    echo "  -I            non-interactive"
-    echo "  -s            slower: increase pauses by 25%"
-    echo "  -f            faster: reduce pauses by 25%"
-    echo "  -u image_url  URL to Demo CentOS image (default: $image_url)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-l]"
+    echo "  -I  non-interactive"
+    echo "  -s  slower: increase pauses by 25%"
+    echo "  -f  faster: reduce pauses by 25%"
+    echo "  -l  Use local mirror for Demo CentOS image"
 }
 
 run() {
@@ -134,12 +136,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfu:? arg; do
+while getopts Isfl? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    u)  image_url="$OPTARG";;
+    l)  image_url=$internal_image_url;;
     ?)  usage
         exit 1;;
     esac
@@ -151,7 +153,7 @@ shift $(($OPTIND - 1))
 #  4. Validate environment
 
 if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "-u $image_url invalid: attempts to reach this URL failed"
+    echo "$image_url invalid: attempts to reach this URL failed"
     exit 5
 fi
 
@@ -228,7 +230,7 @@ if [ $is_clc = y ]; then
         echo "xz -v -d /root/centos.raw.xz"
         xz -v -d /root/centos.raw.xz
 
-        next 50
+        next
     fi
 fi
 
@@ -252,11 +254,12 @@ if [ $is_clc = y ]; then
     if [ $choice = y ]; then
         echo
         echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee /var/tmp/9-3-euca-install-image.out
+        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
-        next 50
+        next
     fi
 fi
+image_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out)
 
 
 ((++step))
@@ -266,9 +269,9 @@ if [ $is_clc = y ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List Images"
-    echo "    - NOTE: Notice the imaging and loadbalancing images in addition"
-    echo "      to the image just uploaded. Such internal images are only"
-    echo "      visible to the Eucalyptus Administrator"
+    echo "    - NOTE: Notice the imaging-worker and loadbalancer images"
+    echo "      in addition to the centos image just uploaded. Such internal"
+    echo "      images are only visible to the Eucalyptus Administrator"
     echo
     echo "============================================================"
     echo
@@ -387,18 +390,16 @@ if [ $is_clc = y ]; then
     if [ $choice = y ]; then
         echo
         echo "# euare-accountlist | grep ops"
-        euare-accountlist | tee /var/tmp/9-8-euare-accountlist.out
+        euare-accountlist | grep ops | tee $tmpdir/$prefix-$(printf '%02d' $step)-euare-accountlist.out
 
-        next 50
+        next
     fi
 fi
+account_id=$(grep ops $tmpdir/$prefix-$(printf '%02d' $step)-euare-accountlist.out | cut -f2)
 
 
 ((++step))
 if [ $is_clc = y ]; then
-    account=$(grep ops /var/tmp/9-8-euare-accountlist.out | cut -f2)
-    image=$(cut -f2 /var/tmp/9-3-euca-install-image.out)
-
     clear
     echo
     echo "============================================================"
@@ -409,14 +410,14 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-modify-image-attribute -l -a $account $image"
+    echo "euca-modify-image-attribute -l -a $account_id $image_id"
    
     run 50
    
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-image-attribute -l -a $account $image"
-        euca-modify-image-attribute -l -a $account $image
+        echo "# euca-modify-image-attribute -l -a $account_id $image_id"
+        euca-modify-image-attribute -l -a $account_id $image_id
 
         next
     fi
@@ -543,7 +544,7 @@ if [ $is_clc = y ]; then
         echo "# chmod 0600 /root/creds/ops/admin/ops-admin.pem"
         chmod 0600 /root/creds/ops/admin/ops-admin.pem
 
-        next 50
+        next
     fi
 fi
 
@@ -596,15 +597,13 @@ if [ $is_clc = y ]; then
         echo "# euca-authorize -P tcp -p 22 -s 0.0.0.0/0 default"
         euca-authorize -P tcp -p 22 -s 0.0.0.0/0 default
 
-        next 50
+        next
     fi
 fi
 
 
 ((++step))
 if [ $is_clc = y ]; then
-    image=$(cut -f2 /var/tmp/9-3-euca-install-image.out)
-
     clear
     echo
     echo "============================================================"
@@ -616,18 +615,19 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-run-instances -k ops-admin $image -t m1.small"
+    echo "euca-run-instances -k ops-admin $image_id -t m1.small"
 
     run
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-run-instances -k ops-admin $image -t m1.small"
-        euca-run-instances -k ops-admin $image -t m1.small | tee /var/tmp/9-15-euca-run-instances.out
+        echo "# euca-run-instances -k ops-admin $image_id -t m1.small"
+        euca-run-instances -k ops-admin $image_id -t m1.small | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-run-instances.out
 
-        next 50
+        next
     fi
 fi
+instance_id=$(grep INSTANCE $tmpdir/$prefix-$(printf '%02d' $step)-euca-run-instances.out | cut -f2)
 
 
 ((++step))
@@ -661,7 +661,6 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
-    instance_id=$(grep INSTANCE /var/tmp/9-15-euca-run-instances.out | cut -f2)
     public_ip=$(euca-describe-instances | grep $instance_id | cut -f4)
     user=root
 
@@ -688,7 +687,7 @@ if [ $is_clc = y ]; then
 
     if [ $choice = y ]; then
         attempt=0
-        ((seconds=$login_default * $login_percent / 100))
+        ((seconds=$login_default * $speed / 100))
         while ((attempt++ <=  login_attempts)); do
             sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
             ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
@@ -801,7 +800,7 @@ if [ $is_nc = y ]; then
         echo "# service eucalyptus-nc restart"
         service eucalyptus-nc restart
 
-        next 50
+        next
     fi
 fi
 

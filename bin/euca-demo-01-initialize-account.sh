@@ -159,7 +159,7 @@ shift $(($OPTIND - 1))
 #  4. Validate environment
 
 if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "-u $image_url invalid: attempts to reach this URL failed"
+    echo "$image_url invalid: attempts to reach this URL failed"
     exit 5
 fi
  
@@ -234,7 +234,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
     echo
     echo "chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
 
@@ -242,9 +242,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem
-        echo
+        echo "# euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem
+        echo "#"
         echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
         chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
 
