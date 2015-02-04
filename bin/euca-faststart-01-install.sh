@@ -241,7 +241,7 @@ if [ $choice = y ]; then
         # invisibly fix missing environment variables needed for image import
         pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
         cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/$pk_pem\nexport EC2_CERT=\${EUCA_KEY_DIR}/$cert_pem' /root/creds/eucalyptus/admin/eucarc
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
     fi
     pause
 

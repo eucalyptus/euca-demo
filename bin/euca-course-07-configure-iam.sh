@@ -356,6 +356,12 @@ if [ $choice = y ]; then
     echo ">        -d /root/creds/engineering/admin/"
     unzip -uo /root/creds/engineering/admin.zip \
            -d /root/creds/engineering/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/engineering/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/engineering/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/engineering/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/engineering/admin/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/engineering/admin/eucarc"
@@ -410,6 +416,12 @@ if [ $choice = y ]; then
     echo ">        -d /root/creds/ops/sally/"
     unzip -uo /root/creds/ops/sally.zip \
            -d /root/creds/ops/sally/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/ops/sally/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/ops/sally/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/ops/sally/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/ops/sally/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/ops/sally/eucarc"

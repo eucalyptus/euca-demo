@@ -57,8 +57,8 @@ nc1_domain_name="prc.eucalyptus-systems.com"
 nc1_public_ip=10.104.10.76
 nc1_private_ip=10.105.10.76
 
-dns_host_name="odc-f-38"
-dns_domain_name="prc.eucalyptus-systems.com"
+dns_host_name="ns1"
+dns_domain_name="mjc.prc.eucalyptus-systems.com"
 dns_public_ip=10.104.10.80
 dns_private_ip=10.105.10.80
 dns_mode="PARENT"

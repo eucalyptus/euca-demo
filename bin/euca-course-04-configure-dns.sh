@@ -401,6 +401,12 @@ if [ $choice = y ]; then
 
     echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/eucalyptus/admin/eucarc"
@@ -636,8 +642,6 @@ if [ $extended = 1 ]; then
     echo "euca-describe-snapshots"
 fi
 echo
-echo "eulb-describe-lbs"
-echo
 echo "euform-describe-stacks"
 echo
 echo "euscale-describe-auto-scaling-groups"
@@ -697,11 +701,6 @@ if [ $choice = y ]; then
         euca-describe-snapshots
         pause
     fi
-
-    echo
-    echo "# eulb-describe-lbs"
-    eulb-describe-lbs
-    pause
 
     echo
     echo "# euform-describe-stacks"

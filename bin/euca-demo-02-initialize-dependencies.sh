@@ -410,6 +410,12 @@ else
         echo ">        -d /root/creds/$account/$demo_user/"
         unzip -uo /root/creds/$account/$demo_user.zip \
                -d /root/creds/$account/$demo_user/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/$demo_user/eucarc; then
+            # invisibly fix missing environment variables needed for image import
+            pk_pem=$(ls -1 /root/creds/$account/$demo_user/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 /root/creds/$account/$demo_user/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/$demo_user/eucarc
+        fi
         pause
 
         echo "# cat /root/creds/$account/$demo_user/eucarc"
@@ -600,6 +606,12 @@ else
         echo ">        -d /root/creds/$account/$demo_developer/"
         unzip -uo /root/creds/$account/$demo_developer.zip \
                -d /root/creds/$account/$demo_developer/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/$demo_developer/eucarc; then
+            # invisibly fix missing environment variables needed for image import
+            pk_pem=$(ls -1 /root/creds/$account/$demo_developer/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 /root/creds/$account/$demo_developer/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/$demo_developer/eucarc
+        fi
         pause
 
         echo "# cat /root/creds/$account/$demo_developer/eucarc"

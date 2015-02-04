@@ -520,7 +520,7 @@ if [ $is_clc = y ]; then
     echo "      which starts the Node Controller service on all Node"
     echo "      Controller hosts"
     echo "    - The following services should be in a NOTREADY state:"
-    echo "      - cluster, loadbalancingbackend, imaging"
+    echo "      - cluster, imagingbackend, loadbalancingbackend"
     echo "    - The following services should be in a BROKEN state:"
     echo "      - storage, objectstorage"
     echo "    - This is normal at this point in time, with partial configuration"

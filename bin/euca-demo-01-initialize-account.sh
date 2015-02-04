@@ -389,6 +389,12 @@ else
         echo ">        -d /root/creds/$account/admin/"
         unzip -uo /root/creds/$account/admin.zip \
                -d /root/creds/$account/admin/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/admin/eucarc; then
+            # invisibly fix missing environment variables needed for image import
+            pk_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/admin/eucarc
+        fi
         pause
 
         echo "# cat /root/creds/$account/admin/eucarc"

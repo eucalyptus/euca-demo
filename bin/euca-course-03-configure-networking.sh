@@ -293,7 +293,7 @@ if [ $is_clc = y ]; then
     echo
     echo "mkdir -p /root/creds/eucalyptus/admin"
     echo
-    echo "rm -f /root/creds/eucalyptus/admin.zip
+    echo "rm -f /root/creds/eucalyptus/admin.zip"
     echo
     echo "euca_conf --get-credentials /root/creds/eucalyptus/admin.zip"
     echo
@@ -321,6 +321,7 @@ if [ $is_clc = y ]; then
 
         echo "# unzip /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
         unzip /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+        cp -a /root/creds/eucalyptus/admin/eucarc /root/creds/eucalyptus/admin/eucarc.orig
         pause
 
         echo "# cat /root/creds/eucalyptus/admin/eucarc"
@@ -381,6 +382,40 @@ if [ $is_clc = y ]; then
         echo
         echo "# euca-describe-instance-types --show-capacity"
         euca-describe-instance-types --show-capacity
+
+        next 200
+    fi
+fi
+
+
+((++step))
+if [ $is_clc = y ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm service status"
+    echo "    - The following service should now be in an ENABLED state:"
+    echo "      - cluster"
+    echo "    - The following services should be in a NOTREADY state:"
+    echo "      - imagingbackend, loadbalancingbackend"
+    echo "    - The following services should be in a BROKEN state:"
+    echo "      - storage, objectstorage"
+    echo "    - This is normal at this point in time, with partial configuration"
+    echo "    - Some output truncated for clarity"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-services | cut -f 1-5"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-services | cut -f 1-5"
+        euca-describe-services | cut -f 1-5
 
         next 200
     fi
