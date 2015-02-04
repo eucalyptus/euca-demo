@@ -47,7 +47,7 @@ next_default=5
 interactive=1
 speed=100
 account=demo
-image_url=$external_image_url
+[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
 
 
 #  2. Define functions
@@ -147,7 +147,7 @@ while getopts Isfa:l? arg; do
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     a)  account="$OPTARG";;
-    l)  image_url=$internal_image_url;;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -172,6 +172,12 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Account Administrator credentials!"
     echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
     exit 20
+fi
+
+if [ $local = 1 ]; then
+    image_url=$internal_image_url
+else
+    image_url=$external_image_url
 fi
 
 

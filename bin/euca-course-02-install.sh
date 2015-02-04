@@ -46,7 +46,7 @@ next_default=5
 
 interactive=1
 speed=100
-local=0
+[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
 
 
 #  2. Define functions

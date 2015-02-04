@@ -37,7 +37,7 @@ next_default=5
 
 interactive=1
 speed=100
-faststart_url=$external_faststart_url
+[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
 
 
 #  2. Define functions
@@ -135,7 +135,7 @@ while getopts Isfl? arg; do
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    l)  faststart_url=$internal_faststart_url;;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -149,6 +149,12 @@ shift $(($OPTIND - 1))
 if [ $is_clc = n ]; then
     echo "This script should only be run on the Cloud Controller host"
     exit 10
+fi
+
+if [ $local = 1 ]; then
+    faststart_url=$internal_faststart_url
+else
+    faststart_url=$external_faststart_url
 fi
 
 

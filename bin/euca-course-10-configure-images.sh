@@ -43,7 +43,7 @@ login_default=10
 
 interactive=1
 speed=100
-image_url=$external_image_url
+[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
 
 
 #  2. Define functions
@@ -141,7 +141,7 @@ while getopts Isfl? arg; do
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    l)  image_url=$internal_image_url;;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -166,6 +166,12 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Administrator credentials!"
     echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
     exit 20
+fi
+
+if [ $local = 1 ]; then
+    image_url=$internal_image_url
+else
+    image_url=$external_image_url
 fi
 
 

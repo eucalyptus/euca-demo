@@ -74,3 +74,5 @@ dns_loadbalancer_ttl="15"
 dns_base_domain="c.mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
+
+install_mode="local"

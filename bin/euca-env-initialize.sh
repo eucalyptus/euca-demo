@@ -254,6 +254,8 @@ if [ $valid = y ]; then
     echo "export EUCA_DNS_LOADBALANCER_SUBDOMAIN=\"$dns_loadbalancer_subdomain\""
     echo "export EUCA_DNS_INSTANCE_SUBDOMAIN=\"$dns_instance_subdomain\""
     echo
+    echo "export EUCA_INSTALL_MODE=\"$install_mode\""
+    echo
     echo "env | sort | grep ^EUCA_"
 
     run 50
@@ -382,6 +384,10 @@ if [ $valid = y ]; then
         export EUCA_DNS_LOADBALANCER_SUBDOMAIN="$dns_loadbalancer_subdomain"
         echo "# export EUCA_DNS_INSTANCE_SUBDOMAIN=\"$dns_instance_subdomain\""
         export EUCA_DNS_INSTANCE_SUBDOMAIN="$dns_instance_subdomain"
+        pause
+
+        echo "# export EUCA_INSTALL_MODE=\"$install_mode\""
+        export EUCA_INSTALL_MODE="$install_mode"
         pause
 
         echo "# env | sort | grep ^EUCA_"
