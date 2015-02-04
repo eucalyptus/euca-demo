@@ -444,20 +444,20 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Install Load Balancer and Imaging Worker image packages"
+echo "$(printf '%2d' $step). Install Eucalyptus Service Image package"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
+echo "yum install -y eucalyptus-service-image"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
-    yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image
+    echo "# yum install -y eucalyptus-service-image"
+    yum install -y eucalyptus-service-image
 
     next 50
 fi
