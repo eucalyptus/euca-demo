@@ -46,7 +46,7 @@ next_default=5
 
 interactive=1
 speed=100
-[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=0 || local=1
 
 
 #  2. Define functions
@@ -190,10 +190,14 @@ if [ $choice = y ]; then
         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
         http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+
     # For local installs, switch the default mirrorlist to an internal version
     # which returns both the external value (same as before) and an internal
     # version as well, and trust that the fastest mirror plugin will pick
-    # the fastest location to use for downloads.
+    # the fastest location to use for downloads. Eventually I'd like to have
+    # the current mirrorlist logic return internal URLS when it detects the
+    # caller is running inside HP faclities, or have an internal version of
+    # the mirrors.eucalyptus.com site which returns additional internal URLs
     if [ $local = 1 ]; then
         sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
         sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo

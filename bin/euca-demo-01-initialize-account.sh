@@ -47,7 +47,7 @@ next_default=5
 interactive=1
 speed=100
 account=demo
-[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=0 || local=1
 
 
 #  2. Define functions
@@ -158,11 +158,6 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "$image_url invalid: attempts to reach this URL failed"
-    exit 5
-fi
- 
 if [ $is_clc = n ]; then
     echo "This script should only be run on the Cloud Controller host"
     exit 10
@@ -180,6 +175,11 @@ else
     image_url=$external_image_url
 fi
 
+if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$image_url invalid: attempts to reach this URL failed"
+    exit 5
+fi
+ 
 
 #  5. Prepare Eucalyptus for Demos
 

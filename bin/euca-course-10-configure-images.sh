@@ -43,7 +43,7 @@ login_default=10
 
 interactive=1
 speed=100
-[ "$EUCA_INSTALL_MODE" = "local" ] && echo local=0 || echo local=1
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=0 || local=1
 
 
 #  2. Define functions
@@ -152,11 +152,6 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "$image_url invalid: attempts to reach this URL failed"
-    exit 5
-fi
-
 if [ $is_clc = n -a $is_nc = n ]; then
     echo "This script should be run only on the Cloud Controller or a Node Controller host"
     exit 10
@@ -172,6 +167,11 @@ if [ $local = 1 ]; then
     image_url=$internal_image_url
 else
     image_url=$external_image_url
+fi
+
+if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$image_url invalid: attempts to reach this URL failed"
+    exit 5
 fi
 
 
@@ -629,6 +629,11 @@ if [ $is_clc = y ]; then
         echo
         echo "# euca-run-instances -k ops-admin $image_id -t m1.small"
         euca-run-instances -k ops-admin $image_id -t m1.small | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-run-instances.out
+
+        echo -n "Waiting 15 seconds for instance data to become available..."
+        sleep 15
+        echo " Done"
+        pause
 
         next
     fi
