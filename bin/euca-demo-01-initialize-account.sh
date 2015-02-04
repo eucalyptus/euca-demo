@@ -357,11 +357,13 @@ else
     echo
     echo "mkdir -p /root/creds/$account/admin"
     echo
-    echo "euca-get-credentials -u admin -a $account \\"
-    echo "                     /root/creds/$account/admin/admin.zip"
+    echo "rm -f /root/creds/$account/admin.zip"
     echo
-    echo "unzip /root/creds/$account/admin/admin.zip \\"
-    echo "      -d /root/creds/$account/admin/"
+    echo "euca-get-credentials -u admin -a $account \\"
+    echo "                     /root/creds/$account/admin.zip"
+    echo
+    echo "unzip -uo /root/creds/$account/admin.zip \\"
+    echo "       -d /root/creds/$account/admin/"
     echo
     echo "cat /root/creds/$account/admin/eucarc"
 
@@ -373,16 +375,20 @@ else
         mkdir -p /root/creds/$account/admin
         pause
 
-        echo "# euca-get-credentials -u admin -a $account \\"
-        echo ">                      /root/creds/$account/admin/admin.zip"
-        euca-get-credentials -u admin -a $account \
-                             /root/creds/$account/admin/admin.zip
+        echo "# rm -f /root/creds/$account/admin.zip"
+        rm -f /root/creds/$account/admin.zip
         pause
 
-        echo "# unzip /root/creds/$account/admin/admin.zip \\"
-        echo ">       -d /root/creds/$account/admin/"
-        unzip /root/creds/$account/admin/admin.zip \
-              -d /root/creds/$account/admin/
+        echo "# euca-get-credentials -u admin -a $account \\"
+        echo ">                      /root/creds/$account/admin.zip"
+        euca-get-credentials -u admin -a $account \
+                             /root/creds/$account/admin.zip
+        pause
+
+        echo "# unzip -uo /root/creds/$account/admin.zip \\"
+        echo ">        -d /root/creds/$account/admin/"
+        unzip -uo /root/creds/$account/admin.zip \
+               -d /root/creds/$account/admin/
         pause
 
         echo "# cat /root/creds/$account/admin/eucarc"

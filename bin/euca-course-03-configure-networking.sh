@@ -291,10 +291,13 @@ if [ $is_clc = y ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca_conf --get-credentials /root/admin.zip"
-    echo
     echo "mkdir -p /root/creds/eucalyptus/admin"
-    echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+    echo
+    echo "rm -f /root/creds/eucalyptus/admin.zip
+    echo
+    echo "euca_conf --get-credentials /root/creds/eucalyptus/admin.zip"
+    echo
+    echo "unzip /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
     echo
     echo "cat /root/creds/eucalyptus/admin/eucarc"
     echo
@@ -304,15 +307,20 @@ if [ $is_clc = y ]; then
 
     if [ $choice = y ]; then
         echo
-        echo "# euca_conf --get-credentials /root/admin.zip"
-        euca_conf --get-credentials /root/admin.zip
-        pause
-
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+        pause
+
+        echo "# rm -f /root/creds/eucalyptus/admin.zip"
+        rm -f /root/creds/eucalyptus/admin.zip
+        pause
+
+        echo "# euca_conf --get-credentials /root/creds/eucalyptus/admin.zip"
+        euca_conf --get-credentials /root/creds/eucalyptus/admin.zip
+        pause
+
+        echo "# unzip /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+        unzip /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
         pause
 
         echo "# cat /root/creds/eucalyptus/admin/eucarc"

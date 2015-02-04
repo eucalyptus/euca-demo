@@ -208,7 +208,12 @@ echo
 echo "Commands:"
 echo
 echo "mkdir -p /root/creds/eucalyptus/admin"
-echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+echo
+echo "rm -f /root/creds/eucalyptus/admin.zip"
+echo
+echo "cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip"
+echo
+echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "cat /root/creds/eucalyptus/admin/eucarc"
 echo
@@ -220,9 +225,24 @@ if [ $choice = y ]; then
     echo
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+    pause
+
+    echo "# rm -f /root/creds/eucalyptus/admin.zip"
+    rm -f /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip"
+    cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+    unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/$pk_pem\nexport EC2_CERT=\${EUCA_KEY_DIR}/$cert_pem' /root/creds/eucalyptus/admin/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/eucalyptus/admin/eucarc"

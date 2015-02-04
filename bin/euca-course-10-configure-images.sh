@@ -437,11 +437,13 @@ if [ $is_clc = y ]; then
     echo
     echo "mkdir -p /root/creds/ops/admin"
     echo
-    echo "euca-get-credentials -a ops -u admin \\"
-    echo "                     /root/creds/ops/admin/ops-admin.zip"
+    echo "rm -f /root/creds/ops/admin.zip"
     echo
-    echo "unzip /root/creds/ops/admin/ops-admin.zip \\"
-    echo "      -d /root/creds/ops/admin/"
+    echo "euca-get-credentials -a ops -u admin \\"
+    echo "                     /root/creds/ops/admin.zip"
+    echo
+    echo "unzip -uo /root/creds/ops/admin.zip \\"
+    echo "       -d /root/creds/ops/admin/"
     echo
     echo "cat /root/creds/ops/admin/eucarc"
     echo
@@ -455,16 +457,20 @@ if [ $is_clc = y ]; then
         mkdir -p /root/creds/ops/admin
         pause
 
-        echo "# euca-get-credentials -a ops -u admin \\"
-        echo ">                      /root/creds/ops/admin/ops-admin.zip"
-        euca-get-credentials -a ops -u admin \
-                             /root/creds/ops/admin/ops-admin.zip
+        echo "# rm -f /root/creds/ops/admin.zip"
+        rm -f /root/creds/ops/admin.zip
         pause
 
-        echo "# unzip /root/creds/ops/admin/ops-admin.zip \\"
-        echo ">       -d /root/creds/ops/admin/"
-        unzip /root/creds/ops/admin/ops-admin.zip \
-              -d /root/creds/ops/admin/
+        echo "# euca-get-credentials -a ops -u admin \\"
+        echo ">                      /root/creds/ops/admin.zip"
+        euca-get-credentials -a ops -u admin \
+                             /root/creds/ops/admin.zip
+        pause
+
+        echo "# unzip -uo /root/creds/ops/admin.zip \\"
+        echo ">        -d /root/creds/ops/admin/"
+        unzip -uo /root/creds/ops/admin.zip \
+               -d /root/creds/ops/admin/
         pause
 
         echo "# cat /root/creds/ops/admin/eucarc"

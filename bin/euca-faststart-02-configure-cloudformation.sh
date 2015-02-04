@@ -150,8 +150,8 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     if [ -r /root/admin.zip ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
         mkdir -p /root/creds/eucalyptus/admin
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+        cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip
+        unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -255,13 +255,13 @@ else
     echo
     echo "Commands:"
     echo
-    echo "rm -f /root/admin.zip"
-    echo
-    echo "euca-get-credentials -u admin /root/admin.zip"
-    echo
-    echo "rm -Rf /root/creds/eucalyptus/admin"
     echo "mkdir -p /root/creds/eucalyptus/admin"
-    echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+    echo
+    echo "rm -f /root/creds/eucalyptus/admin.zip"
+    echo
+    echo "euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+    echo
+    echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
     echo
     echo "cat /root/creds/eucalyptus/admin/eucarc"
     echo
@@ -271,28 +271,24 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# rm -f /root/admin.zip"
-        rm -f /root/admin.zip
-        pause
-
-        echo "# euca-get-credentials -u admin /root/admin.zip"
-        euca-get-credentials -u admin /root/admin.zip
-        pause
-
-        # Save and restore the admin-demo.pem if it exists (should not yet)
-        [ -r /root/creds/eucalyptus/admin/admin-demo.pem ] && cp -a /root/creds/eucalyptus/admin/admin-demo.pem /tmp/admin-demo.pem_$$
-        echo "# rm -Rf /root/creds/eucalyptus/admin"
-        rm -Rf /root/creds/eucalyptus/admin
-        echo "#"
         echo "# mkdir -p /root/creds/eucalyptus/admin"
         mkdir -p /root/creds/eucalyptus/admin
-        [ -r /tmp/admin-demo.pem_$$ ] && cp -a /tmp/admin-demo.pem_$$ /root/creds/eucalyptus/admin/admin-demo.pem; rm -f /tmp/admin-demo.pem_$$
-        echo "#"
-        echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-        sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+        pause
+
+        echo "# rm -f /root/creds/eucalyptus/admin.zip"
+        rm -f /root/creds/eucalyptus/admin.zip
+        pause
+
+        echo "# euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+        euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip
+        pause
+
+        echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+        unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+        pause
         if [ -r /root/eucarc ]; then
-            cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
+            # invisibly update Faststart credentials location
+            cp -a /root/creds/eucalyptus/admin/eucarc /root/eucarc
         fi
         pause
 

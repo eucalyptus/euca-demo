@@ -324,11 +324,15 @@ echo "Commands:"
 echo
 echo "mkdir -p /root/creds/engineering/admin"
 echo
-echo "euca-get-credentials -u admin -a engineering \\"
-echo "                     /root/creds/engineering/admin/eng-admin.zip"
+echo "rm -f /root/creds/engineering/admin.zip"
 echo
-echo "unzip /root/creds/engineering/admin/eng-admin.zip \\"
-echo "      -d /root/creds/engineering/admin/"
+echo "euca-get-credentials -u admin -a engineering \\"
+echo "                     /root/creds/engineering/admin.zip"
+echo
+echo "unzip -uo /root/creds/engineering/admin.zip \\"
+echo "       -d /root/creds/engineering/admin/"
+echo
+echo "cat /root/creds/engineering/admin/eucarc"
 
 run 50
 
@@ -338,16 +342,24 @@ if [ $choice = y ]; then
     mkdir -p /root/creds/engineering/admin
     pause
 
-    echo "# euca-get-credentials -u admin -a engineering \\"
-    echo ">                      /root/creds/engineering/admin/eng-admin.zip"
-    euca-get-credentials -u admin -a engineering \
-                         /root/creds/engineering/admin/eng-admin.zip
+    echo "# rm -f /root/creds/engineering/admin.zip"
+    rm -f /root/creds/engineering/admin.zip
     pause
 
-    echo "# unzip /root/creds/engineering/admin/eng-admin.zip \\"
-    echo ">       -d /root/creds/engineering/admin/"
-    unzip /root/creds/engineering/admin/eng-admin.zip \
-          -d /root/creds/engineering/admin/
+    echo "# euca-get-credentials -u admin -a engineering \\"
+    echo ">                      /root/creds/engineering/admin.zip"
+    euca-get-credentials -u admin -a engineering \
+                         /root/creds/engineering/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/engineering/admin.zip \\"
+    echo ">        -d /root/creds/engineering/admin/"
+    unzip -uo /root/creds/engineering/admin.zip \
+           -d /root/creds/engineering/admin/
+    pause
+
+    echo "# cat /root/creds/engineering/admin/eucarc"
+    cat /root/creds/engineering/admin/eucarc
 
     next 50
 fi
@@ -358,7 +370,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Sally User credentials"
+echo "$(printf '%2d' $step). Download Ops Account Sally User credentials"
 echo
 echo "============================================================"
 echo
@@ -366,11 +378,15 @@ echo "Commands:"
 echo
 echo "mkdir -p /root/creds/ops/sally"
 echo
-echo "euca-get-credentials -u sally -a ops \\"
-echo "                     /root/creds/ops/sally/ops-sally.zip"
+echo "rm -f /root/creds/ops/sally.zip"
 echo
-echo "unzip /root/creds/ops/sally/ops-sally.zip \\"
-echo "      -d /root/creds/ops/sally/"
+echo "euca-get-credentials -u sally -a ops \\"
+echo "                     /root/creds/ops/sally.zip"
+echo
+echo "unzip -uo /root/creds/ops/sally.zip \\"
+echo "       -d /root/creds/ops/sally/"
+echo
+echo "cat /root/creds/ops/sally/eucarc"
 
 run 50
 
@@ -380,16 +396,24 @@ if [ $choice = y ]; then
     mkdir -p /root/creds/ops/sally
     pause
 
-    echo "# euca-get-credentials -u sally -a ops \\"
-    echo ">                      /root/creds/ops/sally/ops-sally.zip"
-    euca-get-credentials -u sally -a ops \
-                         /root/creds/ops/sally/ops-sally.zip
+    echo "# rm -f /root/creds/ops/sally.zip"
+    rm -f /root/creds/ops/sally.zip
     pause
 
-    echo "# unzip /root/creds/ops/sally/ops-sally.zip \\"
-    echo ">       -d /root/creds/ops/sally/"
-    unzip /root/creds/ops/sally/ops-sally.zip \
-          -d /root/creds/ops/sally/
+    echo "# euca-get-credentials -u sally -a ops \\"
+    echo ">                      /root/creds/ops/sally.zip"
+    euca-get-credentials -u sally -a ops \
+                         /root/creds/ops/sally.zip
+    pause
+
+    echo "# unzip -uo /root/creds/ops/sally.zip \\"
+    echo ">        -d /root/creds/ops/sally/"
+    unzip -uo /root/creds/ops/sally.zip \
+           -d /root/creds/ops/sally/
+    pause
+
+    echo "# cat /root/creds/ops/sally/eucarc"
+    cat /root/creds/ops/sally/eucarc
 
     next 50
 fi
