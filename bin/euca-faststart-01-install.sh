@@ -237,6 +237,11 @@ if [ $choice = y ]; then
 
     echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
     unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if grep -s -q "echo WARN:  CloudFormation service URL is not configured" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix bug in initial faststart which registers CloudFormation but returns a warning in eucarc
+        sed -i -r -e "/echo WARN:  CloudFormation service URL is not configured/d" \
+                  -e "s/(^export )(AWS_AUTO_SCALING_URL)(.*\/services\/)(AutoScaling$)/\1\2\3\4\n\1AWS_CLOUDFORMATION_URL\3CloudFormation/" /root/creds/eucalyptus/admin/eucarc
+    fi
     if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
         # invisibly fix missing environment variables needed for image import
         pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
