@@ -45,16 +45,18 @@ delete_default=20
 interactive=1
 speed=100
 account=demo
+gui=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g]"
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
     echo "  -a account  account to use in demo (default: $account)"
+    echo "  -g          add steps and time to demo GUI in another window"
 }
 
 run() {
@@ -137,12 +139,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:? arg; do
+while getopts Isfa:g? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     a)  account="$OPTARG";;
+    g)  gui=1;;
     ?)  usage
         exit 1;;
     esac
@@ -162,6 +165,11 @@ if [ ! -r /root/creds/$account/admin/eucarc ]; then
     echo "-a $account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: /root/creds/$account/admin/eucarc"
     exit 21
+fi
+
+if ! rpm -q --quiet w3m; then
+    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+    exit 98
 fi
 
 
@@ -198,7 +206,7 @@ pause
 echo "# source /root/creds/$account/admin/eucarc"
 source /root/creds/$account/admin/eucarc
 
-next 50
+next
 
 
 ((++step))
@@ -238,12 +246,21 @@ next
 
 
 ((++step))
+# Attempt to clean up any terminated instances which are still showing up in listings
+terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
+for instance_id in $terminated_instance_ids; do
+    euca-terminate-instances $instance_id &> /dev/null
+done
+
 clear
 echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List initial resources"
 echo "    - So we can compare with what CloudFormation creates"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -272,17 +289,25 @@ if [ $choice = y ]; then
     pause 
 
     echo "# euca-describe-groups"
-    euca-describe-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-groups.out
+    euca-describe-groups
     pause
 
     echo "# eulb-describe-lbs"
-    eulb-describe-lbs | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-lbs.out
+    eulb-describe-lbs
     pause
 
     echo "# euca-describe-instances"
-    euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
+    euca-describe-instances
     
     next
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
@@ -383,6 +408,9 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack creation"
+if [ $gui = 1 ];  then
+    echo "    - Alternate betwen here and the GUI to monitor progress"
+fi
 echo "    - NOTE: This can take about 60 - 80 seconds"
 echo
 echo "============================================================"
@@ -391,7 +419,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events ElbDemoStack | tail -10"
+echo "euform-describe-stack-events ElbDemoStack | head -10"
 
 run 50
 
@@ -405,11 +433,11 @@ if [ $choice = y ]; then
     ((seconds=$create_default * $speed / 100))
     while ((attempt++ <= create_attempts)); do
         echo
-        echo "# euform-describe-stack-events ElbDemoStack | tail -10"
-        euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
-        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "CREATE_COMPLETE"
-        RC=$?
-        if [ $RC = 0 ]; then
+        echo "# euform-describe-stack-events ElbDemoStack | head -10"
+        euform-describe-stack-events ElbDemoStack | head -10
+
+        status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
+        if [ "$status" = "CREATE_COMPLETE" ]; then
             break
         else
             echo
@@ -429,7 +457,10 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List updated resources"
-echo "    - Note addition of new instance and group"
+echo "    - Note addition of new group, ELB and instances"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -446,25 +477,34 @@ run 50
 if [ $choice = y ]; then
     echo
     echo "# euca-describe-groups"
-    euca-describe-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-groups.out
+    euca-describe-groups
     pause
 
     echo "# eulb-describe-lbs"
-    eulb-describe-lbs | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-lbs.out
+    eulb-describe-lbs
     pause
 
     echo "# euca-describe-instances"
-    euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
+    euca-describe-instances
 
     next
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
 ((++step))
 # This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
-instance_id=${result%:*}
-public_ip=${result#*:}
+result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
+instance_id=${result%%:*}
+temp=${result%:*} && public_name=${temp#*:}
+public_ip=${result##*:}
 user=root
 
 clear
@@ -485,7 +525,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
+echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
 
 run 50
 
@@ -493,16 +533,18 @@ if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $speed / 100))
     while ((attempt++ <= login_attempts)); do
+        sed -i -e "/$public_name/d" /root/.ssh/known_hosts
         sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+        ssh-keyscan $public_name 2> /dev/null >> /root/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
+        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip
+            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name
             RC=$?
         else
-            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip << EOF
+            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
@@ -558,6 +600,9 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack deletion"
+if [ $gui = 1 ];  then
+    echo "    - Alternate betwen here and the GUI to monitor progress"
+fi
 echo "    - NOTE: This can take about 120 - 180 seconds"
 echo
 echo "============================================================"
@@ -566,7 +611,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events ElbDemoStack | tail -10"
+echo "euform-describe-stack-events ElbDemoStack | head -10"
 
 run 50
 
@@ -580,11 +625,11 @@ if [ $choice = y ]; then
     ((seconds=$delete_default * $speed / 100))
     while ((attempt++ <= delete_attempts)); do
         echo
-        echo "# euform-describe-stack-events ElbDemoStack | tail -10"
-        euform-describe-stack-events ElbDemoStack | tail -10 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out
-        tail -1 $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-stack-events.out | grep -s -q "DELETE_COMPLETE"
-        RC=$?
-        if [ $RC = 0 ]; then
+        echo "# euform-describe-stack-events ElbDemoStack | head -10"
+        euform-describe-stack-events ElbDemoStack | head -10
+
+        status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
+        if [ -z "$status" ]; then
             break
         else
             echo
@@ -605,6 +650,9 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). List remaining resources"
 echo "    - Confirm we are back to our initial set"
+if [ $gui = 1 ];  then
+    echo "    - After listing resources here, confirm via GUI"
+fi
 echo
 echo "============================================================"
 echo
@@ -644,6 +692,14 @@ if [ $choice = y ]; then
     euca-describe-instances
 
     next 200
+
+    if [ $gui = 1 ]; then
+        echo
+        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "        to confirm resources via management console"
+
+        next 400
+    fi
 fi
 
 
