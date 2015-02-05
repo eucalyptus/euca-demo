@@ -49,8 +49,6 @@ speed=100
 account=demo
 [ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
 
-echo local=$local
-sleep 2
 
 #  2. Define functions
 
@@ -170,9 +168,6 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
     exit 20
 fi
-
-echo local=$local
-sleep 2
 
 if [ $local = 1 ]; then
     image_url=$internal_image_url
