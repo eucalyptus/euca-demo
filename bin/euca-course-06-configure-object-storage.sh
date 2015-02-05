@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -264,7 +265,7 @@ run
 if [ $choice = y ]; then
     echo
     echo "# euca-create-volume -z AZ1 -s 1"
-    euca-create-volume -z AZ1 -s 1 | tee /var/tmp/5-4-euca-create-volume.out
+    euca-create-volume -z AZ1 -s 1 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -275,9 +276,9 @@ if [ $choice = y ]; then
     euca-describe-volumes
     pause
 
-    echo "# euca-create-snapshot $vol"
-    volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-    euca-create-snapshot $volume | tee /var/tmp/5-4-euca-create-snapshot.out
+    volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
+    echo "# euca-create-snapshot $volume1_id"
+    euca-create-snapshot $volume1_id | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-snapshot.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -289,12 +290,11 @@ if [ $choice = y ]; then
 
     next
 fi
+volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
+snapshot1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-snapshot.out)
 
 
 ((++step))
-snapshot=$(cut -f2 /var/tmp/5-4-euca-create-snapshot.out)
-volume=$(cut -f2 /var/tmp/5-4-euca-create-volume.out)
-
 clear
 echo
 echo "============================================================"
@@ -306,11 +306,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-delete-snapshot $snapshot"
+echo "euca-delete-snapshot $snapshot1_id"
 echo
 echo "euca-describe-snapshots"
 echo
-echo "euca-delete-volume $volume"
+echo "euca-delete-volume $volume1_id"
 echo
 echo "euca-describe-volumes"
 
@@ -318,8 +318,8 @@ run
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-delete-snapshot $snapshot"
-    euca-delete-snapshot $snapshot
+    echo "# euca-delete-snapshot $snapshot1_id"
+    euca-delete-snapshot $snapshot1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -330,8 +330,8 @@ if [ $choice = y ]; then
     euca-describe-snapshots
     pause
 
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -340,7 +340,7 @@ if [ $choice = y ]; then
 
     echo "# euca-describe-volumes"
     euca-describe-volumes
-    euca-delete-volume $volume &> /dev/null    # hidden to clear deleting state
+    euca-delete-volume $volume1_id &> /dev/null    # hidden to clear deleting state
 
     next
 fi
@@ -358,13 +358,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "rm -f /root/admin.zip"
-echo
-echo "euca-get-credentials -u admin /root/admin.zip"
-echo
-echo "rm -Rf /root/creds/eucalyptus/admin"
 echo "mkdir -p /root/creds/eucalyptus/admin"
-echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+echo
+echo "rm -f /root/creds/eucalyptus/admin.zip"
+echo
+echo "euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+echo
+echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "cat /root/creds/eucalyptus/admin/eucarc"
 echo
@@ -374,26 +374,26 @@ run
 
 if [ $choice = y ]; then
     echo
-    echo "# rm -f /root/admin.zip"
-    rm -f /root/admin.zip
-    pause
-
-    echo "# euca-get-credentials -u admin /root/admin.zip"
-    euca-get-credentials -u admin /root/admin.zip
-    pause
-
-    # Save and restore the admin-demo.pem if it exists
-    [ -r /root/creds/eucalyptus/admin/admin-demo.pem ] && cp -a /root/creds/eucalyptus/admin/admin-demo.pem /tmp/admin-demo.pem_$$
-    echo "# rm -Rf /root/creds/eucalyptus/admin"
-    rm -Rf /root/creds/eucalyptus/admin
-    echo "#"
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    [ -r /tmp/admin-demo.pem_$$ ] && cp -a /tmp/admin-demo.pem_$$ /root/creds/eucalyptus/admin/admin-demo.pem; rm -f /tmp/admin-demo.pem_$$
-    echo "#"
-    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+    pause
+
+    echo "# rm -f /root/creds/eucalyptus/admin.zip"
+    rm -f /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+    euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+    unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/eucalyptus/admin/eucarc"
@@ -444,20 +444,20 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Install Load Balancer and Imaging Worker image packages"
+echo "$(printf '%2d' $step). Install Eucalyptus Service Image package"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
+echo "yum install -y eucalyptus-service-image"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image"
-    yum install -y eucalyptus-load-balancer-image eucalyptus-imaging-worker-image
+    echo "# yum install -y eucalyptus-service-image"
+    yum install -y eucalyptus-service-image
 
     next 50
 fi

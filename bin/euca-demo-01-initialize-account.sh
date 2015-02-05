@@ -47,7 +47,7 @@ next_default=5
 interactive=1
 speed=100
 account=demo
-image_url=$external_image_url
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
 
 
 #  2. Define functions
@@ -147,7 +147,7 @@ while getopts Isfa:l? arg; do
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     a)  account="$OPTARG";;
-    l)  image_url=$internal_image_url;;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -158,11 +158,6 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "-u $image_url invalid: attempts to reach this URL failed"
-    exit 5
-fi
- 
 if [ $is_clc = n ]; then
     echo "This script should only be run on the Cloud Controller host"
     exit 10
@@ -174,6 +169,17 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     exit 20
 fi
 
+if [ $local = 1 ]; then
+    image_url=$internal_image_url
+else
+    image_url=$external_image_url
+fi
+
+if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$image_url invalid: attempts to reach this URL failed"
+    exit 5
+fi
+ 
 
 #  5. Prepare Eucalyptus for Demos
 
@@ -234,7 +240,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
     echo
     echo "chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
 
@@ -242,9 +248,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee > /root/creds/eucalyptus/admin/admin-demo.pem
-        echo
+        echo "# euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem
+        echo "#"
         echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
         chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
 
@@ -357,11 +363,13 @@ else
     echo
     echo "mkdir -p /root/creds/$account/admin"
     echo
-    echo "euca-get-credentials -u admin -a $account \\"
-    echo "                     /root/creds/$account/admin/admin.zip"
+    echo "rm -f /root/creds/$account/admin.zip"
     echo
-    echo "unzip /root/creds/$account/admin/admin.zip \\"
-    echo "      -d /root/creds/$account/admin/"
+    echo "euca-get-credentials -u admin -a $account \\"
+    echo "                     /root/creds/$account/admin.zip"
+    echo
+    echo "unzip -uo /root/creds/$account/admin.zip \\"
+    echo "       -d /root/creds/$account/admin/"
     echo
     echo "cat /root/creds/$account/admin/eucarc"
 
@@ -373,16 +381,26 @@ else
         mkdir -p /root/creds/$account/admin
         pause
 
-        echo "# euca-get-credentials -u admin -a $account \\"
-        echo ">                      /root/creds/$account/admin/admin.zip"
-        euca-get-credentials -u admin -a $account \
-                             /root/creds/$account/admin/admin.zip
+        echo "# rm -f /root/creds/$account/admin.zip"
+        rm -f /root/creds/$account/admin.zip
         pause
 
-        echo "# unzip /root/creds/$account/admin/admin.zip \\"
-        echo ">       -d /root/creds/$account/admin/"
-        unzip /root/creds/$account/admin/admin.zip \
-              -d /root/creds/$account/admin/
+        echo "# euca-get-credentials -u admin -a $account \\"
+        echo ">                      /root/creds/$account/admin.zip"
+        euca-get-credentials -u admin -a $account \
+                             /root/creds/$account/admin.zip
+        pause
+
+        echo "# unzip -uo /root/creds/$account/admin.zip \\"
+        echo ">        -d /root/creds/$account/admin/"
+        unzip -uo /root/creds/$account/admin.zip \
+               -d /root/creds/$account/admin/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/admin/eucarc; then
+            # invisibly fix missing environment variables needed for image import
+            pk_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/admin/eucarc
+        fi
         pause
 
         echo "# cat /root/creds/$account/admin/eucarc"

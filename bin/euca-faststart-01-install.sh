@@ -37,7 +37,7 @@ next_default=5
 
 interactive=1
 speed=100
-faststart_url=$external_faststart_url
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
 
 
 #  2. Define functions
@@ -135,7 +135,7 @@ while getopts Isfl? arg; do
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    l)  faststart_url=$internal_faststart_url;;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -149,6 +149,12 @@ shift $(($OPTIND - 1))
 if [ $is_clc = n ]; then
     echo "This script should only be run on the Cloud Controller host"
     exit 10
+fi
+
+if [ $local = 1 ]; then
+    faststart_url=$internal_faststart_url
+else
+    faststart_url=$external_faststart_url
 fi
 
 
@@ -208,7 +214,12 @@ echo
 echo "Commands:"
 echo
 echo "mkdir -p /root/creds/eucalyptus/admin"
-echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+echo
+echo "rm -f /root/creds/eucalyptus/admin.zip"
+echo
+echo "cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip"
+echo
+echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "cat /root/creds/eucalyptus/admin/eucarc"
 echo
@@ -220,9 +231,29 @@ if [ $choice = y ]; then
     echo
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
-    sed -i -e '/EUCALYPTUS_CERT=/aexport EC2_CERT=${EUCA_KEY_DIR}/cloud-cert.pem' /root/creds/eucalyptus/admin/eucarc    # invisibly fix missing property still needed for image import
+    pause
+
+    echo "# rm -f /root/creds/eucalyptus/admin.zip"
+    rm -f /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip"
+    cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+    unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if grep -s -q "echo WARN:  CloudFormation service URL is not configured" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix bug in initial faststart which registers CloudFormation but returns a warning in eucarc
+        sed -i -r -e "/echo WARN:  CloudFormation service URL is not configured/d" \
+                  -e "s/(^export )(AWS_AUTO_SCALING_URL)(.*\/services\/)(AutoScaling$)/\1\2\3\4\n\1AWS_CLOUDFORMATION_URL\3CloudFormation/" /root/creds/eucalyptus/admin/eucarc
+    fi
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
+    fi
     pause
 
     echo "# cat /root/creds/eucalyptus/admin/eucarc"

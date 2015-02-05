@@ -64,8 +64,8 @@ nc2_domain_name="prc.eucalyptus-systems.com"
 nc2_public_ip=10.104.10.37
 nc2_private_ip=10.105.10.37
 
-dns_host_name="odc-f-38"
-dns_domain_name="prc.eucalyptus-systems.com"
+dns_host_name="ns1"
+dns_domain_name="mjc.prc.eucalyptus-systems.com"
 dns_public_ip=10.104.10.80
 dns_private_ip=10.105.10.80
 dns_mode="PARENT"
@@ -74,3 +74,5 @@ dns_loadbalancer_ttl="15"
 dns_base_domain="c.mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
+
+install_mode="local"

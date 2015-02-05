@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -324,11 +325,15 @@ echo "Commands:"
 echo
 echo "mkdir -p /root/creds/engineering/admin"
 echo
-echo "euca-get-credentials -u admin -a engineering \\"
-echo "                     /root/creds/engineering/admin/eng-admin.zip"
+echo "rm -f /root/creds/engineering/admin.zip"
 echo
-echo "unzip /root/creds/engineering/admin/eng-admin.zip \\"
-echo "      -d /root/creds/engineering/admin/"
+echo "euca-get-credentials -u admin -a engineering \\"
+echo "                     /root/creds/engineering/admin.zip"
+echo
+echo "unzip -uo /root/creds/engineering/admin.zip \\"
+echo "       -d /root/creds/engineering/admin/"
+echo
+echo "cat /root/creds/engineering/admin/eucarc"
 
 run 50
 
@@ -338,16 +343,30 @@ if [ $choice = y ]; then
     mkdir -p /root/creds/engineering/admin
     pause
 
-    echo "# euca-get-credentials -u admin -a engineering \\"
-    echo ">                      /root/creds/engineering/admin/eng-admin.zip"
-    euca-get-credentials -u admin -a engineering \
-                         /root/creds/engineering/admin/eng-admin.zip
+    echo "# rm -f /root/creds/engineering/admin.zip"
+    rm -f /root/creds/engineering/admin.zip
     pause
 
-    echo "# unzip /root/creds/engineering/admin/eng-admin.zip \\"
-    echo ">       -d /root/creds/engineering/admin/"
-    unzip /root/creds/engineering/admin/eng-admin.zip \
-          -d /root/creds/engineering/admin/
+    echo "# euca-get-credentials -u admin -a engineering \\"
+    echo ">                      /root/creds/engineering/admin.zip"
+    euca-get-credentials -u admin -a engineering \
+                         /root/creds/engineering/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/engineering/admin.zip \\"
+    echo ">        -d /root/creds/engineering/admin/"
+    unzip -uo /root/creds/engineering/admin.zip \
+           -d /root/creds/engineering/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/engineering/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/engineering/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/engineering/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/engineering/admin/eucarc
+    fi
+    pause
+
+    echo "# cat /root/creds/engineering/admin/eucarc"
+    cat /root/creds/engineering/admin/eucarc
 
     next 50
 fi
@@ -358,7 +377,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Engineering Account Sally User credentials"
+echo "$(printf '%2d' $step). Download Ops Account Sally User credentials"
 echo
 echo "============================================================"
 echo
@@ -366,11 +385,15 @@ echo "Commands:"
 echo
 echo "mkdir -p /root/creds/ops/sally"
 echo
-echo "euca-get-credentials -u sally -a ops \\"
-echo "                     /root/creds/ops/sally/ops-sally.zip"
+echo "rm -f /root/creds/ops/sally.zip"
 echo
-echo "unzip /root/creds/ops/sally/ops-sally.zip \\"
-echo "      -d /root/creds/ops/sally/"
+echo "euca-get-credentials -u sally -a ops \\"
+echo "                     /root/creds/ops/sally.zip"
+echo
+echo "unzip -uo /root/creds/ops/sally.zip \\"
+echo "       -d /root/creds/ops/sally/"
+echo
+echo "cat /root/creds/ops/sally/eucarc"
 
 run 50
 
@@ -380,16 +403,30 @@ if [ $choice = y ]; then
     mkdir -p /root/creds/ops/sally
     pause
 
-    echo "# euca-get-credentials -u sally -a ops \\"
-    echo ">                      /root/creds/ops/sally/ops-sally.zip"
-    euca-get-credentials -u sally -a ops \
-                         /root/creds/ops/sally/ops-sally.zip
+    echo "# rm -f /root/creds/ops/sally.zip"
+    rm -f /root/creds/ops/sally.zip
     pause
 
-    echo "# unzip /root/creds/ops/sally/ops-sally.zip \\"
-    echo ">       -d /root/creds/ops/sally/"
-    unzip /root/creds/ops/sally/ops-sally.zip \
-          -d /root/creds/ops/sally/
+    echo "# euca-get-credentials -u sally -a ops \\"
+    echo ">                      /root/creds/ops/sally.zip"
+    euca-get-credentials -u sally -a ops \
+                         /root/creds/ops/sally.zip
+    pause
+
+    echo "# unzip -uo /root/creds/ops/sally.zip \\"
+    echo ">        -d /root/creds/ops/sally/"
+    unzip -uo /root/creds/ops/sally.zip \
+           -d /root/creds/ops/sally/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/ops/sally/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/ops/sally/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/ops/sally/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/ops/sally/eucarc
+    fi
+    pause
+
+    echo "# cat /root/creds/ops/sally/eucarc"
+    cat /root/creds/ops/sally/eucarc
 
     next 50
 fi
@@ -465,7 +502,7 @@ run
 if [ $choice = y ]; then
     echo
     echo "# euca-create-volume -s 1 -z AZ1"
-    euca-create-volume -s 1 -z AZ1 | tee /var/tmp/6-9-euca-create-volume.out
+    euca-create-volume -s 1 -z AZ1 | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out
 
     echo -n "Waiting 30 seconds..."
     sleep 30
@@ -496,10 +533,10 @@ if [ $choice = y ]; then
     source /root/creds/eucalyptus/admin/eucarc
     pause
 
-    volume=$(cut -f2 /var/tmp/6-9-euca-create-volume.out)
+    volume1_id=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-euca-create-volume.out)
 
-    echo "# euca-delete-volume $volume"
-    euca-delete-volume $volume
+    echo "# euca-delete-volume $volume1_id"
+    euca-delete-volume $volume1_id
 
     echo -n "Waiting 30 seconds..."
     sleep 30

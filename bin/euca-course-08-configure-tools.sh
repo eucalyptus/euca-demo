@@ -23,6 +23,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -215,13 +216,15 @@ echo "EOF"
 echo
 echo "cat << EOF >> /root/.euca/euca2ools.ini"
 echo "[region eucacloud]"
-echo "ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute"
-echo "s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage"
-echo "iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare"
-echo "sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens"
-echo "elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing"
 echo "autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling"
+echo "cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation"
+echo "ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute"
+echo "elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing"
+echo "iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare"
 echo "monitoring-url http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch"
+echo "s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage"
+echo "sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens"
+echo "swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow"
 echo "EOF"
 echo
 echo "more /root/.euca/euca2ools.ini"
@@ -253,24 +256,28 @@ EOF
 
     echo "# cat << EOF >> /root/.euca/euca2ools.ini"
     echo "> [region eucacloud]"
-    echo "> ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute"
-    echo "> s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage"
-    echo "> iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare"
-    echo "> sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens"
-    echo "> elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing"
     echo "> autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling"
+    echo "> cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation"
+    echo "> ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute"
+    echo "> elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing"
+    echo "> iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare"
     echo "> monitoring-url http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch"
+    echo "> s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage"
+    echo "> sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens"
+    echo "> swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow"
     echo "> EOF"
     cat << EOF >> /root/.euca/euca2ools.ini
 
 [region eucacloud]
-ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute
-s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
-iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare
-sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens
-elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing
 autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling
+cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation
+ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute
+elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing
+iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare
 monitoring-url http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch
+s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
+sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens
+swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow
 EOF
     pause
 

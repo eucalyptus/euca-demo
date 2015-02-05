@@ -243,6 +243,12 @@ next
 
 
 ((++step))
+# Attempt to clean up any terminated instances which are still showing up in listings
+terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
+for instance_id in $terminated_instance_ids; do
+    euca-terminate-instances $instance_id &> /dev/null
+done
+
 clear
 echo
 echo "============================================================"
@@ -755,9 +761,10 @@ fi
 
 ((++step))
 # This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11 | sort -k3 | tail -1 | cut -f1,2 | tr -s '[:blank:]' ':')
-instance_id=${result%:*}
-public_ip=${result#*:}
+result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
+instance_id=${result%%:*}
+temp=${result%:*} && public_name=${temp#*:}
+public_ip=${result##*:}
 user=root
 
 clear
@@ -780,7 +787,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
+echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
 
 run 50
 
@@ -788,16 +795,18 @@ if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $speed / 100))
     while ((attempt++ <= $login_attempts)); do
+        sed -i -e "/$public_name/d" /root/.ssh/known_hosts
         sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+        ssh-keyscan $public_name 2> /dev/null >> /root/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip"
+        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip
+            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name
             RC=$?
         else
-            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_ip << EOF
+            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
@@ -1173,6 +1182,11 @@ if [ $choice = y ]; then
     pause
 
     # While the instances are deleted by deletion of the ASG, which removes the terminated results from listings
+    for instance_id in $instance_ids; do
+        euca-terminate-instances $instance_id &> /dev/null
+    done
+
+    # Repeat, as sometimes some terminated instances are still in listings, so we get a clean final listing
     for instance_id in $instance_ids; do
         euca-terminate-instances $instance_id &> /dev/null
     done

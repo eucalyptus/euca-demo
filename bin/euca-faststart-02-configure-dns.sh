@@ -155,7 +155,8 @@ if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
     if [ -r /root/admin.zip ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
         mkdir -p /root/creds/eucalyptus/admin
-        unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+        cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip
+        unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -380,13 +381,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "rm -f /root/admin.zip"
+echo "rm -f /root/creds/eucalyptus/admin.zip"
 echo
-echo "euca-get-credentials -u admin /root/admin.zip"
+echo "euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
 echo
-echo "rm -Rf /root/creds/eucalyptus/admin"
-echo "mkdir -p /root/creds/eucalyptus/admin"
-echo "unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
+echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
 echo
 echo "cat /root/creds/eucalyptus/admin/eucarc"
 echo
@@ -396,27 +395,29 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# rm -f /root/admin.zip"
-    rm -f /root/admin.zip
-    pause
-
-    echo "# euca-get-credentials -u admin /root/admin.zip"
-    euca-get-credentials -u admin /root/admin.zip
-    pause
-
-    # Save and restore the admin-demo.pem if it exists
-    [ -r /root/creds/eucalyptus/admin/admin-demo.pem ] && cp -a /root/creds/eucalyptus/admin/admin-demo.pem /tmp/admin-demo.pem_$$
-    echo "# rm -Rf /root/creds/eucalyptus/admin"
-    rm -Rf /root/creds/eucalyptus/admin
-    echo "#"
     echo "# mkdir -p /root/creds/eucalyptus/admin"
     mkdir -p /root/creds/eucalyptus/admin
-    [ -r /tmp/admin-demo.pem_$$ ] && cp -a /tmp/admin-demo.pem_$$ /root/creds/eucalyptus/admin/admin-demo.pem; rm -f /tmp/admin-demo.pem_$$
-    echo "#"
-    echo "# unzip /root/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip /root/admin.zip -d /root/creds/eucalyptus/admin/
+    pause
+
+    echo "# rm -f /root/creds/eucalyptus/admin.zip"
+    rm -f /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+    euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip
+    pause
+
+    echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+    unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+        # invisibly fix missing environment variables needed for image import
+        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
+    fi
     if [ -r /root/eucarc ]; then
-        cp /root/creds/eucalyptus/admin/eucarc /root/eucarc    # invisibly update Faststart credentials location
+        # invisibly update Faststart credentials location
+        cp -a /root/creds/eucalyptus/admin/eucarc /root/eucarc
     fi
     pause
 
@@ -426,6 +427,7 @@ if [ $choice = y ]; then
 
     echo "# source /root/creds/eucalyptus/admin/eucarc"
     source /root/creds/eucalyptus/admin/eucarc
+    pause
 
     next
 fi

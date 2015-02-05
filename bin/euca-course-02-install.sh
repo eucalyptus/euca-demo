@@ -36,6 +36,7 @@ logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
+prefix=course
 
 step=0
 speed_max=400
@@ -45,15 +46,17 @@ next_default=5
 
 interactive=1
 speed=100
+[ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-l]"
     echo "  -I  non-interactive"
     echo "  -s  slower: increase pauses by 25%"
     echo "  -f  faster: reduce pauses by 25%"
+    echo "  -l  Use local mirror for yum repos"
 }
 
 run() {
@@ -136,11 +139,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isf? arg; do
+while getopts Isfl? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    l)  local=1;;
     ?)  usage
         exit 1;;
     esac
@@ -187,6 +191,17 @@ if [ $choice = y ]; then
         http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
         http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
+    # For local installs, switch the default mirrorlist to an internal version
+    # which returns both the external value (same as before) and an internal
+    # version as well, and trust that the fastest mirror plugin will pick
+    # the fastest location to use for downloads. Eventually I'd like to have
+    # the current mirrorlist logic return internal URLS when it detects the
+    # caller is running inside HP faclities, or have an internal version of
+    # the mirrors.eucalyptus.com site which returns additional internal URLs
+    if [ $local = 1 ]; then
+        sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
+        sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
+    fi
     next 50
 fi
 
@@ -520,7 +535,7 @@ if [ $is_clc = y ]; then
     echo "      which starts the Node Controller service on all Node"
     echo "      Controller hosts"
     echo "    - The following services should be in a NOTREADY state:"
-    echo "      - cluster, loadbalancingbackend, imaging"
+    echo "      - cluster, imagingbackend, loadbalancingbackend"
     echo "    - The following services should be in a BROKEN state:"
     echo "      - storage, objectstorage"
     echo "    - This is normal at this point in time, with partial configuration"
