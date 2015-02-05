@@ -1,5 +1,5 @@
 #
-# This file is for the MCrawford Cloud Administrator Course Environment
+# This file is for the MCrawford Course 1 (Cloud Administrator) Environment
 #
 # This environment consists of the following hosts:
 # - odc-c-21: CLC, UFS, MC, CC, SC, OSP
@@ -71,7 +71,8 @@ dns_private_ip=10.105.10.80
 dns_mode="PARENT"
 dns_timeout="30"
 dns_loadbalancer_ttl="15"
-dns_base_domain="c.mjc.prc.eucalyptus-systems.com"
+dns_region="hp-gol-c1"
+dns_region_domain="mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
 

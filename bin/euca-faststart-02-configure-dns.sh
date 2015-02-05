@@ -240,7 +240,7 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN"
+    echo "euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
     echo
     echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
     
@@ -248,8 +248,8 @@ else
     
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN"
-        euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_BASE_DOMAIN
+        echo "# euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+        euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
         echo "#"
         echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
         euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
@@ -299,14 +299,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN"
+echo "euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN"
-    euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_BASE_DOMAIN
+    echo "# euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
 
     next 50
 fi
@@ -457,28 +457,28 @@ if [ $showdnsconfig = 1 ]; then
         echo "Commands:"
         echo
         echo "# Add these lines to /etc/named.conf on the parent DNS server"
-        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
+        echo "         zone \"$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN\" IN"
         echo "         {"
         echo "                 type master;"
-        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+        echo "                 file \"/etc/named/db.$EUCA_DNS_REGION\";"
         echo "         };"
         echo "#"
         echo "# Create the zone file on the parent DNS server"
-        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+        echo "# cat << EOF > /etc/named/db.$EUCA_DNS_REGION"
         echo "> ;"
-        echo "> ; DNS zone for $EUCA_DNS_BASE_DOMAIN"
+        echo "> ; DNS zone for $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
         echo "> ; - Eucalyptus configured to use Parent DNS server"
         echo "> ;"
         echo "> $TTL 1M"
-        echo "> $ORIGIN $EUCA_DNS_BASE_DOMAIN"
-        echo "> @                       SOA     ns1.${EUCA_DNS_BASE_DOMAIN#*.}. root.${EUCA_DNS_BASE_DOMAIN#*.}. ("
+        echo "> $ORIGIN $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+        echo "> @                       SOA     ns1.$EUCA_DNS_REGION_DOMAIN. root.$EUCA_DNS_REGION_DOMAIN. ("
         echo ">                                 $(date +%Y%m%d)01      ; Serial"
         echo ">                                 1H              ; Refresh"
         echo ">                                 10M             ; Retry"
         echo ">                                 1D              ; Expire"
         echo ">                                 1H )            ; Negative Cache TTL"
         echo ">"
-        echo ">                         NS      ns1.${EUCA_DNS_BASE_DOMAIN#*.}."
+        echo ">                         NS      ns1.$EUCA_DNS_REGION_DOMAIN."
         echo ">"
         echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
         echo ">"
@@ -520,20 +520,20 @@ else
         echo "Commands:"
         echo
         echo "# Add these lines to /etc/named.conf on the parent DNS server"
-        echo "         zone \"$EUCA_DNS_BASE_DOMAIN\" IN"
+        echo "         zone \"$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN\" IN"
         echo "         {"
         echo "                 type master;"
-        echo "                 file \"/etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}\";"
+        echo "                 file \"/etc/named/db.$EUCA_DNS_REGION\";"
         echo "         };"
         echo "#"
         echo "# Create the zone file on the parent DNS server"
         echo "> ;"
-        echo "> ; DNS zone for $EUCA_DNS_BASE_DOMAIN"
+        echo "> ; DNS zone for $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
         echo "> ; - Eucalyptus configured to use CLC as DNS server"
         echo ">"
-        echo "# cat << EOF > /etc/named/db.${EUCA_DNS_BASE_DOMAIN%%.*}"
+        echo "# cat << EOF > /etc/named/db.$EUCA_DNS_REGION"
         echo "> $TTL 1M"
-        echo "> $ORIGIN $EUCA_DNS_BASE_DOMAIN"
+        echo "> $ORIGIN $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
         echo "> @                       SOA     ns1 root ("
         echo ">                                 $(date +%Y%m%d)01      ; Serial"
         echo ">                                 1H              ; Refresh"
@@ -566,56 +566,56 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "dig +short compute.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short euare.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short tokens.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
-echo "dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN"
+echo "dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# dig +short compute.$EUCA_DNS_BASE_DOMAIN"
-    dig +short compute.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN"
-    dig +short objectstorage.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short euare.$EUCA_DNS_BASE_DOMAIN"
-    dig +short euare.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short tokens.$EUCA_DNS_BASE_DOMAIN"
-    dig +short tokens.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN"
-    dig +short autoscaling.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN"
-    dig +short cloudformation.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN"
-    dig +short cloudwatch.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
     pause
 
-    echo "# dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN"
-    dig +short loadbalancing.$EUCA_DNS_BASE_DOMAIN
+    echo "# dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+    dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
 
     next
 fi

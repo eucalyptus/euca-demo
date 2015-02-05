@@ -1,5 +1,5 @@
 #
-# This file is for the MCrawford POC Demo Architecture Environment
+# This file is for the MCrawford Demo 1 (6-node) Architecture Environment
 #
 # This environment consists of the following hosts:
 # - odc-d-13: CLC
@@ -74,7 +74,8 @@ dns_private_ip=10.105.10.80
 dns_mode="PARENT"
 dns_timeout="30"
 dns_loadbalancer_ttl="15"
-dns_base_domain="d.mjc.prc.eucalyptus-systems.com"
+dns_region="hp-gol-d1"
+dns_region_domain="mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
 

@@ -1,5 +1,5 @@
 #
-# This file is for the MCrawford FastStart B Environment
+# This file is for the MCrawford FastStart 2 Environment
 #
 # This environment consists of the following hosts:
 # - odc-f-33: CLC, UFS, MC, CC, SC, OSP, NC1
@@ -64,7 +64,8 @@ dns_private_ip=10.105.10.80
 dns_mode="CLC"
 dns_timeout="30"
 dns_loadbalancer_ttl="15"
-dns_base_domain="fb.mjc.prc.eucalyptus-systems.com"
+dns_region="hp-gol-f2"
+dns_region_domain="mjc.prc.eucalyptus-systems.com"
 dns_loadbalancer_subdomain="lb"
 dns_instance_subdomain=".cloud"
 
