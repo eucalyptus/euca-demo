@@ -1177,6 +1177,11 @@ if [ $choice = y ]; then
         euca-terminate-instances $instance_id &> /dev/null
     done
 
+    # Repeat, as sometimes some terminated instances are still in listings, so we get a clean final listing
+    for instance_id in $instance_ids; do
+        euca-terminate-instances $instance_id &> /dev/null
+    done
+
     next
 fi
 
