@@ -272,7 +272,8 @@ if [ $is_clc = y ]; then
     if [ $choice = y ]; then
         echo
         echo "# chkconfig eucalyptus-cloud on"
-        echo 
+        chkconfig eucalyptus-cloud on
+        echo "#"
         echo "# service eucalyptus-cloud start"
         service eucalyptus-cloud start
 
@@ -322,7 +323,7 @@ if [ $is_cc = y ]; then
         echo
         echo "# chkconfig eucalyptus-cc on"
         chkconfig eucalyptus-cc on
-        echo
+        echo "#"
         echo "# service eucalyptus-cc start"
         service eucalyptus-cc start
 
@@ -499,7 +500,7 @@ if [ $is_nc = y ]; then
         echo
         echo "# chkconfig eucalyptus-nc on"
         chkconfig eucalyptus-nc on
-        echo
+        echo "#"
         echo "# service eucalyptus-nc start"
         service eucalyptus-nc start
 
