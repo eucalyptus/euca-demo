@@ -39,7 +39,7 @@ pause_default=2
 next_default=5
 
 login_attempts=12
-login_default=10
+login_default=20
 
 interactive=1
 speed=100
@@ -435,10 +435,10 @@ fi
 
 
 ((++step))
-account_id=$(euare-accountlist | grep ops | cut -f2)
-image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
-
 if [ $is_clc = y ]; then
+    account_id=$(euare-accountlist | grep ops | cut -f2)
+    image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+
     clear
     echo
     echo "============================================================"
@@ -688,8 +688,8 @@ if [ $is_clc = y ]; then
 
         next
     fi
+    instance_id=$(grep INSTANCE $tmpdir/$prefix-$(printf '%02d' $step)-euca-run-instances.out | cut -f2)
 fi
-instance_id=$(grep INSTANCE $tmpdir/$prefix-$(printf '%02d' $step)-euca-run-instances.out | cut -f2)
 
 
 ((++step))
@@ -723,7 +723,9 @@ fi
 
 ((++step))
 if [ $is_clc = y ]; then
-    public_ip=$(euca-describe-instances | grep $instance_id | cut -f4)
+    result=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4,17 | tr -s '[:blank:]' ':')
+    public_name=${result%:*}
+    public_ip=${result#*:}
     user=root
 
     clear
@@ -733,17 +735,20 @@ if [ $is_clc = y ]; then
     echo "$(printf '%2d' $step). Confirm ability to login to Instance"
     echo "    - If unable to login, view instance console output with:"
     echo "      # euca-get-console-output $instance_id"
-    echo "    - If able to login, show private IP with:"
+    echo "    - If able to login, first show the private IP with:"
     echo "      # ifconfig"
+    echo "    - Then view meta-data about the public IP with:"
+    echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
     echo "    - Then view meta-data about instance type with:"
     echo "      # curl http://169.254.169.254/latest/meta-data/instance-type"
     echo "    - Logout of instance once login ability confirmed"
+    echo "    - NOTE: This can take about 20 - 80 seconds"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip"
+    echo "ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_name"
 
     run 50
 
@@ -751,23 +756,24 @@ if [ $is_clc = y ]; then
         attempt=0
         ((seconds=$login_default * $speed / 100))
         while ((attempt++ <=  login_attempts)); do
+            sed -i -e "/$public_name/d" /root/.ssh/known_hosts
             sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
+            ssh-keyscan $public_name 2> /dev/null >> /root/.ssh/known_hosts
             ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
 
             echo
-            echo "# ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip"
+            echo "# ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_name"
             if [ $interactive = 1 ]; then
-                ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip
+                ssh -i /root/creds/ops/admin/ops-admin.pem $user@$public_name
                 RC=$?
             else
-                ssh -T -i /root/creds/ops/admin/ops-admin.pem $user@$public_ip << EOF
+                ssh -T -i /root/creds/ops/admin/ops-admin.pem $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
 echo
 echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
-echo $(cat /tmp/public-ip4)
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4; echo
 sleep 5
 EOF
                 RC=$?
@@ -782,7 +788,7 @@ EOF
             fi
         done
 
-        next 200
+        next
     fi
 fi
 
