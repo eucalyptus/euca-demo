@@ -603,7 +603,7 @@ Experimental configuration attempting to get AWS-like service URLs
 
         rm -f ~/creds/eucalyptus/admin.zip
 
-        euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+        sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
 
         unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
@@ -615,21 +615,24 @@ Experimental configuration attempting to get AWS-like service URLs
 
 9. (CLC): Confirm DNS resolution for Services
 
-        dig +short compute.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        region=hp-gol-d1
+        region_domain=mjc.prc.eucalyptus-systems.com
 
-        dig +short objectstorage.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short compute.${region}.${region_domain}
 
-        dig +short euare.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short objectstorage.${region}.${region_domain}
 
-        dig +short tokens.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short euare.${region}.${region_domain}
 
-        dig +short autoscaling.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short tokens.${region}.${region_domain}
 
-        dig +short cloudformation.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short autoscaling.${region}.${region_domain}
 
-        dig +short cloudwatch.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short cloudformation.${region}.${region_domain}
 
-        dig +short loadbalancing.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+        dig +short cloudwatch.${region}.${region_domain}
+
+        dig +short loadbalancing.${region}.${region_domain}
 
 10. (CLC): Confirm API commands work with new URLs
 
