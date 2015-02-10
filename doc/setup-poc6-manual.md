@@ -143,91 +143,91 @@ more...
 
 1. (NC*): Install bridge utilities package
 
-    sudo yum -y install bridge-utils
+        sudo yum -y install bridge-utils
 
 2. (NC*): Create Private Bridge
 Move the static IP of em2 to the bridge
 
-    private_interface=em2
-    private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-    private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-    private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-    private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-    private_bridge=br0    
+        private_interface=em2
+        private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+        private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+        private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+        private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+        private_bridge=br0    
 
-    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-$private_bridge > /dev/null
-    DEVICE=$private_bridge
-    TYPE=Bridge
-    BOOTPROTO=static
-    IPADDR=$private_ip
-    NETMASK=$private_netmask
-    DNS1=$private_dns1
-    DNS2=$private_dns2
-    PERSISTENT_DHCLIENT=yes
-    ONBOOT=yes
-    DELAY=0
-    EOF
+        cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-$private_bridge > /dev/null
+        DEVICE=$private_bridge
+        TYPE=Bridge
+        BOOTPROTO=static
+        IPADDR=$private_ip
+        NETMASK=$private_netmask
+        DNS1=$private_dns1
+        DNS2=$private_dns2
+        PERSISTENT_DHCLIENT=yes
+        ONBOOT=yes
+        DELAY=0
+        EOF
 
 3. (NC*): Convert Private Ethernet Interface to Private Bridge Slave
 
-    sudo sed -i -e "\$aBRIDGE=$private_bridge" \
-                -e "/^BOOTPROTO=/s/=.*$/=none/" \
-                -e "/^IPADDR=/d" \
-                -e "/^NETMASK=/d" \
-                -e "/^PERSISTENT_DHCLIENT=/d" \
-                -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
+        sudo sed -i -e "\$aBRIDGE=$private_bridge" \
+                    -e "/^BOOTPROTO=/s/=.*$/=none/" \
+                    -e "/^IPADDR=/d" \
+                    -e "/^NETMASK=/d" \
+                    -e "/^PERSISTENT_DHCLIENT=/d" \
+                    -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
 
 4. (NC*): Restart networking
 
-    sudo service network restart
+        sudo service network restart
 
 5. (ALL): Disable firewall
 
-    sudo service iptables stop
+        sudo service iptables stop
 
 6. (ALL): Disable SELinux
 
-    sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
+        sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
 
-    sudo setenforce 0
+        sudo setenforce 0
 
 7. (ALL): Install and Configure the NTP service
 
-    sudo yum -y install ntp
+        sudo yum -y install ntp
+    
+        sudo chkconfig ntpd on
+        sudo service ntpd start
 
-    sudo chkconfig ntpd on
-    sudo service ntpd start
-
-    sudo ntpdate -u  0.centos.pool.ntp.org
-    sudo hwclock --systohc
+        sudo ntpdate -u  0.centos.pool.ntp.org
+        sudo hwclock --systohc
 
 8. (CLC) Install and Configure Mail Relay
 
-    TBD - see existing Postfix null client configurations
+        TBD - see existing Postfix null client configurations
 
 9. (NC*): Configure packet routing
 
-    sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-    if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
-        sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
-    fi
+        sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
+        if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
+            sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+        fi
 
-    sudo sysctl -p
+        sudo sysctl -p
 
-    cat /proc/sys/net/ipv4/ip_forward
-    if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
-        cat /proc/sys/net/bridge/bridge-nf-call-iptables
-    fi
+        cat /proc/sys/net/ipv4/ip_forward
+        if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
+            cat /proc/sys/net/bridge/bridge-nf-call-iptables
+        fi
 
 10. (ALL): Install subscriber license (optional, for subscriber-only packages)
 Note CS has a license for internal use, so this will obtain and use that license from where
 I have placed it on my local mirror:
 
-    wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
-         -O /tmp/CS-Team-Unlimited-1.4.0.tgz
+        wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
+             -O /tmp/CS-Team-Unlimited-1.4.0.tgz
 
-    cd /tmp
-    tar xvfz CS-Team-Unlimited-1.4.0.tgz
+        cd /tmp
+        tar xvfz CS-Team-Unlimited-1.4.0.tgz
 
 
 ## Install Eucalyptus
