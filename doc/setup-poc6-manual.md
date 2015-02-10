@@ -300,54 +300,71 @@ Not working right now
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        public_interface=em1
+        private_interface=em2
+        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
+        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
+
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$private_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
 1. (UFS / MC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        public_interface=em1
+        private_interface=em2
+        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
+        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
+
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$private_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
 1. (CC / SC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        public_interface=em1
+        private_interface=em2
+        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
+        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
+
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$public_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
 1. (OSP): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        public_interface=em1
+        private_interface=em2
+        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
+        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
+
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$public_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
 1. (NC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
+        public_interface=em1
+        private_bridge=br0
+        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
+        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
+
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"br0\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em1\"/" \
-                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_bridge\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
+                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"$private_bridge\"/" /etc/eucalyptus/eucalyptus.conf
 
 2. (CLC): Create Eucalyptus EDGE Networking configuration file
 This can not be loaded until the cloud is initialized
