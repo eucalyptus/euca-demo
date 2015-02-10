@@ -20,73 +20,74 @@ This manual procedure is partially into that process.
 
 ## Prepare Network
 
-CLC:  1. Reserve Ports Used by Eucalyptus
+1. (CLC): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" >> /etc/sysconfig/iptables # Credentials (CLC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
-    echo "-A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" >> /etc/sysconfig/iptables # Credentials (CLC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
+        echo "-A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
 
-UFS:  1. Reserve Ports Used by Eucalyptus
+1. (UFS): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT" >> /etc/sysconfig/iptables # Database (CLC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT" >> /etc/sysconfig/iptables # Database (CLC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
-MC:   1. Reserve Ports Used by Eucalyptus
+1. (MC): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT" >> /etc/sysconfig/iptables
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /etc/sysconfig/iptables
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT" >> /etc/sysconfig/iptables
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /etc/sysconfig/iptables
 
-CC:   1. Reserve Ports Used by Eucalyptus
+1. (CC): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
 
-SC:   1. Reserve Ports Used by Eucalyptus
+1. (SC): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
-OSG:  1. Reserve Ports Used by Eucalyptus
+1. (OSP): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
-NC*:  1. Reserve Ports Used by Eucalyptus
+1. (NC): Reserve Ports Used by Eucalyptus
 
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (NC)
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT" >> /etc/sysconfig/iptables # TLS, needed for node migrations (NC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (NC)
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
+        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT" >> /etc/sysconfig/iptables # TLS, needed for node migrations (NC)
 
-ALL:  2. Verify Connectivity
+2. (ALL): Verify Connectivity
+use nc from MW to confirm these via code statements
 
 1. Verify connection from an end-user to the CLC on TCP ports 8443 and 8773
 2. Verify connection from an end-user to Walrus on TCP port 8773
@@ -107,23 +108,25 @@ ALL:  2. Verify Connectivity
 16. If you use VMware with Eucalyptus, verify the connection from the VMware Broker to VMware (ESX, VSphere).
 17. Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
 
-CLC, CC, SC, OSG:  3. Run tomography tool
+3. (CLC / CC / SC / OSG): Run tomography tool
 
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+        git clone https://github.com/eucalyptus/deveutils
 
-    cd deveutils/network-tomography
-    ./network-tomography 10.104.10.83 10.104.10.84 10.104.10.85 10.104.1.208
+        cd deveutils/network-tomography
+        ./network-tomography 10.104.10.83 10.104.10.84 10.104.10.85 10.104.1.208
 
-CLC:  4. Scan for unknown SSH host keys (sudo tee needed to append output to file owned by root)
+4. (CLC): Scan for unknown SSH host keys
+Note: sudo tee needed to append output to file owned by root
 
-    ssh-keyscan 10.104.10.83 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan 10.104.10.84 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan 10.104.10.85 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan 10.104.1.208 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan 10.104.1.190 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan 10.104.1.187 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan 10.104.10.83 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan 10.104.10.84 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan 10.104.10.85 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan 10.104.1.208 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+        ssh-keyscan 10.105.1.190 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan 10.105.1.187 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
 
 ## Prepare External DNS
@@ -133,19 +136,21 @@ before registering services with the method outlined below, as I will be using D
 so they look more AWS-like.
 
 You should be able to resolve:
-hp-gol-d1.mjc.prc.eucalyptus-systems.com: 10.104.10.84
 
-clc.hp-gol-d1.mjc.prc.eucalyptus-systems.com: 10.104.10.83
-more...
+        dig +short hp-gol-d1.mjc.prc.eucalyptus-systems.com
+        10.104.10.84
+
+        dig +short clc.hp-gol-d1.mjc.prc.eucalyptus-systems.com
+        10.104.10.83
 
 
 ## Initialize Dependencies
 
-1. (NC*): Install bridge utilities package
+1. (NC): Install bridge utilities package
 
         sudo yum -y install bridge-utils
 
-2. (NC*): Create Private Bridge
+2. (NC): Create Private Bridge
 Move the static IP of em2 to the bridge
 
         private_interface=em2
@@ -168,7 +173,7 @@ Move the static IP of em2 to the bridge
         DELAY=0
         EOF
 
-3. (NC*): Convert Private Ethernet Interface to Private Bridge Slave
+3. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
         sudo sed -i -e "\$aBRIDGE=$private_bridge" \
                     -e "/^BOOTPROTO=/s/=.*$/=none/" \
@@ -177,7 +182,7 @@ Move the static IP of em2 to the bridge
                     -e "/^PERSISTENT_DHCLIENT=/d" \
                     -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
 
-4. (NC*): Restart networking
+4. (NC): Restart networking
 
         sudo service network restart
 
@@ -205,7 +210,7 @@ Move the static IP of em2 to the bridge
 
         TBD - see existing Postfix null client configurations
 
-9. (NC*): Configure packet routing
+9. (NC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
         if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
@@ -232,310 +237,313 @@ I have placed it on my local mirror:
 
 ## Install Eucalyptus
 
-ALL:  1. Configure yum repositories (second set of statements optional for subscriber-licensed packages)
+1. (ALL): Configure yum repositories (second set of statements optional for subscriber-licensed packages)
 
-    sudo yum install -y \
-             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
-             http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+        sudo yum install -y \
+                 http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
+                 http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
+                 http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
 ```
 Not working right now
-    sudo yum install -y /tmp/CS-Team-Unlimited-1.4.0/eucalyptus-enterprise-release-4.0-1.CS_Team.Unlimited.noarch.rpm
-    sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.0-1.el6.noarch.rpm
-    sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+        sudo yum install -y /tmp/CS-Team-Unlimited-1.4.0/eucalyptus-enterprise-release-4.0-1.CS_Team.Unlimited.noarch.rpm
+        sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.0-1.el6.noarch.rpm
+        sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
 ```
 
-ALL:  1. Override external yum repos to internal servers
+1. (ALL): Override external yum repos to internal servers
 
-    sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
-    sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
+        sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
+        sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
 
+2. (CLC): Install packages
 
-CLC:  2. Install packages
+        sudo yum install -y eucalyptus-cloud eucalyptus-service-image
 
-    sudo yum install -y eucalyptus-cloud
-    sudo yum install -y eucalyptus-service-image
+2. (UFC): Install packages
 
-UFC:  2. Install packages
+        sudo yum install -y eucalyptus-cloud
 
-    sudo yum install -y eucalyptus-cloud
+2. (MC): Install packages
 
-MC:   2. Install packages
+        sudo yum install -y eucaconsole
 
-    sudo yum install -y eucaconsole
+2. (CC): Install packages
 
-CC:   2. Install packages
+        sudo yum install -y eucalyptus-cc
 
-    sudo yum install -y eucalyptus-cc
+2. (SC): Install packages
 
-SC:   2. Install packages
+        sudo yum install -y eucalyptus-sc
 
-    sudo yum install -y eucalyptus-sc
+2. (OSP): Install packages
 
-OSP:  2. Install packages
+        sudo yum install -y eucalyptus-walrus
 
-    sudo yum install -y eucalyptus-walrus
+2. (NC): Install packages
 
-NC*:  2. Install packages (note eucalyptus-nc has eucanetd as dependency)
+        sudo yum install -y eucalyptus-nc
 
-    sudo yum install -y eucalyptus-nc
+3. (NC): Remove Devfault libvirt network.
 
-NC*:  3. Remove Devfault libvirt network.
+        sudo virsh net-destroy default
+        sudo virsh net-autostart default --disable
 
-    sudo virsh net-destroy default
-    sudo virsh net-autostart default --disable
+4. (NC): Confirm KVM device node permissions.
 
-NC*:  4. Confirm KVM device node permissions.
-
-    ls -l /dev/kvm  # should be owned by root:kvm
+        ls -l /dev/kvm  # should be owned by root:kvm
 
 
 ## Configure Eucalyptus
 
-CLC:  1. Configure Eucalyptus Networking
+1. (CLC):  1. Configure Eucalyptus Networking
 
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-    em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-    em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
+        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
+        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
-UFS,MC:  1. Configure Eucalyptus Networking
+1. (UFS / MC): Configure Eucalyptus Networking
 
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-    em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-    em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
+        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
+        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em2_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
-CC,SC:   1. Configure Eucalyptus Networking
+1. (CC / SC): Configure Eucalyptus Networking
 
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-    em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-    em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
+        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
+        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
-OSP:  1. Configure Eucalyptus Networking
+1. (OSP): Configure Eucalyptus Networking
 
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-    em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
-    em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
-                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
+        em1_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em1$/\1/p')
+        em2_ip=$(ip addr | sed -r -n -e 's/^ *inet ([^/]*)\/.* em2$/\1/p')
+        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"em1\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em2\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$em1_ip\"/" /etc/eucalyptus/eucalyptus.conf
 
-NC*:  1. Configure Eucalyptus Networking
+1. (NC): Configure Eucalyptus Networking
 
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"br0\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em1\"/" \
-                -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" /etc/eucalyptus/eucalyptus.conf
+        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"br0\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"em1\"/" \
+                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"br0\"/" /etc/eucalyptus/eucalyptus.conf
 
-CLC:  2. Create Eucalyptus EDGE Networking configuration file
-* This can not be loaded until the cloud is initialized
+2. (CLC): Create Eucalyptus EDGE Networking configuration file
+This can not be loaded until the cloud is initialized
 
-    instance_dns_domain=cloud.internal
-    instance_dns_servers=10.104.10.80
-    instance_public_ips=10.104.40.1-10.104.40.254
-    cluster01=hp-gol-d1a
+        instance_dns_domain=cloud.internal
+        instance_dns_servers=10.104.10.80
+        instance_public_ips=10.104.40.1-10.104.40.254
+        cluster01=hp-gol-d1a
     
-    cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
-    {
-      "InstanceDnsDomain": "eucalyptus.internal",
-      "InstanceDnsServers": [
-        "10.104.10.80"
-      ],
-      "PublicIps": [
-        "10.104.40.1-10.104.40.254"
-      ],
-      "Clusters": [
+        cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
         {
-          "Name": "hp-gol-d1a",
-          "MacPrefix": "d0:0d",
-          "Subnet": {
-            "Name": "Private (10.105.40.0/24)",
-            "Subnet": "10.105.40.0",
-            "Netmask": "255.255.255.0",
-            "Gateway": "10.105.40.1"
-          },
-          "PrivateIps": [
-            "10.105.40.2-10.105.40.254"
+          "InstanceDnsDomain": "eucalyptus.internal",
+          "InstanceDnsServers": [
+            "10.104.10.80"
+          ],
+          "PublicIps": [
+            "10.104.40.1-10.104.40.254"
+          ],
+          "Clusters": [
+            {
+              "Name": "hp-gol-d1a",
+              "MacPrefix": "d0:0d",
+              "Subnet": {
+                "Name": "Private (10.105.40.0/24)",
+                "Subnet": "10.105.40.0",
+                "Netmask": "255.255.255.0",
+                "Gateway": "10.105.40.1"
+              },
+              "PrivateIps": [
+                "10.105.40.2-10.105.40.254"
+              ]
+            }
           ]
         }
-      ]
-    }
-    EOF
+        EOF
 
-NC*:  3. Configure Eucalyptus Disk Allocation
+3. (NC): Configure Eucalyptus Disk Allocation
 
-    nc_work_size=2400000
-    nc_cache_size=300000
-    sudo sed -i -e "s/^#NC_WORK_SIZE=.*$/NC_WORK_SIZE=\"$nc_work_size\"/" \
-                -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
+        nc_work_size=2400000
+        nc_cache_size=300000
 
-NC*:  4. Configure Eucalyptus to use Private IP for Metadata
+        sudo sed -i -e "s/^#NC_WORK_SIZE=.*$/NC_WORK_SIZE=\"$nc_work_size\"/" \
+                    -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
 
-    cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
+4. (NC): Configure Eucalyptus to use Private IP for Metadata
+
+        cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
     
-    # Set this to Y to use the private IP of the CLC for the metadata service.
-    # The default is to use the public IP.
-    METADATA_USE_VM_PRIVATE="Y"
-    EOF
+        # Set this to Y to use the private IP of the CLC for the metadata service.
+        # The default is to use the public IP.
+        METADATA_USE_VM_PRIVATE="Y"
+        EOF
 
-CLC,UFS,SC,OSP:  5. Configure Eucalyptus Java Memory Allocation
+5. (CLC / UFS / SC / OSP): Configure Eucalyptus Java Memory Allocation
 
-    # Skip for now, causing startup errors
-    # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
-    # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
+        # Skip for now, causing startup errors
+        # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
+        # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
 
-MC:   6. Configure Management Console with Cloud Controller Address
+6. (MC): Configure Management Console with Cloud Controller Address
 
-    clc_host=odc-d-13.prc.eucalyptus-systems.com
-    clc_em1_ip=$(dig +short $clc_host)
-    clc_em2_ip=${clc_em1_ip/10.104/10.105}
-    sudo sed -i -e "/^clchost = /s/localhost/$clc_em2_ip/" /etc/eucaconsole/console.ini
+        clc_host=odc-d-13.prc.eucalyptus-systems.com
+        clc_em1_ip=$(dig +short $clc_host)
+        clc_em2_ip=${clc_em1_ip/10.104/10.105}
+        sudo sed -i -e "/^clchost = /s/localhost/$clc_em2_ip/" /etc/eucaconsole/console.ini
 
-ALL:  7. Disable zero-conf network
+7. (ALL): Disable zero-conf network
 
-    sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
+        sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
     
 
 ## Start Eucalyptus
 
-CLC:  1. Initialize the Cloud Controller service
+1. (CLC): Initialize the Cloud Controller service
 
-    sudo euca_conf --initialize
+        sudo euca_conf --initialize
 
-CLC,UFS,SC,OSP:  2. Start the Cloud Controller service
+2. (CLC / UFS / SC / OSP): Start the Cloud Controller service
 
-    sudo chkconfig eucalyptus-cloud on
+        sudo chkconfig eucalyptus-cloud on
 
-    sudo service eucalyptus-cloud start
+        sudo service eucalyptus-cloud start
 
-CC:   3. Start the Cluster Controller service
+3. (CC): Start the Cluster Controller service
 
-    sudo chkconfig eucalyptus-cc on
+        sudo chkconfig eucalyptus-cc on
 
-    sudo service eucalyptus-cc start
+        sudo service eucalyptus-cc start
 
-NC*:  4. Start the Node Controller and Eucanetd services
+4. (NC): Start the Node Controller and Eucanetd services
 
-    sudo chkconfig eucalyptus-nc on
+        sudo chkconfig eucalyptus-nc on
 
-    sudo service eucalyptus-nc start
+        sudo service eucalyptus-nc start
 
-    sudo chkconfig eucanetd on
+        sudo chkconfig eucanetd on
 
-    sudo service eucanetd start
+        sudo service eucanetd start
 
-MW:   5. Confirm service startup
+5. (MW): Confirm service startup - Are ports listening?
 
-    nc -z 10.104.10.83 8443 || echo 'Connection failed! CLC not listening on 8443'
-    nc -z 10.104.10.83 8773 || echo 'Connection failed! CLC not listening on 8773'
+        nc -z 10.104.10.83 8443 || echo 'Connection failed! CLC not listening on 8443'
+        nc -z 10.104.10.83 8773 || echo 'Connection failed! CLC not listening on 8773'
 
-    nc -z 10.104.10.84 8773 || echo 'Connection failed! UFS not listening on 8773'
+        nc -z 10.104.10.84 8773 || echo 'Connection failed! UFS not listening on 8773'
 
-    nc -z 10.104.10.84 8888 || echo 'Connection failed! MC not listening on 8888'
+        nc -z 10.104.10.84 8888 || echo 'Connection failed! MC not listening on 8888'
 
-    nc -z 10.10.104.1.208 8773 || echo 'Connection failed! OSP not listening on 8773'
+        nc -z 10.10.104.1.208 8773 || echo 'Connection failed! OSP not listening on 8773'
 
-    nc -z 10.104.10.85 8773 || echo 'Connection failed! SC not listening on 8773'
+        nc -z 10.104.10.85 8773 || echo 'Connection failed! SC not listening on 8773'
 
-    nc -z 10.104.10.85 8774 || echo 'Connection failed! CC not listening on 8774'
+        nc -z 10.104.10.85 8774 || echo 'Connection failed! CC not listening on 8774'
 
-    nc -z 10.105.1.190 8775 || echo 'Connection failed! NC1 not listening on 8775'
-    nc -z 10.105.1.187 8775 || echo 'Connection failed! NC2 not listening on 8775'
-    nc -z 10.105.10.56 8775 || echo 'Connection failed! NC3 not listening on 8775'
-    nc -z 10.105.10.59 8775 || echo 'Connection failed! NC4 not listening on 8775'
+        nc -z 10.105.1.190 8775 || echo 'Connection failed! NC1 not listening on 8775'
+        nc -z 10.105.1.187 8775 || echo 'Connection failed! NC2 not listening on 8775'
+        nc -z 10.105.10.56 8775 || echo 'Connection failed! NC3 not listening on 8775'
+        nc -z 10.105.10.59 8775 || echo 'Connection failed! NC4 not listening on 8775'
 
-    ls -l /var/log/eucalyptus # confirm log files written on all hosts
+5. (All): Confirm service startup - Are logs being written?
+
+        ls -l /var/log/eucalyptus
 
 
 ## Register Eucalyptus
+Experimental configuration attempting to get AWS-like service URLs
 
-CLC:  1. Register User-Facing services
+1. (CLC): Register User-Facing services
 
-    region=hp-gol-d1
-    region_domain=mjc.prc.eucalyptus-systems.com
-    zone_a=${region}a
-    zone_b=${region}b
+        region=hp-gol-d1
+        region_domain=mjc.prc.eucalyptus-systems.com
+        zone_a=${region}a
+        zone_b=${region}b
 
-    ufs_private_ip=10.105.10.84
-    api_service_name=${region}-api
+        ufs_private_ip=10.105.10.84
+        api_service_name=${region}-api
 
-    euca_conf --register-service -T user-api -H ${region}.${region_domain} -N ${api_service_name}
+        euca_conf --register-service -T user-api -H ${region}.${region_domain} -N ${api_service_name}
 
-CLC:  2. Register Walrus as the Object Storage Provider
+2. (CLC): Register Walrus as the Object Storage Provider
 
-    walrus_public_ip=10.104.1.208
-    walrus_component_name=${region}-walrus
+        walrus_public_ip=10.104.1.208
+        walrus_component_name=${region}-walrus
 
-    euca_conf --register-walrusbackend -P walrus -H ${walrus_public_ip} -C ${walrus_component_name}
+        euca_conf --register-walrusbackend -P walrus -H ${walrus_public_ip} -C ${walrus_component_name}
 
-CLC:  3. Register Storage Controller service
+3. (CLC): Register Storage Controller service
 
-    sc_public_ip=10.104.10.85
-    sc_component_name=${zone_a}-sc
+        sc_public_ip=10.104.10.85
+        sc_component_name=${zone_a}-sc
 
-    euca_conf --register-sc -P ${zone_a} -H ${sc_public_ip} -C ${sc_component_name}
+        euca_conf --register-sc -P ${zone_a} -H ${sc_public_ip} -C ${sc_component_name}
 
-CLC:  4. Register Cluster Controller service
+4. (CLC): Register Cluster Controller service
 
-    cc_public_ip=10.104.10.85
-    cc_component_name=${zone_a}-cc
+        cc_public_ip=10.104.10.85
+        cc_component_name=${zone_a}-cc
 
-    euca_conf --register-cluster -P ${zone_a} -H ${cc_public_ip} -C ${cc_component_name}
+        euca_conf --register-cluster -P ${zone_a} -H ${cc_public_ip} -C ${cc_component_name}
 
-CC:   5. Register Node Controller host(s)
+5. (CC): Register Node Controller host(s)
 
-    nc1_private_ip=10.105.1.190
-    nc2_private_ip=10.105.1.187
-    nc3_private_ip=10.105.10.56
-    nc4_private_ip=10.105.10.59
+        nc1_private_ip=10.105.1.190
+        nc2_private_ip=10.105.1.187
+        nc3_private_ip=10.105.10.56
+        nc4_private_ip=10.105.10.59
 
-    # Skip broken hosts until first two healthy again
-    #euca_conf --register-nodes="${nc1_private_ip} ${nc2_private_ip} ${nc3_private_ip} ${nc4_private_ip}"
-    euca_conf --register-nodes="${nc3_private_ip} ${nc4_private_ip}"
+        # Skip broken hosts until first two healthy again
+        #euca_conf --register-nodes="${nc1_private_ip} ${nc2_private_ip} ${nc3_private_ip} ${nc4_private_ip}"
+        euca_conf --register-nodes="${nc3_private_ip} ${nc4_private_ip}"
 
 
 ## Runtime Configuration
 
-CLC:  1. Use Eucalyptus Administrator credentials
+1. (CLC): Use Eucalyptus Administrator credentials
 
-    mkdir -p ~/creds/eucalyptus/admin
+        mkdir -p ~/creds/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+        rm -f ~/creds/eucalyptus/admin.zip
 
-    euca_conf --get-credentials ~root/creds/eucalyptus/admin.zip
+        euca_conf --get-credentials ~root/creds/eucalyptus/admin.zip
 
-    unzip ~root/creds/eucalyptus/admin.zip -d ~root/creds/eucalyptus/admin/
+        unzip ~root/creds/eucalyptus/admin.zip -d ~root/creds/eucalyptus/admin/
 
-    cat ~root/creds/eucalyptus/admin/eucarc
+        cat ~root/creds/eucalyptus/admin/eucarc
 
-    source ~root/creds/eucalyptus/admin/eucarc
+        source ~root/creds/eucalyptus/admin/eucarc
 
-CLC:  5. Confirm Public IP addresses
+YOU ARE HERE
+2. (CLC): Confirm Public IP addresses
 
-    euca-describe-addresses verbose
+        euca-describe-addresses verbose
 
 CLC:  7. Confirm service status
 
-    euca-describe-services | cut -f 1-5
+        euca-describe-services | cut -f 1-5
 
 
 ## Configure DNS
