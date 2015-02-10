@@ -141,11 +141,11 @@ more...
 
 ## Initialize Dependencies
 
-NC*:  1. Install bridge utilities package
+1. (NC*): Install bridge utilities package
 
     sudo yum -y install bridge-utils
 
-NC*:  2. Create Private Bridge
+2. (NC*): Create Private Bridge
 Move the static IP of em2 to the bridge
 
     private_interface=em2
@@ -168,7 +168,7 @@ Move the static IP of em2 to the bridge
     DELAY=0
     EOF
 
-NC*:  3. Convert Private Ethernet Interface to Private Bridge Slave
+3. (NC*): Convert Private Ethernet Interface to Private Bridge Slave
 
     sudo sed -i -e "\$aBRIDGE=$private_bridge" \
                 -e "/^BOOTPROTO=/s/=.*$/=none/" \
@@ -177,21 +177,21 @@ NC*:  3. Convert Private Ethernet Interface to Private Bridge Slave
                 -e "/^PERSISTENT_DHCLIENT=/d" \
                 -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
 
-NC*:  4. Restart networking
+4. (NC*): Restart networking
 
     sudo service network restart
 
-ALL:  5. Disable firewall
+5. (ALL): Disable firewall
 
     sudo service iptables stop
 
-ALL:  6. Disable SELinux
+6. (ALL): Disable SELinux
 
     sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
 
     sudo setenforce 0
 
-ALL:  7. Install and Configure the NTP service
+7. (ALL): Install and Configure the NTP service
 
     sudo yum -y install ntp
 
@@ -201,11 +201,11 @@ ALL:  7. Install and Configure the NTP service
     sudo ntpdate -u  0.centos.pool.ntp.org
     sudo hwclock --systohc
 
-CLC:  8. Install and Configure Mail Relay
+8. (CLC) Install and Configure Mail Relay
 
     TBD - see existing Postfix null client configurations
 
-NC*:  9. Configure packet routing
+9. (NC*): Configure packet routing
 
     sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
     if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
@@ -219,9 +219,9 @@ NC*:  9. Configure packet routing
         cat /proc/sys/net/bridge/bridge-nf-call-iptables
     fi
 
-ALL: 10. Install subscriber license (optional, for subscriber-only packages)
-* Note CS has a license for internal use, so this will obtain and use that license from where
-  I have placed it on my local mirror:
+10. (ALL): Install subscriber license (optional, for subscriber-only packages)
+Note CS has a license for internal use, so this will obtain and use that license from where
+I have placed it on my local mirror:
 
     wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
          -O /tmp/CS-Team-Unlimited-1.4.0.tgz
