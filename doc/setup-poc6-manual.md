@@ -210,19 +210,23 @@ Move the static IP of em2 to the bridge
 
         TBD - see existing Postfix null client configurations
 
-9. (NC): Configure packet routing
+9. (CC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-        if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
-            sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
-        fi
 
         sudo sysctl -p
 
         cat /proc/sys/net/ipv4/ip_forward
-        if [ -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
-            cat /proc/sys/net/bridge/bridge-nf-call-iptables
-        fi
+
+9. (NC): Configure packet routing
+
+        sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
+        sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+
+        sudo sysctl -p
+
+        cat /proc/sys/net/ipv4/ip_forward
+        cat /proc/sys/net/bridge/bridge-nf-call-iptables
 
 10. (ALL): Install subscriber license (optional, for subscriber-only packages)
 Note CS has a license for internal use, so this will obtain and use that license from where
@@ -502,28 +506,28 @@ Experimental configuration attempting to get AWS-like service URLs
         ufs_private_ip=10.105.10.84
         api_service_name=${region}-api
 
-        euca_conf --register-service -T user-api -H ${region}.${region_domain} -N ${api_service_name}
+        sudo euca_conf --register-service -T user-api -H ${region}.${region_domain} -N ${api_service_name}
 
 2. (CLC): Register Walrus as the Object Storage Provider
 
         walrus_public_ip=10.104.1.208
         walrus_component_name=${region}-walrus
 
-        euca_conf --register-walrusbackend -P walrus -H ${walrus_public_ip} -C ${walrus_component_name}
+        sudo euca_conf --register-walrusbackend -P walrus -H ${walrus_public_ip} -C ${walrus_component_name}
 
 3. (CLC): Register Storage Controller service
 
         sc_public_ip=10.104.10.85
         sc_component_name=${zone_a}-sc
 
-        euca_conf --register-sc -P ${zone_a} -H ${sc_public_ip} -C ${sc_component_name}
+        sudo euca_conf --register-sc -P ${zone_a} -H ${sc_public_ip} -C ${sc_component_name}
 
 4. (CLC): Register Cluster Controller service
 
         cc_public_ip=10.104.10.85
         cc_component_name=${zone_a}-cc
 
-        euca_conf --register-cluster -P ${zone_a} -H ${cc_public_ip} -C ${cc_component_name}
+        sudo euca_conf --register-cluster -P ${zone_a} -H ${cc_public_ip} -C ${cc_component_name}
 
 5. (CC): Register Node Controller host(s)
 
@@ -534,10 +538,10 @@ Experimental configuration attempting to get AWS-like service URLs
 
         # Skip broken hosts until first two healthy again
         #euca_conf --register-nodes="${nc1_private_ip} ${nc2_private_ip} ${nc3_private_ip} ${nc4_private_ip}"
-        euca_conf --register-nodes="${nc3_private_ip} ${nc4_private_ip}"
+        sudo euca_conf --register-nodes="${nc3_private_ip} ${nc4_private_ip}"
 
 
-## Runtime Configuration
+## Initial Runtime Configuration
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
@@ -545,13 +549,98 @@ Experimental configuration attempting to get AWS-like service URLs
 
         rm -f ~/creds/eucalyptus/admin.zip
 
-        euca_conf --get-credentials ~root/creds/eucalyptus/admin.zip
+        sudo euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
 
-        unzip ~root/creds/eucalyptus/admin.zip -d ~root/creds/eucalyptus/admin/
+        unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
-        cat ~root/creds/eucalyptus/admin/eucarc
+        cat ~/creds/eucalyptus/admin/eucarc
 
-        source ~root/creds/eucalyptus/admin/eucarc
+        source ~/creds/eucalyptus/admin/eucarc
+
+
+2. (CLC): Switch API to port 80
+
+        euca-modify-property -p bootstrap.webservices.port=80
+
+
+## Configure DNS
+
+1. (CLC): Use Eucalyptus Administrator credentials
+
+        source ~/creds/eucalyptus/admin/eucarc
+
+2. (CLC): Configure Eucalyptus DNS Server
+
+        euca-modify-property -p system.dns.nameserver=ns1.mjc.prc.eucalyptus-systems.com
+
+        euca-modify-property -p system.dns.nameserveraddress=10.104.10.80
+
+3. (CLC): Configure DNS Timeout and TTL
+
+        euca-modify-property -p dns.tcp.timeout_seconds=30
+
+        euca-modify-property -p services.loadbalancing.dns_ttl=15
+
+4. (CLC): Configure DNS Domain
+
+        euca-modify-property -p system.dns.dnsdomain=hp-gol-d1.mjc.prc.eucalyptus-systems.com
+
+5. (CLC): Configure DNS Sub-Domains
+
+        euca-modify-property -p cloud.vmstate.instance_subdomain=.cloud
+
+        euca-modify-property -p services.loadbalancing.dns_subdomain=lb
+
+6. (CLC): Enable DNS
+
+        euca-modify-property -p bootstrap.webservices.use_instance_dns=true
+
+        euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
+
+7. (CLC): Refresh Eucalyptus Administrator credentials
+
+        mkdir -p ~/creds/eucalyptus/admin
+
+        rm -f ~/creds/eucalyptus/admin.zip
+
+        euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+
+        unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+
+        cat ~/creds/eucalyptus/admin/eucarc
+
+        source ~/creds/eucalyptus/admin/eucarc
+
+8. (CLC): Display Parent DNS Server Sample Configuration (skipped)
+
+9. (CLC): Confirm DNS resolution for Services
+
+        dig +short compute.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short objectstorage.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short euare.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short tokens.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short autoscaling.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short cloudformation.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short cloudwatch.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+        dig +short loadbalancing.hp-gol-c1.mjc.prc.eucalyptus-systems.com
+
+10. (CLC): Confirm API commands work with new URLs
+
+        euca-describe-regions
+    
+        euform-describe-stacks
+
+        euscale-describe-auto-scaling-groups
+
+        euwatch-describe-alarms
+
 
 YOU ARE HERE
 2. (CLC): Confirm Public IP addresses
@@ -561,85 +650,6 @@ YOU ARE HERE
 CLC:  7. Confirm service status
 
         euca-describe-services | cut -f 1-5
-
-
-## Configure DNS
-
-CLC:  1. Use Eucalyptus Administrator credentials
-
-    source ~root/creds/eucalyptus/admin/eucarc
-
-CLC:  2. Configure Eucalyptus DNS Server
-
-    euca-modify-property -p system.dns.nameserver=ns1.mjc.prc.eucalyptus-systems.com
-
-    euca-modify-property -p system.dns.nameserveraddress=10.104.10.80
-
-CLC:  3. Configure DNS Timeout and TTL
-
-    euca-modify-property -p dns.tcp.timeout_seconds=30
-
-    euca-modify-property -p services.loadbalancing.dns_ttl=15
-
-CLC:  4. Configure DNS Domain
-
-    euca-modify-property -p system.dns.dnsdomain=hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-CLC:  5. Configure DNS Sub-Domains
-
-    euca-modify-property -p cloud.vmstate.instance_subdomain=.cloud
-
-    euca-modify-property -p services.loadbalancing.dns_subdomain=lb
-
-CLC:  6. Enable DNS
-
-    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
-
-    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
-
-CLC:  7. Refresh Eucalyptus Administrator credentials
-
-    mkdir -p ~root/creds/eucalyptus/admin
-
-    rm -f ~root/creds/eucalyptus/admin.zip
-
-    euca-get-credentials -u admin ~root/creds/eucalyptus/admin.zip
-
-    unzip -uo ~root/creds/eucalyptus/admin.zip -d ~root/creds/eucalyptus/admin/
-
-    cat ~root/creds/eucalyptus/admin/eucarc
-
-    source ~root/creds/eucalyptus/admin/eucarc
-
-CLC:  8. Display Parent DNS Server Sample Configuration (skipped)
-
-CLC:  9. Confirm DNS resolution for Services
-
-    dig +short compute.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short objectstorage.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short euare.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short tokens.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short autoscaling.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short cloudformation.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short cloudwatch.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-    dig +short loadbalancing.hp-gol-c1.mjc.prc.eucalyptus-systems.com
-
-CLC: 10. Confirm API commands work with new URLs
-
-    euca-describe-regions
-
-    euform-describe-stacks
-
-    euscale-describe-auto-scaling-groups
-
-    euwatch-describe-alarms
 
 
 ## Configure EBS Storage
