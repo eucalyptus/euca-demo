@@ -141,39 +141,41 @@ more...
 
 ## Initialize Dependencies
 
-CLC, UFS+MC, CC+SC, OSP, NC*:  1. Install bridge utilities package
+NC*:  1. Install bridge utilities package
 
     sudo yum -y install bridge-utils
 
-NC*:  2. Create Bridge
-* Move the static IP of em2 to the bridge
+NC*:  2. Create Private Bridge
+Move the static IP of em2 to the bridge
 
-    em2_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-em2)
-    em2_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-em2)
-    em2_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-em2)
-    em2_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-em2)
-    
-    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-br0 > /dev/null
-    DEVICE=br0
+    private_interface=em2
+    private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+    private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+    private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+    private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
+    private_bridge=br0    
+
+    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-$private_bridge > /dev/null
+    DEVICE=$private_bridge
     TYPE=Bridge
     BOOTPROTO=static
-    IPADDR=$em2_ip
-    NETMASK=$em2_netmask
-    DNS1=$em2_dns1
-    DNS2=$em2_dns2
+    IPADDR=$private_ip
+    NETMASK=$private_netmask
+    DNS1=$private_dns1
+    DNS2=$private_dns2
     PERSISTENT_DHCLIENT=yes
     ONBOOT=yes
     DELAY=0
     EOF
 
-NC*:  3. Adjust public ethernet interface
+NC*:  3. Convert Private Ethernet Interface to Private Bridge Slave
 
-    sudo sed -i -e "\$aBRIDGE=br0" \
+    sudo sed -i -e "\$aBRIDGE=$private_bridge" \
                 -e "/^BOOTPROTO=/s/=.*$/=none/" \
                 -e "/^IPADDR=/d" \
                 -e "/^NETMASK=/d" \
                 -e "/^PERSISTENT_DHCLIENT=/d" \
-                -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-em2
+                -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
 
 NC*:  4. Restart networking
 
