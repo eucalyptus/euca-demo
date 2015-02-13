@@ -254,7 +254,7 @@ parameter to make the commands more legible than would be the case if we used IP
 
 18. (CLC): Scan for unknown SSH host keys
 
-  Note: sudo tee needed to append output to file owned by root
+    Note: sudo tee needed to append output to file owned by root
 
         ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
@@ -275,11 +275,11 @@ so they look more AWS-like.
 
 You should be able to resolve:
 
-        dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-        10.104.10.84
+    dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    10.104.10.84
 
-        dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-        10.104.10.83
+    dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    10.104.10.83
 
 
 ### Initialize Dependencies
@@ -291,7 +291,7 @@ You should be able to resolve:
 
 2. (NC): Create Private Bridge
 
-  Move the static IP of the private interface to the private bridge
+    Move the static IP of the private interface to the private bridge
 
         private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
         private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
@@ -377,8 +377,8 @@ You should be able to resolve:
 
 11. (ALL): Install subscriber license (optional, for subscriber-only packages)
 
-  Note CS has a license for internal use, so this will obtain and use that license from where
-i  I have placed it on my local mirror:
+    Note CS has a license for internal use, so this will obtain and use that license from where
+    I have placed it on my local mirror:
 
         wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
              -O /tmp/CS-Team-Unlimited-1.4.0.tgz
@@ -403,8 +403,9 @@ i  I have placed it on my local mirror:
 
 
 2. (ALL): Override external yum repos to internal servers
-   There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
-   It may be better to manually create repo configs than download and install the eucalyptus-release RPM and modifying it.
+
+    There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
+    It may be better to manually create repo configs than download and install the eucalyptus-release RPM and modifying it.
 
         sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
         sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
@@ -510,7 +511,7 @@ i  I have placed it on my local mirror:
 
 6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
-  This can not be loaded until the cloud is initialized
+    This can not be loaded until the cloud is initialized
 
         cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
         {
@@ -640,11 +641,11 @@ i  I have placed it on my local mirror:
 
         sudo euca_conf --register-service -T user-api -H ${EUCA_UFS_PRIVATE_IP} -N ${EUCA_REGION}-api
 
-  or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
+    or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
 
         sudo euca_conf --register-service -T user-api -H ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} -N ${EUCA_REGION}-api
 
-  Second method experimental...
+    Second method experimental...
 
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
@@ -686,7 +687,7 @@ i  I have placed it on my local mirror:
 
 2. (CLC): Switch API to port 80
 
-  Confirm how this works with Vic
+    Confirm how this works with Vic
 
         euca-modify-property -p bootstrap.webservices.port=80
 
@@ -831,9 +832,9 @@ i  I have placed it on my local mirror:
         euare-usermodloginprofile -u admin -p password
 
 
-## YOU ARE HERE
+### YOU ARE HERE
 
-## Configure Management Console
+### Configure Management Console
 
 1. (MC): Configure Eucalyptus Console Configuration file
 
@@ -859,7 +860,7 @@ i  I have placed it on my local mirror:
 
 4. (MC):  4. Stop Eucalyptus Console service
 
-    service eucaconsole stop
+        service eucaconsole stop
 
 
 5. (MC): Install Nginx package
@@ -901,7 +902,7 @@ i  I have placed it on my local mirror:
         Browse: https://${EUCA_MC_PUBLIC_IP}
 
 
-## Configure Images
+### Configure Images
 
 1. (CLC): Download Images
 
