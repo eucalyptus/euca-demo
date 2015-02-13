@@ -34,9 +34,12 @@ I am also slowly trying to author procedures to run within a normal user account
 This manual procedure is partially into that process.
 
 
-## Define Parameters
+### Define Parameters
 Define these environment variables before running script snippets below. This allows us to use descriptive names for each
 parameter to make the commands more legible than would be the case if we used IP addresses
+
+
+1. (ALL): Define Environment Variables used in upcoming code blocks
 
         export EUCA_REGION=hp-gol-d1
 
@@ -84,12 +87,12 @@ parameter to make the commands more legible than would be the case if we used IP
         export EUCA_SC_PRIVATE_IP=10.105.10.85
 
         export EUCA_OSP_PUBLIC_INTERFACE=em1
-	export EUCA_OSP_PRIVATE_INTERFACE=em2
+        export EUCA_OSP_PRIVATE_INTERFACE=em2
         export EUCA_OSP_PUBLIC_IP=10.104.1.208
         export EUCA_OSP_PRIVATE_IP=10.105.1.208
 
-	export EUCA_NC_PRIVATE_BRIDGE=br0
-	export EUCA_NC_PRIVATE_INTERFACE=em2
+        export EUCA_NC_PRIVATE_BRIDGE=br0
+        export EUCA_NC_PRIVATE_INTERFACE=em2
         export EUCA_NC_PUBLIC_INTERFACE=em1
 
         export EUCA_NC1_PUBLIC_IP=10.104.1.190
@@ -105,9 +108,7 @@ parameter to make the commands more legible than would be the case if we used IP
         export EUCA_NC4_PRIVATE_IP=10.105.10.59
 
 
-1. (CLC): Reserve Ports Used by Eucalyptus
-
-## Prepare Network
+### Prepare Network
 
 1. (CLC): Reserve Ports Used by Eucalyptus
 
@@ -120,7 +121,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
 
 
-1. (UFS): Reserve Ports Used by Eucalyptus
+2. (UFS): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -131,7 +132,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
 
-1. (MC): Reserve Ports Used by Eucalyptus
+3. (MC): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -142,7 +143,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /etc/sysconfig/iptables
 
 
-1. (CC): Reserve Ports Used by Eucalyptus
+4. (CC): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -152,7 +153,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
 
 
-1. (SC): Reserve Ports Used by Eucalyptus
+5. (SC): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -162,7 +163,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
 
-1. (OSP): Reserve Ports Used by Eucalyptus
+6. (OSP): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -172,7 +173,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
 
 
-1. (NC): Reserve Ports Used by Eucalyptus
+7. (NC): Reserve Ports Used by Eucalyptus
 
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
@@ -182,7 +183,7 @@ parameter to make the commands more legible than would be the case if we used IP
         echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT" >> /etc/sysconfig/iptables # TLS, needed for node migrations (NC)
 
 
-2. (MW): Verify Connectivity
+8. (MW): Verify Connectivity
 
         nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
         nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
@@ -190,40 +191,48 @@ parameter to make the commands more legible than would be the case if we used IP
         nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
 
 
-2. (CLC): Verify Connectivity
+9. (CLC): Verify Connectivity
+
         nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
         nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
         nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
 
 
-2. (UFS): Verify Connectivity
+10. (UFS): Verify Connectivity
+
         nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
 
 
-2. (CC): Verify Connectivity
+11. (CC): Verify Connectivity
+
         nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
         nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
         nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
         nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
 
 
-2. (SC): Verify Connectivity
+13. (SC): Verify Connectivity
+
         nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
         nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
         nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
 
 
-2. (OSP): Verify Connectivity
+14. (OSP): Verify Connectivity
+
         nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
 
 
-2. (NC): Verify Connectivity
+15. (NC): Verify Connectivity
+
         nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
         nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
 
 
-2. (other): Verify Connectivity
+16. (Other): Verify Connectivity
+
   Use additional commands to verify the following:
+
   - Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
   - Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
   - Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
@@ -233,7 +242,7 @@ parameter to make the commands more legible than would be the case if we used IP
   - Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
 
 
-3. (CLC / CC / SC / OSG): Run tomography tool
+17. (CLC / CC / SC / OSG): Run tomography tool
 
         mkdir -p ~/src/eucalyptus
         cd ~/src/eucalyptus
@@ -243,8 +252,9 @@ parameter to make the commands more legible than would be the case if we used IP
         ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
 
 
-4. (CLC): Scan for unknown SSH host keys
-Note: sudo tee needed to append output to file owned by root
+18. (CLC): Scan for unknown SSH host keys
+
+  Note: sudo tee needed to append output to file owned by root
 
         ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
@@ -257,7 +267,7 @@ Note: sudo tee needed to append output to file owned by root
         ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
 
-## Prepare External DNS
+### Prepare External DNS
 
 I will not describe this in detail yet, except to note that this must be in place and working properly 
 before registering services with the method outlined below, as I will be using DNS names for the services
@@ -265,14 +275,14 @@ so they look more AWS-like.
 
 You should be able to resolve:
 
-        dig +short hp-gol-d1.mjc.prc.eucalyptus-systems.com
+        dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
         10.104.10.84
 
-        dig +short clc.hp-gol-d1.mjc.prc.eucalyptus-systems.com
+        dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
         10.104.10.83
 
 
-## Initialize Dependencies
+### Initialize Dependencies
 
 1. (NC): Install bridge utilities package
 
@@ -280,7 +290,8 @@ You should be able to resolve:
 
 
 2. (NC): Create Private Bridge
-Move the static IP of the private interface to the private bridge
+
+  Move the static IP of the private interface to the private bridge
 
         private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
         private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
@@ -353,7 +364,7 @@ Move the static IP of the private interface to the private bridge
         cat /proc/sys/net/ipv4/ip_forward
 
 
-9. (NC): Configure packet routing
+10. (NC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
         sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -364,9 +375,10 @@ Move the static IP of the private interface to the private bridge
         cat /proc/sys/net/bridge/bridge-nf-call-iptables
 
 
-10. (ALL): Install subscriber license (optional, for subscriber-only packages)
-Note CS has a license for internal use, so this will obtain and use that license from where
-I have placed it on my local mirror:
+11. (ALL): Install subscriber license (optional, for subscriber-only packages)
+
+  Note CS has a license for internal use, so this will obtain and use that license from where
+i  I have placed it on my local mirror:
 
         wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
              -O /tmp/CS-Team-Unlimited-1.4.0.tgz
@@ -375,7 +387,7 @@ I have placed it on my local mirror:
         tar xvfz CS-Team-Unlimited-1.4.0.tgz
 
 
-## Install Eucalyptus
+### Install Eucalyptus
 
 1. (ALL): Configure yum repositories (second set of statements optional for subscriber-licensed packages)
 
@@ -390,7 +402,7 @@ I have placed it on my local mirror:
         # sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
 
 
-1. (ALL): Override external yum repos to internal servers
+2. (ALL): Override external yum repos to internal servers
    There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
    It may be better to manually create repo configs than download and install the eucalyptus-release RPM and modifying it.
 
@@ -398,53 +410,53 @@ I have placed it on my local mirror:
         sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
 
 
-2. (CLC): Install packages
+3. (CLC): Install packages
 
         sudo yum install -y eucalyptus-cloud eucalyptus-service-image
 
 
-2. (UFC): Install packages
+4. (UFC): Install packages
 
         sudo yum install -y eucalyptus-cloud
 
 
-2. (MC): Install packages
+5. (MC): Install packages
 
         sudo yum install -y eucaconsole
 
 
-2. (CC): Install packages
+6. (CC): Install packages
 
         sudo yum install -y eucalyptus-cc
 
 
-2. (SC): Install packages
+7. (SC): Install packages
 
         sudo yum install -y eucalyptus-sc
 
 
-2. (OSP): Install packages
+8. (OSP): Install packages
 
         sudo yum install -y eucalyptus-walrus
 
 
-2. (NC): Install packages
+9. (NC): Install packages
 
         sudo yum install -y eucalyptus-nc
 
 
-3. (NC): Remove Devfault libvirt network.
+10. (NC): Remove Devfault libvirt network.
 
         sudo virsh net-destroy default
         sudo virsh net-autostart default --disable
 
 
-4. (NC): Confirm KVM device node permissions.
+11. (NC): Confirm KVM device node permissions.
 
         ls -l /dev/kvm  # should be owned by root:kvm
 
 
-## Configure Eucalyptus
+### Configure Eucalyptus
 
 1. (CLC):  1. Configure Eucalyptus Networking
 
@@ -456,7 +468,7 @@ I have placed it on my local mirror:
                     -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-1. (UFS / MC): Configure Eucalyptus Networking
+2. (UFS / MC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -466,7 +478,7 @@ I have placed it on my local mirror:
                     -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-1. (CC / SC): Configure Eucalyptus Networking
+3. (CC / SC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -476,7 +488,7 @@ I have placed it on my local mirror:
                     -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-1. (OSP): Configure Eucalyptus Networking
+4. (OSP): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -486,7 +498,7 @@ I have placed it on my local mirror:
                     -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-1. (NC): Configure Eucalyptus Networking
+5. (NC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -496,8 +508,9 @@ I have placed it on my local mirror:
                     -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-2. (CLC): Create Eucalyptus EDGE Networking configuration file
-This can not be loaded until the cloud is initialized
+6. (CLC): Create Eucalyptus EDGE Networking configuration file
+
+  This can not be loaded until the cloud is initialized
 
         cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
         {
@@ -527,7 +540,7 @@ This can not be loaded until the cloud is initialized
         EOF
 
 
-3. (NC): Configure Eucalyptus Disk Allocation
+7. (NC): Configure Eucalyptus Disk Allocation
 
         nc_work_size=2400000
         nc_cache_size=300000
@@ -536,7 +549,7 @@ This can not be loaded until the cloud is initialized
                     -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-4. (NC): Configure Eucalyptus to use Private IP for Metadata
+8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
         cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
     
@@ -546,24 +559,24 @@ This can not be loaded until the cloud is initialized
         EOF
 
 
-5. (CLC / UFS / SC / OSP): Configure Eucalyptus Java Memory Allocation
+9. (CLC / UFS / SC / OSP): Configure Eucalyptus Java Memory Allocation
 
         # Skip for now, causing startup errors
         # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
         # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-6. (MC): Configure Management Console with Cloud Controller Address
+10. (MC): Configure Management Console with Cloud Controller Address
 
         sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
 
 
-7. (ALL): Disable zero-conf network
+11. (ALL): Disable zero-conf network
 
         sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
     
 
-## Start Eucalyptus
+### Start Eucalyptus
 
 1. (CLC): Initialize the Cloud Controller service
 
@@ -616,21 +629,22 @@ This can not be loaded until the cloud is initialized
         nc -z ${EUCA_NC4_PUBLIC_IP} 8775 || echo 'Connection from MW to NC4:8775 failed!'
 
 
-5. (All): Confirm service startup - Are logs being written?
+6. (All): Confirm service startup - Are logs being written?
 
         ls -l /var/log/eucalyptus
 
 
-## Register Eucalyptus
-Experimental configuration attempting to get AWS-like service URLs
+### Register Eucalyptus
 
 1. (CLC): Register User-Facing services
 
         sudo euca_conf --register-service -T user-api -H ${EUCA_UFS_PRIVATE_IP} -N ${EUCA_REGION}-api
 
-    or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
+  or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
 
         sudo euca_conf --register-service -T user-api -H ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} -N ${EUCA_REGION}-api
+
+  Second method experimental...
 
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
@@ -653,7 +667,7 @@ Experimental configuration attempting to get AWS-like service URLs
         sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
 
 
-## Initial Runtime Configuration
+### Initial Runtime Configuration
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
@@ -671,12 +685,13 @@ Experimental configuration attempting to get AWS-like service URLs
 
 
 2. (CLC): Switch API to port 80
-Confirm how this works with Vic
+
+  Confirm how this works with Vic
 
         euca-modify-property -p bootstrap.webservices.port=80
 
 
-## Configure DNS
+### Configure DNS
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
@@ -753,17 +768,17 @@ Confirm how this works with Vic
         dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 
-## Additional Runtime Configuration
+### Additional Runtime Configuration
 
 1. (CLC): Configure EBS Storage
 
-        euca-modify-property -p ${zone_a}.storage.blockstoragemanager=overlay
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
 
     or
 
-        euca-modify-property -p ${zone_a}.storage.blockstoragemanager=das
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
 
-        euca-modify-property -p ${zone_a}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
 
 
 2. (CLC): Configure Object Storage
@@ -809,7 +824,7 @@ Confirm how this works with Vic
 
 
 
-## Configure Minimal IAM
+### Configure Minimal IAM
 
 1. (CLC): Configure Eucalyptus Administrator Password
 
