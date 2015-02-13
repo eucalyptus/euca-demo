@@ -34,6 +34,79 @@ I am also slowly trying to author procedures to run within a normal user account
 This manual procedure is partially into that process.
 
 
+## Define Parameters
+Define these environment variables before running script snippets below. This allows us to use descriptive names for each
+parameter to make the commands more legible than would be the case if we used IP addresses
+
+        export EUCA_REGION=hp-gol-d1
+
+        export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
+        export EUCA_DNS_PRIVATE_DOMAIN=internal
+        export EUCA_DNS_INSTANCE_SUBDOMAIN=cloud
+        export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+        export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
+        export EUCA_DNS_PARENT_IP=10.104.10.80
+        
+        export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
+
+        export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
+
+        export EUCA_CLUSTER1=${EUCA_REGION}a
+        export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
+        export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
+        export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
+        export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
+        export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
+    
+        export EUCA_CLC_PUBLIC_INTERFACE=em1
+        export EUCA_CLC_PRIVATE_INTERFACE=em2
+        export EUCA_CLC_PUBLIC_IP=10.104.10.83
+        export EUCA_CLC_PRIVATE_IP=10.105.10.83
+
+        export EUCA_UFS_PUBLIC_INTERFACE=em1
+        export EUCA_UFS_PRIVATE_INTERFACE=em2
+        export EUCA_UFS_PUBLIC_IP=10.104.10.84
+        export EUCA_UFS_PRIVATE_IP=10.105.10.84
+
+        export EUCA_MC_PUBLIC_INTERFACE=em1
+        export EUCA_MC_PRIVATE_INTERFACE=em2
+        export EUCA_MC_PUBLIC_IP=10.104.10.84
+        export EUCA_MC_PRIVATE_IP=10.105.10.84
+
+        export EUCA_CC_PUBLIC_INTERFACE=em1
+        export EUCA_CC_PRIVATE_INTERFACE=em2
+        export EUCA_CC_PUBLIC_IP=10.104.10.85
+        export EUCA_CC_PRIVATE_IP=10.105.10.85
+
+        export EUCA_SC_PUBLIC_INTERFACE=em1
+        export EUCA_SC_PRIVATE_INTERFACE=em2
+        export EUCA_SC_PUBLIC_IP=10.104.10.85
+        export EUCA_SC_PRIVATE_IP=10.105.10.85
+
+        export EUCA_OSP_PUBLIC_INTERFACE=em1
+	export EUCA_OSP_PRIVATE_INTERFACE=em2
+        export EUCA_OSP_PUBLIC_IP=10.104.1.208
+        export EUCA_OSP_PRIVATE_IP=10.105.1.208
+
+	export EUCA_NC_PRIVATE_BRIDGE=br0
+	export EUCA_NC_PRIVATE_INTERFACE=em2
+        export EUCA_NC_PUBLIC_INTERFACE=em1
+
+        export EUCA_NC1_PUBLIC_IP=10.104.1.190
+        export EUCA_NC1_PRIVATE_IP=10.105.1.190
+
+        export EUCA_NC2_PUBLIC_IP=10.104.1.187
+        export EUCA_NC2_PRIVATE_IP=10.105.1.187
+
+        export EUCA_NC3_PUBLIC_IP=10.104.10.56
+        export EUCA_NC3_PRIVATE_IP=10.105.10.56
+
+        export EUCA_NC4_PUBLIC_IP=10.104.10.59
+        export EUCA_NC4_PRIVATE_IP=10.105.10.59
+
+
+1. (CLC): Reserve Ports Used by Eucalyptus
+
 ## Prepare Network
 
 1. (CLC): Reserve Ports Used by Eucalyptus
@@ -111,42 +184,42 @@ This manual procedure is partially into that process.
 
 2. (MW): Verify Connectivity
 
-        nc -z 10.104.10.83 8443 || echo 'Connection from MW to CLC:8443 failed!'
-        nc -z 10.104.10.83 8773 || echo 'Connection from MW to CLC:8773 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
 
-        nc -z 10.104.1.208 8773 || echo 'Connection from MW to Walrus:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
 
 
 2. (CLC): Verify Connectivity
-        nc -z 10.104.10.85 8773 || echo 'Connection from CLC to SC:8773 failed!'
-        nc -z 10.104.1.208 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-        nc -z 10.104.10.85 8774 || echo 'Connection from CLC to CC:8774 failed!'
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
+        nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
 
 
 2. (UFS): Verify Connectivity
-        nc -z 10.104.10.83 8773 || echo 'Connection from UFS to CLC:8773 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
 
 
 2. (CC): Verify Connectivity
-        nc -z 10.105.1.190 8775 || echo 'Connection from CC to NC1:8775 failed!'
-        nc -z 10.105.1.187 8775 || echo 'Connection from CC to NC2:8775 failed!'
-        nc -z 10.105.10.56 8775 || echo 'Connection from CC to NC3:8775 failed!'
-        nc -z 10.105.10.59 8775 || echo 'Connection from CC to NC4:8775 failed!'
+        nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
+        nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
+        nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
+        nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
 
 
 2. (SC): Verify Connectivity
-        nc -z 10.104.10.85 8773 || echo 'Connection from SC to SC:8773 failed!'
-        nc -z 10.104.1.208 8773 || echo 'Connection from SC to OSP:8773 failed!'
-        nc -z 10.104.10.83 8777 || echo 'Connection from SC to CLC:8777 failed!'
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
 
 
 2. (OSP): Verify Connectivity
-        nc -z 10.104.10.83 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
 
 
 2. (NC): Verify Connectivity
-        nc -z 10.104.10.85 8773 || echo 'Connection from NC to SC:8773 failed!'
-        nc -z 10.104.1.208 8773 || echo 'Connection from NC to OSP:8773 failed!'
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
 
 
 2. (other): Verify Connectivity
@@ -167,21 +240,21 @@ This manual procedure is partially into that process.
         git clone https://github.com/eucalyptus/deveutils
 
         cd deveutils/network-tomography
-        ./network-tomography 10.104.10.83 10.104.10.84 10.104.10.85 10.104.1.208
+        ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
 
 
 4. (CLC): Scan for unknown SSH host keys
 Note: sudo tee needed to append output to file owned by root
 
-        ssh-keyscan 10.104.10.83 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.104.10.84 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.104.10.85 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.104.1.208 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-        ssh-keyscan 10.105.1.190 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.105.1.187 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.105.10.56 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan 10.105.10.59 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
 
 ## Prepare External DNS
@@ -207,17 +280,15 @@ You should be able to resolve:
 
 
 2. (NC): Create Private Bridge
-Move the static IP of em2 to the bridge
+Move the static IP of the private interface to the private bridge
 
-        private_interface=em2
-        private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-        private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-        private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-        private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-$private_interface)
-        private_bridge=br0    
+        private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+        private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+        private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+        private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
 
-        cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-$private_bridge > /dev/null
-        DEVICE=$private_bridge
+        cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_BRIDGE} > /dev/null
+        DEVICE=${EUCA_NC_PRIVATE_BRIDGE}
         TYPE=Bridge
         BOOTPROTO=static
         IPADDR=$private_ip
@@ -237,7 +308,7 @@ Move the static IP of em2 to the bridge
                     -e "/^IPADDR=/d" \
                     -e "/^NETMASK=/d" \
                     -e "/^PERSISTENT_DHCLIENT=/d" \
-                    -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-$private_interface
+                    -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
 
 
 4. (NC): Restart networking
@@ -379,106 +450,76 @@ I have placed it on my local mirror:
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        public_interface=em1
-        private_interface=em2
-        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
-        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
-
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$private_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CLC_PRIVATE_INTERFACE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CLC_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 1. (UFS / MC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        public_interface=em1
-        private_interface=em2
-        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
-        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
-
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$private_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFC_PRIVATE_INTERFACE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFC_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 1. (CC / SC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        public_interface=em1
-        private_interface=em2
-        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
-        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
-
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$public_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 1. (OSP): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        public_interface=em1
-        private_interface=em2
-        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
-        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
-
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_interface\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=$public_ip\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 1. (NC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        public_interface=em1
-        private_bridge=br0
-        public_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $public_interface$/\1/p")
-        private_ip=$(ip addr | sed -r -n -e "s/^ *inet ([^/]*)\/.* $private_interface$/\1/p")
-
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"$private_bridge\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"$public_interface\"/" \
-                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"$private_bridge\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_NC_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 2. (CLC): Create Eucalyptus EDGE Networking configuration file
 This can not be loaded until the cloud is initialized
 
-        instance_dns_domain=cloud.internal
-        instance_dns_servers=10.104.10.80
-        instance_public_ips=10.104.40.1-10.104.40.254
-        cluster01=hp-gol-d1a
-    
         cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
         {
-          "InstanceDnsDomain": "eucalyptus.internal",
+          "InstanceDnsDomain": "${EUCA_DNS_INSTANCE_SUBDOMAIN}.${EUCA_DNS_PRIVATE_DOMAIN}",
           "InstanceDnsServers": [
-            "10.104.10.80"
+            "${EUCA_DNS_PARENT_IP}"
           ],
           "PublicIps": [
-            "10.104.40.1-10.104.40.254"
+            "${EUCA_PUBLIC_IP_RANGE}"
           ],
           "Clusters": [
             {
-              "Name": "hp-gol-d1a",
+              "Name": "${EUCA_CLUSTER1}",
               "MacPrefix": "d0:0d",
               "Subnet": {
-                "Name": "Private (10.105.40.0/24)",
-                "Subnet": "10.105.40.0",
-                "Netmask": "255.255.255.0",
-                "Gateway": "10.105.40.1"
+                "Name": "Private (${EUCA_CLUSTER1_PRIVATE_CIDR})",
+                "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
+                "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
+                "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
               },
               "PrivateIps": [
-                "10.105.40.2-10.105.40.254"
+                "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
               ]
             }
           ]
@@ -514,10 +555,7 @@ This can not be loaded until the cloud is initialized
 
 6. (MC): Configure Management Console with Cloud Controller Address
 
-        clc_host=odc-d-13.prc.eucalyptus-systems.com
-        clc_em1_ip=$(dig +short $clc_host)
-        clc_em2_ip=${clc_em1_ip/10.104/10.105}
-        sudo sed -i -e "/^clchost = /s/localhost/$clc_em2_ip/" /etc/eucaconsole/console.ini
+        sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
 
 
 7. (ALL): Disable zero-conf network
@@ -559,23 +597,23 @@ This can not be loaded until the cloud is initialized
 
 5. (MW): Confirm service startup - Are ports listening?
 
-        nc -z 10.104.10.83 8443 || echo 'Connection from MW to CLC:8443 failed!'
-        nc -z 10.104.10.83 8773 || echo 'Connection from MW to CLC:8773 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
 
-        nc -z 10.104.10.84 8773 || echo 'Connection from MW to UFS:8773 failed!'
+        nc -z ${EUCA_UFS_PUBLIC_IP} 8773 || echo 'Connection from MW to UFS:8773 failed!'
 
-        nc -z 10.104.10.84 8888 || echo 'Connection from MW to MC:8888 failed!'
+        nc -z ${EUCA_MC_PUBLIC_IP} 8888  || echo 'Connection from MW to MC:8888 failed!'
 
-        nc -z 10.10.104.1.208 8773 || echo 'Connection from MW to OSP:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to OSP:8773 failed!'
 
-        nc -z 10.104.10.85 8773 || echo 'Connection from MW to SC:8773 failed!'
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773  || echo 'Connection from MW to SC:8773 failed!'
 
-        nc -z 10.104.10.85 8774 || echo 'Connection from MW to CC:8774 failed!'
+        nc -z ${EUCA_CC_PUBLIC_IP} 8774  || echo 'Connection from MW to CC:8774 failed!'
 
-        nc -z 10.105.1.190 8775 || echo 'Connection from MW to NC1:8775 failed!'
-        nc -z 10.105.1.187 8775 || echo 'Connection from MW to NC2:8775 failed!'
-        nc -z 10.105.10.56 8775 || echo 'Connection from MW to NC3:8775 failed!'
-        nc -z 10.105.10.59 8775 || echo 'Connection from MW to NC4:8775 failed!'
+        nc -z ${EUCA_NC1_PUBLIC_IP} 8775 || echo 'Connection from MW to NC1:8775 failed!'
+        nc -z ${EUCA_NC2_PUBLIC_IP} 8775 || echo 'Connection from MW to NC2:8775 failed!'
+        nc -z ${EUCA_NC3_PUBLIC_IP} 8775 || echo 'Connection from MW to NC3:8775 failed!'
+        nc -z ${EUCA_NC4_PUBLIC_IP} 8775 || echo 'Connection from MW to NC4:8775 failed!'
 
 
 5. (All): Confirm service startup - Are logs being written?
@@ -588,49 +626,31 @@ Experimental configuration attempting to get AWS-like service URLs
 
 1. (CLC): Register User-Facing services
 
-        region=hp-gol-d1
-        region_domain=mjc.prc.eucalyptus-systems.com
-        zone_a=${region}a
-        zone_b=${region}b
+        sudo euca_conf --register-service -T user-api -H ${EUCA_UFS_PRIVATE_IP} -N ${EUCA_REGION}-api
 
-        ufs_private_ip=10.105.10.84
-        api_service_name=${region}-api
+    or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
 
-        sudo euca_conf --register-service -T user-api -H ${region}.${region_domain} -N ${api_service_name}
+        sudo euca_conf --register-service -T user-api -H ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} -N ${EUCA_REGION}-api
 
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
-        walrus_public_ip=10.104.1.208
-        walrus_component_name=${region}-walrus
-
-        sudo euca_conf --register-walrusbackend -P walrus -H ${walrus_public_ip} -C ${walrus_component_name}
+        sudo euca_conf --register-walrusbackend -P walrus -H ${EUCA_OSP_PUBLIC_IP} -C ${EUCA_REGION}-walrus
 
 
 3. (CLC): Register Storage Controller service
 
-        sc_public_ip=10.104.10.85
-        sc_component_name=${zone_a}-sc
-
-        sudo euca_conf --register-sc -P ${zone_a} -H ${sc_public_ip} -C ${sc_component_name}
+        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -H ${EUCA_SC_PUBLIC_IP} -C ${EUCA_CLUSTER1}-sc
 
 
 4. (CLC): Register Cluster Controller service
 
-        cc_public_ip=10.104.10.85
-        cc_component_name=${zone_a}-cc
-
-        sudo euca_conf --register-cluster -P ${zone_a} -H ${cc_public_ip} -C ${cc_component_name}
+        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -H ${EUCA_CC_PUBLIC_IP} -C ${EUCA_CLUSTER1}-cc
 
 
 5. (CC): Register Node Controller host(s)
 
-        nc1_private_ip=10.105.1.190
-        nc2_private_ip=10.105.1.187
-        nc3_private_ip=10.105.10.56
-        nc4_private_ip=10.105.10.59
-
-        sudo euca_conf --register-nodes="${nc1_private_ip} ${nc2_private_ip} ${nc3_private_ip} ${nc4_private_ip}"
+        sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
 
 
 ## Initial Runtime Configuration
@@ -665,9 +685,9 @@ Confirm how this works with Vic
 
 2. (CLC): Configure Eucalyptus DNS Server
 
-        euca-modify-property -p system.dns.nameserver=ns1.mjc.prc.eucalyptus-systems.com
+        euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
 
-        euca-modify-property -p system.dns.nameserveraddress=10.104.10.80
+        euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
 
 
 3. (CLC): Configure DNS Timeout and TTL
@@ -679,14 +699,14 @@ Confirm how this works with Vic
 
 4. (CLC): Configure DNS Domain
 
-        euca-modify-property -p system.dns.dnsdomain=hp-gol-d1.mjc.prc.eucalyptus-systems.com
+        euca-modify-property -p system.dns.dnsdomain=${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 
 5. (CLC): Configure DNS Sub-Domains
 
-        euca-modify-property -p cloud.vmstate.instance_subdomain=.cloud
+        euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
 
-        euca-modify-property -p services.loadbalancing.dns_subdomain=lb
+        euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
 
 
 6. (CLC): Enable DNS
@@ -716,24 +736,21 @@ Confirm how this works with Vic
 
 9. (CLC): Confirm DNS resolution for Services
 
-        region=hp-gol-d1
-        region_domain=mjc.prc.eucalyptus-systems.com
+        dig +short compute.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short compute.${region}.${region_domain}
+        dig +short objectstorage.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short objectstorage.${region}.${region_domain}
+        dig +short euare.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short euare.${region}.${region_domain}
+        dig +short tokens.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short tokens.${region}.${region_domain}
+        dig +short autoscaling.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short autoscaling.${region}.${region_domain}
+        dig +short cloudformation.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short cloudformation.${region}.${region_domain}
+        dig +short cloudwatch.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short cloudwatch.${region}.${region_domain}
-
-        dig +short loadbalancing.${region}.${region_domain}
+        dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 
 ## Additional Runtime Configuration
@@ -808,9 +825,9 @@ Confirm how this works with Vic
         sed -i -e "/#elb.host=10.20.30.40/d" \
                -e "/#elb.port=443/d" \
                -e "/#s3.host=<your host IP or name>/d" \
-               -e "/^clchost = localhost$/s/localhost/10.105.10.83/" \
+               -e "/^clchost = localhost$/s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
                -e "/that won't work from client's browsers./a\
-        s3.host=10.104.1.208" /etc/eucaconsole/console.ini
+        s3.host=${EUCA_OSP_PUBLIC_IP}" /etc/eucaconsole/console.ini
 
 
 2. (MC): Start Eucalyptus Console service
@@ -822,7 +839,7 @@ Confirm how this works with Vic
 
 3. (MW): Confirm Eucalyptus Console service
 
-        Browse: http://10.104.10.84:8888
+        Browse: http://${EUCA_MC_PUBLIC_IP}:8888
 
 
 4. (MC):  4. Stop Eucalyptus Console service
@@ -866,7 +883,7 @@ Confirm how this works with Vic
 
 10. (MC): Confirm Eucalyptus Console service
 
-        Browse: https://10.104.10.21
+        Browse: https://${EUCA_MC_PUBLIC_IP}
 
 
 ## Configure Images
