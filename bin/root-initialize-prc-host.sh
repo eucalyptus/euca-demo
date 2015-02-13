@@ -47,8 +47,8 @@ echo
 if [ ! -r /etc/profile.d/local.sh ]; then
     echo "# echo \"alias lsa='ls -lAF'\" > /etc/profile.d/local.sh"
     echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
-    echo "# echo \"alias ip4='ip addr | grep \" inet \"'\" > /etc/profile.d/local.sh"
-    echo "alias ip4='ip addr | grep \" inet \"'" > /etc/profile.d/local.sh
+    echo "# echo \"alias ip4='ip addr | grep \" inet \"'\" >> /etc/profile.d/local.sh"
+    echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
     echo "# source /etc/profile.d/local.sh"
     source /etc/profile.d/local.sh
 fi
