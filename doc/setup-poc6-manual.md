@@ -49,7 +49,7 @@ parameter to make the commands more legible than would be the case if we used IP
         export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
         export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
         export EUCA_DNS_PARENT_IP=10.104.10.80
-        
+
         export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
         export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
@@ -60,7 +60,7 @@ parameter to make the commands more legible than would be the case if we used IP
         export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
         export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
         export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
-    
+
         export EUCA_CLC_PUBLIC_INTERFACE=em1
         export EUCA_CLC_PRIVATE_INTERFACE=em2
         export EUCA_CLC_PUBLIC_IP=10.104.10.83
@@ -148,7 +148,7 @@ parameter to make the commands more legible than would be the case if we used IP
 
 ### Prepare External DNS
 
-I will not describe this in detail yet, except to note that this must be in place and working properly 
+I will not describe this in detail yet, except to note that this must be in place and working properly
 before registering services with the method outlined below, as I will be using DNS names for the services
 so they look more AWS-like.
 
@@ -164,9 +164,9 @@ You should be able to resolve:
 ### Initialize Dependencies
 
 1. (ALL): Disable zero-conf network
- 
+
         sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
-    
+
 
 2. (NC): Install bridge utilities package
 
@@ -213,14 +213,14 @@ You should be able to resolve:
 
 6. (CLC): Configure firewall, but disable during installation
 
-    * udp   53 - DNS
-    * tcp   53 - DNS
-    * tcp 5005 - Debug
-    * tcp 8080 - Credentials
-    * tcp 8772 - Debug
-    * tcp 8773 - Web services
-    * tcp 8777 - Database 
-    * tcp 8778 - Multicast 
+  * udp   53 - DNS
+  * tcp   53 - DNS
+  * tcp 5005 - Debug
+  * tcp 8080 - Credentials
+  * tcp 8772 - Debug
+  * tcp 8773 - Web services
+  * tcp 8777 - Database
+  * tcp 8778 - Multicast
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -248,18 +248,18 @@ You should be able to resolve:
         service iptables stop
 
 
-7. (UFS+MC): 
+7. (UFS+MC): Configure firewall, but disable during installation
 
-    * tcp   22 - Login, Control
-    * tcp   80 - Console - HTTP (MC)
-    * tcp  443 - Console - HTTPS (MC)
-    * tcp 5005 - Debug (UFS)
-    * tcp 7500 - Diagnostics (UFS)
-    * tcp 8772 - Debug (UFS)
-    * tcp 8773 - Web services (UFS)
-    * tcp 8778 - Multicast (UFS)
-    * tcp 8779-8849 - jGroups (UFS)
-    * tcp 8888 - Console - Direct (MC)
+  * tcp   22 - Login, Control
+  * tcp   80 - Console - HTTP (MC)
+  * tcp  443 - Console - HTTPS (MC)
+  * tcp 5005 - Debug (UFS)
+  * tcp 7500 - Diagnostics (UFS)
+  * tcp 8772 - Debug (UFS)
+  * tcp 8773 - Web services (UFS)
+  * tcp 8778 - Multicast (UFS)
+  * tcp 8779-8849 - jGroups (UFS)
+  * tcp 8888 - Console - Direct (MC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -288,16 +288,16 @@ You should be able to resolve:
         service iptables stop
 
 
-8. (SC+CC): 
+8. (SC+CC): Configure firewall, but disable during installation
 
-    * tcp   22 - Login, Control
-    * tcp 5005 - Debug (SC, CC)
-    * tcp 7500 - Diagnostice (SC)
-    * tcp 8772 - Debug (SC, CC)
-    * tcp 8773 - Web services (SC)
-    * tcp 8774 - Web services (CC)
-    * tcp 8778 - Multicast (SC, CC)
-    * tcp 8779-8849 - jGroups (SC)
+  * tcp   22 - Login, Control
+  * tcp 5005 - Debug (SC, CC)
+  * tcp 7500 - Diagnostice (SC)
+  * tcp 8772 - Debug (SC, CC)
+  * tcp 8773 - Web services (SC)
+  * tcp 8774 - Web services (CC)
+  * tcp 8778 - Multicast (SC, CC)
+  * tcp 8779-8849 - jGroups (SC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -324,15 +324,15 @@ You should be able to resolve:
         service iptables stop
 
 
-9. (OSP): 
+9. (OSP): Configure firewall, but disable during installation
 
-    * tcp   22 - Login, Control
-    * tcp 5005 - Debug
-    * tcp 7500 - Diagnostics
-    * tcp 8772 - Debug
-    * tcp 8773 - Web services
-    * tcp 8778 - Multicast
-    * tcp 8779-8849 - jGroups
+  * tcp   22 - Login, Control
+  * tcp 5005 - Debug
+  * tcp 7500 - Diagnostics
+  * tcp 8772 - Debug
+  * tcp 8773 - Web services
+  * tcp 8778 - Multicast
+  * tcp 8779-8849 - jGroups
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -360,13 +360,13 @@ You should be able to resolve:
 
 10. (NC): Configure firewall, but disable during installation
 
-    * tcp    22 - Login, Control
-    * tcp  5005 - Debug
-    * tcp  8772 - Debug
-    * tcp  8773 - Web services
-    * tcp  8775 - Web services
-    * tcp  8778 - Multicast
-    * tcp 16514 - TLS, needed for node migrations
+  * tcp    22 - Login, Control
+  * tcp  5005 - Debug
+  * tcp  8772 - Debug
+  * tcp  8773 - Web services
+  * tcp  8775 - Web services
+  * tcp  8778 - Multicast
+  * tcp 16514 - TLS, needed for node migrations
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -402,7 +402,7 @@ You should be able to resolve:
 12. (ALL): Install and Configure the NTP service
 
         sudo yum -y install ntp
-    
+
         sudo chkconfig ntpd on
         sudo service ntpd start
 
@@ -584,7 +584,7 @@ You should be able to resolve:
 8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
         cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
-    
+
         # Set this to Y to use the private IP of the CLC for the metadata service.
         # The default is to use the public IP.
         METADATA_USE_VM_PRIVATE="Y"
@@ -606,7 +606,7 @@ You should be able to resolve:
 11. (ALL): Disable zero-conf network
 
         sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
-    
+
 
 ### Start Eucalyptus
 
@@ -888,7 +888,7 @@ You should be able to resolve:
         euca-describe-services | cut -f1-6
 
 
-7. (CLC): Confirm apis 
+7. (CLC): Confirm apis
 
        euca-describe-regions
 
