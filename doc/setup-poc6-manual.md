@@ -213,14 +213,14 @@ You should be able to resolve:
 
 6. (CLC): Configure firewall, but disable during installation
 
-  * udp   53 - DNS
-  * tcp   53 - DNS
-  * tcp 5005 - Debug
-  * tcp 8080 - Credentials
-  * tcp 8772 - Debug
-  * tcp 8773 - Web services
-  * tcp 8777 - Database
-  * tcp 8778 - Multicast
+* udp   53 - DNS
+* tcp   53 - DNS
+* tcp 5005 - Debug
+* tcp 8080 - Credentials
+* tcp 8772 - Debug
+* tcp 8773 - Web services
+* tcp 8777 - Database
+* tcp 8778 - Multicast
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -250,16 +250,16 @@ You should be able to resolve:
 
 7. (UFS+MC): Configure firewall, but disable during installation
 
-  * tcp   22 - Login, Control
-  * tcp   80 - Console - HTTP (MC)
-  * tcp  443 - Console - HTTPS (MC)
-  * tcp 5005 - Debug (UFS)
-  * tcp 7500 - Diagnostics (UFS)
-  * tcp 8772 - Debug (UFS)
-  * tcp 8773 - Web services (UFS)
-  * tcp 8778 - Multicast (UFS)
-  * tcp 8779-8849 - jGroups (UFS)
-  * tcp 8888 - Console - Direct (MC)
+* tcp   22 - Login, Control
+* tcp   80 - Console - HTTP (MC)
+* tcp  443 - Console - HTTPS (MC)
+* tcp 5005 - Debug (UFS)
+* tcp 7500 - Diagnostics (UFS)
+* tcp 8772 - Debug (UFS)
+* tcp 8773 - Web services (UFS)
+* tcp 8778 - Multicast (UFS)
+* tcp 8779-8849 - jGroups (UFS)
+* tcp 8888 - Console - Direct (MC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -290,14 +290,14 @@ You should be able to resolve:
 
 8. (SC+CC): Configure firewall, but disable during installation
 
-  * tcp   22 - Login, Control
-  * tcp 5005 - Debug (SC, CC)
-  * tcp 7500 - Diagnostice (SC)
-  * tcp 8772 - Debug (SC, CC)
-  * tcp 8773 - Web services (SC)
-  * tcp 8774 - Web services (CC)
-  * tcp 8778 - Multicast (SC, CC)
-  * tcp 8779-8849 - jGroups (SC)
+* tcp   22 - Login, Control
+* tcp 5005 - Debug (SC, CC)
+* tcp 7500 - Diagnostice (SC)
+* tcp 8772 - Debug (SC, CC)
+* tcp 8773 - Web services (SC)
+* tcp 8774 - Web services (CC)
+* tcp 8778 - Multicast (SC, CC)
+* tcp 8779-8849 - jGroups (SC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -326,13 +326,13 @@ You should be able to resolve:
 
 9. (OSP): Configure firewall, but disable during installation
 
-  * tcp   22 - Login, Control
-  * tcp 5005 - Debug
-  * tcp 7500 - Diagnostics
-  * tcp 8772 - Debug
-  * tcp 8773 - Web services
-  * tcp 8778 - Multicast
-  * tcp 8779-8849 - jGroups
+* tcp   22 - Login, Control
+* tcp 5005 - Debug
+* tcp 7500 - Diagnostics
+* tcp 8772 - Debug
+* tcp 8773 - Web services
+* tcp 8778 - Multicast
+* tcp 8779-8849 - jGroups
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -360,13 +360,13 @@ You should be able to resolve:
 
 10. (NC): Configure firewall, but disable during installation
 
-  * tcp    22 - Login, Control
-  * tcp  5005 - Debug
-  * tcp  8772 - Debug
-  * tcp  8773 - Web services
-  * tcp  8775 - Web services
-  * tcp  8778 - Multicast
-  * tcp 16514 - TLS, needed for node migrations
+* tcp    22 - Login, Control
+* tcp  5005 - Debug
+* tcp  8772 - Debug
+* tcp  8773 - Web services
+* tcp  8775 - Web services
+* tcp  8778 - Multicast
+* tcp 16514 - TLS, needed for node migrations
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
