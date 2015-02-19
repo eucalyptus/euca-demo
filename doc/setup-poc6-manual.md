@@ -213,53 +213,53 @@ You should be able to resolve:
 
 6. (CLC): Configure firewall, but disable during installation
 
-    * udp   53 - DNS
-    * tcp   53 - DNS
-    * tcp 5005 - Debug
-    * tcp 8080 - Credentials
-    * tcp 8772 - Debug
-    * tcp 8773 - Web services
-    * tcp 8777 - Database
-    * tcp 8778 - Multicast
+    udp   53 - DNS
+    tcp   53 - DNS
+    tcp 5005 - Debug
+    tcp 8080 - Credentials
+    tcp 8772 - Debug
+    tcp 8773 - Web services
+    tcp 8777 - Database
+    tcp 8778 - Multicast
 
-            cat << EOF > /etc/sysconfig/iptables
-            *filter
-            :INPUT ACCEPT [0:0]
-            :FORWARD ACCEPT [0:0]
-            :OUTPUT ACCEPT [0:0]
-            -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-            -A INPUT -p icmp -j ACCEPT
-            -A INPUT -i lo -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
-            -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
-            -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-            -A INPUT -j REJECT --reject-with icmp-host-prohibited
-            -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-            COMMIT
-            EOF
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
+        -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
 
-            chkconfig iptables on
-            service iptables stop
+        chkconfig iptables on
+        service iptables stop
 
 
 7. (UFS+MC): Configure firewall, but disable during installation
 
-* tcp   22 - Login, Control
-* tcp   80 - Console - HTTP (MC)
-* tcp  443 - Console - HTTPS (MC)
-* tcp 5005 - Debug (UFS)
-* tcp 7500 - Diagnostics (UFS)
-* tcp 8772 - Debug (UFS)
-* tcp 8773 - Web services (UFS)
-* tcp 8778 - Multicast (UFS)
-* tcp 8779-8849 - jGroups (UFS)
-* tcp 8888 - Console - Direct (MC)
+    tcp   22 - Login, Control
+    tcp   80 - Console - HTTP (MC)
+    tcp  443 - Console - HTTPS (MC)
+    tcp 5005 - Debug (UFS)
+    tcp 7500 - Diagnostics (UFS)
+    tcp 8772 - Debug (UFS)
+    tcp 8773 - Web services (UFS)
+    tcp 8778 - Multicast (UFS)
+    tcp 8779-8849 - jGroups (UFS)
+    tcp 8888 - Console - Direct (MC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -290,14 +290,14 @@ You should be able to resolve:
 
 8. (SC+CC): Configure firewall, but disable during installation
 
-* tcp   22 - Login, Control
-* tcp 5005 - Debug (SC, CC)
-* tcp 7500 - Diagnostice (SC)
-* tcp 8772 - Debug (SC, CC)
-* tcp 8773 - Web services (SC)
-* tcp 8774 - Web services (CC)
-* tcp 8778 - Multicast (SC, CC)
-* tcp 8779-8849 - jGroups (SC)
+    tcp   22 - Login, Control
+    tcp 5005 - Debug (SC, CC)
+    tcp 7500 - Diagnostice (SC)
+    tcp 8772 - Debug (SC, CC)
+    tcp 8773 - Web services (SC)
+    tcp 8774 - Web services (CC)
+    tcp 8778 - Multicast (SC, CC)
+    tcp 8779-8849 - jGroups (SC)
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -326,13 +326,13 @@ You should be able to resolve:
 
 9. (OSP): Configure firewall, but disable during installation
 
-* tcp   22 - Login, Control
-* tcp 5005 - Debug
-* tcp 7500 - Diagnostics
-* tcp 8772 - Debug
-* tcp 8773 - Web services
-* tcp 8778 - Multicast
-* tcp 8779-8849 - jGroups
+    tcp   22 - Login, Control
+    tcp 5005 - Debug
+    tcp 7500 - Diagnostics
+    tcp 8772 - Debug
+    tcp 8773 - Web services
+    tcp 8778 - Multicast
+    tcp 8779-8849 - jGroups
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
@@ -360,13 +360,13 @@ You should be able to resolve:
 
 10. (NC): Configure firewall, but disable during installation
 
-* tcp    22 - Login, Control
-* tcp  5005 - Debug
-* tcp  8772 - Debug
-* tcp  8773 - Web services
-* tcp  8775 - Web services
-* tcp  8778 - Multicast
-* tcp 16514 - TLS, needed for node migrations
+    tcp    22 - Login, Control
+    tcp  5005 - Debug
+    tcp  8772 - Debug
+    tcp  8773 - Web services
+    tcp  8775 - Web services
+    tcp  8778 - Multicast
+    tcp 16514 - TLS, needed for node migrations
 
         cat << EOF > /etc/sysconfig/iptables
         *filter
