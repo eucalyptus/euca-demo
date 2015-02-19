@@ -314,7 +314,7 @@ You should be able to resolve:
 
 3. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
-        sudo sed -i -e "\$aBRIDGE=$private_bridge" \
+        sudo sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
                     -e "/^BOOTPROTO=/s/=.*$/=none/" \
                     -e "/^IPADDR=/d" \
                     -e "/^NETMASK=/d" \
@@ -486,7 +486,7 @@ You should be able to resolve:
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
                     -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
                     -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 4. (OSP): Configure Eucalyptus Networking
@@ -496,7 +496,7 @@ You should be able to resolve:
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
                     -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
                     -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PUBLIC_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 5. (NC): Configure Eucalyptus Networking
@@ -650,17 +650,17 @@ You should be able to resolve:
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
-        sudo euca_conf --register-walrusbackend -P walrus -H ${EUCA_OSP_PUBLIC_IP} -C ${EUCA_REGION}-walrus
+        sudo euca_conf --register-walrusbackend -P walrus -H ${EUCA_OSP_PRIVATE_IP} -C ${EUCA_REGION}-walrus
 
 
 3. (CLC): Register Storage Controller service
 
-        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -H ${EUCA_SC_PUBLIC_IP} -C ${EUCA_CLUSTER1}-sc
+        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -H ${EUCA_SC_PRIVATE_IP} -C ${EUCA_CLUSTER1}-sc
 
 
 4. (CLC): Register Cluster Controller service
 
-        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -H ${EUCA_CC_PUBLIC_IP} -C ${EUCA_CLUSTER1}-cc
+        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -H ${EUCA_CC_PRIVATE_IP} -C ${EUCA_CLUSTER1}-cc
 
 
 5. (CC): Register Node Controller host(s)
