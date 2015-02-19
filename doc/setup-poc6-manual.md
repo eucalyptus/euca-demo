@@ -211,18 +211,24 @@ You should be able to resolve:
         sudo service network restart
 
 
-6. (CLC): Configure firewall, but disable during installation
+6. (ALL): Confirm networking
 
-    udp   53 - DNS
-    tcp   53 - DNS
-    tcp 5005 - Debug
-    tcp 8080 - Credentials
-    tcp 8772 - Debug
-    tcp 8773 - Web services
-    tcp 8777 - Database
-    tcp 8778 - Multicast
+        ip addr | grep " inet "
+        netstat -nr
 
-        cat << EOF > /etc/sysconfig/iptables
+
+7. (CLC): Configure firewall, but disable during installation
+
+        * udp   53 - DNS
+        * tcp   53 - DNS
+        * tcp 5005 - Debug
+        * tcp 8080 - Credentials
+        * tcp 8772 - Debug
+        * tcp 8773 - Web services
+        * tcp 8777 - Database
+        * tcp 8778 - Multicast
+
+        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
         :INPUT ACCEPT [0:0]
         :FORWARD ACCEPT [0:0]
@@ -244,11 +250,11 @@ You should be able to resolve:
         COMMIT
         EOF
 
-        chkconfig iptables on
-        service iptables stop
+        sudo chkconfig iptables on
+        sudo service iptables stop
 
 
-7. (UFS+MC): Configure firewall, but disable during installation
+8. (UFS+MC): Configure firewall, but disable during installation
 
     tcp   22 - Login, Control
     tcp   80 - Console - HTTP (MC)
@@ -261,7 +267,7 @@ You should be able to resolve:
     tcp 8779-8849 - jGroups (UFS)
     tcp 8888 - Console - Direct (MC)
 
-        cat << EOF > /etc/sysconfig/iptables
+        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
         :INPUT ACCEPT [0:0]
         :FORWARD ACCEPT [0:0]
@@ -284,11 +290,11 @@ You should be able to resolve:
         COMMIT
         EOF
 
-        chkconfig iptables on
-        service iptables stop
+        sudo chkconfig iptables on
+        sudo service iptables stop
 
 
-8. (SC+CC): Configure firewall, but disable during installation
+9. (SC+CC): Configure firewall, but disable during installation
 
     tcp   22 - Login, Control
     tcp 5005 - Debug (SC, CC)
@@ -299,7 +305,7 @@ You should be able to resolve:
     tcp 8778 - Multicast (SC, CC)
     tcp 8779-8849 - jGroups (SC)
 
-        cat << EOF > /etc/sysconfig/iptables
+        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
         :INPUT ACCEPT [0:0]
         :FORWARD ACCEPT [0:0]
@@ -320,11 +326,11 @@ You should be able to resolve:
         COMMIT
         EOF
 
-        chkconfig iptables on
-        service iptables stop
+        sudo chkconfig iptables on
+        sudo service iptables stop
 
 
-9. (OSP): Configure firewall, but disable during installation
+10. (OSP): Configure firewall, but disable during installation
 
     tcp   22 - Login, Control
     tcp 5005 - Debug
@@ -334,7 +340,7 @@ You should be able to resolve:
     tcp 8778 - Multicast
     tcp 8779-8849 - jGroups
 
-        cat << EOF > /etc/sysconfig/iptables
+        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
         :INPUT ACCEPT [0:0]
         :FORWARD ACCEPT [0:0]
@@ -354,11 +360,11 @@ You should be able to resolve:
         COMMIT
         EOF
 
-        chkconfig iptables on
-        service iptables stop
+        sudo chkconfig iptables on
+        sudo service iptables stop
 
 
-10. (NC): Configure firewall, but disable during installation
+11. (NC): Configure firewall, but disable during installation
 
     tcp    22 - Login, Control
     tcp  5005 - Debug
@@ -368,7 +374,7 @@ You should be able to resolve:
     tcp  8778 - Multicast
     tcp 16514 - TLS, needed for node migrations
 
-        cat << EOF > /etc/sysconfig/iptables
+        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
         :INPUT ACCEPT [0:0]
         :FORWARD ACCEPT [0:0]
@@ -388,18 +394,18 @@ You should be able to resolve:
         COMMIT
         EOF
 
-        chkconfig iptables on
-        service iptables stop
+        sudo chkconfig iptables on
+        sudo service iptables stop
 
 
-11. (ALL): Disable SELinux
+12. (ALL): Disable SELinux
 
         sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
 
         sudo setenforce 0
 
 
-12. (ALL): Install and Configure the NTP service
+13. (ALL): Install and Configure the NTP service
 
         sudo yum -y install ntp
 
@@ -410,12 +416,12 @@ You should be able to resolve:
         sudo hwclock --systohc
 
 
-13. (CLC) Install and Configure Mail Relay
+14. (CLC) Install and Configure Mail Relay
 
         TBD - see existing Postfix null client configurations
 
 
-14. (CC): Configure packet routing
+15. (CC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
 
@@ -424,7 +430,7 @@ You should be able to resolve:
         cat /proc/sys/net/ipv4/ip_forward
 
 
-15. (NC): Configure packet routing
+16. (NC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
         sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
