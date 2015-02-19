@@ -110,139 +110,14 @@ parameter to make the commands more legible than would be the case if we used IP
 
 ### Prepare Network
 
-1. (CLC): Reserve Ports Used by Eucalyptus
+1. (ALL): Configure firewall to allow Eucalyptus Traffic
 
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" >> /etc/sysconfig/iptables # Credentials (CLC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
-        echo "-A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT" >> /etc/sysconfig/iptables # DNS
+    TBD: Validate protocol source:port to dest:port traffic
+    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which could send and receive
+         dummy traffic to confirm there are no firewall or routing issues, prior to their removal and replacement
+         with the actual packages
 
-
-2. (UFS): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT" >> /etc/sysconfig/iptables # Database (CLC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
-
-
-3. (MC): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT" >> /etc/sysconfig/iptables
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /etc/sysconfig/iptables
-
-
-4. (CC): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-
-
-5. (SC): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
-
-
-6. (OSP): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (CLC, UFS, OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT" >> /etc/sysconfig/iptables # jGroups (CLC,UFS,OSG, SC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT" >> /etc/sysconfig/iptables # Diagnostice (CLC, UFS, OSG, SC)
-
-
-7. (NC): Reserve Ports Used by Eucalyptus
-
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT" >> /etc/sysconfig/iptables # Debug only
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT" >> /etc/sysconfig/iptables # HA Membership
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT" >> /etc/sysconfig/iptables # Web services (NC)
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT" >> /etc/sysconfig/iptables # Multicast bind port ?
-        echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT" >> /etc/sysconfig/iptables # TLS, needed for node migrations (NC)
-
-
-8. (MW): Verify Connectivity
-
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
-
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-
-
-9. (CLC): Verify Connectivity
-
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-        nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
-
-
-10. (UFS): Verify Connectivity
-
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-
-
-11. (CC): Verify Connectivity
-
-        nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
-        nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
-        nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
-        nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
-
-
-13. (SC): Verify Connectivity
-
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
-
-
-14. (OSP): Verify Connectivity
-
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-
-
-15. (NC): Verify Connectivity
-
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-
-
-16. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  - Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
-  - Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
-  - Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  - Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
-  - If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  - If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
-  - Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
-
-17. (CLC / CC / SC / OSG): Run tomography tool
+2. (CLC/CC/SC/OSG): Run tomography tool
 
         mkdir -p ~/src/eucalyptus
         cd ~/src/eucalyptus
@@ -252,14 +127,18 @@ parameter to make the commands more legible than would be the case if we used IP
         ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
 
 
-18. (CLC): Scan for unknown SSH host keys
+3. (CLC): Scan for unknown SSH host keys
 
     Note: sudo tee needed to append output to file owned by root
 
         ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+4. (CC): Scan for unknown SSH host keys
+
+    Note: sudo tee needed to append output to file owned by root
 
         ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
@@ -284,12 +163,17 @@ You should be able to resolve:
 
 ### Initialize Dependencies
 
-1. (NC): Install bridge utilities package
+1. (ALL): Disable zero-conf network
+ 
+        sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
+    
+
+2. (NC): Install bridge utilities package
 
         sudo yum -y install bridge-utils
 
 
-2. (NC): Create Private Bridge
+3. (NC): Create Private Bridge
 
     Move the static IP of the private interface to the private bridge
 
@@ -312,7 +196,7 @@ You should be able to resolve:
         EOF
 
 
-3. (NC): Convert Private Ethernet Interface to Private Bridge Slave
+4. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
         sudo sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
                     -e "/^BOOTPROTO=/s/=.*$/=none/" \
@@ -322,24 +206,200 @@ You should be able to resolve:
                     -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
 
 
-4. (NC): Restart networking
+5. (ALL): Restart networking
 
         sudo service network restart
 
 
-5. (ALL): Disable firewall
+6. (CLC): Configure firewall, but disable during installation
 
-        sudo service iptables stop
+    * udp   53 - DNS
+    * tcp   53 - DNS
+    * tcp 5005 - Debug
+    * tcp 8080 - Credentials
+    * tcp 8772 - Debug
+    * tcp 8773 - Web services
+    * tcp 8777 - Database 
+    * tcp 8778 - Multicast 
+
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
+        -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
+
+        chkconfig iptables on
+        service iptables stop
 
 
-6. (ALL): Disable SELinux
+7. (UFS+MC): 
+
+    * tcp   22 - Login, Control
+    * tcp   80 - Console - HTTP (MC)
+    * tcp  443 - Console - HTTPS (MC)
+    * tcp 5005 - Debug (UFS)
+    * tcp 7500 - Diagnostics (UFS)
+    * tcp 8772 - Debug (UFS)
+    * tcp 8773 - Web services (UFS)
+    * tcp 8778 - Multicast (UFS)
+    * tcp 8779-8849 - jGroups (UFS)
+    * tcp 8888 - Console - Direct (MC)
+
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
+
+        chkconfig iptables on
+        service iptables stop
+
+
+8. (SC+CC): 
+
+    * tcp   22 - Login, Control
+    * tcp 5005 - Debug (SC, CC)
+    * tcp 7500 - Diagnostice (SC)
+    * tcp 8772 - Debug (SC, CC)
+    * tcp 8773 - Web services (SC)
+    * tcp 8774 - Web services (CC)
+    * tcp 8778 - Multicast (SC, CC)
+    * tcp 8779-8849 - jGroups (SC)
+
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
+
+        chkconfig iptables on
+        service iptables stop
+
+
+9. (OSP): 
+
+    * tcp   22 - Login, Control
+    * tcp 5005 - Debug
+    * tcp 7500 - Diagnostics
+    * tcp 8772 - Debug
+    * tcp 8773 - Web services
+    * tcp 8778 - Multicast
+    * tcp 8779-8849 - jGroups
+
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
+
+        chkconfig iptables on
+        service iptables stop
+
+
+10. (NC): Configure firewall, but disable during installation
+
+    * tcp    22 - Login, Control
+    * tcp  5005 - Debug
+    * tcp  8772 - Debug
+    * tcp  8773 - Web services
+    * tcp  8775 - Web services
+    * tcp  8778 - Multicast
+    * tcp 16514 - TLS, needed for node migrations
+
+        cat << EOF > /etc/sysconfig/iptables
+        *filter
+        :INPUT ACCEPT [0:0]
+        :FORWARD ACCEPT [0:0]
+        :OUTPUT ACCEPT [0:0]
+        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        -A INPUT -p icmp -j ACCEPT
+        -A INPUT -i lo -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+        -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
+        -A INPUT -j REJECT --reject-with icmp-host-prohibited
+        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+        COMMIT
+        EOF
+
+        chkconfig iptables on
+        service iptables stop
+
+
+11. (ALL): Disable SELinux
 
         sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
 
         sudo setenforce 0
 
 
-7. (ALL): Install and Configure the NTP service
+12. (ALL): Install and Configure the NTP service
 
         sudo yum -y install ntp
     
@@ -350,12 +410,12 @@ You should be able to resolve:
         sudo hwclock --systohc
 
 
-8. (CLC) Install and Configure Mail Relay
+13. (CLC) Install and Configure Mail Relay
 
         TBD - see existing Postfix null client configurations
 
 
-9. (CC): Configure packet routing
+14. (CC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
 
@@ -364,7 +424,7 @@ You should be able to resolve:
         cat /proc/sys/net/ipv4/ip_forward
 
 
-10. (NC): Configure packet routing
+15. (NC): Configure packet routing
 
         sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
         sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -373,18 +433,6 @@ You should be able to resolve:
 
         cat /proc/sys/net/ipv4/ip_forward
         cat /proc/sys/net/bridge/bridge-nf-call-iptables
-
-
-11. (ALL): Install subscriber license (optional, for subscriber-only packages)
-
-    Note CS has a license for internal use, so this will obtain and use that license from where
-    I have placed it on my local mirror:
-
-        wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/CS-Team-Unlimited-1.4.0.tgz \
-             -O /tmp/CS-Team-Unlimited-1.4.0.tgz
-
-        cd /tmp
-        tar xvfz CS-Team-Unlimited-1.4.0.tgz
 
 
 ### Install Eucalyptus
@@ -396,10 +444,8 @@ You should be able to resolve:
                  http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
                  http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
-        # Not working right now - confirm with Harold how I can test a license
-        # sudo yum install -y /tmp/CS-Team-Unlimited-1.4.0/eucalyptus-enterprise-release-4.0-1.CS_Team.Unlimited.noarch.rpm
-        # sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.0-1.el6.noarch.rpm
-        # sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+        sudo yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
+        sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
 
 
 2. (ALL): Override external yum repos to internal servers
@@ -416,45 +462,30 @@ You should be able to resolve:
         sudo yum install -y eucalyptus-cloud eucalyptus-service-image
 
 
-4. (UFC): Install packages
+4. (UFC+MC): Install packages
 
-        sudo yum install -y eucalyptus-cloud
-
-
-5. (MC): Install packages
-
-        sudo yum install -y eucaconsole
+        sudo yum install -y eucalyptus-cloud eucaconsole
 
 
-6. (CC): Install packages
+5. (SC+CC): Install packages
 
-        sudo yum install -y eucalyptus-cc
-
-
-7. (SC): Install packages
-
-        sudo yum install -y eucalyptus-sc
+        sudo yum install -y eucalyptus-sc eucalyptus-cc
 
 
-8. (OSP): Install packages
+6. (OSP): Install packages
 
         sudo yum install -y eucalyptus-walrus
 
 
-9. (NC): Install packages
+7. (NC): Install packages
 
         sudo yum install -y eucalyptus-nc
 
 
-10. (NC): Remove Devfault libvirt network.
+8. (NC): Remove Devfault libvirt network.
 
         sudo virsh net-destroy default
         sudo virsh net-autostart default --disable
-
-
-11. (NC): Confirm KVM device node permissions.
-
-        ls -l /dev/kvm  # should be owned by root:kvm
 
 
 ### Configure Eucalyptus
@@ -469,17 +500,17 @@ You should be able to resolve:
                     -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-2. (UFS / MC): Configure Eucalyptus Networking
+2. (UFS+MC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
         sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFC_PRIVATE_INTERFACE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFC_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFS_PRIVATE_INTERFACE}\"/" \
+                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFS_PUBLIC_INTERFACE}\"/" \
+                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
 
 
-3. (CC / SC): Configure Eucalyptus Networking
+3. (SC+CC): Configure Eucalyptus Networking
 
         sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -560,7 +591,7 @@ You should be able to resolve:
         EOF
 
 
-9. (CLC / UFS / SC / OSP): Configure Eucalyptus Java Memory Allocation
+9. (CLC/UFS/SC/OSP): Configure Eucalyptus Java Memory Allocation
 
         # Skip for now, causing startup errors
         # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -584,7 +615,7 @@ You should be able to resolve:
         sudo euca_conf --initialize
 
 
-2. (CLC / UFS / SC / OSP): Start the Cloud Controller service
+2. (CLC/UFS/SC/OSP): Start the Cloud Controller service
 
         sudo chkconfig eucalyptus-cloud on
 
@@ -609,28 +640,66 @@ You should be able to resolve:
         sudo service eucanetd start
 
 
-5. (MW): Confirm service startup - Are ports listening?
+5. (MW): Verify Connectivity
 
         nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
         nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
 
-        nc -z ${EUCA_UFS_PUBLIC_IP} 8773 || echo 'Connection from MW to UFS:8773 failed!'
-
-        nc -z ${EUCA_MC_PUBLIC_IP} 8888  || echo 'Connection from MW to MC:8888 failed!'
-
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to OSP:8773 failed!'
-
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773  || echo 'Connection from MW to SC:8773 failed!'
-
-        nc -z ${EUCA_CC_PUBLIC_IP} 8774  || echo 'Connection from MW to CC:8774 failed!'
-
-        nc -z ${EUCA_NC1_PUBLIC_IP} 8775 || echo 'Connection from MW to NC1:8775 failed!'
-        nc -z ${EUCA_NC2_PUBLIC_IP} 8775 || echo 'Connection from MW to NC2:8775 failed!'
-        nc -z ${EUCA_NC3_PUBLIC_IP} 8775 || echo 'Connection from MW to NC3:8775 failed!'
-        nc -z ${EUCA_NC4_PUBLIC_IP} 8775 || echo 'Connection from MW to NC4:8775 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
 
 
-6. (All): Confirm service startup - Are logs being written?
+6. (CLC): Verify Connectivity
+
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
+        nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
+
+
+7. (UFS): Verify Connectivity
+
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
+
+
+8. (CC): Verify Connectivity
+
+        nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
+        nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
+        nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
+        nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
+
+
+9. (SC): Verify Connectivity
+
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
+
+
+10. (OSP): Verify Connectivity
+
+        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+
+
+11. (NC): Verify Connectivity
+
+        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
+        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+
+
+12. (Other): Verify Connectivity
+
+  Use additional commands to verify the following:
+
+  - Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
+  - Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
+  - Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
+  - Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
+  - If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
+  - If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
+  - Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
+
+
+13. (All): Confirm service startup - Are logs being written?
 
         ls -l /var/log/eucalyptus
 
