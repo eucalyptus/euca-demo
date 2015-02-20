@@ -2,7 +2,7 @@
 
 This is going to be the manual steps to setup region hp-gol-d1, based on the "4-node reference architecture".
 
-This will use hp-gol-d1 as the EUCA_REGION.
+This will use hp-gol-d1 as the AWS_DEFAULT_REGION.
 
 The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 
@@ -36,7 +36,7 @@ parameter to make the commands more legible than would be the case if we used IP
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
     ```bash
-    export EUCA_REGION=hp-gol-d1
+    export AWS_DEFAULT_REGION=hp-gol-d1
 
     export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PRIVATE_DOMAIN=internal
@@ -45,12 +45,11 @@ parameter to make the commands more legible than would be the case if we used IP
     export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PARENT_IP=10.104.10.80
 
-    #export EUCA_SERVICE_API_NAME=${EUCA_REGION}-api
     export EUCA_SERVICE_API_NAME=api
 
     export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-    #export EUCA_CLUSTER1=${EUCA_REGION}a
+    #export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
     export EUCA_CLUSTER1=cluster01
     #export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
     export EUCA_CLUSTER1_CC_NAME=cc01
@@ -177,10 +176,10 @@ so they look more AWS-like.
 You should be able to resolve these names with these results:
 
 ```bash
-dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.104.10.84
 
-dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.104.10.83
 ```
 
@@ -880,7 +879,17 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p objectstorage.providerclient=walrus
     ```
 
-4. (CLC): Refresh Eucalyptus Administrator credentials
+4. (CLC): Configure API to use standard HTTP port (Optional)
+
+   This changes the port specified in eucarc to the standard http port, not sure this is the best idea,
+   as it may be better to reserve standard HTTP and HTTPS ports for a front-end proxy. At this point, this
+   an experiement to see what this might allow.
+
+    ```bash
+    euca-modify-property -p bootstrap.webservices.port=80
+    ```
+
+5. (CLC): Refresh Eucalyptus Administrator credentials
 
     ```bash
     rm -f ~/creds/eucalyptus/admin.zip
@@ -894,13 +903,13 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-5. (CLC): Load Edge Network JSON configuration
+6. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-5. (CLC): Install the imaging-worker and load-balancer images
+7. (CLC): Install the imaging-worker and load-balancer images
 
     ```bash
     euca-install-load-balancer --install-default
@@ -908,13 +917,13 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-install-imaging-worker --install-default
     ```
 
-6. (CLC): Confirm service status
+8. (CLC): Confirm service status
 
     ```bash
-    euca-describe-services | cut -f1-6
+    euca-describe-services | cut -f1-7
     ```
 
-7. (CLC): Confirm apis
+9. (CLC): Confirm apis
 
     ```bash
    euca-describe-regions
@@ -949,7 +958,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 4. (CLC): Configure DNS Domain
 
     ```bash
-    euca-modify-property -p system.dns.dnsdomain=${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    euca-modify-property -p system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 5. (CLC): Configure DNS Sub-Domains
@@ -993,21 +1002,21 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 9. (CLC): Confirm DNS resolution for Services
 
     ```bash
-    dig +short compute.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short compute.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short objectstorage.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short objectstorage.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short euare.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short euare.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short tokens.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short tokens.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short autoscaling.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short autoscaling.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short cloudformation.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudformation.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short cloudwatch.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-    dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short loadbalancing.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 ### Configure Minimal IAM
