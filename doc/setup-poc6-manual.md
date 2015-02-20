@@ -885,17 +885,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p objectstorage.providerclient=walrus
     ```
 
-4. (CLC): Configure API to use standard HTTP port (Optional)
-
-   This changes the port specified in eucarc to the standard http port, not sure this is the best idea,
-   as it may be better to reserve standard HTTP and HTTPS ports for a front-end proxy. At this point, this
-   an experiement to see what this might allow.
-
-    ```bash
-    euca-modify-property -p bootstrap.webservices.port=80
-    ```
-
-5. (CLC): Refresh Eucalyptus Administrator credentials
+4. (CLC): Refresh Eucalyptus Administrator credentials
 
     ```bash
     rm -f ~/creds/eucalyptus/admin.zip
@@ -909,13 +899,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-6. (CLC): Load Edge Network JSON configuration
+5. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-7. (CLC): Install the imaging-worker and load-balancer images
+6. (CLC): Install the imaging-worker and load-balancer images
 
     ```bash
     euca-install-load-balancer --install-default
@@ -923,13 +913,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-install-imaging-worker --install-default
     ```
 
-8. (CLC): Confirm service status
+7. (CLC): Confirm service status
 
     ```bash
     euca-describe-services | cut -f1-7
     ```
 
-9. (CLC): Confirm apis
+8. (CLC): Confirm apis
 
     ```bash
    euca-describe-regions
