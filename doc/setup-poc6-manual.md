@@ -677,10 +677,16 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=4G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with Cloud Controller Address
+10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
 
     ```bash
-    sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
+    sudo sed -i -e "/#elb.host=10.20.30.40/d" \
+                -e "/#elb.port=443/d" \
+                -e "/#s3.host=<your host IP or name>/d" \
+                -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
+                -e "/that won't work from client's browsers./a\
+         s3.host=${EUCA_OSP_PRIVATE_IP}" /etc/eucaconsole/console.ini
+
     ```
 
 ### Start Eucalyptus
@@ -1027,71 +1033,50 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euare-usermodloginprofile -u admin -p password
     ```
 
-### Configure Management Console
+### Configure Management Console for SSL
 
-1. (MC): Configure Eucalyptus Console Configuration file
-
-    ```bash
-    sed -i -e "/#elb.host=10.20.30.40/d" \
-           -e "/#elb.port=443/d" \
-           -e "/#s3.host=<your host IP or name>/d" \
-           -e "/^clchost = localhost$/s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
-           -e "/that won't work from client's browsers./a\
-    s3.host=${EUCA_OSP_PUBLIC_IP}" /etc/eucaconsole/console.ini
-    ```
-
-
-2. (MC): Start Eucalyptus Console service
-
-    ```bash
-    chkconfig eucaconsole on
-
-    service eucaconsole start
-    ```
-
-
-3. (MW): Confirm Eucalyptus Console service
+1. (MW): Confirm Eucalyptus Console service on default port
 
     ```bash
     Browse: http://${EUCA_MC_PUBLIC_IP}:8888
     ```
 
-4. (MC):  4. Stop Eucalyptus Console service
+2. (MC):  4. Stop Eucalyptus Console service
 
     ```bash
-    service eucaconsole stop
+    sudo service eucaconsole stop
     ```
 
-5. (MC): Install Nginx package
+3. (MC): Install Nginx package
 
     ```bash
-    yum install -y nginx
+    sudo yum install -y nginx
     ```
 
-6. (MC): Configure Nginx
+4. (MC): Configure Nginx
 
     ```bash
-    \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
+    sudo \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
 
-    sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
-           -e 's/# \(ssl_certificate\)/\1/' \
-           -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
-           -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    sudo sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
+                -e 's/# \(ssl_certificate\)/\1/' \
+                -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
+                -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
 
     ```bash
-    chkconfig nginx on
+    sudo chkconfig nginx on
 
-    service nginx start
+    sudo service nginx start
     ```
 
 8. (MC): Configure Eucalyptus Console for SSL
 
     ```bash
-    sed -i -e '/^session.secure =/s/= .*$/= true/' \
-           -e '/^session.secure/a\
+    sudo sed -i -e '/^session.secure =/s/= .*$/= true/' \
+                -e '/^session.secure/a\
     sslcert=/etc/eucaconsole/console.crt\
     sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
     ```
@@ -1099,7 +1084,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 9. (MC): Start Eucalyptus Console service
 
     ```bash
-    service eucaconsole start
+    sudo service eucaconsole start
     ```
 
 10. (MC): Confirm Eucalyptus Console service
