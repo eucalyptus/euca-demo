@@ -1,5 +1,4 @@
-Region hp-gol-d1 Manual Installation
-====================================
+# Region hp-gol-d1 Manual Installation
 
 This is going to be the manual steps to setup region hp-gol-d1, based on the "4-node reference architecture".
 
@@ -41,82 +40,84 @@ parameter to make the commands more legible than would be the case if we used IP
 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
-        export EUCA_REGION=hp-gol-d1
+```bash
+    export EUCA_REGION=hp-gol-d1
 
-        export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
-        export EUCA_DNS_PRIVATE_DOMAIN=internal
-        export EUCA_DNS_INSTANCE_SUBDOMAIN=cloud
-        export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-        export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
-        export EUCA_DNS_PARENT_IP=10.104.10.80
+    export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
+    export EUCA_DNS_PRIVATE_DOMAIN=internal
+    export EUCA_DNS_INSTANCE_SUBDOMAIN=cloud
+    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+    export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
+    export EUCA_DNS_PARENT_IP=10.104.10.80
 
-        #export EUCA_SERVICE_API_NAME=${EUCA_REGION}-api
-        export EUCA_SERVICE_API_NAME=api
+    #export EUCA_SERVICE_API_NAME=${EUCA_REGION}-api
+    export EUCA_SERVICE_API_NAME=api
 
-        export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
+    export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-        #export EUCA_CLUSTER1=${EUCA_REGION}a
-        export EUCA_CLUSTER1=cluster01
-        #export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
-        export EUCA_CLUSTER1_CC_NAME=cc01
-        #export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
-        export EUCA_CLUSTER1_SC_NAME=sc01
+    #export EUCA_CLUSTER1=${EUCA_REGION}a
+    export EUCA_CLUSTER1=cluster01
+    #export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
+    export EUCA_CLUSTER1_CC_NAME=cc01
+    #export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
+    export EUCA_CLUSTER1_SC_NAME=sc01
 
-        export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
-        #export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
-        export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.0.0/16
-        #export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
-        export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
-        #export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
-        export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
-        #export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
-        export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
+    export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
+    #export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
+    export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.0.0/16
+    #export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
+    export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
+    #export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
+    export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
+    #export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
+    export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
 
-        export EUCA_CLC_PUBLIC_INTERFACE=em1
-        export EUCA_CLC_PRIVATE_INTERFACE=em2
-        export EUCA_CLC_PUBLIC_IP=10.104.10.83
-        export EUCA_CLC_PRIVATE_IP=10.105.10.83
+    export EUCA_CLC_PUBLIC_INTERFACE=em1
+    export EUCA_CLC_PRIVATE_INTERFACE=em2
+    export EUCA_CLC_PUBLIC_IP=10.104.10.83
+    export EUCA_CLC_PRIVATE_IP=10.105.10.83
 
-        export EUCA_UFS_PUBLIC_INTERFACE=em1
-        export EUCA_UFS_PRIVATE_INTERFACE=em2
-        export EUCA_UFS_PUBLIC_IP=10.104.10.84
-        export EUCA_UFS_PRIVATE_IP=10.105.10.84
+    export EUCA_UFS_PUBLIC_INTERFACE=em1
+    export EUCA_UFS_PRIVATE_INTERFACE=em2
+    export EUCA_UFS_PUBLIC_IP=10.104.10.84
+    export EUCA_UFS_PRIVATE_IP=10.105.10.84
 
-        export EUCA_MC_PUBLIC_INTERFACE=em1
-        export EUCA_MC_PRIVATE_INTERFACE=em2
-        export EUCA_MC_PUBLIC_IP=10.104.10.84
-        export EUCA_MC_PRIVATE_IP=10.105.10.84
+    export EUCA_MC_PUBLIC_INTERFACE=em1
+    export EUCA_MC_PRIVATE_INTERFACE=em2
+    export EUCA_MC_PUBLIC_IP=10.104.10.84
+    export EUCA_MC_PRIVATE_IP=10.105.10.84
 
-        export EUCA_CC_PUBLIC_INTERFACE=em1
-        export EUCA_CC_PRIVATE_INTERFACE=em2
-        export EUCA_CC_PUBLIC_IP=10.104.10.85
-        export EUCA_CC_PRIVATE_IP=10.105.10.85
+    export EUCA_CC_PUBLIC_INTERFACE=em1
+    export EUCA_CC_PRIVATE_INTERFACE=em2
+    export EUCA_CC_PUBLIC_IP=10.104.10.85
+    export EUCA_CC_PRIVATE_IP=10.105.10.85
 
-        export EUCA_SC_PUBLIC_INTERFACE=em1
-        export EUCA_SC_PRIVATE_INTERFACE=em2
-        export EUCA_SC_PUBLIC_IP=10.104.10.85
-        export EUCA_SC_PRIVATE_IP=10.105.10.85
+    export EUCA_SC_PUBLIC_INTERFACE=em1
+    export EUCA_SC_PRIVATE_INTERFACE=em2
+    export EUCA_SC_PUBLIC_IP=10.104.10.85
+    export EUCA_SC_PRIVATE_IP=10.105.10.85
 
-        export EUCA_OSP_PUBLIC_INTERFACE=em1
-        export EUCA_OSP_PRIVATE_INTERFACE=em2
-        export EUCA_OSP_PUBLIC_IP=10.104.1.208
-        export EUCA_OSP_PRIVATE_IP=10.105.1.208
+    export EUCA_OSP_PUBLIC_INTERFACE=em1
+    export EUCA_OSP_PRIVATE_INTERFACE=em2
+    export EUCA_OSP_PUBLIC_IP=10.104.1.208
+    export EUCA_OSP_PRIVATE_IP=10.105.1.208
 
-        export EUCA_NC_PRIVATE_BRIDGE=br0
-        export EUCA_NC_PRIVATE_INTERFACE=em2
-        export EUCA_NC_PUBLIC_INTERFACE=em1
+    export EUCA_NC_PRIVATE_BRIDGE=br0
+    export EUCA_NC_PRIVATE_INTERFACE=em2
+    export EUCA_NC_PUBLIC_INTERFACE=em1
 
-        export EUCA_NC1_PUBLIC_IP=10.104.1.190
-        export EUCA_NC1_PRIVATE_IP=10.105.1.190
+    export EUCA_NC1_PUBLIC_IP=10.104.1.190
+    export EUCA_NC1_PRIVATE_IP=10.105.1.190
 
-        export EUCA_NC2_PUBLIC_IP=10.104.1.187
-        export EUCA_NC2_PRIVATE_IP=10.105.1.187
+    export EUCA_NC2_PUBLIC_IP=10.104.1.187
+    export EUCA_NC2_PRIVATE_IP=10.105.1.187
 
-        export EUCA_NC3_PUBLIC_IP=10.104.10.56
-        export EUCA_NC3_PRIVATE_IP=10.105.10.56
+    export EUCA_NC3_PUBLIC_IP=10.104.10.56
+    export EUCA_NC3_PRIVATE_IP=10.105.10.56
 
-        export EUCA_NC4_PUBLIC_IP=10.104.10.59
-        export EUCA_NC4_PRIVATE_IP=10.105.10.59
+    export EUCA_NC4_PUBLIC_IP=10.104.10.59
+    export EUCA_NC4_PRIVATE_IP=10.105.10.59
+```
 
 
 ### Prepare Network
@@ -130,13 +131,14 @@ parameter to make the commands more legible than would be the case if we used IP
 
 2. (CLC/CC/SC/OSG): Run tomography tool
 
-        mkdir -p ~/src/eucalyptus
-        cd ~/src/eucalyptus
-        git clone https://github.com/eucalyptus/deveutils
+```bash
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
 
-        cd deveutils/network-tomography
-        ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
-
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
+```
 
 3. (CLC): Scan for unknown SSH host keys
 
@@ -687,7 +689,6 @@ You should be able to resolve:
         sudo service eucanetd start
 
 
-```
 5. (MW): Verify Connectivity
 
         nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
