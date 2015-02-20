@@ -50,16 +50,27 @@ parameter to make the commands more legible than would be the case if we used IP
         export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
         export EUCA_DNS_PARENT_IP=10.104.10.80
 
-        export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
+        #export EUCA_SERVICE_API_NAME=${EUCA_REGION}-api
+        export EUCA_SERVICE_API_NAME=api
 
         export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-        export EUCA_CLUSTER1=${EUCA_REGION}a
+        #export EUCA_CLUSTER1=${EUCA_REGION}a
+        export EUCA_CLUSTER1=cluster01
+        #export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
+        export EUCA_CLUSTER1_CC_NAME=cc01
+        #export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
+        export EUCA_CLUSTER1_SC_NAME=sc01
+
         export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
-        export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
-        export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
-        export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
-        export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
+        #export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
+        export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.0.0/16
+        #export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
+        export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
+        #export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
+        export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
+        #export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
+        export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
 
         export EUCA_CLC_PUBLIC_INTERFACE=em1
         export EUCA_CLC_PRIVATE_INTERFACE=em2
@@ -132,9 +143,21 @@ parameter to make the commands more legible than would be the case if we used IP
     Note: sudo tee needed to append output to file owned by root
 
         ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+        ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+        ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+        ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
         ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+        ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+        ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
 4. (CC): Scan for unknown SSH host keys
 
@@ -219,14 +242,18 @@ You should be able to resolve:
 
 7. (CLC): Configure firewall, but disable during installation
 
-        * udp   53 - DNS
-        * tcp   53 - DNS
-        * tcp 5005 - Debug
-        * tcp 8080 - Credentials
-        * tcp 8772 - Debug
-        * tcp 8773 - Web services
-        * tcp 8777 - Database
-        * tcp 8778 - Multicast
+    Ports to open
+
+    * udp   53 - DNS
+    * tcp   53 - DNS
+    * tcp 5005 - Debug
+    * tcp 8080 - Credentials
+    * tcp 8772 - Debug
+    * tcp 8773 - Web services
+    * tcp 8777 - Database
+    * tcp 8778 - Multicast
+
+    Firewall configuration
 
         cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
@@ -256,16 +283,20 @@ You should be able to resolve:
 
 8. (UFS+MC): Configure firewall, but disable during installation
 
-    tcp   22 - Login, Control
-    tcp   80 - Console - HTTP (MC)
-    tcp  443 - Console - HTTPS (MC)
-    tcp 5005 - Debug (UFS)
-    tcp 7500 - Diagnostics (UFS)
-    tcp 8772 - Debug (UFS)
-    tcp 8773 - Web services (UFS)
-    tcp 8778 - Multicast (UFS)
-    tcp 8779-8849 - jGroups (UFS)
-    tcp 8888 - Console - Direct (MC)
+    Ports to open
+
+    * tcp   22 - Login, Control
+    * tcp   80 - Console - HTTP (MC)
+    * tcp  443 - Console - HTTPS (MC)
+    * tcp 5005 - Debug (UFS)
+    * tcp 7500 - Diagnostics (UFS)
+    * tcp 8772 - Debug (UFS)
+    * tcp 8773 - Web services (UFS)
+    * tcp 8778 - Multicast (UFS)
+    * tcp 8779-8849 - jGroups (UFS)
+    * tcp 8888 - Console - Direct (MC)
+
+    Firewall configuration
 
         cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
@@ -296,14 +327,18 @@ You should be able to resolve:
 
 9. (SC+CC): Configure firewall, but disable during installation
 
-    tcp   22 - Login, Control
-    tcp 5005 - Debug (SC, CC)
-    tcp 7500 - Diagnostice (SC)
-    tcp 8772 - Debug (SC, CC)
-    tcp 8773 - Web services (SC)
-    tcp 8774 - Web services (CC)
-    tcp 8778 - Multicast (SC, CC)
-    tcp 8779-8849 - jGroups (SC)
+    Ports to open
+
+    * tcp   22 - Login, Control
+    * tcp 5005 - Debug (SC, CC)
+    * tcp 7500 - Diagnostice (SC)
+    * tcp 8772 - Debug (SC, CC)
+    * tcp 8773 - Web services (SC)
+    * tcp 8774 - Web services (CC)
+    * tcp 8778 - Multicast (SC, CC)
+    * tcp 8779-8849 - jGroups (SC)
+
+    Firewall configuration
 
         cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
@@ -332,13 +367,17 @@ You should be able to resolve:
 
 10. (OSP): Configure firewall, but disable during installation
 
-    tcp   22 - Login, Control
-    tcp 5005 - Debug
-    tcp 7500 - Diagnostics
-    tcp 8772 - Debug
-    tcp 8773 - Web services
-    tcp 8778 - Multicast
-    tcp 8779-8849 - jGroups
+    Ports to open
+
+    * tcp   22 - Login, Control
+    * tcp 5005 - Debug
+    * tcp 7500 - Diagnostics
+    * tcp 8772 - Debug
+    * tcp 8773 - Web services
+    * tcp 8778 - Multicast
+    * tcp 8779-8849 - jGroups
+
+    Firewall configuration
 
         cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
@@ -366,13 +405,17 @@ You should be able to resolve:
 
 11. (NC): Configure firewall, but disable during installation
 
-    tcp    22 - Login, Control
-    tcp  5005 - Debug
-    tcp  8772 - Debug
-    tcp  8773 - Web services
-    tcp  8775 - Web services
-    tcp  8778 - Multicast
-    tcp 16514 - TLS, needed for node migrations
+    Ports to open
+
+    * tcp    22 - Login, Control
+    * tcp  5005 - Debug
+    * tcp  8772 - Debug
+    * tcp  8773 - Web services
+    * tcp  8775 - Web services
+    * tcp  8778 - Multicast
+    * tcp 16514 - TLS, needed for node migrations
+
+    Firewall configuration
 
         cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
         *filter
@@ -475,12 +518,12 @@ You should be able to resolve:
 
 5. (SC+CC): Install packages
 
-        sudo yum install -y eucalyptus-sc eucalyptus-cc
+        sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
 
 
 6. (OSP): Install packages
 
-        sudo yum install -y eucalyptus-walrus
+        sudo yum install -y eucalyptus-cloud eucalyptus-walrus
 
 
 7. (NC): Install packages
@@ -599,19 +642,17 @@ You should be able to resolve:
 
 9. (CLC/UFS/SC/OSP): Configure Eucalyptus Java Memory Allocation
 
-        # Skip for now, causing startup errors
+        # Skip calculated value for now, causing startup errors
         # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
         # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
+
+        sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=4G\"/" /etc/eucalyptus/eucalyptus.conf
 
 
 10. (MC): Configure Management Console with Cloud Controller Address
 
         sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
 
-
-11. (ALL): Disable zero-conf network
-
-        sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
 
 
 ### Start Eucalyptus
@@ -646,6 +687,7 @@ You should be able to resolve:
         sudo service eucanetd start
 
 
+```
 5. (MW): Verify Connectivity
 
         nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
@@ -696,14 +738,14 @@ You should be able to resolve:
 
   Use additional commands to verify the following:
 
-  - Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
-  - Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
-  - Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  - Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
-  - If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  - If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
-  - Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
+  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
+  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
+  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
+  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
+  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
+  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
+  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
+```
 
 13. (All): Confirm service startup - Are logs being written?
 
@@ -714,28 +756,22 @@ You should be able to resolve:
 
 1. (CLC): Register User-Facing services
 
-        sudo euca_conf --register-service -T user-api -H ${EUCA_UFS_PRIVATE_IP} -N ${EUCA_REGION}-api
-
-    or, if ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} resolves to ${EUCA_UFS_PRIVATE_IP}, try
-
-        sudo euca_conf --register-service -T user-api -H ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} -N ${EUCA_REGION}-api
-
-    Second method experimental...
+        sudo euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
 
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
-        sudo euca_conf --register-walrusbackend -P walrus -H ${EUCA_OSP_PRIVATE_IP} -C ${EUCA_REGION}-walrus
+        sudo euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
 
 
 3. (CLC): Register Storage Controller service
 
-        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -H ${EUCA_SC_PRIVATE_IP} -C ${EUCA_CLUSTER1}-sc
+        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
 
 
 4. (CLC): Register Cluster Controller service
 
-        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -H ${EUCA_CC_PRIVATE_IP} -C ${EUCA_CLUSTER1}-cc
+        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
 
 
 5. (CC): Register Node Controller host(s)
@@ -743,7 +779,7 @@ You should be able to resolve:
         sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
 
 
-### Initial Runtime Configuration
+### Runtime Configuration
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
@@ -760,11 +796,57 @@ You should be able to resolve:
         source ~/creds/eucalyptus/admin/eucarc
 
 
-2. (CLC): Switch API to port 80
+2. (CLC): Configure EBS Storage
 
-    Confirm how this works with Vic
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
 
-        euca-modify-property -p bootstrap.webservices.port=80
+    or
+
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
+
+        #euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
+        euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/vg01 # Specfify Volume Group
+
+
+3. (CLC): Configure Object Storage
+
+        euca-modify-property -p objectstorage.providerclient=walrus
+
+
+4. (CLC): Refresh Eucalyptus Administrator credentials
+
+        rm -f ~/creds/eucalyptus/admin.zip
+
+        sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+
+        unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+
+        cat ~/creds/eucalyptus/admin/eucarc
+
+        source ~/creds/eucalyptus/admin/eucarc
+
+
+5. (CLC): Load Edge Network JSON configuration
+
+        euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
+
+
+5. (CLC): Install the imaging-worker and load-balancer images
+
+        euca-install-load-balancer --install-default
+
+        euca-install-imaging-worker --install-default
+
+
+6. (CLC): Confirm service status
+
+        euca-describe-services | cut -f1-6
+
+
+7. (CLC): Confirm apis
+
+       euca-describe-regions
+
 
 
 ### Configure DNS
@@ -775,6 +857,8 @@ You should be able to resolve:
 
 
 2. (CLC): Configure Eucalyptus DNS Server
+
+        euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
 
         euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
 
@@ -844,67 +928,13 @@ You should be able to resolve:
         dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 
-### Additional Runtime Configuration
-
-1. (CLC): Configure EBS Storage
-
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
-
-    or
-
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
-
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
-
-
-2. (CLC): Configure Object Storage
-
-        euca-modify-property -p objectstorage.providerclient=walrus
-
-        euca-modify-property -p walrusbackend.storagedir=/var/lib/eucalyptus/bukkits # optional
-
-
-3. (CLC): Refresh Eucalyptus Administrator credentials
-
-        rm -f ~/creds/eucalyptus/admin.zip
-
-        sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
-
-        unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
-
-        cat ~/creds/eucalyptus/admin/eucarc
-
-        source ~/creds/eucalyptus/admin/eucarc
-
-
-4. (CLC): Load Edge Network JSON configuration
-
-        euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
-
-
-5. (CLC): Install the imaging-worker and load-balancer images
-
-        euca-install-load-balancer --install-default
-
-        euca-install-imaging-worker --install-default
-
-
-6. (CLC): Confirm service status
-
-        euca-describe-services | cut -f1-6
-
-
-7. (CLC): Confirm apis
-
-       euca-describe-regions
-
-
 
 ### Configure Minimal IAM
 
 1. (CLC): Configure Eucalyptus Administrator Password
 
         euare-usermodloginprofile -u admin -p password
+
 
 
 ### YOU ARE HERE
