@@ -1112,7 +1112,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 2. (CLC): Install Image
 
     ```bash
-    euca-install-image -b images -r x86_64 -i ~root/centos.raw -n centos65 --virtualization-type hvm
+    euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm
     ```
 
 3. (CLC): List Images
