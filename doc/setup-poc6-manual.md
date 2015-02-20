@@ -731,60 +731,69 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service eucanetd start
     ```
 
-5. (MW): Verify Connectivity
+5. (MC): Start the Management Console service
 
     ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
+    sudo chkconfig eucaconsole on
 
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
+    sudo service eucaconsole start
     ```
 
-6. (CLC): Verify Connectivity
+
+6. (MW): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-    nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
+
+    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
     ```
 
-7. (UFS): Verify Connectivity
+7. (CLC): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
+    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
+    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
+    # nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
     ```
 
-8. (CC): Verify Connectivity
+8. (UFS): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
-    nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
-    nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
-    nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
     ```
 
-9. (SC): Verify Connectivity
+9. (CC): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
+    # nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
+    # nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
+    # nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
+    # nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
     ```
 
-10. (OSP): Verify Connectivity
+10. (SC): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
+    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
     ```
 
-11. (NC): Verify Connectivity
+11. (OSP): Verify Connectivity
 
     ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
     ```
 
-12. (Other): Verify Connectivity
+12. (NC): Verify Connectivity
+
+    ```bash
+    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
+    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    ```
+
+13. (Other): Verify Connectivity
 
   Use additional commands to verify the following:
 
@@ -796,7 +805,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
   * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
   * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
 
-13. (All): Confirm service startup - Are logs being written?
+14. (All): Confirm service startup - Are logs being written?
 
     ```bash
     ls -l /var/log/eucalyptus
