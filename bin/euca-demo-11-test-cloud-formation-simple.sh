@@ -161,9 +161,9 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/$account/admin/eucarc ]; then
+if [ ! -r ~/creds/$account/admin/eucarc ]; then
     echo "-a $account invalid: Could not find Account Administrator credentials!"
-    echo "   Expected to find: /root/creds/$account/admin/eucarc"
+    echo "   Expected to find: ~/creds/$account/admin/eucarc"
     exit 21
 fi
 
@@ -192,19 +192,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat /root/creds/$account/admin/eucarc"
+echo "cat ~/creds/$account/admin/eucarc"
 echo
-echo "source /root/creds/$account/admin/eucarc"
+echo "source ~/creds/$account/admin/eucarc"
 
 next
 
 echo
-echo "# cat /root/creds/$account/admin/eucarc"
-cat /root/creds/$account/admin/eucarc
+echo "# cat ~/creds/$account/admin/eucarc"
+cat ~/creds/$account/admin/eucarc
 pause
 
-echo "# source /root/creds/$account/admin/eucarc"
-source /root/creds/$account/admin/eucarc
+echo "# source ~/creds/$account/admin/eucarc"
+source ~/creds/$account/admin/eucarc
 
 next
 
@@ -513,7 +513,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
+echo "ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name"
 
 run 50
 
@@ -521,18 +521,18 @@ if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $speed / 100))
     while ((attempt++ <= login_attempts)); do
-        sed -i -e "/$public_name/d" /root/.ssh/known_hosts
-        sed -i -e "/$public_ip/d" /root/.ssh/known_hosts
-        ssh-keyscan $public_name 2> /dev/null >> /root/.ssh/known_hosts
-        ssh-keyscan $public_ip 2> /dev/null >> /root/.ssh/known_hosts
+        sed -i -e "/$public_name/d" ~/.ssh/known_hosts
+        sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
+        ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
+        ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
         echo
-        echo "# ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name"
+        echo "# ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i /root/creds/$account/admin/admin-demo.pem $user@$public_name
+            ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name
             RC=$?
         else
-            ssh -T -i /root/creds/$account/admin/admin-demo.pem $user@$public_name << EOF
+            ssh -T -i ~/creds/$account/admin/admin-demo.pem $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5

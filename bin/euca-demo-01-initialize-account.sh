@@ -163,9 +163,9 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+if [ ! -r ~/creds/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
+    echo "Expected to find: ~/creds/eucalyptus/admin/eucarc"
     exit 20
 fi
 
@@ -196,25 +196,25 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo "cat ~/creds/eucalyptus/admin/eucarc"
 echo
-echo "source /root/creds/eucalyptus/admin/eucarc"
+echo "source ~/creds/eucalyptus/admin/eucarc"
 
 next
 
 echo
-echo "# cat /root/creds/eucalyptus/admin/eucarc"
-cat /root/creds/eucalyptus/admin/eucarc
+echo "# cat ~/creds/eucalyptus/admin/eucarc"
+cat ~/creds/eucalyptus/admin/eucarc
 pause
 
-echo "# source /root/creds/eucalyptus/admin/eucarc"
-source /root/creds/eucalyptus/admin/eucarc
+echo "# source ~/creds/eucalyptus/admin/eucarc"
+source ~/creds/eucalyptus/admin/eucarc
 
 next
 
 
 ((++step))
-if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/eucalyptus/admin/admin-demo.pem ]; then
+if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
     clear
     echo
     echo "============================================================"
@@ -228,7 +228,7 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/eucalypt
 
 else
     euca-delete-keypair admin-demo
-    rm -f /root/creds/eucalyptus/admin/admin-demo.pem
+    rm -f ~/creds/eucalyptus/admin/admin-demo.pem
 
     clear
     echo
@@ -240,19 +240,19 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
     echo
-    echo "chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
+    echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee /root/creds/eucalyptus/admin/admin-demo.pem
+        echo "# euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem
         echo "#"
-        echo "# chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem"
-        chmod 0600 /root/creds/eucalyptus/admin/admin-demo.pem
+        echo "# chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
+        chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem
 
         next
     fi
@@ -337,7 +337,7 @@ fi
 
 
 ((++step))
-if [ -r /root/creds/$account/admin/eucarc ]; then
+if [ -r ~/creds/$account/admin/eucarc ]; then
     clear
     echo
     echo "============================================================"
@@ -361,50 +361,50 @@ else
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/$account/admin"
+    echo "mkdir -p ~/creds/$account/admin"
     echo
-    echo "rm -f /root/creds/$account/admin.zip"
+    echo "rm -f ~/creds/$account/admin.zip"
     echo
-    echo "euca-get-credentials -u admin -a $account \\"
-    echo "                     /root/creds/$account/admin.zip"
+    echo "sudo euca-get-credentials -u admin -a $account \\"
+    echo "                          ~/creds/$account/admin.zip"
     echo
-    echo "unzip -uo /root/creds/$account/admin.zip \\"
-    echo "       -d /root/creds/$account/admin/"
+    echo "unzip -uo ~/creds/$account/admin.zip \\"
+    echo "       -d ~/creds/$account/admin/"
     echo
-    echo "cat /root/creds/$account/admin/eucarc"
+    echo "cat ~/creds/$account/admin/eucarc"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/$account/admin"
-        mkdir -p /root/creds/$account/admin
+        echo "# mkdir -p ~/creds/$account/admin"
+        mkdir -p ~/creds/$account/admin
         pause
 
-        echo "# rm -f /root/creds/$account/admin.zip"
-        rm -f /root/creds/$account/admin.zip
+        echo "# rm -f ~/creds/$account/admin.zip"
+        rm -f ~/creds/$account/admin.zip
         pause
 
-        echo "# euca-get-credentials -u admin -a $account \\"
-        echo ">                      /root/creds/$account/admin.zip"
-        euca-get-credentials -u admin -a $account \
-                             /root/creds/$account/admin.zip
+        echo "# sudo euca-get-credentials -u admin -a $account \\"
+        echo ">                           ~/creds/$account/admin.zip"
+        sudo euca-get-credentials -u admin -a $account \
+                                  ~/creds/$account/admin.zip
         pause
 
-        echo "# unzip -uo /root/creds/$account/admin.zip \\"
-        echo ">        -d /root/creds/$account/admin/"
-        unzip -uo /root/creds/$account/admin.zip \
-               -d /root/creds/$account/admin/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/admin/eucarc; then
+        echo "# unzip -uo ~/creds/$account/admin.zip \\"
+        echo ">        -d ~/creds/$account/admin/"
+        unzip -uo ~/creds/$account/admin.zip \
+               -d ~/creds/$account/admin/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/$account/admin/eucarc; then
             # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 /root/creds/$account/admin/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/admin/eucarc
+            pk_pem=$(ls -1 ~/creds/$account/admin/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 ~/creds/$account/admin/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/$account/admin/eucarc
         fi
         pause
 
-        echo "# cat /root/creds/$account/admin/eucarc"
-        cat /root/creds/$account/admin/eucarc
+        echo "# cat ~/creds/$account/admin/eucarc"
+        cat ~/creds/$account/admin/eucarc
 
         next
     fi
@@ -412,7 +412,7 @@ fi
 
 
 ((++step))
-if [ -r /root/centos.raw ]; then
+if [ -r ~/centos.raw ]; then
     clear
     echo
     echo "============================================================"
@@ -435,20 +435,20 @@ else
     echo
     echo "Commands:"
     echo
-    echo "wget $image_url -O /root/centos.raw.xz"
+    echo "wget $image_url -O ~/centos.raw.xz"
     echo
-    echo "xz -v -d /root/centos.raw.xz"
+    echo "xz -v -d ~/centos.raw.xz"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $image_url -O /root/centos.raw.xz"
-        wget $image_url -O /root/centos.raw.xz
+        echo "# wget $image_url -O ~/centos.raw.xz"
+        wget $image_url -O ~/centos.raw.xz
         pause
 
-        echo "xz -v -d /root/centos.raw.xz"
-        xz -v -d /root/centos.raw.xz
+        echo "xz -v -d ~/centos.raw.xz"
+        xz -v -d ~/centos.raw.xz
 
         next
     fi
@@ -480,14 +480,14 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
+    echo "euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm"
-        euca-install-image -b images -r x86_64 -i /root/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+        echo "# euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm"
+        euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
         next
     fi
@@ -576,4 +576,4 @@ end=$(date +%s)
 echo
 echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = demo ] || a=" -a $account"
-echo "Please run \"euca-demo-02-initialize-dependencies$a\" to complete demo initialization"
+echo "Please run \"euca-demo-02-initialize-dependencies.sh$a\" to complete demo initialization"

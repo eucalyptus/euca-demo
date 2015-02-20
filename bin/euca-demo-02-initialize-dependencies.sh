@@ -165,9 +165,9 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/$account/admin/eucarc ]; then
+if [ ! -r ~/creds/$account/admin/eucarc ]; then
     echo "-a $account invalid: Could not find Account Administrator credentials!"
-    echo "   Expected to find: /root/creds/$account/admin/eucarc"
+    echo "   Expected to find: ~/creds/$account/admin/eucarc"
     exit 21
 fi
 
@@ -187,19 +187,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat /root/creds/$account/admin/eucarc"
+echo "cat ~/creds/$account/admin/eucarc"
 echo
-echo "source /root/creds/$account/admin/eucarc"
+echo "source ~/creds/$account/admin/eucarc"
 
 next
 
 echo
-echo "# cat /root/creds/$account/admin/eucarc"
-cat /root/creds/$account/admin/eucarc
+echo "# cat ~/creds/$account/admin/eucarc"
+cat ~/creds/$account/admin/eucarc
 pause
 
-echo "# source /root/creds/$account/admin/eucarc"
-source /root/creds/$account/admin/eucarc
+echo "# source ~/creds/$account/admin/eucarc"
+source ~/creds/$account/admin/eucarc
 
 next
 
@@ -229,7 +229,7 @@ fi
 
 
 ((++step))
-if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/$account/admin/admin-demo.pem ]; then
+if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/$account/admin/admin-demo.pem ]; then
     clear
     echo
     echo "============================================================"
@@ -243,7 +243,7 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r /root/creds/$account
 
 else
     euca-delete-keypair admin-demo
-    rm -f /root/creds/$account/admin/admin-demo.pem
+    rm -f ~/creds/$account/admin/admin-demo.pem
 
     clear
     echo
@@ -255,19 +255,19 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem"
+    echo "euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
     echo
-    echo "chmod 0600 /root/creds/$account/admin/admin-demo.pem"
+    echo "chmod 0600 ~/creds/$account/admin/admin-demo.pem"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee /root/creds/$account/admin/admin-demo.pem
+        echo "# euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem
         echo "#"
-        echo "# chmod 0600 /root/creds/$account/admin/admin-demo.pem"
-        chmod 0600 /root/creds/$account/admin/admin-demo.pem
+        echo "# chmod 0600 ~/creds/$account/admin/admin-demo.pem"
+        chmod 0600 ~/creds/$account/admin/admin-demo.pem
 
         next
     fi
@@ -352,7 +352,7 @@ fi
 
 
 ((++step))
-if [ -r /root/creds/$account/$demo_user/eucarc ]; then
+if [ -r ~/creds/$account/$demo_user/eucarc ]; then
     clear
     echo
     echo "============================================================"
@@ -376,50 +376,50 @@ else
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/$account/$demo_user"
+    echo "mkdir -p ~/creds/$account/$demo_user"
     echo
-    echo "rm -f /root/creds/$account/$demo_user.zip"
+    echo "rm -f ~/creds/$account/$demo_user.zip"
     echo
-    echo "euca-get-credentials -u $demo_user -a $account \\"
-    echo "                     /root/creds/$account/$demo_user.zip"
+    echo "sudo euca-get-credentials -u $demo_user -a $account \\"
+    echo "                          ~/creds/$account/$demo_user.zip"
     echo
-    echo "unzip -uo /root/creds/$account/$demo_user.zip \\"
-    echo "       -d /root/creds/$account/$demo_user/"
+    echo "unzip -uo ~/creds/$account/$demo_user.zip \\"
+    echo "       -d ~/creds/$account/$demo_user/"
     echo
-    echo "cat /root/creds/$account/$demo_user/eucarc"
+    echo "cat ~/creds/$account/$demo_user/eucarc"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/$account/$demo_user"
-        mkdir -p /root/creds/$account/$demo_user
+        echo "# mkdir -p ~/creds/$account/$demo_user"
+        mkdir -p ~/creds/$account/$demo_user
         pause
 
-        echo "# rm -f /root/creds/$account/$demo_user.zip"
-        rm -f /root/creds/$account/$demo_user.zip
+        echo "# rm -f ~/creds/$account/$demo_user.zip"
+        rm -f ~/creds/$account/$demo_user.zip
         pause
 
-        echo "# euca-get-credentials -u $demo_user -a $account \\"
-        echo ">                      /root/creds/$account/$demo_user.zip"
-        euca-get-credentials -u $demo_user -a $account \
-                             /root/creds/$account/$demo_user.zip
+        echo "# sudo euca-get-credentials -u $demo_user -a $account \\"
+        echo ">                           ~/creds/$account/$demo_user.zip"
+        sudo euca-get-credentials -u $demo_user -a $account \
+                                  ~/creds/$account/$demo_user.zip
         pause
 
-        echo "# unzip -uo /root/creds/$account/$demo_user.zip \\"
-        echo ">        -d /root/creds/$account/$demo_user/"
-        unzip -uo /root/creds/$account/$demo_user.zip \
-               -d /root/creds/$account/$demo_user/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/$demo_user/eucarc; then
+        echo "# unzip -uo ~/creds/$account/$demo_user.zip \\"
+        echo ">        -d ~/creds/$account/$demo_user/"
+        unzip -uo ~/creds/$account/$demo_user.zip \
+               -d ~/creds/$account/$demo_user/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/$account/$demo_user/eucarc; then
             # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 /root/creds/$account/$demo_user/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 /root/creds/$account/$demo_user/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/$demo_user/eucarc
+            pk_pem=$(ls -1 ~/creds/$account/$demo_user/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 ~/creds/$account/$demo_user/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/$account/$demo_user/eucarc
         fi
         pause
 
-        echo "# cat /root/creds/$account/$demo_user/eucarc"
-        cat /root/creds/$account/$demo_user/eucarc
+        echo "# cat ~/creds/$account/$demo_user/eucarc"
+        cat ~/creds/$account/$demo_user/eucarc
 
         next
     fi
@@ -547,7 +547,7 @@ fi
 
 
 ((++step))
-if [ -r /root/creds/$account/$demo_developer/eucarc ]; then
+if [ -r ~/creds/$account/$demo_developer/eucarc ]; then
     clear
     echo
     echo "============================================================"
@@ -572,50 +572,50 @@ else
     echo
     echo "Commands:"
     echo
-    echo "mkdir -p /root/creds/$account/$demo_developer"
+    echo "mkdir -p ~/creds/$account/$demo_developer"
     echo
-    echo "rm -f /root/creds/$account/$demo_developer.zip"
+    echo "rm -f ~/creds/$account/$demo_developer.zip"
     echo
-    echo "euca-get-credentials -u $demo_developer -a $account \\"
-    echo "                     /root/creds/$account/$demo_developer.zip"
+    echo "sudo euca-get-credentials -u $demo_developer -a $account \\"
+    echo "                          ~/creds/$account/$demo_developer.zip"
     echo
-    echo "unzip -uo /root/creds/$account/$demo_developer.zip \\"
-    echo "       -d /root/creds/$account/$demo_developer/"
+    echo "unzip -uo ~/creds/$account/$demo_developer.zip \\"
+    echo "       -d ~/creds/$account/$demo_developer/"
     echo
-    echo "cat /root/creds/$account/$demo_developer/eucarc"
+    echo "cat ~/creds/$account/$demo_developer/eucarc"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p /root/creds/$account/$demo_developer"
-        mkdir -p /root/creds/$account/$demo_developer
+        echo "# mkdir -p ~/creds/$account/$demo_developer"
+        mkdir -p ~/creds/$account/$demo_developer
         pause
 
-        echo "# rm -f /root/creds/$account/$demo_developer.zip"
-        rm -f /root/creds/$account/$demo_developer.zip
+        echo "# rm -f ~/creds/$account/$demo_developer.zip"
+        rm -f ~/creds/$account/$demo_developer.zip
         pause
 
-        echo "# euca-get-credentials -u $demo_developer -a $account \\"
-        echo ">                      /root/creds/$account/$demo_developer.zip"
-        euca-get-credentials -u $demo_developer -a $account \
-                             /root/creds/$account/$demo_developer.zip
+        echo "# sudo euca-get-credentials -u $demo_developer -a $account \\"
+        echo ">                           ~/creds/$account/$demo_developer.zip"
+        sudo euca-get-credentials -u $demo_developer -a $account \
+                                  ~/creds/$account/$demo_developer.zip
         pause
 
-        echo "# unzip -uo /root/creds/$account/$demo_developer.zip \\"
-        echo ">        -d /root/creds/$account/$demo_developer/"
-        unzip -uo /root/creds/$account/$demo_developer.zip \
-               -d /root/creds/$account/$demo_developer/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/$account/$demo_developer/eucarc; then
+        echo "# unzip -uo ~/creds/$account/$demo_developer.zip \\"
+        echo ">        -d ~/creds/$account/$demo_developer/"
+        unzip -uo ~/creds/$account/$demo_developer.zip \
+               -d ~/creds/$account/$demo_developer/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/$account/$demo_developer/eucarc; then
             # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 /root/creds/$account/$demo_developer/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 /root/creds/$account/$demo_developer/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/$account/$demo_developer/eucarc
+            pk_pem=$(ls -1 ~/creds/$account/$demo_developer/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 ~/creds/$account/$demo_developer/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/$account/$demo_developer/eucarc
         fi
         pause
 
-        echo "# cat /root/creds/$account/$demo_developer/eucarc"
-        cat /root/creds/$account/$demo_developer/eucarc
+        echo "# cat ~/creds/$account/$demo_developer/eucarc"
+        cat ~/creds/$account/$demo_developer/eucarc
 
         next
     fi
