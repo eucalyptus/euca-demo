@@ -268,6 +268,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8777 - Database (CLC)
     * tcp 8778 - Multicast (CLC)
 
+
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
     *filter
@@ -295,7 +296,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-
 8. (UFS+MC): Configure firewall, but disable during installation
 
     Ports to open by component
@@ -310,6 +310,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8778 - Multicast (UFS)
     * tcp 8779-8849 - jGroups (UFS)
     * tcp 8888 - Console - Direct (MC)
+
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -339,7 +340,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-
 9. (SC+CC): Configure firewall, but disable during installation
 
     Ports to open by component
@@ -352,6 +352,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8774 - Web services (CC)
     * tcp 8778 - Multicast (SC, CC)
     * tcp 8779-8849 - jGroups (SC)
+
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -379,7 +380,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-
 10. (OSP): Configure firewall, but disable during installation
 
     Ports to open by component
@@ -391,6 +391,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8773 - Web services (OSP)
     * tcp 8778 - Multicast (OSP)
     * tcp 8779-8849 - jGroups (OSP)
+
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -417,7 +418,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-
 11. (NC): Configure firewall, but disable during installation
 
     Ports to open by component
@@ -429,6 +429,7 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp  8775 - Web services (NC)
     * tcp  8778 - Multicast (NC)
     * tcp 16514 - TLS, needed for node migrations (NC)
+
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -455,7 +456,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-
 12. (ALL): Disable SELinux
 
     ```bash
@@ -463,7 +463,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     sudo setenforce 0
     ```
-
 
 13. (ALL): Install and Configure the NTP service
 
@@ -477,13 +476,11 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo hwclock --systohc
     ```
 
-
 14. (CLC) Install and Configure Mail Relay
 
     ```bash
     # TBD - see existing Postfix null client configurations
     ```
-
 
 15. (CC): Configure packet routing
 
@@ -494,7 +491,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     cat /proc/sys/net/ipv4/ip_forward
     ```
-
 
 16. (NC): Configure packet routing
 
@@ -523,7 +519,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
 
-
 2. (ALL): Override external yum repos to internal servers
 
     There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
@@ -534,13 +529,11 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
     ```
 
-
 3. (CLC): Install packages
 
     ```bash
     sudo yum install -y eucalyptus-cloud eucalyptus-service-image
     ```
-
 
 4. (UFC+MC): Install packages
 
@@ -548,13 +541,11 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo yum install -y eucalyptus-cloud eucaconsole
     ```
 
-
 5. (SC+CC): Install packages
 
     ```bash
     sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
     ```
-
 
 6. (OSP): Install packages
 
@@ -562,13 +553,11 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo yum install -y eucalyptus-cloud eucalyptus-walrus
     ```
 
-
 7. (NC): Install packages
 
     ```bash
     sudo yum install -y eucalyptus-nc
     ```
-
 
 8. (NC): Remove Devfault libvirt network.
 
@@ -591,7 +580,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-
 2. (UFS+MC): Configure Eucalyptus Networking
 
     ```bash
@@ -602,7 +590,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFS_PUBLIC_INTERFACE}\"/" \
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
-
 
 3. (SC+CC): Configure Eucalyptus Networking
 
@@ -615,7 +602,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-
 4. (OSP): Configure Eucalyptus Networking
 
     ```bash
@@ -627,7 +613,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-
 5. (NC): Configure Eucalyptus Networking
 
     ```bash
@@ -638,7 +623,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_NC_PUBLIC_INTERFACE}\"/" \
                 -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
-
 
 6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
@@ -673,7 +657,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-
 7. (NC): Configure Eucalyptus Disk Allocation
 
     ```bash
@@ -683,7 +666,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo sed -i -e "s/^#NC_WORK_SIZE=.*$/NC_WORK_SIZE=\"$nc_work_size\"/" \
                 -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
     ```
-
 
 8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
@@ -696,7 +678,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-
 9. (CLC/UFS/SC/OSP): Configure Eucalyptus Java Memory Allocation
 
     ```bash
@@ -706,7 +687,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=4G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
-
 
 10. (MC): Configure Management Console with Cloud Controller Address
 
@@ -719,79 +699,90 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (CLC): Initialize the Cloud Controller service
 
-        sudo euca_conf --initialize
-
+    ```bash
+    sudo euca_conf --initialize
+    ```
 
 2. (CLC/UFS/SC/OSP): Start the Cloud Controller service
 
-        sudo chkconfig eucalyptus-cloud on
+    ```bash
+    sudo chkconfig eucalyptus-cloud on
 
-        sudo service eucalyptus-cloud start
-
+    sudo service eucalyptus-cloud start
+    ```
 
 3. (CC): Start the Cluster Controller service
 
-        sudo chkconfig eucalyptus-cc on
+    ```bash
+    sudo chkconfig eucalyptus-cc on
 
-        sudo service eucalyptus-cc start
-
+    sudo service eucalyptus-cc start
+    ```
 
 4. (NC): Start the Node Controller and Eucanetd services
 
-        sudo chkconfig eucalyptus-nc on
+    ```bash
+    sudo chkconfig eucalyptus-nc on
 
-        sudo service eucalyptus-nc start
+    sudo service eucalyptus-nc start
 
-        sudo chkconfig eucanetd on
+    sudo chkconfig eucanetd on
 
-        sudo service eucanetd start
-
+    sudo service eucanetd start
+    ```
 
 5. (MW): Verify Connectivity
 
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
 
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
+    ```
 
 6. (CLC): Verify Connectivity
 
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-        nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
-
+    ```bash
+    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
+    nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
+    ```
 
 7. (UFS): Verify Connectivity
 
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
+    ```
 
 8. (CC): Verify Connectivity
 
-        nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
-        nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
-        nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
-        nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
-
+    ```bash
+    nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
+    nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
+    nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
+    nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
+    ```
 
 9. (SC): Verify Connectivity
 
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
-
+    ```bash
+    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
+    ```
 
 10. (OSP): Verify Connectivity
 
-        nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+    ```
 
 11. (NC): Verify Connectivity
 
-        nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
-        nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-
+    ```bash
+    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    ```
 
 12. (Other): Verify Connectivity
 
@@ -804,287 +795,334 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
   * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
   * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
   * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-```
 
 13. (All): Confirm service startup - Are logs being written?
 
-        ls -l /var/log/eucalyptus
+    ```bash
+    ls -l /var/log/eucalyptus
+    ```
 
 
 ### Register Eucalyptus
 
 1. (CLC): Register User-Facing services
 
-        sudo euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
-
+    ```bash
+    sudo euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    ```
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
-        sudo euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
-
+    ```bash
+    sudo euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
+    ```
 
 3. (CLC): Register Storage Controller service
 
-        sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
-
+    ```bash
+    sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
+    ```
 
 4. (CLC): Register Cluster Controller service
 
-        sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
-
+    ```bash
+    sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
+    ```
 
 5. (CC): Register Node Controller host(s)
 
-        sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
+    ```bash
+    sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
+    ```
 
 
 ### Runtime Configuration
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
-        mkdir -p ~/creds/eucalyptus/admin
+    ```bash
+    mkdir -p ~/creds/eucalyptus/admin
 
-        rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/creds/eucalyptus/admin.zip
 
-        sudo euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
+    sudo euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
 
-        unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
-        cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/creds/eucalyptus/admin/eucarc
 
-        source ~/creds/eucalyptus/admin/eucarc
-
+    source ~/creds/eucalyptus/admin/eucarc
+    ```
 
 2. (CLC): Configure EBS Storage
 
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
+    ```bash
+    euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
+    ```
 
     or
 
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
+    ```bash
+    euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
 
-        #euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
-        euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/vg01 # Specfify Volume Group
-
+    #euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
+    euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/vg01 # Specfify Volume Group
+    ```
 
 3. (CLC): Configure Object Storage
 
-        euca-modify-property -p objectstorage.providerclient=walrus
-
+    ```bash
+    euca-modify-property -p objectstorage.providerclient=walrus
+    ```
 
 4. (CLC): Refresh Eucalyptus Administrator credentials
 
-        rm -f ~/creds/eucalyptus/admin.zip
+    ```bash
+    rm -f ~/creds/eucalyptus/admin.zip
 
-        sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
 
-        unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
-        cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/creds/eucalyptus/admin/eucarc
 
-        source ~/creds/eucalyptus/admin/eucarc
-
+    source ~/creds/eucalyptus/admin/eucarc
+    ```
 
 5. (CLC): Load Edge Network JSON configuration
 
-        euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
-
+    ```bash
+    euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
+    ```
 
 5. (CLC): Install the imaging-worker and load-balancer images
 
-        euca-install-load-balancer --install-default
+    ```bash
+    euca-install-load-balancer --install-default
 
-        euca-install-imaging-worker --install-default
-
+    euca-install-imaging-worker --install-default
+    ```
 
 6. (CLC): Confirm service status
 
-        euca-describe-services | cut -f1-6
-
+    ```bash
+    euca-describe-services | cut -f1-6
+    ```
 
 7. (CLC): Confirm apis
 
-       euca-describe-regions
-
+    ```bash
+   euca-describe-regions
+    ```
 
 
 ### Configure DNS
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
-        source ~/creds/eucalyptus/admin/eucarc
-
+    ```bash
+    source ~/creds/eucalyptus/admin/eucarc
+    ```
 
 2. (CLC): Configure Eucalyptus DNS Server
 
-        euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
+    ```bash
+    euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
 
-        euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
+    euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
 
-        euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
-
+    euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
+    ```
 
 3. (CLC): Configure DNS Timeout and TTL
 
-        euca-modify-property -p dns.tcp.timeout_seconds=30
+    ```bash
+    euca-modify-property -p dns.tcp.timeout_seconds=30
 
-        euca-modify-property -p services.loadbalancing.dns_ttl=15
-
+    euca-modify-property -p services.loadbalancing.dns_ttl=15
+    ```
 
 4. (CLC): Configure DNS Domain
 
-        euca-modify-property -p system.dns.dnsdomain=${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
+    ```bash
+    euca-modify-property -p system.dns.dnsdomain=${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    ```
 
 5. (CLC): Configure DNS Sub-Domains
 
-        euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
+    ```bash
+    euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
 
-        euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
-
+    euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
+    ```
 
 6. (CLC): Enable DNS
 
-        euca-modify-property -p bootstrap.webservices.use_instance_dns=true
+    ```bash
+    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
 
-        euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
-
+    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
+    ```
 
 7. (CLC): Refresh Eucalyptus Administrator credentials
 
-        mkdir -p ~/creds/eucalyptus/admin
+    ```bash
+    mkdir -p ~/creds/eucalyptus/admin
 
-        rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/creds/eucalyptus/admin.zip
 
-        sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
 
-        unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
-        cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/creds/eucalyptus/admin/eucarc
 
-        source ~/creds/eucalyptus/admin/eucarc
-
+    source ~/creds/eucalyptus/admin/eucarc
+    ```
 
 8. (CLC): Display Parent DNS Server Sample Configuration (skipped)
 
+    ```bash
+    # TBD
+    ```
 
 9. (CLC): Confirm DNS resolution for Services
 
-        dig +short compute.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    ```bash
+    dig +short compute.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short objectstorage.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short objectstorage.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short euare.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short euare.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short tokens.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short tokens.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short autoscaling.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short autoscaling.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short cloudformation.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudformation.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short cloudwatch.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudwatch.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
-        dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
+    dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    ```
 
 
 ### Configure Minimal IAM
 
 1. (CLC): Configure Eucalyptus Administrator Password
 
-        euare-usermodloginprofile -u admin -p password
+    ```bash
+    euare-usermodloginprofile -u admin -p password
+    ```
 
-
-
-### YOU ARE HERE
 
 ### Configure Management Console
 
 1. (MC): Configure Eucalyptus Console Configuration file
 
-        sed -i -e "/#elb.host=10.20.30.40/d" \
-               -e "/#elb.port=443/d" \
-               -e "/#s3.host=<your host IP or name>/d" \
-               -e "/^clchost = localhost$/s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
-               -e "/that won't work from client's browsers./a\
-        s3.host=${EUCA_OSP_PUBLIC_IP}" /etc/eucaconsole/console.ini
+    ```bash
+    sed -i -e "/#elb.host=10.20.30.40/d" \
+           -e "/#elb.port=443/d" \
+           -e "/#s3.host=<your host IP or name>/d" \
+           -e "/^clchost = localhost$/s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
+           -e "/that won't work from client's browsers./a\
+    s3.host=${EUCA_OSP_PUBLIC_IP}" /etc/eucaconsole/console.ini
+    ```
 
 
 2. (MC): Start Eucalyptus Console service
 
-        chkconfig eucaconsole on
+    ```bash
+    chkconfig eucaconsole on
 
-        service eucaconsole start
+    service eucaconsole start
+    ```
 
 
 3. (MW): Confirm Eucalyptus Console service
 
-        Browse: http://${EUCA_MC_PUBLIC_IP}:8888
-
+    ```bash
+    Browse: http://${EUCA_MC_PUBLIC_IP}:8888
+    ```
 
 4. (MC):  4. Stop Eucalyptus Console service
 
-        service eucaconsole stop
-
+    ```bash
+    service eucaconsole stop
+    ```
 
 5. (MC): Install Nginx package
 
-        yum install -y nginx
-
+    ```bash
+    yum install -y nginx
+    ```
 
 6. (MC): Configure Nginx
 
-        \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
+    ```bash
+    \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
 
-        sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
-               -e 's/# \(ssl_certificate\)/\1/' \
-               -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
-               -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
+           -e 's/# \(ssl_certificate\)/\1/' \
+           -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
+           -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    ```
 
 7. (MC): Start Nginx service
 
-        chkconfig nginx on
+    ```bash
+    chkconfig nginx on
 
-        service nginx start
-
+    service nginx start
+    ```
 
 8. (MC): Configure Eucalyptus Console for SSL
 
-        sed -i -e '/^session.secure =/s/= .*$/= true/' \
-               -e '/^session.secure/a\
-        sslcert=/etc/eucaconsole/console.crt\
-        sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
-
+    ```bash
+    sed -i -e '/^session.secure =/s/= .*$/= true/' \
+           -e '/^session.secure/a\
+    sslcert=/etc/eucaconsole/console.crt\
+    sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
+    ```
 
 9. (MC): Start Eucalyptus Console service
 
-        service eucaconsole start
-
+    ```bash
+    service eucaconsole start
+    ```
 
 10. (MC): Confirm Eucalyptus Console service
 
-        Browse: https://${EUCA_MC_PUBLIC_IP}
+    ```bash
+    Browse: https://${EUCA_MC_PUBLIC_IP}
+    ```
 
 
 ### Configure Images
 
 1. (CLC): Download Images
 
-        wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
+    ```bash
+    wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
 
-        xz -v -d ~/centos.raw.xz
+    xz -v -d ~/centos.raw.xz
+    ```
 
-        or
+    or
 
-        python <(curl http://internal-emis.objectstorage.cloud.qa1.eucalyptus-systems.com/install-emis.py)
-
+    ```bash
+    python <(curl http://internal-emis.objectstorage.cloud.qa1.eucalyptus-systems.com/install-emis.py)
+    ```
 
 2. (CLC): Install Image
 
-        euca-install-image -b images -r x86_64 -i ~root/centos.raw -n centos65 --virtualization-type hvm
-
+    ```bash
+    euca-install-image -b images -r x86_64 -i ~root/centos.raw -n centos65 --virtualization-type hvm
+    ```
 
 3. (CLC): List Images
 
-        euca-describe-images
+    ```bash
+    euca-describe-images
+    ```
 
