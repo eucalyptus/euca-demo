@@ -40,7 +40,7 @@ parameter to make the commands more legible than would be the case if we used IP
 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
-```bash
+    ```bash
     export EUCA_REGION=hp-gol-d1
 
     export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
@@ -117,7 +117,7 @@ parameter to make the commands more legible than would be the case if we used IP
 
     export EUCA_NC4_PUBLIC_IP=10.104.10.59
     export EUCA_NC4_PRIVATE_IP=10.105.10.59
-```
+    ```
 
 
 ### Prepare Network
@@ -131,44 +131,48 @@ parameter to make the commands more legible than would be the case if we used IP
 
 2. (CLC/CC/SC/OSG): Run tomography tool
 
-```bash
+    ```bash
     mkdir -p ~/src/eucalyptus
     cd ~/src/eucalyptus
     git clone https://github.com/eucalyptus/deveutils
 
     cd deveutils/network-tomography
     ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
-```
+    ```
 
 3. (CLC): Scan for unknown SSH host keys
 
     Note: sudo tee needed to append output to file owned by root
 
-        ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ```bash
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-        ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-        ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-        ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-        ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ```
 
 4. (CC): Scan for unknown SSH host keys
 
     Note: sudo tee needed to append output to file owned by root
 
-        ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-        ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ```bash
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ```
 
 
 ### Prepare External DNS
@@ -177,117 +181,126 @@ I will not describe this in detail yet, except to note that this must be in plac
 before registering services with the method outlined below, as I will be using DNS names for the services
 so they look more AWS-like.
 
-You should be able to resolve:
+You should be able to resolve these names with these results:
 
-    dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-    10.104.10.84
+```bash
+dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.84
 
-    dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-    10.104.10.83
+dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
+```
 
 
 ### Initialize Dependencies
 
 1. (ALL): Disable zero-conf network
 
-        sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
-
+    ```bash
+    sudo sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
+    ```
 
 2. (NC): Install bridge utilities package
 
-        sudo yum -y install bridge-utils
-
+    ```bash
+    sudo yum -y install bridge-utils
+    ```
 
 3. (NC): Create Private Bridge
 
     Move the static IP of the private interface to the private bridge
 
-        private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-        private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-        private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-        private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+    ```bash
+    private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+    private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+    private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
+    private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
 
-        cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_BRIDGE} > /dev/null
-        DEVICE=${EUCA_NC_PRIVATE_BRIDGE}
-        TYPE=Bridge
-        BOOTPROTO=static
-        IPADDR=$private_ip
-        NETMASK=$private_netmask
-        DNS1=$private_dns1
-        DNS2=$private_dns2
-        PERSISTENT_DHCLIENT=yes
-        ONBOOT=yes
-        DELAY=0
-        EOF
-
+    cat << EOF | sudo tee /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_BRIDGE} > /dev/null
+    DEVICE=${EUCA_NC_PRIVATE_BRIDGE}
+    TYPE=Bridge
+    BOOTPROTO=static
+    IPADDR=$private_ip
+    NETMASK=$private_netmask
+    DNS1=$private_dns1
+    DNS2=$private_dns2
+    PERSISTENT_DHCLIENT=yes
+    ONBOOT=yes
+    DELAY=0
+    EOF
+    ```
 
 4. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
-        sudo sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
-                    -e "/^BOOTPROTO=/s/=.*$/=none/" \
-                    -e "/^IPADDR=/d" \
-                    -e "/^NETMASK=/d" \
-                    -e "/^PERSISTENT_DHCLIENT=/d" \
-                    -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
-
+    ```bash
+    sudo sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
+                -e "/^BOOTPROTO=/s/=.*$/=none/" \
+                -e "/^IPADDR=/d" \
+                -e "/^NETMASK=/d" \
+                -e "/^PERSISTENT_DHCLIENT=/d" \
+                -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
+    ```
 
 5. (ALL): Restart networking
 
-        sudo service network restart
-
+    ```bash
+    sudo service network restart
+    ```
 
 6. (ALL): Confirm networking
 
-        ip addr | grep " inet "
-        netstat -nr
-
+    ```bash
+    ip addr | grep " inet "
+    netstat -nr
+    ```
 
 7. (CLC): Configure firewall, but disable during installation
 
-    Ports to open
+    Ports to open by component
 
-    * udp   53 - DNS
-    * tcp   53 - DNS
-    * tcp 5005 - Debug
-    * tcp 8080 - Credentials
-    * tcp 8772 - Debug
-    * tcp 8773 - Web services
-    * tcp 8777 - Database
-    * tcp 8778 - Multicast
+    * tcp   22 - Login, Control (ALL)
+    * udp   53 - DNS (CLC)
+    * tcp   53 - DNS (CLC)
+    * tcp 5005 - Debug (CLC)
+    * tcp 8080 - Credentials (CLC)
+    * tcp 8772 - Debug (CLC)
+    * tcp 8773 - Web services (CLC)
+    * tcp 8777 - Database (CLC)
+    * tcp 8778 - Multicast (CLC)
 
-    Firewall configuration
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
+    -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-        *filter
-        :INPUT ACCEPT [0:0]
-        :FORWARD ACCEPT [0:0]
-        :OUTPUT ACCEPT [0:0]
-        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-        -A INPUT -i lo -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
-        -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-        -A INPUT -j REJECT --reject-with icmp-host-prohibited
-        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-        COMMIT
-        EOF
-
-        sudo chkconfig iptables on
-        sudo service iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
 
 
 8. (UFS+MC): Configure firewall, but disable during installation
 
-    Ports to open
+    Ports to open by component
 
-    * tcp   22 - Login, Control
+    * tcp   22 - Login, Control (ALL)
     * tcp   80 - Console - HTTP (MC)
     * tcp  443 - Console - HTTPS (MC)
     * tcp 5005 - Debug (UFS)
@@ -298,40 +311,40 @@ You should be able to resolve:
     * tcp 8779-8849 - jGroups (UFS)
     * tcp 8888 - Console - Direct (MC)
 
-    Firewall configuration
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-        *filter
-        :INPUT ACCEPT [0:0]
-        :FORWARD ACCEPT [0:0]
-        :OUTPUT ACCEPT [0:0]
-        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-        -A INPUT -i lo -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
-        -A INPUT -j REJECT --reject-with icmp-host-prohibited
-        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-        COMMIT
-        EOF
-
-        sudo chkconfig iptables on
-        sudo service iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
 
 
 9. (SC+CC): Configure firewall, but disable during installation
 
-    Ports to open
+    Ports to open by component
 
-    * tcp   22 - Login, Control
+    * tcp   22 - Login, Control (ALL)
     * tcp 5005 - Debug (SC, CC)
     * tcp 7500 - Diagnostice (SC)
     * tcp 8772 - Debug (SC, CC)
@@ -340,163 +353,175 @@ You should be able to resolve:
     * tcp 8778 - Multicast (SC, CC)
     * tcp 8779-8849 - jGroups (SC)
 
-    Firewall configuration
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-        *filter
-        :INPUT ACCEPT [0:0]
-        :FORWARD ACCEPT [0:0]
-        :OUTPUT ACCEPT [0:0]
-        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-        -A INPUT -i lo -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
-        -A INPUT -j REJECT --reject-with icmp-host-prohibited
-        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-        COMMIT
-        EOF
-
-        sudo chkconfig iptables on
-        sudo service iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
 
 
 10. (OSP): Configure firewall, but disable during installation
 
-    Ports to open
+    Ports to open by component
 
-    * tcp   22 - Login, Control
-    * tcp 5005 - Debug
-    * tcp 7500 - Diagnostics
-    * tcp 8772 - Debug
-    * tcp 8773 - Web services
-    * tcp 8778 - Multicast
-    * tcp 8779-8849 - jGroups
+    * tcp   22 - Login, Control (ALL)
+    * tcp 5005 - Debug (OSP)
+    * tcp 7500 - Diagnostics (OSP)
+    * tcp 8772 - Debug (OSP)
+    * tcp 8773 - Web services (OSP)
+    * tcp 8778 - Multicast (OSP)
+    * tcp 8779-8849 - jGroups (OSP)
 
-    Firewall configuration
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-        *filter
-        :INPUT ACCEPT [0:0]
-        :FORWARD ACCEPT [0:0]
-        :OUTPUT ACCEPT [0:0]
-        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-        -A INPUT -i lo -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
-        -A INPUT -j REJECT --reject-with icmp-host-prohibited
-        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-        COMMIT
-        EOF
-
-        sudo chkconfig iptables on
-        sudo service iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
 
 
 11. (NC): Configure firewall, but disable during installation
 
-    Ports to open
+    Ports to open by component
 
-    * tcp    22 - Login, Control
-    * tcp  5005 - Debug
-    * tcp  8772 - Debug
-    * tcp  8773 - Web services
-    * tcp  8775 - Web services
-    * tcp  8778 - Multicast
-    * tcp 16514 - TLS, needed for node migrations
+    * tcp    22 - Login, Control (ALL)
+    * tcp  5005 - Debug (NC)
+    * tcp  8772 - Debug (NC)
+    * tcp  8773 - Web services (NC)
+    * tcp  8775 - Web services (NC)
+    * tcp  8778 - Multicast (NC)
+    * tcp 16514 - TLS, needed for node migrations (NC)
 
-    Firewall configuration
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-        cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-        *filter
-        :INPUT ACCEPT [0:0]
-        :FORWARD ACCEPT [0:0]
-        :OUTPUT ACCEPT [0:0]
-        -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-        -A INPUT -p icmp -j ACCEPT
-        -A INPUT -i lo -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-        -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
-        -A INPUT -j REJECT --reject-with icmp-host-prohibited
-        -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-        COMMIT
-        EOF
-
-        sudo chkconfig iptables on
-        sudo service iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
 
 
 12. (ALL): Disable SELinux
 
-        sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
+    ```bash
+    sudo sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
 
-        sudo setenforce 0
+    sudo setenforce 0
+    ```
 
 
 13. (ALL): Install and Configure the NTP service
 
-        sudo yum -y install ntp
+    ```bash
+    sudo yum -y install ntp
 
-        sudo chkconfig ntpd on
-        sudo service ntpd start
+    sudo chkconfig ntpd on
+    sudo service ntpd start
 
-        sudo ntpdate -u  0.centos.pool.ntp.org
-        sudo hwclock --systohc
+    sudo ntpdate -u  0.centos.pool.ntp.org
+    sudo hwclock --systohc
+    ```
 
 
 14. (CLC) Install and Configure Mail Relay
 
-        TBD - see existing Postfix null client configurations
+    ```bash
+    # TBD - see existing Postfix null client configurations
+    ```
 
 
 15. (CC): Configure packet routing
 
-        sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    ```bash
+    sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
 
-        sudo sysctl -p
+    sudo sysctl -p
 
-        cat /proc/sys/net/ipv4/ip_forward
+    cat /proc/sys/net/ipv4/ip_forward
+    ```
 
 
 16. (NC): Configure packet routing
 
-        sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-        sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    ```bash
+    sudo sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    sudo sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
 
-        sudo sysctl -p
+    sudo sysctl -p
 
-        cat /proc/sys/net/ipv4/ip_forward
-        cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    cat /proc/sys/net/ipv4/ip_forward
+    cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    ```
 
 
 ### Install Eucalyptus
 
 1. (ALL): Configure yum repositories (second set of statements optional for subscriber-licensed packages)
 
-        sudo yum install -y \
-                 http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-                 http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
-                 http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+    ```bash
+    sudo yum install -y \
+             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
+             http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
+             http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
 
-        sudo yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
-        sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+    sudo yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
+    sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+    ```
 
 
 2. (ALL): Override external yum repos to internal servers
@@ -504,157 +529,190 @@ You should be able to resolve:
     There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
     It may be better to manually create repo configs than download and install the eucalyptus-release RPM and modifying it.
 
-        sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
-        sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
+    ```bash
+    sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
+    sudo sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
+    ```
 
 
 3. (CLC): Install packages
 
-        sudo yum install -y eucalyptus-cloud eucalyptus-service-image
+    ```bash
+    sudo yum install -y eucalyptus-cloud eucalyptus-service-image
+    ```
 
 
 4. (UFC+MC): Install packages
 
-        sudo yum install -y eucalyptus-cloud eucaconsole
+    ```bash
+    sudo yum install -y eucalyptus-cloud eucaconsole
+    ```
 
 
 5. (SC+CC): Install packages
 
-        sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
+    ```bash
+    sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
+    ```
 
 
 6. (OSP): Install packages
 
-        sudo yum install -y eucalyptus-cloud eucalyptus-walrus
+    ```bash
+    sudo yum install -y eucalyptus-cloud eucalyptus-walrus
+    ```
 
 
 7. (NC): Install packages
 
-        sudo yum install -y eucalyptus-nc
+    ```bash
+    sudo yum install -y eucalyptus-nc
+    ```
 
 
 8. (NC): Remove Devfault libvirt network.
 
-        sudo virsh net-destroy default
-        sudo virsh net-autostart default --disable
+    ```bash
+    sudo virsh net-destroy default
+    sudo virsh net-autostart default --disable
+    ```
 
 
 ### Configure Eucalyptus
 
 1. (CLC):  1. Configure Eucalyptus Networking
 
-        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CLC_PRIVATE_INTERFACE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CLC_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CLC_PRIVATE_INTERFACE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CLC_PUBLIC_INTERFACE}\"/" \
+                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 2. (UFS+MC): Configure Eucalyptus Networking
 
-        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFS_PRIVATE_INTERFACE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFS_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFS_PRIVATE_INTERFACE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFS_PUBLIC_INTERFACE}\"/" \
+                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 3. (SC+CC): Configure Eucalyptus Networking
 
-        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
+                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 4. (OSP): Configure Eucalyptus Networking
 
-        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
+                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 5. (NC): Configure Eucalyptus Networking
 
-        sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
-        sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                    -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" \
-                    -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_NC_PUBLIC_INTERFACE}\"/" \
-                    -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_NC_PUBLIC_INTERFACE}\"/" \
+                -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
     This can not be loaded until the cloud is initialized
 
-        cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
+    ```bash
+    cat << EOF | sudo tee /etc/eucalyptus/edge-$(date +%Y-%m-%d).json > /dev/null
+    {
+      "InstanceDnsDomain": "${EUCA_DNS_INSTANCE_SUBDOMAIN}.${EUCA_DNS_PRIVATE_DOMAIN}",
+      "InstanceDnsServers": [
+        "${EUCA_DNS_PARENT_IP}"
+      ],
+      "PublicIps": [
+        "${EUCA_PUBLIC_IP_RANGE}"
+      ],
+      "Clusters": [
         {
-          "InstanceDnsDomain": "${EUCA_DNS_INSTANCE_SUBDOMAIN}.${EUCA_DNS_PRIVATE_DOMAIN}",
-          "InstanceDnsServers": [
-            "${EUCA_DNS_PARENT_IP}"
-          ],
-          "PublicIps": [
-            "${EUCA_PUBLIC_IP_RANGE}"
-          ],
-          "Clusters": [
-            {
-              "Name": "${EUCA_CLUSTER1}",
-              "MacPrefix": "d0:0d",
-              "Subnet": {
-                "Name": "Private (${EUCA_CLUSTER1_PRIVATE_CIDR})",
-                "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
-                "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
-                "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
-              },
-              "PrivateIps": [
-                "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
-              ]
-            }
+          "Name": "${EUCA_CLUSTER1}",
+          "MacPrefix": "d0:0d",
+          "Subnet": {
+            "Name": "Private (${EUCA_CLUSTER1_PRIVATE_CIDR})",
+            "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
+            "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
+            "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
+          },
+          "PrivateIps": [
+            "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
           ]
         }
-        EOF
+      ]
+    }
+    EOF
+    ```
 
 
 7. (NC): Configure Eucalyptus Disk Allocation
 
-        nc_work_size=2400000
-        nc_cache_size=300000
+    ```bash
+    nc_work_size=2400000
+    nc_cache_size=300000
 
-        sudo sed -i -e "s/^#NC_WORK_SIZE=.*$/NC_WORK_SIZE=\"$nc_work_size\"/" \
-                    -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "s/^#NC_WORK_SIZE=.*$/NC_WORK_SIZE=\"$nc_work_size\"/" \
+                -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
-        cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
+    ```bash
+    cat << EOF | sudo tee -a /etc/eucalyptus/eucalyptus.conf > /dev/null
 
-        # Set this to Y to use the private IP of the CLC for the metadata service.
-        # The default is to use the public IP.
-        METADATA_USE_VM_PRIVATE="Y"
-        EOF
+    # Set this to Y to use the private IP of the CLC for the metadata service.
+    # The default is to use the public IP.
+    METADATA_USE_VM_PRIVATE="Y"
+    EOF
+    ```
 
 
 9. (CLC/UFS/SC/OSP): Configure Eucalyptus Java Memory Allocation
 
-        # Skip calculated value for now, causing startup errors
-        # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
-        # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
+    ```bash
+    # Skip calculated value for now, causing startup errors
+    # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
+    # sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
 
-        sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=4G\"/" /etc/eucalyptus/eucalyptus.conf
+    sudo sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=4G\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
 
 
 10. (MC): Configure Management Console with Cloud Controller Address
 
-        sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
-
+    ```bash
+    sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
+    ```
 
 
 ### Start Eucalyptus
