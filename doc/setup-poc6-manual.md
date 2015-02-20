@@ -6,7 +6,6 @@ This will use hp-gol-d1 as the EUCA_REGION.
 
 The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 
-
 This is using the following nodes in the PRC:
 - odc-d-13: CLC
 - odc-d-14: UFS, MC
@@ -16,7 +15,6 @@ This is using the following nodes in the PRC:
 - odc-d-38: NC2
 - odc-f-14: NC1 (temporary)
 - odc-f-17: NC2 (temporary)
-
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
@@ -28,15 +26,12 @@ Each step uses a code to indicate what node the step should be run on:
 - OSP: Object Storage Provider(Gateway), Walrus
 - NCn: Node Controller(s)
 
-
 I am also slowly trying to author procedures to run within a normal user account, and use sudo when necessary.
 This manual procedure is partially into that process.
-
 
 ### Define Parameters
 Define these environment variables before running script snippets below. This allows us to use descriptive names for each
 parameter to make the commands more legible than would be the case if we used IP addresses
-
 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
@@ -119,7 +114,6 @@ parameter to make the commands more legible than would be the case if we used IP
     export EUCA_NC4_PRIVATE_IP=10.105.10.59
     ```
 
-
 ### Prepare Network
 
 1. (ALL): Configure firewall to allow Eucalyptus Traffic
@@ -174,7 +168,6 @@ parameter to make the commands more legible than would be the case if we used IP
     ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ```
 
-
 ### Prepare External DNS
 
 I will not describe this in detail yet, except to note that this must be in place and working properly
@@ -190,7 +183,6 @@ dig +short ${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.104.10.83
 ```
-
 
 ### Initialize Dependencies
 
@@ -504,7 +496,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
-
 ### Install Eucalyptus
 
 1. (ALL): Configure yum repositories (second set of statements optional for subscriber-licensed packages)
@@ -565,7 +556,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo virsh net-destroy default
     sudo virsh net-autostart default --disable
     ```
-
 
 ### Configure Eucalyptus
 
@@ -694,7 +684,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo sed -i -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" /etc/eucaconsole/console.ini
     ```
 
-
 ### Start Eucalyptus
 
 1. (CLC): Initialize the Cloud Controller service
@@ -721,6 +710,8 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 4. (NC): Start the Node Controller and Eucanetd services
 
+    Expect failure messages due to missing keys. This will be corrected when the nodes are registered.
+
     ```bash
     sudo chkconfig eucalyptus-nc on
 
@@ -738,7 +729,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     sudo service eucaconsole start
     ```
-
 
 6. (MW): Verify Connectivity
 
@@ -811,7 +801,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ls -l /var/log/eucalyptus
     ```
 
-
 ### Register Eucalyptus
 
 1. (CLC): Register User-Facing services
@@ -844,6 +833,13 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
     ```
 
+6. (NC): Restart the Node Controller services
+
+    The failure messages due to missing keys should no longer be there on restart.
+
+    ```bash
+    sudo service eucalyptus-nc restart
+    ```
 
 ### Runtime Configuration
 
@@ -923,7 +919,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
    euca-describe-regions
     ```
-
 
 ### Configure DNS
 
@@ -1015,7 +1010,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     dig +short loadbalancing.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
-
 ### Configure Minimal IAM
 
 1. (CLC): Configure Eucalyptus Administrator Password
@@ -1023,7 +1017,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euare-usermodloginprofile -u admin -p password
     ```
-
 
 ### Configure Management Console
 
@@ -1105,7 +1098,6 @@ dig +short clc.${EUCA_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     Browse: https://${EUCA_MC_PUBLIC_IP}
     ```
-
 
 ### Configure Images
 
