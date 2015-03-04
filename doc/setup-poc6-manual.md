@@ -707,16 +707,12 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 2. (CLC/UFS/OSP/SC): Start the Cloud Controller service
 
     ```bash
-    sudo chkconfig eucalyptus-cloud on
-
     sudo service eucalyptus-cloud start
     ```
 
 3. (CC): Start the Cluster Controller service
 
     ```bash
-    sudo chkconfig eucalyptus-cc on
-
     sudo service eucalyptus-cc start
     ```
 
@@ -725,11 +721,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Expect failure messages due to missing keys. This will be corrected when the nodes are registered.
 
     ```bash
-    sudo chkconfig eucalyptus-nc on
-
     sudo service eucalyptus-nc start
-
-    sudo chkconfig eucanetd on
 
     sudo service eucanetd start
     ```
@@ -737,8 +729,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 5. (MC): Start the Management Console service
 
     ```bash
-    sudo chkconfig eucaconsole on
-
     sudo service eucaconsole start
     ```
 
@@ -1065,7 +1055,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     sudo chkconfig nginx on
-
     sudo service nginx start
     ```
 
