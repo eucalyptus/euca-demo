@@ -26,11 +26,21 @@ echo
 echo " $(printf '%2d' $step). Configure Sudo"
 echo "    - This makes CentOS 6.x behave like CentOS 7.x"
 echo "      - Members of wheel can sudo with a password"
+echo "    - Members of eucalyptus-install can sudo without a password"
+echo "    - Create eucalyptus-install group for use by sudo"
 echo
 echo "============================================================"
 echo
 echo "# sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers"
 sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
+echo
+echo "# echo 'eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install"
+echo 'eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install
+echo "# chmod 0440 /etc/sudoers.d/eucalyptus-install"
+chmod 0440 /etc/sudoers.d/eucalyptus-install
+echo
+echo "# groupadd -r eucalyptus-install"
+groupadd -r eucalyptus-install
 sleep 1
 
 
@@ -116,6 +126,21 @@ echo
 if ! rpm -q --quiet git; then
     echo "# yum install -y git"
     yum install -y git
+fi
+sleep 1
+
+
+((++step))
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Install nc"
+echo
+echo "============================================================"
+echo
+if ! rpm -q --quiet nc; then
+    echo "# yum install -y nc"
+    yum install -y nc
 fi
 sleep 1
 
