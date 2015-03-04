@@ -128,6 +128,8 @@ parameter to make the commands more legible than would be the case if we used IP
 2. (CLC/UFS/OSP/SC): Run tomography tool
 
     ```bash
+    sudo yum install -y java
+
     mkdir -p ~/src/eucalyptus
     cd ~/src/eucalyptus
     git clone https://github.com/eucalyptus/deveutils
@@ -159,7 +161,7 @@ parameter to make the commands more legible than would be the case if we used IP
     ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ```
 
-4. (CCA): Scan for unknown SSH host keys
+4. (CC): Scan for unknown SSH host keys
 
     Note: sudo tee needed to append output to file owned by root
 
@@ -334,7 +336,45 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo service iptables stop
     ```
 
-9. (SC+CC): Configure firewall, but disable during installation
+9. (OSP): Configure firewall, but disable during installation
+
+    Ports to open by component
+
+    * tcp   22 - Login, Control (ALL)
+    * tcp 5005 - Debug (OSP)
+    * tcp 7500 - Diagnostics (OSP)
+    * tcp 8772 - Debug (OSP)
+    * tcp 8773 - Web services (OSP)
+    * tcp 8778 - Multicast (OSP)
+    * tcp 8779-8849 - jGroups (OSP)
+
+
+    ```bash
+    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
+
+    sudo chkconfig iptables on
+    sudo service iptables stop
+    ```
+
+10. (SC+CC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -363,44 +403,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
-    -A INPUT -j REJECT --reject-with icmp-host-prohibited
-    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-    COMMIT
-    EOF
-
-    sudo chkconfig iptables on
-    sudo service iptables stop
-    ```
-
-10. (OSP): Configure firewall, but disable during installation
-
-    Ports to open by component
-
-    * tcp   22 - Login, Control (ALL)
-    * tcp 5005 - Debug (OSP)
-    * tcp 7500 - Diagnostics (OSP)
-    * tcp 8772 - Debug (OSP)
-    * tcp 8773 - Web services (OSP)
-    * tcp 8778 - Multicast (OSP)
-    * tcp 8779-8849 - jGroups (OSP)
-
-
-    ```bash
-    cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
-    *filter
-    :INPUT ACCEPT [0:0]
-    :FORWARD ACCEPT [0:0]
-    :OUTPUT ACCEPT [0:0]
-    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    -A INPUT -p icmp -j ACCEPT
-    -A INPUT -i lo -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
@@ -534,16 +536,16 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo yum install -y eucalyptus-cloud eucaconsole
     ```
 
-5. (SC+CC): Install packages
-
-    ```bash
-    sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
-    ```
-
-6. (OSP): Install packages
+5. (OSP): Install packages
 
     ```bash
     sudo yum install -y eucalyptus-cloud eucalyptus-walrus
+    ```
+
+6. (SC+CC): Install packages
+
+    ```bash
+    sudo yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
     ```
 
 7. (NC): Install packages
@@ -670,7 +672,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-9. (CLC/UFS/SC/OSP): Configure Eucalyptus Java Memory Allocation
+9. (CLC/UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+
+    This has proven risky to run, frequently causing failure to start due to incorrect heap size, regardless of value
 
     ```bash
     # Skip calculated value for now, causing startup errors
@@ -700,7 +704,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo euca_conf --initialize
     ```
 
-2. (CLC/UFS/SC/OSP): Start the Cloud Controller service
+2. (CLC/UFS/OSP/SC): Start the Cloud Controller service
 
     ```bash
     sudo chkconfig eucalyptus-cloud on
@@ -767,7 +771,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
     ```
 
-10. (CCA): Verify Connectivity
+10. (CC): Verify Connectivity
 
     ```bash
     # nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
@@ -776,7 +780,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
     ```
 
-11. (SCA): Verify Connectivity
+11. (SC): Verify Connectivity
 
     ```bash
     # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
@@ -835,7 +839,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
     ```
 
-5. (CCA): Register Node Controller host(s)
+5. (CC): Register Node Controller host(s)
 
     ```bash
     sudo euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP} ${EUCA_NCA3_PRIVATE_IP} ${EUCA_NCA4_PRIVATE_IP}"
