@@ -9,22 +9,25 @@ The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 This is using the following nodes in the PRC:
 - odc-d-13: CLC
 - odc-d-14: UFS, MC
-- odc-d-15: CC, SC
-- odc-d-29: OSP
-- odc-d-35: NC1
-- odc-d-38: NC2
-- odc-f-14: NC1 (temporary)
-- odc-f-17: NC2 (temporary)
+- odc-d-15: OSP
+- odc-d-29: CCA, SCA
+- odc-d-35: NCA1
+- odc-d-38: NCA2
+- odc-f-14: NCA3 (temporary)
+- odc-f-17: NCA4 (temporary)
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
 - CLC: Cloud Controller Host
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
-- CC:  Cluster Controller Host
-- SC:  Storage Controller Host
 - OSP: Object Storage Provider(Gateway), Walrus
-- NCn: Node Controller(s)
+- CCA:  Cluster Controller Host (Cluster A)
+- CCB:  Cluster Controller Host (Cluster B)
+- SCA:  Storage Controller Host (Cluster A)
+- SCB:  Storage Controller Host (Cluster B)
+- NCAn: Node Controller(s) (Cluster A)
+- NCBn: Node Controller(s) (Cluster B)
 
 I am also slowly trying to author procedures to run within a normal user account, and use sudo when necessary.
 This manual procedure is partially into that process.
@@ -81,36 +84,36 @@ parameter to make the commands more legible than would be the case if we used IP
     export EUCA_MC_PUBLIC_IP=10.104.10.84
     export EUCA_MC_PRIVATE_IP=10.105.10.84
 
-    export EUCA_CC_PUBLIC_INTERFACE=em1
-    export EUCA_CC_PRIVATE_INTERFACE=em2
-    export EUCA_CC_PUBLIC_IP=10.104.10.85
-    export EUCA_CC_PRIVATE_IP=10.105.10.85
-
-    export EUCA_SC_PUBLIC_INTERFACE=em1
-    export EUCA_SC_PRIVATE_INTERFACE=em2
-    export EUCA_SC_PUBLIC_IP=10.104.10.85
-    export EUCA_SC_PRIVATE_IP=10.105.10.85
-
     export EUCA_OSP_PUBLIC_INTERFACE=em1
     export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PUBLIC_IP=10.104.1.208
     export EUCA_OSP_PRIVATE_IP=10.105.1.208
 
+    export EUCA_CCA_PUBLIC_INTERFACE=em1
+    export EUCA_CCA_PRIVATE_INTERFACE=em2
+    export EUCA_CCA_PUBLIC_IP=10.104.10.85
+    export EUCA_CCA_PRIVATE_IP=10.105.10.85
+
+    export EUCA_SCA_PUBLIC_INTERFACE=em1
+    export EUCA_SCA_PRIVATE_INTERFACE=em2
+    export EUCA_SCA_PUBLIC_IP=10.104.10.85
+    export EUCA_SCA_PRIVATE_IP=10.105.10.85
+
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
     export EUCA_NC_PUBLIC_INTERFACE=em1
 
-    export EUCA_NC1_PUBLIC_IP=10.104.1.190
-    export EUCA_NC1_PRIVATE_IP=10.105.1.190
+    export EUCA_NCA1_PUBLIC_IP=10.104.1.190
+    export EUCA_NCA1_PRIVATE_IP=10.105.1.190
 
-    export EUCA_NC2_PUBLIC_IP=10.104.1.187
-    export EUCA_NC2_PRIVATE_IP=10.105.1.187
+    export EUCA_NCA2_PUBLIC_IP=10.104.1.187
+    export EUCA_NCA2_PRIVATE_IP=10.105.1.187
 
-    export EUCA_NC3_PUBLIC_IP=10.104.10.56
-    export EUCA_NC3_PRIVATE_IP=10.105.10.56
+    export EUCA_NCA3_PUBLIC_IP=10.104.10.56
+    export EUCA_NCA3_PRIVATE_IP=10.105.10.56
 
-    export EUCA_NC4_PUBLIC_IP=10.104.10.59
-    export EUCA_NC4_PRIVATE_IP=10.105.10.59
+    export EUCA_NCA4_PUBLIC_IP=10.104.10.59
+    export EUCA_NCA4_PRIVATE_IP=10.105.10.59
     ```
 
 ### Prepare Network
@@ -122,7 +125,7 @@ parameter to make the commands more legible than would be the case if we used IP
          dummy traffic to confirm there are no firewall or routing issues, prior to their removal and replacement
          with the actual packages
 
-2. (CLC/CC/SC/OSG): Run tomography tool
+2. (CLC/UFS/OSP/SC): Run tomography tool
 
     ```bash
     mkdir -p ~/src/eucalyptus
@@ -130,7 +133,7 @@ parameter to make the commands more legible than would be the case if we used IP
     git clone https://github.com/eucalyptus/deveutils
 
     cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_SC_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP}
+    ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP} ${EUCA_SCA_PUBLIC_IP}
     ```
 
 3. (CLC): Scan for unknown SSH host keys
@@ -144,27 +147,27 @@ parameter to make the commands more legible than would be the case if we used IP
     ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-    ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-
     ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
 
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ```
 
-4. (CC): Scan for unknown SSH host keys
+4. (CCA): Scan for unknown SSH host keys
 
     Note: sudo tee needed to append output to file owned by root
 
     ```bash
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ```
 
 ### Prepare External DNS
@@ -580,18 +583,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-3. (SC+CC): Configure Eucalyptus Networking
-
-    ```bash
-    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
-
-    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
-                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
-                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
-4. (OSP): Configure Eucalyptus Networking
+3. (OSP): Configure Eucalyptus Networking
 
     ```bash
     sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -600,6 +592,17 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                 -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
                 -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
                 -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
+
+4. (SC+CC): Configure Eucalyptus Networking
+
+    ```bash
+    sudo cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+    sudo sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+                -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CCA_PRIVATE_INTERFACE}\"/" \
+                -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CCA_PUBLIC_INTERFACE}\"/" \
+                -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CCA_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
 5. (NC): Configure Eucalyptus Networking
@@ -747,9 +750,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 7. (CLC): Verify Connectivity
 
     ```bash
-    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
+    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
     # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-    # nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
+    # nc -z ${EUCA_CCA_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
     ```
 
 8. (UFS): Verify Connectivity
@@ -758,34 +761,34 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
     ```
 
-9. (CC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NC1:8775 failed!'
-    # nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NC2:8775 failed!'
-    # nc -z ${EUCA_NC3_PRIVATE_IP} 8775 || echo 'Connection from CC to NC3:8775 failed!'
-    # nc -z ${EUCA_NC4_PRIVATE_IP} 8775 || echo 'Connection from CC to NC4:8775 failed!'
-    ```
-
-10. (SC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
-    ```
-
-11. (OSP): Verify Connectivity
+9. (OSP): Verify Connectivity
 
     ```bash
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
     ```
 
+10. (CCA): Verify Connectivity
+
+    ```bash
+    # nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
+    # nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
+    # nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
+    # nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
+    ```
+
+11. (SCA): Verify Connectivity
+
+    ```bash
+    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
+    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
+    ```
+
 12. (NC): Verify Connectivity
 
     ```bash
-    # nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
     # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
     ```
 
 13. (Other): Verify Connectivity
@@ -823,19 +826,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 3. (CLC): Register Storage Controller service
 
     ```bash
-    sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
+    sudo euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
     ```
 
 4. (CLC): Register Cluster Controller service
 
     ```bash
-    sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
+    sudo euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
     ```
 
-5. (CC): Register Node Controller host(s)
+5. (CCA): Register Node Controller host(s)
 
     ```bash
-    sudo euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP} ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}"
+    sudo euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP} ${EUCA_NCA3_PRIVATE_IP} ${EUCA_NCA4_PRIVATE_IP}"
     ```
 
 6. (NC): Restart the Node Controller services
