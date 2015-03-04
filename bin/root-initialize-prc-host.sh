@@ -35,7 +35,7 @@ echo "# sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers"
 sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
 echo
 echo "# echo 'eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install"
-echo 'eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install
+echo '%eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install
 echo "# chmod 0440 /etc/sudoers.d/eucalyptus-install"
 chmod 0440 /etc/sudoers.d/eucalyptus-install
 echo
