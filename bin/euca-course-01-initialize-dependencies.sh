@@ -231,6 +231,32 @@ if [ $is_cc = y -o $is_nc = y ]; then
     echo
     echo "============================================================"
     echo
+    echo "$(printf '%2d' $step). Disable ZEROCONF networking"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network"
+
+    run
+
+    if [ $choice = y ]; then
+        echo
+        echo "# sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network"
+        sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
+
+        next
+    fi
+fi
+
+
+((++step))
+if [ $is_cc = y -o $is_nc = y ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
     echo "$(printf '%2d' $step). Install bridge utilities package"
     echo
     echo "============================================================"
@@ -336,7 +362,7 @@ fi
 
 
 ((++step))
-if [ $is_nc = y ]; then
+if [ $is_cc = y -o $is_nc = y ]; then
     clear
     echo
     echo "============================================================"
