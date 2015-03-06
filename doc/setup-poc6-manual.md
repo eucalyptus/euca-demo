@@ -85,18 +85,18 @@ parameter to make the commands more legible than would be the case if we used IP
 
     export EUCA_OSP_PUBLIC_INTERFACE=em1
     export EUCA_OSP_PRIVATE_INTERFACE=em2
-    export EUCA_OSP_PUBLIC_IP=10.104.1.208
-    export EUCA_OSP_PRIVATE_IP=10.105.1.208
+    export EUCA_OSP_PUBLIC_IP=10.104.10.85
+    export EUCA_OSP_PRIVATE_IP=10.105.10.85
 
     export EUCA_CCA_PUBLIC_INTERFACE=em1
     export EUCA_CCA_PRIVATE_INTERFACE=em2
-    export EUCA_CCA_PUBLIC_IP=10.104.10.85
-    export EUCA_CCA_PRIVATE_IP=10.105.10.85
+    export EUCA_CCA_PUBLIC_IP=10.104.1.208
+    export EUCA_CCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_SCA_PUBLIC_INTERFACE=em1
     export EUCA_SCA_PRIVATE_INTERFACE=em2
-    export EUCA_SCA_PUBLIC_IP=10.104.10.85
-    export EUCA_SCA_PRIVATE_IP=10.105.10.85
+    export EUCA_SCA_PUBLIC_IP=10.104.1.208
+    export EUCA_SCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
