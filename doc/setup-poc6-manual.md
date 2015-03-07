@@ -477,6 +477,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 15. (CC): Configure packet routing
 
+    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic, you would
+    get a warning when starting the CC if this routing is not present, and it is turned on ephemerally at that
+    point. So, this is to prevent the warning.
+
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
 
@@ -729,72 +733,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service eucaconsole start
     ```
 
-6. (MW): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
-
-    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-    ```
-
-7. (CLC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
-    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSG:8773 failed!'
-    # nc -z ${EUCA_CCA_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
-    ```
-
-8. (UFS): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-    ```
-
-9. (OSG): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSG to CLC:8777 failed!'
-    ```
-
-10. (CC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
-    # nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
-    # nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
-    # nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
-    ```
-
-11. (SC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
-    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSG:8773 failed!'
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
-    ```
-
-12. (NC): Verify Connectivity
-
-    ```bash
-    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from NC to OSG:8773 failed!'
-    # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
-    ```
-
-13. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
-14. (All): Confirm service startup - Are logs being written?
+6. (All): Confirm service startup - Are logs being written?
 
     ```bash
     ls -l /var/log/eucalyptus
@@ -1103,4 +1042,71 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euca-describe-images
     ```
+
+### Test Inter-Component Connectivity
+
+1. (MW): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
+
+    nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
+    ```
+
+2. (CLC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
+    nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSG:8773 failed!'
+    nc -z ${EUCA_CCA_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
+    ```
+
+3. (UFS): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
+    ```
+
+4. (OSG): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSG to CLC:8777 failed!'
+    ```
+
+5. (CC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
+    nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
+    nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
+    nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
+    ```
+
+6. (SC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
+    nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSG:8773 failed!'
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
+    ```
+
+7. (NC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from NC to OSG:8773 failed!'
+    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
+    ```
+
+8. (Other): Verify Connectivity
+
+  Use additional commands to verify the following:
+
+  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
+  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
+  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
+  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
+  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
+  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
+  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
 
