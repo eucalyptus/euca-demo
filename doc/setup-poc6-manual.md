@@ -137,6 +137,7 @@ parameter to make the commands more legible than would be the case if we used IP
 
     cd deveutils/network-tomography
     ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSG_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    ```
 
 3. (CLC): Scan for unknown SSH host keys
 
