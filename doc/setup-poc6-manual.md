@@ -767,6 +767,15 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     done
     ```
 
+    Optional: Once User Facing Services are responding, confirm service status.
+
+    * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend and imagingbackend.
+    * The cluster, storage and walrusbackend services should not yet be listed.
+
+    ```bash
+    euca-describe-services | cut -f1-5
+    ```
+
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
     ```bash
@@ -832,10 +841,30 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/vg01 # Specfify Volume Group
     ```
 
+    Optional: Wait a few seconds for the property change to go into effect, then confirm service status.
+
+    * The storage service should now be in the ENABLED state.
+    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend and imagingbackend.
+
+    ```bash
+    sleep 15
+    euca-describe-services | cut -f1-5
+    ```
+
 3. (CLC): Configure Object Storage
 
     ```bash
     euca-modify-property -p objectstorage.providerclient=walrus
+    ```
+
+    Optional: Wait a few seconds for the property change to go into effect, then confirm service status.
+
+    * The objectstorage service should now be in the ENABLED state.
+    * All services should be in the ENABLED state, except for loadbalancingbackend and imagingbackend.
+
+    ```bash
+    sleep 15
+    euca-describe-services | cut -f1-5
     ```
 
 4. (CLC): Refresh Eucalyptus Administrator credentials
@@ -868,8 +897,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 7. (CLC): Confirm service status
 
+    All services should now be in the ENABLED state.
+
     ```bash
-    euca-describe-services | cut -f1-7
+    euca-describe-services | cut -f1-5
     ```
 
 8. (CLC): Confirm apis
