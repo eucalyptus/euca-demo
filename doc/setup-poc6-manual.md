@@ -9,7 +9,7 @@ The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 This is using the following nodes in the PRC:
 - odc-d-13: CLC
 - odc-d-14: UFS, MC
-- odc-d-15: OSP
+- odc-d-15: OSG
 - odc-d-29: CCA, SCA
 - odc-d-35: NCA1
 - odc-d-38: NCA2
@@ -21,7 +21,7 @@ Each step uses a code to indicate what node the step should be run on:
 - CLC: Cloud Controller Host
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
-- OSP: Object Storage Provider(Gateway), Walrus
+- OSG: Object Storage Provider(Gateway), Walrus
 - CCA:  Cluster Controller Host (Cluster A)
 - CCB:  Cluster Controller Host (Cluster B)
 - SCA:  Storage Controller Host (Cluster A)
@@ -83,10 +83,10 @@ parameter to make the commands more legible than would be the case if we used IP
     export EUCA_MC_PUBLIC_IP=10.104.10.84
     export EUCA_MC_PRIVATE_IP=10.105.10.84
 
-    export EUCA_OSP_PUBLIC_INTERFACE=em1
-    export EUCA_OSP_PRIVATE_INTERFACE=em2
-    export EUCA_OSP_PUBLIC_IP=10.104.10.85
-    export EUCA_OSP_PRIVATE_IP=10.105.10.85
+    export EUCA_OSG_PUBLIC_INTERFACE=em1
+    export EUCA_OSG_PRIVATE_INTERFACE=em2
+    export EUCA_OSG_PUBLIC_IP=10.104.10.85
+    export EUCA_OSG_PRIVATE_IP=10.105.10.85
 
     export EUCA_CCA_PUBLIC_INTERFACE=em1
     export EUCA_CCA_PRIVATE_INTERFACE=em2
@@ -124,7 +124,10 @@ parameter to make the commands more legible than would be the case if we used IP
          dummy traffic to confirm there are no firewall or routing issues, prior to their removal and replacement
          with the actual packages
 
-2. (CLC/UFS/OSP/SC): Run tomography tool
+2. (CLC): Run tomography tool (Run steps 2 - 5 in parallel)
+
+    This tool should be run simultaneously on all hosts running Java components, with each host specifying the
+    PRIVATE IP addresses of all other Java component hosts.
 
     ```bash
     yum install -y java
@@ -134,10 +137,58 @@ parameter to make the commands more legible than would be the case if we used IP
     git clone https://github.com/eucalyptus/deveutils
 
     cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PUBLIC_IP} ${EUCA_UFS_PUBLIC_IP} ${EUCA_OSP_PUBLIC_IP} ${EUCA_SCA_PUBLIC_IP}
+    ./network-tomography ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSG_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
     ```
 
-3. (CLC): Scan for unknown SSH host keys
+3. (UFS): Run tomography tool (Run steps 2 - 5 in parallel)
+
+    This tool should be run simultaneously on all hosts running Java components, with each host specifying the
+    PRIVATE IP addresses of all other Java component hosts.
+
+    ```bash
+    yum install -y java
+
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_OSG_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    ```
+
+4. (OSG): Run tomography tool (Run steps 2 - 5 in parallel)
+
+    This tool should be run simultaneously on all hosts running Java components, with each host specifying the
+    PRIVATE IP addresses of all other Java component hosts.
+
+    ```bash
+    yum install -y java
+
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    ```
+
+5. (SC): Run tomography tool (Run steps 2 - 5 in parallel)
+
+    This tool should be run simultaneously on all hosts running Java components, with each host specifying the
+    PRIVATE IP addresses of all other Java component hosts.
+
+    ```bash
+    yum install -y java
+
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSG_PRIVATE_IP}
+    ```
+
+6. (CLC): Scan for unknown SSH host keys
 
     ```bash
     ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
@@ -146,8 +197,8 @@ parameter to make the commands more legible than would be the case if we used IP
     ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSG_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSG_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
     ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
@@ -158,7 +209,7 @@ parameter to make the commands more legible than would be the case if we used IP
     ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
-4. (CC): Scan for unknown SSH host keys
+7. (CC): Scan for unknown SSH host keys
 
     ```bash
     ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
@@ -331,17 +382,17 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-9. (OSP): Configure firewall, but disable during installation
+9. (OSG): Configure firewall, but disable during installation
 
     Ports to open by component
 
     * tcp   22 - Login, Control (ALL)
-    * tcp 5005 - Debug (OSP)
-    * tcp 7500 - Diagnostics (OSP)
-    * tcp 8772 - Debug (OSP)
-    * tcp 8773 - Web services (OSP)
-    * tcp 8778 - Multicast (OSP)
-    * tcp 8779-8849 - jGroups (OSP)
+    * tcp 5005 - Debug (OSG)
+    * tcp 7500 - Diagnostics (OSG)
+    * tcp 8772 - Debug (OSG)
+    * tcp 8773 - Web services (OSG)
+    * tcp 8778 - Multicast (OSG)
+    * tcp 8779-8849 - jGroups (OSG)
 
 
     ```bash
@@ -531,7 +582,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     yum install -y eucalyptus-cloud eucaconsole
     ```
 
-5. (OSP): Install packages
+5. (OSG): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-walrus
@@ -580,15 +631,15 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-3. (OSP): Configure Eucalyptus Networking
+3. (OSG): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
     sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSG_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSG_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSG_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
 4. (SC+CC): Configure Eucalyptus Networking
@@ -667,7 +718,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-9. (CLC/UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+9. (CLC/UFS/OSG/SC): Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size, regardless of value
 
@@ -687,7 +738,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "/#s3.host=<your host IP or name>/d" \
            -e "/^clchost = /s/localhost/${EUCA_CLC_PRIVATE_IP}/" \
            -e "/that won't work from client's browsers./a\
-    s3.host=${EUCA_OSP_PRIVATE_IP}" /etc/eucaconsole/console.ini
+    s3.host=${EUCA_OSG_PRIVATE_IP}" /etc/eucaconsole/console.ini
 
     ```
 
@@ -699,7 +750,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca_conf --initialize
     ```
 
-2. (CLC/UFS/OSP/SC): Start the Cloud Controller service
+2. (CLC/UFS/OSG/SC): Start the Cloud Controller service
 
     ```bash
     service eucalyptus-cloud start
@@ -733,14 +784,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
 
-    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
+    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
     ```
 
 7. (CLC): Verify Connectivity
 
     ```bash
     # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
-    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
+    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSG:8773 failed!'
     # nc -z ${EUCA_CCA_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
     ```
 
@@ -750,10 +801,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
     ```
 
-9. (OSP): Verify Connectivity
+9. (OSG): Verify Connectivity
 
     ```bash
-    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+    # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSG to CLC:8777 failed!'
     ```
 
 10. (CC): Verify Connectivity
@@ -769,14 +820,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
-    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
+    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSG:8773 failed!'
     # nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
     ```
 
 12. (NC): Verify Connectivity
 
     ```bash
-    # nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    # nc -z ${EUCA_OSG_PUBLIC_IP} 8773 || echo 'Connection from NC to OSG:8773 failed!'
     # nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
     ```
 
@@ -809,7 +860,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
     ```bash
-    euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
+    euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSG_PRIVATE_IP}
     ```
 
 3. (CLC): Register Storage Controller service
