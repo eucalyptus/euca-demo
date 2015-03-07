@@ -911,13 +911,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure DNS
 
-1. (CLC): Use Eucalyptus Administrator credentials
-
-    ```bash
-    source ~/creds/eucalyptus/admin/eucarc
-    ```
-
-2. (CLC): Configure Eucalyptus DNS Server
+1. (CLC): Configure Eucalyptus DNS Server
 
     ```bash
     euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
@@ -927,7 +921,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
     ```
 
-3. (CLC): Configure DNS Timeout and TTL
+2. (CLC): Configure DNS Timeout and TTL
 
     ```bash
     euca-modify-property -p dns.tcp.timeout_seconds=30
@@ -935,13 +929,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p services.loadbalancing.dns_ttl=15
     ```
 
-4. (CLC): Configure DNS Domain
+3. (CLC): Configure DNS Domain
 
     ```bash
     euca-modify-property -p system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
-5. (CLC): Configure DNS Sub-Domains
+4. (CLC): Configure DNS Sub-Domains
 
     ```bash
     euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
@@ -949,7 +943,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
     ```
 
-6. (CLC): Enable DNS
+5. (CLC): Enable DNS
 
     ```bash
     euca-modify-property -p bootstrap.webservices.use_instance_dns=true
@@ -957,7 +951,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
     ```
 
-7. (CLC): Refresh Eucalyptus Administrator credentials
+6. (CLC): Refresh Eucalyptus Administrator credentials
 
     ```bash
     mkdir -p ~/creds/eucalyptus/admin
@@ -973,13 +967,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-8. (CLC): Display Parent DNS Server Sample Configuration (skipped)
+7. (CLC): Display Parent DNS Server Sample Configuration (skipped)
 
     ```bash
     # TBD
     ```
 
-9. (CLC): Confirm DNS resolution for Services
+8. (CLC): Confirm DNS resolution for Services
 
     ```bash
     dig +short compute.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
