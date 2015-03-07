@@ -9,7 +9,7 @@ The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 This is using the following nodes in the PRC:
 - odc-d-13: CLC
 - odc-d-14: UFS, MC
-- odc-d-15: OSG
+- odc-d-15: OSG, Walrus
 - odc-d-29: CCA, SCA
 - odc-d-35: NCA1
 - odc-d-38: NCA2
@@ -21,7 +21,7 @@ Each step uses a code to indicate what node the step should be run on:
 - CLC: Cloud Controller Host
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
-- OSG: Object Storage Provider(Gateway), Walrus
+- OSG: Object Storage Gateway, Walrus
 - CCA:  Cluster Controller Host (Cluster A)
 - CCB:  Cluster Controller Host (Cluster B)
 - SCA:  Storage Controller Host (Cluster A)
@@ -137,7 +137,6 @@ parameter to make the commands more legible than would be the case if we used IP
 
     cd deveutils/network-tomography
     ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSG_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
-    ```
 
 3. (CLC): Scan for unknown SSH host keys
 
