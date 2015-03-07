@@ -733,7 +733,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service eucaconsole start
     ```
 
-6. (All): Confirm service startup - Are logs being written?
+6. (All): Confirm service startup
+
+    Confirm logs are being written.
 
     ```bash
     ls -l /var/log/eucalyptus
@@ -745,6 +747,24 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    ```
+
+    Wait for services to respond before continuing.
+
+    ```bash
+    sleep 60
+    while true; do
+        echo -n "Testing services... "
+        if curl -s http://$EUCA_UFS_PRIVATE_IP:8773/services/User-API | grep -s -q 404; then
+            echo " Started"
+            break
+        else
+            echo " Not yet running"
+            echo -n "Waiting another 15 seconds..."
+            sleep 15
+            echo " Done"
+        fi
+    done
     ```
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
