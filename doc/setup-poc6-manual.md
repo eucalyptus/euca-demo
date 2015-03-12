@@ -59,13 +59,9 @@ parameter to make the commands more legible than would be the case if we used IP
     export EUCA_CLUSTER1_SC_NAME=sc01
 
     export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
-    #export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.40.0/24
-    export EUCA_CLUSTER1_PRIVATE_CIDR=10.105.0.0/16
-    #export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.40.0
+    export EUCA_CLUSTER1_PRIVATE_NAME=10.105.0.0
     export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
-    #export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.255.0
     export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
-    #export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.40.1
     export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
 
     export EUCA_CLC_PUBLIC_INTERFACE=em1
@@ -638,7 +634,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
           "Name": "${EUCA_CLUSTER1}",
           "MacPrefix": "d0:0d",
           "Subnet": {
-            "Name": "Private (${EUCA_CLUSTER1_PRIVATE_CIDR})",
+            "Name": "${EUCA_CLUSTER1_PRIVATE_NAME}",
             "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
             "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
             "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
@@ -706,7 +702,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sts.host=$EUCA_UFS_PRIVATE_IP\n\
     sts.port=8773" \
                -e "/that won't work from client's browsers./a\
-    s3.host=$EUCA_OSP_PRIVATE_IP" /etc/eucaconsole/console.ini
+    s3.host=$EUCA_UFS_PRIVATE_IP" /etc/eucaconsole/console.ini
     ```
 
 ### Start Eucalyptus
