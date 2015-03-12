@@ -382,6 +382,8 @@ fi
 
 
 ((++step))
+zone=$(euca-describe-availability-zones | head -1 | cut -f2)
+
 clear
 echo
 echo "============================================================"
@@ -394,7 +396,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "eulb-create-lb -z default -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
+echo "eulb-create-lb -z $zone -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
 echo
 echo "eulb-describe-lbs DemoELB"
 
@@ -402,8 +404,8 @@ run
 
 if [ $choice = y ]; then
     echo
-    echo "# eulb-create-lb -z default -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
-    eulb-create-lb -z default -l "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out
+    echo "# eulb-create-lb -z $zone -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
+    eulb-create-lb -z $zone -l "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out
     pause
 
     echo "# eulb-describe-lbs DemoELB"
@@ -524,6 +526,8 @@ fi
 
 
 ((++step))
+zone=$(euca-describe-availability-zones | head -1 | cut -f2)
+
 clear
 echo
 echo "============================================================"
@@ -539,7 +543,7 @@ echo
 echo "Commands:"
 echo
 echo "euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
-echo "                                          --availability-zones default \\"
+echo "                                          --availability-zones $zone \\"
 echo "                                          --load-balancers DemoELB \\"
 echo "                                          --min-size 2 --max-size 4 --desired-capacity 2"
 echo
@@ -552,11 +556,11 @@ run 150
 if [ $choice = y ]; then
     echo
     echo "# euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
-    echo ">                                           --availability-zones default \\"
+    echo ">                                           --availability-zones $zone \\"
     echo ">                                           --load-balancers DemoELB \\"
     echo ">                                           --min-size 2 --max-size 4 --desired-capacity 2"
     euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \
-                                              --availability-zones default \
+                                              --availability-zones $zone \
                                               --load-balancers DemoELB \
                                               --min-size 2 --max-size 4 --desired-capacity 2
     pause
