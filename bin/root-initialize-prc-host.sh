@@ -152,6 +152,36 @@ sleep 1
 echo
 echo "============================================================"
 echo
+echo " $(printf '%2d' $step). Install nc"
+echo
+echo "============================================================"
+echo
+if ! rpm -q --quiet nc; then
+    echo "# yum install -y nc"
+    yum install -y nc
+fi
+sleep 1
+
+
+((++step))
+echo
+echo "============================================================"
+echo
+echo " $(printf '%2d' $step). Install screen"
+echo
+echo "============================================================"
+echo
+if ! rpm -q --quiet screen; then
+    echo "# yum install -y screen"
+    yum install -y screen
+fi
+sleep 1
+
+
+((++step))
+echo
+echo "============================================================"
+echo
 echo " $(printf '%2d' $step). Clone euca-demo git project"
 echo
 echo "============================================================"
