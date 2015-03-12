@@ -12,22 +12,17 @@ Help is available when running this script, via the -? flag.
     ```bash
     euca-demo-02-initialize-dependencies.sh -?
     ```
+
     Usage: euca-demo-02-initialize-dependencies.sh [-I [-s | -f]] [-a account]
       -I          non-interactive
       -s          slower: increase pauses by 25%
       -f          faster: reduce pauses by 25%
       -a account  account to create for use in demos (default: demo)
 
-As noted in the help message, by default, the demo account used is named "demo", but this can be
-overridden with the -a account flag. This allows alternate and/or multiple demo accounts to be used.
+By default, the demo account used is named "demo", but this can be overridden with the -a account flag.
+This allows alternate and/or multiple demo accounts to be used.
 
 ### Initialize Demo Dependencies Manual Procedure
-
-This procedure depends on the existance of the Demo account administrator credentials in
-the ~/creds/demo/admin directory. If an account other than "demo" was created, this path would 
-instead reference that account name.
-
-Additionally, the procedure or script to initialize the demo account must have been run.
 
 1. Use Demo (demo) Account Administrator credentials
 

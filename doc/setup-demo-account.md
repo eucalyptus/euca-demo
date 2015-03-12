@@ -12,6 +12,7 @@ Help is available when running this script, via the -? flag.
     ```bash
     euca-demo-01-initialize-account.sh -?
     ```
+
     Usage: euca-demo-01-initialize-account.sh [-I [-s | -f]] [-a account] [-l]
       -I          non-interactive
       -s          slower: increase pauses by 25%
@@ -19,13 +20,10 @@ Help is available when running this script, via the -? flag.
       -a account  account to create for use in demos (default: demo)
       -l          Use local mirror for Demo CentOS image
 
-As noted in the help message, by default, the demo account created is named "demo", but this can be
-overridden with the -a account flag. This allows alternate and/or multiple demo accounts to be used.
+By default, the demo account created is named "demo", but this can be overridden with the -a account flag.
+This allows alternate and/or multiple demo accounts to be used.
 
 ### Initialize Demo Account Manual Procedure
-
-This procedure depends on the existance of the Eucalyptus account administrator credentials in
-the ~/creds/eucalyptus/admin directory.
 
 1. Use Eucalyptus Administrator credentials
 
@@ -89,8 +87,10 @@ the ~/creds/eucalyptus/admin directory.
 
 8. Authorize Demo (demo) Account use of Demo Image
 
+    Lookup the demo account id and centos image id, as these will be different for each environment
+
     ```bash
-    account_id=$(euare-accountlist | grep "^$account" | cut -f2)
+    account_id=$(euare-accountlist | grep "^demo" | cut -f2)
     image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
 
     euca-modify-image-attribute -l -a $account_id $image_id
