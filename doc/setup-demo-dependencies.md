@@ -11,13 +11,12 @@ Help is available when running this script, via the -? flag.
 
 ```bash
 euca-demo-02-initialize-dependencies.sh -?
-```
-
 Usage: euca-demo-02-initialize-dependencies.sh [-I [-s | -f]] [-a account]
   -I          non-interactive
   -s          slower: increase pauses by 25%
   -f          faster: reduce pauses by 25%
   -a account  account to create for use in demos (default: demo)
+```
 
 By default, the demo account used is named "demo", but this can be overridden with the -a account flag.
 This allows alternate and/or multiple demo accounts to be used.

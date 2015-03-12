@@ -11,14 +11,13 @@ Help is available when running this script, via the -? flag.
 
 ```bash
 euca-demo-01-initialize-account.sh -?
-```
-
 Usage: euca-demo-01-initialize-account.sh [-I [-s | -f]] [-a account] [-l]
   -I          non-interactive
   -s          slower: increase pauses by 25%
   -f          faster: reduce pauses by 25%
   -a account  account to create for use in demos (default: demo)
   -l          Use local mirror for Demo CentOS image
+```
 
 By default, the demo account created is named "demo", but this can be overridden with the -a account flag.
 This allows alternate and/or multiple demo accounts to be used.
