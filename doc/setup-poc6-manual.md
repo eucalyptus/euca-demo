@@ -683,26 +683,22 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
 
+    The clchost parameter within console.ini is misnamed, it should reference the public IP of the host where the 
+    UFS component runs.
+
     ```bash
-    sed -i -e "/#elb.host=10.20.30.40/d" \
+    cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
+
+    sed -i -e "/^clchost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" \
+           -e "/# since eucalyptus allows for different services to be located on different/d" \
+           -e "/# physical hosts, you may override the above host and port for each service./d" \
+           -e "/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d" \
+           -e "/For each service, you can specify a different host and\/or port, for example;/d" \
+           -e "/#elb.host=10.20.30.40/d" \
            -e "/#elb.port=443/d" \
-           -e "/#s3.host=<your host IP or name>/d" \
-           -e "/^clchost = localhost$/s/localhost/$EUCA_CLC_PRIVATE_IP/" \
-           -e "/For each service, you can specify a different host and\/or port, for example;/a\
-    ec2.host=$EUCA_UFS_PRIVATE_IP\n\
-    ec2.port=8773\n\
-    autoscale.host=$EUCA_UFS_PRIVATE_IP\n\
-    autoscale.port=8773\n\
-    cloudwatch.host=$EUCA_UFS_PRIVATE_IP\n\
-    cloudwatch.port=8773\n\
-    elb.host=$EUCA_UFS_PRIVATE_IP\n\
-    elb.port=8773\n\
-    iam.host=$EUCA_UFS_PRIVATE_IP\n\
-    iam.port=8773\n\
-    sts.host=$EUCA_UFS_PRIVATE_IP\n\
-    sts.port=8773" \
-               -e "/that won't work from client's browsers./a\
-    s3.host=$EUCA_UFS_PRIVATE_IP" /etc/eucaconsole/console.ini
+           -e "/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d" \
+           -e "/# that won't work from client's browsers./d" \
+           -e "/#s3.host=<your host IP or name>/d" /etc/eucaconsole/console.ini
     ```
 
 ### Start Eucalyptus
@@ -1070,6 +1066,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Images
 
+This is optional at this point. If you plan on using this system to run demos, it's preferrable to run the demo setup scripts,
+which incorporate this logic as well as performing additional setup, instead.
+
 1. (CLC): Download Images
 
     ```bash
@@ -1097,6 +1096,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 ### Test Inter-Component Connectivity
+
+This section has not yet been confirmed for accuracy. Running this won't hurt, but there may be additonal ports we
+should add to ensure complete interconnectivity testing.
 
 1. (MW): Verify Connectivity
 
