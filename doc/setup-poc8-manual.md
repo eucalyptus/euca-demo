@@ -1,8 +1,11 @@
-# Region hp-gol-d1 Manual Installation
+# Manual Installation Procedure for 8-Node (4+4) POC (region hp-gol-d1)
 
-This is going to be the manual steps to setup region hp-gol-d1, based on the "4-node reference architecture".
+This document describes the manual procedure to setup region hp-gol-d1,
+based on the "4-node reference architecture", with 4 Node Controllers.
 
-This will use hp-gol-d1 as the AWS_DEFAULT_REGION.
+This variant is meant to be run as root
+
+This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
 
 The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 
@@ -29,11 +32,13 @@ Each step uses a code to indicate what node the step should be run on:
 - NCAn: Node Controller(s) (Cluster A)
 - NCBn: Node Controller(s) (Cluster B)
 
-This variant is meant to be run as root
-
 ### Define Parameters
-Define these environment variables before running script snippets below. This allows us to use descriptive names for each
-parameter to make the commands more legible than would be the case if we used IP addresses
+
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different identifiers, hosts and IP addresses, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
@@ -51,12 +56,9 @@ parameter to make the commands more legible than would be the case if we used IP
 
     export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-    #export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
-    export EUCA_CLUSTER1=cluster01
-    #export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
-    export EUCA_CLUSTER1_CC_NAME=cc01
-    #export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
-    export EUCA_CLUSTER1_SC_NAME=sc01
+    export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
+    export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
+    export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
 
     export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
     export EUCA_CLUSTER1_PRIVATE_NAME=10.105.0.0
@@ -113,12 +115,15 @@ parameter to make the commands more legible than would be the case if we used IP
 
 ### Prepare Network
 
-1. (ALL): Configure any external firewalls to allow Eucalyptus Traffic
+1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+
+    The purpose of this section is to confirm external network dependencies are configured properly
+    for Eucalyptus network traffic.
 
     TBD: Validate protocol source:port to dest:port traffic
-    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which could send and receive
-         dummy traffic to confirm there are no firewall or routing issues, prior to their removal and replacement
-         with the actual packages
+    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
+    send and receive dummy traffic to confirm there are no external firewall or routing issues,
+    prior to their removal and replacement with the actual packages
 
 2. (CLC/UFS/OSP/SC): Run tomography tool
 
@@ -167,9 +172,9 @@ parameter to make the commands more legible than would be the case if we used IP
 
 ### Prepare External DNS
 
-I will not describe this in detail yet, except to note that this must be in place and working properly
-before registering services with the method outlined below, as I will be using DNS names for the services
-so they look more AWS-like.
+I will not describe this in detail here, except to note that this must be in place and working
+properly before registering services with the method outlined below, as I will be using DNS names
+for the services so they look more AWS-like.
 
 You should be able to resolve these names with these results:
 
@@ -185,21 +190,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (ALL): Configure common additional disk storage
 
-    The hosts which participate in this POC were created by Cobbler via kickstart 
-    with the it-centos6-x86_64-bare cobbler profile.
+    The hosts which participate in this POC were created by Cobbler via kickstart with the
+    it-centos6-x86_64-bare cobbler profile.
 
     In this profile, we have 2 physical disks presented to the OS as /dev/sda and /dev/sdb.
-    In other Cobbler profiles, we typically use software raid on the physical disks,
-    so only /dev/sda is presented to the OS. But for this POC, we want to simulate hosts
-    with hardware RAID controllers, presenting multiple RAID sets as physical disks.
+    In other Cobbler profiles, we typically use software raid on the physical disks, so only
+    /dev/sda is presented to the OS. But for this POC, we want to simulate hosts with hardware
+    RAID controllers, presenting multiple RAID sets as physical disks.
 
-    Disk sda is partitioned, with partition sda1 formatted as ext4 and mounted as /boot, 
-    and partition sda2 formatted as an LVM physical disk, and assigned to volume group vg01. 
-    Logial volumes of 8GB and 20GB were created for swap and the root filesystem, also  
-    formatted with ext4. 
+    Disk sda is partitioned, with partition sda1 formatted as ext4 and mounted as /boot, and
+    partition sda2 formatted as an LVM physical disk, and assigned to volume group vg01. 
+    Logical volumes of 8GB and 20GB were created for swap and the root filesystem, also formatted
+    with ext4. 
  
-    Here is the output of some disk commands showing the initial storage layout, before we
-    perform additional configuration.
+    Here is the output of some disk commands showing the initial storage layout, before we perform
+    additional configuration.
 
     **Physical Disks and Logical Volumes**
 
@@ -296,14 +301,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     
 2. (CLC)  Configure additional disk storage for the Cloud Controller
 
-    As we only have 2 physical disks to work with, for the CLC, use of the second disk
-    is best suited to keeping the PostgreSQL transaction logs separate from all other
-    disk activity, due to the sequential write nature of transaction logs. On many 
-    database systems, the speed at which transaction logs can be written determines
-    the maximum transactions per second rate. This second disk will also be used for a
-    separate logical volume to hold potential PostgreSQL archive logs. Normally these
-    would be kept on yet another disk, due to the potential for disk contention between
-    transactions and the log archive process, but we only have 2 disks to work with.
+    As we only have 2 physical disks to work with, for the CLC, use of the second disk is best
+    suited to keeping the PostgreSQL transaction logs separate from all other disk activity, due to
+    the sequential write nature of transaction logs. On many database systems, the speed at which
+    transaction logs can be written determines the maximum transactions per second rate.
+    This second disk will also be used for a separate logical volume to hold potential PostgreSQL
+    archive logs. Normally these would be kept on yet another disk, due to the potential for disk
+    contention between transactions and the log archive process, but we only have 2 disks to work
+    with, so we will keep them on separate Logical Volumes, the best possible alternative.
 
     ```bash
     pvcreate -Z y /dev/sdb
@@ -333,8 +338,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 3. (OSP)  Configure additional disk storage for the Object Storage Provider
 
-    As we only have 2 physical disks to work with, for the OSP, use of the second disk
-    is best suited to keeping the storage buckets separate from other disk activity.
+    As we only have 2 physical disks to work with, for the OSP, use of the second disk is best
+    suited to keeping the storage buckets separate from other disk activity.
 
     ```bash
     pvcreate -Z y /dev/sdb
@@ -358,11 +363,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 4. (SC)  Configure additional disk storage for the Storage Controller
 
-    As we only have 2 physical disks to work with, for the SC, use of the second disk
-    is best suited to an additional volume group used for the logical volumes which
-    are used for EBS volumes. Note in this case we do not explicitly create the logical
-    volumes or format filesystems on top of them, as these tasks are handled by the
-    Eucalyptus Storage Controller.
+    As we only have 2 physical disks to work with, for the SC, use of the second disk is best
+    suited to an additional volume group used for the logical volumes which are used for EBS
+    volumes. Note in this case we do not explicitly create the logical volumes or format
+    filesystems on top of them, as these tasks are handled by the Eucalyptus Storage Controller.
 
     ```bash
     pvcreate -Z y /dev/sdb
@@ -374,8 +378,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 5. (NC)  Configure additional disk storage for the Node Controller
 
-    As we only have 2 physical disks to work with, for the NC, use of the second disk
-    is best suited to where the instance virtual disks are created.
+    As we only have 2 physical disks to work with, for the NC, use of the second disk is best
+    suited to where the instance virtual disks are created.
 
     ```bash
     pvcreate -Z y /dev/sdb
@@ -693,10 +697,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 21. (ALL) Install and Configure Mail Relay
 
-    Normally, a null relay will use DNS to find the MX records associated with
-    the domain of the host, but that is not currently set for the PRC environment.
-    So, we are using the same sub-domain as is used for other DNS base-domains, 
-    where this internal record is configured.
+    Normally, a null relay will use DNS to find the MX records associated with the domain of the
+    host, but that is not currently set for the PRC environment. So, we are using the same
+    sub-domain as is used for other DNS base-domains, where this internal record is configured.
 
     ```bash
     yum install -y postfix
@@ -809,9 +812,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 23. (CC): Configure packet routing
 
-    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic, you would
-    get a warning when starting the CC if this routing is not present, and it is turned on ephemerally at that
-    point. So, this is to prevent the warning.
+    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic,
+    you will get a warning when starting the CC if this routing has not been configured, and the
+    package would turn this on at that time. So, this is to prevent that warning.
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -835,13 +838,20 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Install Eucalyptus
 
-1. (ALL): Configure yum repositories (second set of statements optional for subscriber-licensed packages)
+1. (ALL): Configure yum repositories
+
+   This first set of packages is required to configure access to the Eucalyptus yum repositories
+   which contain open source Eucalyptus software, and their dependencies.
 
     ```bash
     yum install -y \
              http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
              http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
              http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+    ```
+
+    Optional: This second set of packages is required to configure access to the Eucalyptus yum
+    repositories which contain subscription-only Eucalyptus software, which requires a license.
 
     yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
@@ -849,8 +859,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 2. (ALL): Override external yum repos to internal servers
 
-    There appears to be more repos described on the quality confluence page - confirm with Harold how these are actually used.
-    It may be better to manually create repo configs than download and install the eucalyptus-release RPM and modifying it.
+    Optional: This step modifies the `mirrorlist=` value in the Eucalyptus yum repo configuration
+    files, to instead reference an internal mirrorlist service running on the odc-f-38 host on the
+    mirrorlist.mjc.prc.eucalyptus-systems.com domain. 
+
+    This internal service augments the external Eucalyptus mirrors with internal release mirrors
+    which are equivalent. The yum `fastest mirror` plugin will then favor the internal mirror
+    because it is faster. This can speed up intallations within the PRC by 4 to 6 minutes.
 
     ```bash
     sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
@@ -953,7 +968,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
-    This can not be loaded until the cloud is initialized
+    This can not be loaded until the cloud is initialized.
 
     ```bash
     cat << EOF > /etc/eucalyptus/edge-$(date +%Y-%m-%d).json
@@ -1007,20 +1022,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 9. (CLC/UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
 
-    This has proven risky to run, frequently causing failure to start due to incorrect heap size, regardless of value
+    This has proven risky to run, frequently causing failure to start due to incorrect heap size,
+    regardless of value
 
     ```bash
-    # Skip calculated value for now, causing startup errors
-    # heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
-    # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
+    heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
+    sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
 
-    sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
+    # Alternate method
+    # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
 10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
 
-    The clchost parameter within console.ini is misnamed, it should reference the public IP of the host where the 
-    UFS component runs.
+    The clchost parameter within console.ini is misleadingly named, as it should reference the
+    public IP of the host running User Facing Services.
 
     ```bash
     cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
@@ -1059,7 +1075,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 4. (NC): Start the Node Controller and Eucanetd services
 
-    Expect failure messages due to missing keys. This will be corrected when the nodes are registered.
+    Expect failure messages due to missing keys. This will be corrected when the nodes are
+    registered.
 
     ```bash
     service eucalyptus-nc start
@@ -1085,14 +1102,31 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (CLC): Register User-Facing services
 
+    Wait for CLC services to respond.
+
     ```bash
-    euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    while true; do
+        echo -n "Testing services... "
+        if nc -z localhost 8777 &> /dev/null; then 
+            echo " Started"
+            break
+        else
+            echo " Not yet running"
+            echo -n "Waiting another 15 seconds..."
+            sleep 15
+            echo " Done"
+        fi
+    done
     ```
 
-    Wait for services to respond before continuing.
+    ```bash
+    euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    sleep 60
+    ```
+
+    Wait for UFS services to respond.
 
     ```bash
-    sleep 60
     while true; do
         echo -n "Testing services... "
         if curl -s http://$EUCA_UFS_PRIVATE_IP:8773/services/User-API | grep -s -q 404; then
@@ -1107,9 +1141,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     done
     ```
 
-    Optional: Once User Facing Services are responding, confirm service status.
+    Optional: Confirm service status.
 
-    * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend and imagingbackend.
+    * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend
+      and imagingbackend.
     * The cluster, storage and walrusbackend services should not yet be listed.
 
     ```bash
@@ -1120,24 +1155,28 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
+    sleep 15
     ```
 
 3. (CLC): Register Storage Controller service
 
     ```bash
     euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
+    sleep 15
     ```
 
 4. (CLC): Register Cluster Controller service
 
     ```bash
     euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
+    sleep 15
     ```
 
 5. (CC): Register Node Controller host(s)
 
     ```bash
     euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP} ${EUCA_NCA3_PRIVATE_IP} ${EUCA_NCA4_PRIVATE_IP}"
+    sleep 15
     ```
 
 6. (NC): Restart the Node Controller services
@@ -1191,17 +1230,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
+    sleep 15
 
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=eucalyptus
+    sleep 15
     ```
 
-    Optional: Wait a few seconds for the property change to go into effect, then confirm service status.
+    Optional: Confirm service status.
 
     * The storage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend and imagingbackend.
+    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend
+      and imagingbackend.
 
     ```bash
-    sleep 15
     euca-describe-services | cut -f1-5
     ```
 
@@ -1209,22 +1250,24 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca-modify-property -p objectstorage.providerclient=walrus
+    sleep 15
     ```
 
-    Optional: Wait a few seconds for the property change to go into effect, then confirm service status.
+    Optional: Confirm service status.
 
     * The objectstorage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state, except for loadbalancingbackend and imagingbackend.
+    * All services should be in the ENABLED state, except for loadbalancingbackend and
+      imagingbackend.
 
     ```bash
-    sleep 15
     euca-describe-services | cut -f1-5
     ```
 
 4. (CLC): Refresh Eucalyptus Administrator credentials
 
-    As noted above, if the eucarc does not contain the environment variables for the key and certificate,
-    we must patch it to reference the previously downloaded versions of the key and certificate files.
+    As noted above, if the eucarc does not contain the environment variables for the key and
+    certificate, we must patch it to add the missing variables which reference the previously
+    downloaded versions of the key and certificate files.
 
     ```bash
     rm -f ~/creds/eucalyptus/admin.zip
@@ -1248,6 +1291,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
+    sleep 15
     ```
 
 6. (CLC): Install the imaging-worker and load-balancer images
@@ -1315,9 +1359,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 6. (CLC): Refresh Eucalyptus Administrator credentials
-
-    As noted above, if the eucarc does not contain the environment variables for the key and certificate,
-    we must patch it to reference the previously downloaded versions of the key and certificate files.
+ 
+    As noted above, if the eucarc does not contain the environment variables for the key and 
+    certificate, we must patch it to add the missing variables which reference the previously 
+    downloaded versions of the key and certificate files.
 
     ```bash
     mkdir -p ~/creds/eucalyptus/admin
@@ -1434,8 +1479,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Images
 
-This is optional at this point. If you plan on using this system to run demos, it's preferrable to run the demo setup scripts,
-which incorporate this logic as well as performing additional setup, instead.
+Optional: If you plan on using this system to run demos, it is preferrable to run the demo setup
+scripts, which incorporate this logic as well as performing additional setup, instead.
 
 1. (CLC): Download Images
 
@@ -1445,16 +1490,10 @@ which incorporate this logic as well as performing additional setup, instead.
     xz -v -d ~/centos.raw.xz
     ```
 
-    or
-
-    ```bash
-    python <(curl http://internal-emis.objectstorage.cloud.qa1.eucalyptus-systems.com/install-emis.py)
-    ```
-
 2. (CLC): Install Image
 
     ```bash
-    euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm
+    euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm
     ```
 
 3. (CLC): List Images
@@ -1465,8 +1504,8 @@ which incorporate this logic as well as performing additional setup, instead.
 
 ### Test Inter-Component Connectivity
 
-This section has not yet been confirmed for accuracy. Running this won't hurt, but there may be additonal ports we
-should add to ensure complete interconnectivity testing.
+This section has not yet been confirmed for accuracy. Running this is fine, but there may be
+additonal ports we should add to ensure complete interconnectivity testing.
 
 1. (MW): Verify Connectivity
 
@@ -1525,11 +1564,15 @@ should add to ensure complete interconnectivity testing.
 
   Use additional commands to verify the following:
 
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first available port in range 8779-8849)
+  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
+    on TCP port 8773
+  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
+    available port in range 8779-8849)
   * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on UDP port 8773
+  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
+    UDP port 8773
   * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on TCP port 3260
+  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
+    TCP port 3260
   * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
 
