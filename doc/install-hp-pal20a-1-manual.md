@@ -12,7 +12,8 @@ The full parent DNS domain will be hp-pal20a-1.hpccc.com. Note that this
 domain only resolves inside the EBC.
 
 This is using the following node in the EBC machine room:
-- dl580gen8a.hpccc.comL CLC+UFS+MC+Walrus+CC+SC+NC
+
+- dl580gen8a.hpccc.com: CLC+UFS+MC+Walrus+CC+SC+NC
   - vlan10(public): 172.0.1.8/24
   - vlan20(private): 172.0.2.8/24)
 
@@ -39,13 +40,16 @@ The host will eventually have 8 480GB SSD disks, configured into the following R
 Initiallly, the SSDs were not available, and standard 300GB disks were used for the install.
 The system will be rebuilt via these instructions once the SSDs arrive and can be installed.
 
-A manual installation of CentOS 6.6 was done via the [CentOS-6.6-x86_64-minimal.iso](http://mirrors.kernel.org/centos/6.6/isos/x86_64/CentOS-6.6-x86_64-minimal.iso) DVD. During the manual
-installation, we chose automatic disk formatting with an ability to edit to get an initial
-disk partitioning configuration, but then this was modified heavily. We switched the standard
-name of the VG which uses `sda` to "local", removed `/home` partition, increased size of swap
-to 64G (to allow for RAM overcommit). We created a new VG named eucalyptus, and an LV named
-eucalyptus which used 256G for `/var/lib/eucalyptus`. The remainder of the eucalyptus VG is
-reserved for use by the Eucalyptus Storage Controller.
+A manual installation of CentOS 6.6 was done via the 
+[CentOS-6.6-x86_64-minimal.iso](http://mirrors.kernel.org/centos/6.6/isos/x86_64/CentOS-6.6-x86_64-minimal.iso)
+DVD, mounted as a virtual CD-ROM via the iLo management console.
+
+During the manual installation, we chose automatic disk formatting with an ability to edit to
+get an initial disk partitioning configuration, but then this was modified heavily. We switched
+the standard name of the VG which uses `sda` to `local`, removed the `/home` partition, and 
+increased the size of `swap` to 64G (to allow for RAM overcommit). We created a new VG named
+`eucalyptus`, and an LV also named `eucalyptus` which used 256G for `/var/lib/eucalyptus`.
+The remainder of the `eucalyptus` VG is reserved for use by the Eucalyptus Storage Controller.
 
 ### Define Parameters
 
