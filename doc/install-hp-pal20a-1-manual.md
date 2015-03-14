@@ -99,12 +99,65 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```
 
 
-### Install Miscellaneous Packages
+### Initialize Host Conventions
 
-1. Install packages
+This section will initialize the host with some conventions normally added during the kickstart
+process, not currently available for this host.
+
+1. Install additional packages
+
+    Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y wget zip unzip git bind-utils rsync nc tree
+    yum install -y man wget zip unzip git nc w3m rsync bind-utils tree
+    ```
+
+2. Configure Sudo
+
+    Allow members of group `wheel` to sudo with a password.
+
+    bash```
+    sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
+    ```
+
+3. Configure local profile
+
+    Create a local profile with some useful aliases.
+
+    bash```
+    if [ ! -r /etc/profile.d/local.sh ]; then
+        echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
+        echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
+    fi
+    ```
+
+4. Configure root user
+
+    Configure the root user with some useful conventions.
+
+    - Create a consistent directory structure
+    - Adjust root's name in `/etc/passwd` so mail sent from root on a host is more
+      easily identifed by the host's shortname.
+
+    bash```
+    mkdir -p ~/{bin,doc,log,.ssh}
+    chmod og-rwx ~/{bin,log,.ssh}
+
+    sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
+    ```
+
+5. Clone euca-demo git project
+
+    This is one location where demo scripts live. We will run the demo initialization
+    scripts at the completion of the installation.
+
+    bash```
+    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+
+        git clone https://github.com/eucalyptus/euca-demo.git
+    fi
     ```
 
 ### Initialize External DNS
@@ -121,6 +174,12 @@ dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 172.0.1.8
+
+dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
+
+dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
 ```
 
 ### Initialize Dependencies
@@ -134,6 +193,26 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Initially manual disk and LVM configuration was done during a manual OS install. We will
     attempt to convert this manual process to something kickstart based if time allows.
 
+    The kickstart produced by Anaconda during a manual installation can be found here: 
+    `/root/anaconda-ks.cfg. To assist with any future kickstart, the disk configuration
+    section (edited for order, improvements and clarity) should look like:
+
+    bash```
+    clearpart --all --drives=sda,sdb
+    part /boot --ondisk=sda --asprimary --fstype=ext4 --name=boot --size=500
+    part pv.01 --ondisk=sda --grow --size=1
+    part pv.02 --ondisk-sdb --grow --size=1
+    volgroup local --pesize=4096 pv.01
+    volgroup eucalyptus --pesize=4096 pv.02
+    logvol swap --name=swap --vgname=local --size=65536
+    logvol / --fstype=ext4 --name=root --vgname=local --size=65536 --grow
+    logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=262144
+    ```
+
+    Note that we are leaving about half of VG `eucalyptus` on disk `sdb` un-reserved and
+    available for use by the Eucalyptus Storage Controller, which will use the `das` storage
+    mode, where volumes and snapshots are created as LVs within this VG.
+ 
     Here is the output of some disk commands showing the storage layout created by anaconda
     during the manual install.
 
@@ -220,6 +299,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 3. Manually configure complex networking.
 
     Currently this bridging is configured manually, with these statements.
+
+    **TODO:** reference variables set above in scripts below. Currently values are
+    hard-coded.
 
     ```bash
     cat << EOF > /etc/modprobe.d/bonding.conf
@@ -520,7 +602,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 2. Install packages
 
     ```bash
-    yum install -y eucalyptus-cloud eucaconsole eucalyptus-service-image eucalyptus-walrus eucalyptus-sc eucalyptus-cc eucalyptus-nc
+    yum install -y eucalyptus-cloud eucaconsole eucalyptus-service-image
+    yum install -y eucalyptus-walrus
+    yum install -y eucalyptus-sc eucalyptus-cc
+    yum install -y eucalyptus-nc
     ```
 
 3. Remove Devfault libvirt network.
