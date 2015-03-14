@@ -158,11 +158,9 @@ process, not currently available for this host.
 
 4. Configure root user
 
-    Configure the root user with some useful conventions.
-
-    - Create a consistent directory structure
-    - Adjust root's name in `/etc/passwd` so mail sent from root on a host is more
-      easily identifed by the host's shortname.
+    Configure the root user with some useful conventions, including a consistent directory
+    structure, and adjusting the default GECOS information so email sent from root on a host
+    is identified by the host's shortname.  
 
     ```bash
     mkdir -p ~/{bin,doc,log,.ssh}
@@ -450,7 +448,7 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     USERCTL=no
     NM_CONTROLLED=no
     EOF
-
+    ```
 
 4. Restart networking
 
