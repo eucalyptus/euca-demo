@@ -8,7 +8,8 @@ This variant is meant to be run as root
 
 This POC will use **hp-pal10a-1** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be hp-pal20a-1.hpccc.com.
+The full parent DNS domain will be hp-pal20a-1.hpccc.com. Note that this
+domain only resolves inside the EBC.
 
 This is using the following node in the EBC machine room:
 - dl580gen8a.hpccc.comL CLC+UFS+MC+Walrus+CC+SC+NC
@@ -33,7 +34,7 @@ different identifiers, hosts and IP addresses, as well as to clearly indicate th
 parameter used in various statements, we will define a set of environment variables here, which
 will be pasted into each ssh session, and which can then adjust the behavior of statements.
 
-1. (ALL): Define Environment Variables used in upcoming code blocks
+1. Define Environment Variables used in upcoming code blocks
 
     ```bash
     export AWS_DEFAULT_REGION=hp-pal20a-1
@@ -60,80 +61,53 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_CLUSTER1_PRIVATE_GATEWAY=172.0.2.1
 
     export EUCA_CLC_PUBLIC_INTERFACE=br10
-    export EUCA_CLC_PRIVATE_INTERFACE=em2
+    export EUCA_CLC_PRIVATE_INTERFACE=br20
     export EUCA_CLC_PUBLIC_IP=172.0.1.8
     export EUCA_CLC_PRIVATE_IP=172.0.2.8
 
     export EUCA_UFS_PUBLIC_INTERFACE=br10
-    export EUCA_UFS_PRIVATE_INTERFACE=em2
+    export EUCA_UFS_PRIVATE_INTERFACE=br20
     export EUCA_UFS_PUBLIC_IP=172.0.1.8
     export EUCA_UFS_PRIVATE_IP=172.0.2.8
 
     export EUCA_MC_PUBLIC_INTERFACE=br10
-    export EUCA_MC_PRIVATE_INTERFACE=em2
+    export EUCA_MC_PRIVATE_INTERFACE=br20
     export EUCA_MC_PUBLIC_IP=172.0.1.8
     export EUCA_MC_PRIVATE_IP=172.0.2.8
 
     export EUCA_OSP_PUBLIC_INTERFACE=br10
-    export EUCA_OSP_PRIVATE_INTERFACE=em2
+    export EUCA_OSP_PRIVATE_INTERFACE=br20
     export EUCA_OSP_PUBLIC_IP=172.0.1.8
     export EUCA_OSP_PRIVATE_IP=172.0.2.8
 
     export EUCA_CC_PUBLIC_INTERFACE=br10
-    export EUCA_CC_PRIVATE_INTERFACE=em2
+    export EUCA_CC_PRIVATE_INTERFACE=br20
     export EUCA_CC_PUBLIC_IP=172.0.1.8
     export EUCA_CC_PRIVATE_IP=172.0.2.8
 
     export EUCA_SC_PUBLIC_INTERFACE=br10
-    export EUCA_SC_PRIVATE_INTERFACE=em2
+    export EUCA_SC_PRIVATE_INTERFACE=br20
     export EUCA_SC_PUBLIC_IP=172.0.1.8
     export EUCA_SC_PRIVATE_IP=172.0.2.8
 
-    export EUCA_NC_PRIVATE_BRIDGE=br20
-    export EUCA_NC_PRIVATE_INTERFACE=br20
     export EUCA_NC_PUBLIC_INTERFACE=br10
+    export EUCA_NC_PRIVATE_INTERFACE=br20
+    export EUCA_NC_PRIVATE_BRIDGE=br20
 
     export EUCA_NC1_PUBLIC_IP=172.0.1.8
     export EUCA_NC1_PRIVATE_IP=172.0.2.8
     ```
 
-### Prepare Network
 
-1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+### Install Miscellaneous Packages
 
-    The purpose of this section is to confirm external network dependencies are configured properly
-    for Eucalyptus network traffic.
-
-    TBD: Validate protocol source:port to dest:port traffic
-    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
-    send and receive dummy traffic to confirm there are no external firewall or routing issues,
-    prior to their removal and replacement with the actual packages
-
-2. (CLC+UFS/OSP/SC): Run tomography tool
-
-    This tool should be run simultaneously on all hosts running Java components.
+1. Install packages
 
     ```bash
-    yum install -y java
-
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP}
+    yum install -y wget zip unzip git bind-utils rsync nc tree
     ```
 
-3. (CLC): Scan for unknown SSH host keys
-
-    ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ```
-
-### Prepare External DNS
+### Initialize External DNS
 
 I will not describe this in detail here, except to note that this must be in place and working
 properly before registering services with the method outlined below, as I will be using DNS names
@@ -143,283 +117,249 @@ You should be able to resolve these names with these results:
 
 ```bash
 dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-10.104.10.21
+172.0.1.8
 
 dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-10.104.10.21
+172.0.1.8
 ```
 
 ### Initialize Dependencies
 
-1. (ALL): Configure common additional disk storage
+1. Confirm storage
 
-    The hosts which participate in this POC were created by Cobbler via kickstart with the
-    it-centos6-x86_64-bare cobbler profile.
+    This environment uses a single large DL580 populated with 2 146GB disks in a RAID 1 array
+    which appears to the OS as /dev/sda, and another 6 300GB disks in a RAID 10 array which
+    appears to the OS as /dev/sdb.
 
-    In this profile, we have 2 physical disks presented to the OS as /dev/sda and /dev/sdb.
-    In other Cobbler profiles, we typically use software raid on the physical disks, so only
-    /dev/sda is presented to the OS. But for this POC, we want to simulate hosts with hardware
-    RAID controllers, presenting multiple RAID sets as physical disks.
+    Initially manual disk and LVM configuration was done during a manual OS install. We will
+    attempt to convert this manual process to something kickstart based if time allows.
 
-    Disk sda is partitioned, with partition sda1 formatted as ext4 and mounted as /boot, and
-    partition sda2 formatted as an LVM physical disk, and assigned to volume group vg01. 
-    Logical volumes of 8GB and 20GB were created for swap and the root filesystem, also formatted
-    with ext4. 
- 
-    Here is the output of some disk commands showing the initial storage layout, before we perform
-    additional configuration.
-
-    **Physical Disks and Logical Volumes**
-
-    ```bash
-    fdisk -l
-
-    Disk /dev/sda: 1000.2 GB, 1000204886016 bytes
-    255 heads, 63 sectors/track, 121601 cylinders
-    Units = cylinders of 16065 * 512 = 8225280 bytes
-    Sector size (logical/physical): 512 bytes / 4096 bytes
-    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
-    Disk identifier: 0x0000f592
-
-       Device Boot      Start         End      Blocks   Id  System
-    /dev/sda1   *           1          33      262144   83  Linux
-    Partition 1 does not end on cylinder boundary.
-    /dev/sda2              33      121602   976498688   8e  Linux LVM
-
-    Disk /dev/sdb: 1000.2 GB, 1000204886016 bytes
-    255 heads, 63 sectors/track, 121601 cylinders
-    Units = cylinders of 16065 * 512 = 8225280 bytes
-    Sector size (logical/physical): 512 bytes / 512 bytes
-    I/O size (minimum/optimal): 512 bytes / 512 bytes
-    Disk identifier: 0x0000e434
-
-       Device Boot      Start         End      Blocks   Id  System
-
-    Disk /dev/mapper/vg01-lv_swap: 8388 MB, 8388608000 bytes
-    255 heads, 63 sectors/track, 1019 cylinders
-    Units = cylinders of 16065 * 512 = 8225280 bytes
-    Sector size (logical/physical): 512 bytes / 4096 bytes
-    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
-    Disk identifier: 0x00000000
-
-
-    Disk /dev/mapper/vg01-lv_root: 21.5 GB, 21474836480 bytes
-    255 heads, 63 sectors/track, 2610 cylinders
-    Units = cylinders of 16065 * 512 = 8225280 bytes
-    Sector size (logical/physical): 512 bytes / 4096 bytes
-    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
-    Disk identifier: 0x00000000
-    ```
-
-    **LVM Physical Disks, Volume Groups and Logical Volumes**
-
-    ```bash
-    pvscan
-      PV /dev/sda2   VG vg01   lvm2 [931.25 GiB / 903.44 GiB free]
-      Total: 1 [931.25 GiB] / in use: 1 [931.25 GiB] / in no VG: 0 [0   ]
-
-    vgscan
-      Reading all physical volumes.  This may take a while...
-      Found volume group "vg01" using metadata type lvm2
-
-    lvscan
-      ACTIVE            '/dev/vg01/lv_swap' [7.81 GiB] inherit
-      ACTIVE            '/dev/vg01/lv_root' [20.00 GiB] inherit
-    ```
-
-    **Mounted Filesystems**
+    Here is the output of some disk commands showing the storage layout created by anaconda
+    during the manual install.
 
     ```bash
     df -h
     Filesystem            Size  Used Avail Use% Mounted on
-    /dev/mapper/vg01-lv_root
-                           20G  1.1G   18G   6% /
-    tmpfs                 3.9G     0  3.9G   0% /dev/shm
-    /dev/sda1             240M   33M  195M  15% /boot
-    ```
-    
-    On all hosts, use the remaining space in the vg01 volume group for
-    /var/lib/eucalyptus.
-
-    ```bash
-    lvcreate -l 100%FREE -n eucalyptus vg01
+    /dev/mapper/local-root
+                           71G  730M   67G   2% /
+    tmpfs                  63G     0   63G   0% /dev/shm
+    /dev/sda1             477M   25M  427M   6% /boot
+    /dev/mapper/eucalyptus-eucalyptus
+                          252G   60M  240G   1% /var/lib/eucalyptus
 
     pvscan
+      PV /dev/sdb1   VG eucalyptus   lvm2 [558.73 GiB / 302.73 GiB free]
+      PV /dev/sda2   VG local        lvm2 [136.21 GiB / 0    free]
+      Total: 2 [694.93 GiB] / in use: 2 [694.93 GiB] / in no VG: 0 [0   ]
 
     vgscan
+      Reading all physical volumes.  This may take a while...
+      Found volume group "eucalyptus" using metadata type lvm2
+      Found volume group "local" using metadata type lvm2
 
     lvscan
+      ACTIVE            '/dev/eucalyptus/eucalyptus' [256.00 GiB] inherit
+      ACTIVE            '/dev/local/root' [72.21 GiB] inherit
+      ACTIVE            '/dev/local/swap' [64.00 GiB] inherit
 
-    mke2fs -t ext4 /dev/vg01/eucalyptus
 
-    e2label /dev/vg01/eucalyptus eucalyptus
+    fdisk -l
 
-    echo >> /etc/fstab
-    echo "LABEL=eucalyptus        /var/lib/eucalyptus             ext4    defaults        1 1" >> /etc/fstab
+    Disk /dev/sda: 146.8 GB, 146778685440 bytes
+    255 heads, 63 sectors/track, 17844 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 262144 bytes
+    Disk identifier: 0x000e63c1
 
-    mkdir -p /var/lib/eucalyptus
-   
-    mount /var/lib/eucalyptus
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sda1   *           1          64      512000   83  Linux
+    Partition 1 does not end on cylinder boundary.
+    /dev/sda2              64       17845   142825472   8e  Linux LVM
+
+    Disk /dev/sdb: 599.9 GB, 599932581888 bytes
+    255 heads, 63 sectors/track, 72937 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 524288 bytes
+    Disk identifier: 0x00010ae1
+
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sdb1               1       72938   585870336   8e  Linux LVM
+
+    Disk /dev/mapper/local-root: 77.5 GB, 77531709440 bytes
+    255 heads, 63 sectors/track, 9426 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 262144 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/local-swap: 68.7 GB, 68719476736 bytes
+    255 heads, 63 sectors/track, 8354 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 262144 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/eucalyptus-eucalyptus: 274.9 GB, 274877906944 bytes
+    255 heads, 63 sectors/track, 33418 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 524288 bytes
+    Disk identifier: 0x00000000
     ```
     
-2. (CLC+UFS+OSP+SC)  Configure additional disk storage for the Storage Controller
-
-    With a combined FE host, using the second disk as the LVM for EBS storage.
-
-    ```bash
-    pvcreate -Z y /dev/sdb
-
-    pvscan
-
-    vgcreate eucalyptus /dev/sdb
-    ```
-
-3. (NC)  Configure additional disk storage for the Node Controller
-
-    As we only have 2 physical disks to work with, for the NC, use of the second disk is best
-    suited to where the instance virtual disks are created.
-
-    ```bash
-    pvcreate -Z y /dev/sdb
-
-    pvscan
-
-    vgcreate eucalyptus /dev/sdb
-
-    lvcreate -l 100%FREE -n instances eucalyptus
-
-    mke2fs -t ext4 /dev/eucalyptus/instances
-    
-    e2label /dev/eucalyptus/instances instances
-    
-    echo "LABEL=instances         /var/lib/eucalyptus/instances   ext4    defaults        1 1" >> /etc/fstab
-
-    mkdir -p /var/lib/eucalyptus/instances
-   
-    mount /var/lib/eucalyptus/instances
-    ```
-
-4. (ALL): Confirm storage
-
-    ```bash
-    df -h
-
-    pvscan
-
-    vgscan
-
-    lvscan
-    ```
-
-5. (ALL): Disable zero-conf network
-
-    ```bash
-    sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
-    ```
-
-6. (NC): Install bridge utilities package
+2. Install bridge utilities package
 
     ```bash
     yum install -y bridge-utils
     ```
 
-7. (NC): Create Private Bridge
+3. Manually configure complex networking.
 
-    Move the static IP of the private interface to the private bridge
+    Currently this bridging is configured manually, with these statements.
 
     ```bash
-    private_ip=$(sed -n -e "s/^IPADDR=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-    private_netmask=$(sed -n -e "s/^NETMASK=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-    private_dns1=$(sed -n -e "s/^DNS1=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-    private_dns2=$(sed -n -e "s/^DNS2=//p" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE})
-
-    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_BRIDGE}
-    DEVICE=${EUCA_NC_PRIVATE_BRIDGE}
-    TYPE=Bridge
-    BOOTPROTO=static
-    IPADDR=$private_ip
-    NETMASK=$private_netmask
-    DNS1=$private_dns1
-    DNS2=$private_dns2
-    PERSISTENT_DHCLIENT=yes
-    ONBOOT=yes
-    DELAY=0
+    cat << EOF > /etc/modprobe.d/bonding.conf
+    alias bond0 bonding
+    options bond0 mode=4 miimon=80
     EOF
-    ```
 
-8. (NC): Convert Private Ethernet Interface to Private Bridge Slave
+    cat << EOF > /etc/sysconfig/network
+    NETWORKING=yes
+    NETWORKING_IPV6=no
+    HOSTNAME=dl580gen8a.hpccc.com
+    GATEWAY=172.0.1.1
+    NOZEROCONF=yes
+    EOF
 
-    ```bash
-    sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
-           -e "/^BOOTPROTO=/s/=.*$/=none/" \
-           -e "/^IPADDR=/d" \
-           -e "/^NETMASK=/d" \
-           -e "/^PERSISTENT_DHCLIENT=/d" \
-           -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
-    ```
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-br10
+    # Eucalyptus Public Network (172.0.1.0/24)
+    NAME=br10
+    DEVICE=br10
+    TYPE=Bridge
+    ONBOOT=yes
+    BOOTPROTO=none
+    IPADDR0=172.0.1.8
+    PREFIX0=24
+    GATEWAY0=172.0.1.1
+    DNS1=10.0.1.91
+    DNS2=10.0.1.92
+    DOMAIN="hpccc.com"
+    DEFROUTE=yes
+    PEERDNS=yes
+    PEERROUTES=yes
+    IPV6INIT=no
+    STP=no
+    PERSISTENT_DHCLIENT=yes
+    NM_CONTROLLED=no
+    EOF
 
-9. (ALL): Restart networking
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-br20
+    # Eucalyptus Private Network (172.0.2.0/24)
+    NAME=br20
+    DEVICE=br20
+    TYPE=Bridge
+    ONBOOT=yes
+    BOOTPROTO=none
+    IPADDR0=172.0.2.8
+    PREFIX0=24
+    GATEWAY0=172.0.2.1
+    DNS1=10.0.1.91
+    DNS2=10.0.1.92
+    DOMAIN="hpccc.com"
+    IPV6INIT=no
+    STP=no
+    PERSISTENT_DHCLIENT=yes
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-bond0
+    # Bonded interface into Eucalyptus Public Network (172.0.1.0/24)
+    NAME=bond0
+    DEVICE=bond0
+    TYPE=Bond
+    ONBOOT=yes
+    NETBOOT=yes
+    BOOTPROTO=none
+    BRIDGE=br10
+    IPV6INIT=no
+    PERSISTENT_DHCLIENT=yes
+    NM_CONTROLLED=no
+    BONDING_MASTER=yes
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-bond0.20
+    # Bonded interface into Eucalyptus Private Network (172.0.2.0/24)
+    NAME=bond0.20
+    DEVICE=bond0.20
+    TYPE=Vlan
+    VLAN=yes
+    VLAN_ID=20
+    PHYSDEV=bond0
+    MASTER=br20
+    BRIDGE=br20
+    ONBOOT=yes
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0
+    # em1
+    NAME=eth0
+    DEVICE=eth0
+    TYPE=Ethernet
+    HWADDR=F0:92:1C:05:EB:B8
+    ONBOOT=yes
+    NETBOOT=yes
+    BOOTPROTO=none
+    MASTER=bond0
+    SLAVE=yes
+    USERCTL=no
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth1
+    # em2
+    NAME=eth1
+    DEVICE=eth1
+    TYPE=Ethernet
+    HWADDR=F0:92:1C:05:EB:BC
+    ONBOOT=yes
+    NETBOOT=yes
+    BOOTPROTO=none
+    MASTER=bond0
+    SLAVE=yes
+    USERCTL=no
+    NM_CONTROLLED=no
+    EOF
+
+
+4. Restart networking
 
     ```bash
     service network restart
     ```
 
-10. (ALL): Confirm networking
+5. Confirm networking
 
     ```bash
     ip addr | grep " inet "
     netstat -nr
     ```
 
-11. (CLC+UFS+MC+): Disable firewall
+6. Disable firewall
 
     ```bash
-    I will come back to this later, to nail down what ports are needed for a combined FE.
+    I will come back to this later, to nail down what ports are needed for a combined host.
     Until then, just disabling IPtables
 
     chkconfig iptables off
     service iptables stop
     ```
 
-12. (NC): Configure firewall, but disable during installation
-
-    Ports to open by component
-
-    * tcp    22 - Login, Control (ALL)
-    * tcp  5005 - Debug (NC)
-    * tcp  8772 - Debug (NC)
-    * tcp  8773 - Web services (NC)
-    * tcp  8775 - Web services (NC)
-    * tcp  8778 - Multicast (NC)
-    * tcp 16514 - TLS, needed for node migrations (NC)
-
-
-    ```bash
-    cat << EOF > /etc/sysconfig/iptables
-    *filter
-    :INPUT ACCEPT [0:0]
-    :FORWARD ACCEPT [0:0]
-    :OUTPUT ACCEPT [0:0]
-    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    -A INPUT -p icmp -j ACCEPT
-    -A INPUT -i lo -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
-    -A INPUT -j REJECT --reject-with icmp-host-prohibited
-    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-    COMMIT
-    EOF
-
-    chkconfig iptables off
-    service iptables stop
-    ```
-
-13. (ALL): Disable SELinux
+7. Disable SELinux
 
     ```bash
     sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
@@ -427,7 +367,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     setenforce 0
     ```
 
-14. (ALL): Install and Configure the NTP service
+8. Install and Configure the NTP service
 
     ```bash
     yum install -y ntp
@@ -439,11 +379,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     hwclock --systohc
     ```
 
-15. (ALL) Install and Configure Mail Relay
+9. Install and Configure Mail Relay
 
-    Normally, a null relay will use DNS to find the MX records associated with the domain of the
-    host, but that is not currently set for the PRC environment. So, we are using the same
-    sub-domain as is used for other DNS base-domains, where this internal record is configured.
+    Skipping this on initial pass, until we know how EBC can route mail
 
     ```bash
     yum install -y postfix
@@ -465,8 +403,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     # INTERNET HOST AND DOMAIN NAMES
     myhostname = $(hostname)
-    #mydomain = $(hostname -d)
-    mydomain = mjc.$(hostname -d)
+    mydomain = $(hostname -d)
 
     # SENDING MAIL
     myorigin = \$mydomain
@@ -542,7 +479,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     popd
     ```
 
-16. (ALL) Install Email test client and test email
+10. Install Email test client and test email
 
     Sending to personal email address on Google Apps - Please update to use your own email address!
 
@@ -554,21 +491,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
-17. (CC): Configure packet routing
-
-    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic,
-    you will get a warning when starting the CC if this routing has not been configured, and the
-    package would turn this on at that time. So, this is to prevent that warning.
-
-    ```bash
-    sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-
-    sysctl -p
-
-    cat /proc/sys/net/ipv4/ip_forward
-    ```
-
-18. (NC): Configure packet routing
+11. Configure packet routing
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -582,7 +505,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Install Eucalyptus
 
-1. (ALL): Configure yum repositories
+1. Configure yum repositories
 
    This first set of packages is required to configure access to the Eucalyptus yum repositories
    which contain open source Eucalyptus software, and their dependencies.
@@ -594,54 +517,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
         http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
     ```
 
-    Optional: This second set of packages is required to configure access to the Eucalyptus yum
-    repositories which contain subscription-only Eucalyptus software, which requires a license.
+2. Install packages
 
     ```bash
-    yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
-    yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+    yum install -y eucalyptus-cloud eucaconsole eucalyptus-service-image eucalyptus-walrus eucalyptus-sc eucalyptus-cc eucalyptus-nc
     ```
 
-2. (ALL): Override external yum repos to internal servers
-
-    Optional: This step modifies the `mirrorlist=` value in the Eucalyptus yum repo configuration
-    files, to instead reference an internal mirrorlist service running on the odc-f-38 host on the
-    mirrorlist.mjc.prc.eucalyptus-systems.com domain. 
-
-    This internal service augments the external Eucalyptus mirrors with internal release mirrors
-    which are equivalent. The yum `fastest mirror` plugin will then favor the internal mirror
-    because it is faster. This can speed up intallations within the PRC by 4 to 6 minutes.
-
-    ```bash
-    sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
-    sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
-    ```
-
-3. (CLC+UFS+MC): Install packages
-
-    ```bash
-    yum install -y eucalyptus-cloud eucaconsole eucalyptus-service-image
-    ```
-
-4. (OSP): Install packages
-
-    ```bash
-    yum install -y eucalyptus-cloud eucalyptus-walrus
-    ```
-
-5. (SC+CC): Install packages
-
-    ```bash
-    yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
-    ```
-
-6. (NC): Install packages
-
-    ```bash
-    yum install -y eucalyptus-nc
-    ```
-
-7. (NC): Remove Devfault libvirt network.
+3. Remove Devfault libvirt network.
 
     ```bash
     virsh net-destroy default
@@ -650,7 +532,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Eucalyptus
 
-1. (CLC+UFS+MC):  1. Configure Eucalyptus Networking
+1. Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -658,43 +540,11 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
            -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CLC_PRIVATE_INTERFACE}\"/" \
            -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CLC_PUBLIC_INTERFACE}\"/" \
+           -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" \
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-2. (OSP): Configure Eucalyptus Networking
-
-    ```bash
-    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
-
-    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
-3. (SC+CC): Configure Eucalyptus Networking
-
-    ```bash
-    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
-
-    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
-4. (NC): Configure Eucalyptus Networking
-
-    ```bash
-    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
-
-    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_NC_PUBLIC_INTERFACE}\"/" \
-           -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
-5. (CLC): Create Eucalyptus EDGE Networking configuration file
+2. Create Eucalyptus EDGE Networking configuration file
 
     This can not be loaded until the cloud is initialized.
 
@@ -727,7 +577,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-6. (NC): Configure Eucalyptus Disk Allocation
+3. Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=2400000
@@ -737,7 +587,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-7. (NC): Configure Eucalyptus to use Private IP for Metadata
+4. Configure Eucalyptus to use Private IP for Metadata
 
     ```bash
     cat << EOF >> /etc/eucalyptus/eucalyptus.conf
@@ -748,20 +598,20 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-8. (CLC/OSP/SC): Configure Eucalyptus Java Memory Allocation
+5. Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
 
     ```bash
-    heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
+    #heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
     sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
 
     # Alternate method
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
+6. Configure Management Console with Cloud Controller and Walrus addresses
 
     The clchost parameter within console.ini is misleadingly named, as it should reference the
     public IP of the host running User Facing Services.
@@ -783,25 +633,25 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Start Eucalyptus
 
-1. (CLC): Initialize the Cloud Controller service
+1. Initialize the Cloud Controller service
 
     ```bash
     euca_conf --initialize
     ```
 
-2. (CLC/OSP/SC): Start the Cloud Controller service
+2. Start the Cloud Controller service
 
     ```bash
     service eucalyptus-cloud start
     ```
 
-3. (CC): Start the Cluster Controller service
+3. Start the Cluster Controller service
 
     ```bash
     service eucalyptus-cc start
     ```
 
-4. (NC): Start the Node Controller and Eucanetd services
+4. Start the Node Controller and Eucanetd services
 
     Expect failure messages due to missing keys. This will be corrected when the nodes are
     registered.
@@ -812,13 +662,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service eucanetd start
     ```
 
-5. (MC): Start the Management Console service
+5. Start the Management Console service
 
     ```bash
     service eucaconsole start
     ```
 
-6. (All): Confirm service startup
+6. Confirm service startup
 
     Confirm logs are being written.
 
@@ -828,7 +678,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Register Eucalyptus
 
-1. (CLC): Register User-Facing services
+1. Register User-Facing services
 
     Wait for CLC services to respond.
 
@@ -852,7 +702,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
-    sleep 60
     ```
 
     Wait for UFS services to respond.
@@ -882,35 +731,35 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-2. (CLC): Register Walrus as the Object Storage Provider (OSP)
+2. Register Walrus as the Object Storage Provider (OSP)
 
     ```bash
     euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
     sleep 15
     ```
 
-3. (CLC): Register Storage Controller service
+3. Register Storage Controller service
 
     ```bash
     euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
     sleep 15
     ```
 
-4. (CLC): Register Cluster Controller service
+4. Register Cluster Controller service
 
     ```bash
     euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
     sleep 15
     ```
 
-5. (CC): Register Node Controller host(s)
+5. Register Node Controller host(s)
 
     ```bash
     euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}"
     sleep 15
     ```
 
-6. (NC): Restart the Node Controller services
+6. Restart the Node Controller services
 
     The failure messages due to missing keys should no longer be there on restart.
 
@@ -920,7 +769,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Runtime Configuration
 
-1. (CLC): Use Eucalyptus Administrator credentials
+1. Use Eucalyptus Administrator credentials
 
     Note that there is a limit to the number of times the primary key and certificate
     can be downloaded, without deleting and recreating them. So, insure you do not
@@ -953,7 +802,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-2. (CLC): Confirm initial service status
+2. Confirm initial service status
 
     * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend,
       imagingbackend, and storage.
@@ -965,7 +814,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-nodes
     ```
 
-3. (CLC): Configure EBS Storage
+3. Configure EBS Storage
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -989,7 +838,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-4. (CLC): Configure Object Storage
+4. Configure Object Storage
 
     ```bash
     euca-modify-property -p objectstorage.providerclient=walrus
@@ -1006,7 +855,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-5. (CLC): Refresh Eucalyptus Administrator credentials
+5. Refresh Eucalyptus Administrator credentials
 
     As noted above, if the eucarc does not contain the environment variables for the key and
     certificate, we must patch it to add the missing variables which reference the previously
@@ -1030,14 +879,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-6. (CLC): Load Edge Network JSON configuration
+6. Load Edge Network JSON configuration
 
     ```bash
     euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     sleep 15
     ```
 
-7. (CLC): Install the imaging-worker and load-balancer images
+7. Install the imaging-worker and load-balancer images
 
     ```bash
     euca-install-load-balancer --install-default
@@ -1045,7 +894,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-install-imaging-worker --install-default
     ```
 
-8. (CLC): Confirm service status
+8. Confirm service status
 
     All services should now be in the ENABLED state.
 
@@ -1053,7 +902,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-9. (CLC): Confirm apis
+9. Confirm apis
 
     ```bash
     euca-describe-regions
@@ -1065,7 +914,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure DNS
 
-1. (CLC): Configure Eucalyptus DNS Server
+1. Configure Eucalyptus DNS Server
 
     ```bash
     euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
@@ -1075,7 +924,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
     ```
 
-2. (CLC): Configure DNS Timeout and TTL
+2. Configure DNS Timeout and TTL
 
     ```bash
     euca-modify-property -p dns.tcp.timeout_seconds=30
@@ -1083,13 +932,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p services.loadbalancing.dns_ttl=15
     ```
 
-3. (CLC): Configure DNS Domain
+3. Configure DNS Domain
 
     ```bash
     euca-modify-property -p system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
-4. (CLC): Configure DNS Sub-Domains
+4. Configure DNS Sub-Domains
 
     ```bash
     euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
@@ -1097,7 +946,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
     ```
 
-5. (CLC): Enable DNS
+5. Enable DNS
 
     ```bash
     euca-modify-property -p bootstrap.webservices.use_instance_dns=true
@@ -1105,7 +954,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
     ```
 
-6. (CLC): Refresh Eucalyptus Administrator credentials
+6. Refresh Eucalyptus Administrator credentials
  
     As noted above, if the eucarc does not contain the environment variables for the key and 
     certificate, we must patch it to add the missing variables which reference the previously 
@@ -1131,13 +980,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-7. (CLC): Display Parent DNS Server Sample Configuration (skipped)
+7. Display Parent DNS Server Sample Configuration (skipped)
 
     ```bash
     # TBD
     ```
 
-8. (CLC): Confirm DNS resolution for Services
+8. Confirm DNS resolution for Services
 
     ```bash
     dig +short compute.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
@@ -1159,7 +1008,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Minimal IAM
 
-1. (CLC): Configure Eucalyptus Administrator Password
+1. Configure Eucalyptus Administrator Password
 
     ```bash
     euare-usermodloginprofile -u admin -p password
@@ -1167,25 +1016,25 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Management Console for SSL
 
-1. (MW): Confirm Eucalyptus Console service on default port
+1. Confirm Eucalyptus Console service on default port
 
     ```bash
     Browse: http://${EUCA_MC_PUBLIC_IP}:8888
     ```
 
-2. (MC):  4. Stop Eucalyptus Console service
+2. Stop Eucalyptus Console service
 
     ```bash
     service eucaconsole stop
     ```
 
-3. (MC): Install Nginx package
+3. Install Nginx package
 
     ```bash
     yum install -y nginx
     ```
 
-4. (MC): Configure Nginx
+4. Configure Nginx
 
     ```bash
     \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
@@ -1196,14 +1045,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
     ```
 
-7. (MC): Start Nginx service
+7. Start Nginx service
 
     ```bash
     chkconfig nginx on
     service nginx start
     ```
 
-8. (MC): Configure Eucalyptus Console for SSL
+8. Configure Eucalyptus Console for SSL
 
     ```bash
     sed -i -e '/^session.secure =/s/= .*$/= true/' \
@@ -1212,13 +1061,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
     ```
 
-9. (MC): Start Eucalyptus Console service
+9. Start Eucalyptus Console service
 
     ```bash
     service eucaconsole start
     ```
 
-10. (MC): Confirm Eucalyptus Console service
+10. Confirm Eucalyptus Console service
 
     ```bash
     Browse: https://${EUCA_MC_PUBLIC_IP}
@@ -1229,7 +1078,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 Optional: If you plan on using this system to run demos, it is preferrable to run the demo setup
 scripts, which incorporate this logic as well as performing additional setup, instead.
 
-1. (CLC): Download Images
+1. Download Images
 
     ```bash
     wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
@@ -1237,158 +1086,14 @@ scripts, which incorporate this logic as well as performing additional setup, in
     xz -v -d ~/centos.raw.xz
     ```
 
-2. (CLC): Install Image
+2. Install Image
 
     ```bash
     euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm
     ```
 
-3. (CLC): List Images
+3. List Images
 
     ```bash
     euca-describe-images
     ```
-
-### Test Inter-Component Connectivity
-
-This section has not yet been confirmed for accuracy. Running this is fine, but there may be
-additonal ports we should add to ensure complete interconnectivity testing.
-
-1. (MW): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
-
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-    ```
-
-2. (CLC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-    nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CC:8774 failed!'
-    ```
-
-3. (UFS): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-    ```
-
-4. (OSP): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-    ```
-
-5. (CC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA1:8775 failed!'
-    nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA2:8775 failed!'
-    ```
-
-6. (SC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
-    ```
-
-7. (NC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
-    ```
-
-8. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
-    on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
-    available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
-    UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
-    TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
-# Manual Installation Procedure for 5-Node (3+2) POC (region hp-gol-d1)
-
-This document describes the manual procedure to setup region hp-gol-d1,
-based on a variant of the "4-node reference architecture", but combining the CLC with the UFS, and
-with 2 Node Controllers.
-
-This variant is meant to be run as root
-
-This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
-
-The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
-
-This is using the following nodes in the PRC:
-- odc-d-13: CLC, UFS, MC
-- odc-d-15: OSP (Walrus)
-- odc-d-29: CC, SC
-- odc-d-35: NC1
-- odc-d-38: NC2
-
-Each step uses a code to indicate what node the step should be run on:
-- MW:  Management Workstation
-- CLC: Cloud Controller Host
-- UFS: User-Facing Services Host
-- MC:  Management Console Host
-- OSP: Object Storage Provider (Walrus)
-- CC:  Cluster Controller Host
-- SC:  Storage Controller Host
-- NCn: Node Controller(s)
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-    ```
-
-5. (CC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA1:8775 failed!'
-    nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA2:8775 failed!'
-    nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA3:8775 failed!'
-    nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CC to NCA4:8775 failed!'
-    ```
-
-6. (SC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SC to SC:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SC to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SC to CLC:8777 failed!'
-    ```
-
-7. (NC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SC:8773 failed!'
-    ```
-
-8. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
-    on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
-    available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
-    UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
-    TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
