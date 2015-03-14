@@ -271,7 +271,7 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
       ACTIVE            '/dev/local/swap' [64.00 GiB] inherit
     ```
 
-    ** Disk Partitions**
+    **Disk Partitions**
 
     ```bash
     fdisk -l
@@ -884,7 +884,7 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 5. Register Node Controller host(s)
 
     ```bash
-    euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}"
+    euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP}"
     sleep 15
     ```
 
