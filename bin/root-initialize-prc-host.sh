@@ -182,6 +182,21 @@ sleep 1
 echo
 echo "============================================================"
 echo
+echo " $(printf '%2d' $step). Install tree"
+echo
+echo "============================================================"
+echo
+if ! rpm -q --quiet tree; then
+    echo "# yum install -y tree"
+    yum install -y tree
+fi
+sleep 1
+
+
+((++step))
+echo
+echo "============================================================"
+echo
 echo " $(printf '%2d' $step). Clone euca-demo git project"
 echo
 echo "============================================================"
