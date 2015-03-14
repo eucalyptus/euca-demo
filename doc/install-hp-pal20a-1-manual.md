@@ -26,6 +26,27 @@ Each step uses a code to indicate what node the step should be run on:
 - SC:  Storage Controller Host
 - NCn: Node Controller(s)
 
+### Hardware Configuration and Operating System Installation
+
+The hardware configuration and operating system installation were done manually for this first
+iteration of the demo, as a PXE boot and kickstart environment were not yet available.
+
+The host will eventually have 8 480GB SSD disks, configured into the following RAID groups:
+
+- Disks 1-2, RAID1, /dev/sda, used for boot (/boot), root (/), and swap.
+- Disks 3-8, RAID10, /dev/sdb, used for eucalyptus (/var/lib/eucalyptus) and EBS volumes
+
+Initiallly, the SSDs were not available, and standard 300GB disks were used for the install.
+The system will be rebuilt via these instructions once the SSDs arrive and can be installed.
+
+A manual installation of CentOS 6.6 was done via the [CentOS-6.6-x86_64-minimal.iso](http://mirrors.kernel.org/centos/6.6/isos/x86_64/CentOS-6.6-x86_64-minimal.iso) DVD. During the manual
+installation, we chose automatic disk formatting with an ability to edit to get an initial
+disk partitioning configuration, but then this was modified heavily. We switched the standard
+name of the VG which uses `sda` to "local", removed `/home` partition, increased size of swap
+to 64G (to allow for RAM overcommit). We created a new VG named eucalyptus, and an LV named
+eucalyptus which used 256G for `/var/lib/eucalyptus`. The remainder of the eucalyptus VG is
+reserved for use by the Eucalyptus Storage Controller.
+
 ### Define Parameters
 
 The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
