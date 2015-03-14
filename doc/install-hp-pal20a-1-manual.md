@@ -14,8 +14,8 @@ domain only resolves inside the EBC.
 This is using the following node in the EBC machine room:
 
 - dl580gen8a.hpccc.com: CLC+UFS+MC+Walrus+CC+SC+NC
-  - vlan10(public): 172.0.1.8/24
-  - vlan20(private): 172.0.2.8/24)
+  - Public: 172.0.1.8/24 (VLAN 10)
+  - Private: 172.0.2.8/24 (VLAN 20)
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
@@ -141,7 +141,7 @@ process, not currently available for this host.
 
     Allow members of group `wheel` to sudo with a password.
 
-    bash```
+    ```bash
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
@@ -149,7 +149,7 @@ process, not currently available for this host.
 
     Create a local profile with some useful aliases.
 
-    bash```
+    ```bash
     if [ ! -r /etc/profile.d/local.sh ]; then
         echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
         echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
@@ -164,7 +164,7 @@ process, not currently available for this host.
     - Adjust root's name in `/etc/passwd` so mail sent from root on a host is more
       easily identifed by the host's shortname.
 
-    bash```
+    ```bash
     mkdir -p ~/{bin,doc,log,.ssh}
     chmod og-rwx ~/{bin,log,.ssh}
 
@@ -176,7 +176,7 @@ process, not currently available for this host.
     This is one location where demo scripts live. We will run the demo initialization
     scripts at the completion of the installation.
 
-    bash```
+    ```bash
     if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
         mkdir -p ~/src/eucalyptus
         cd ~/src/eucalyptus
@@ -222,7 +222,7 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     `/root/anaconda-ks.cfg. To assist with any future kickstart, the disk configuration
     section (edited for order, improvements and clarity) should look like:
 
-    bash```
+    ```bash
     clearpart --all --drives=sda,sdb
     part /boot --ondisk=sda --asprimary --fstype=ext4 --name=boot --size=500
     part pv.01 --ondisk=sda --grow --size=1
@@ -241,6 +241,8 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Here is the output of some disk commands showing the storage layout created by anaconda
     during the manual install.
 
+    **Mounted Filesystems**
+
     ```bash
     df -h
     Filesystem            Size  Used Avail Use% Mounted on
@@ -250,7 +252,11 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     /dev/sda1             477M   25M  427M   6% /boot
     /dev/mapper/eucalyptus-eucalyptus
                           252G   60M  240G   1% /var/lib/eucalyptus
+    ```
 
+    **Logical Volume Management**
+
+    ```bash
     pvscan
       PV /dev/sdb1   VG eucalyptus   lvm2 [558.73 GiB / 302.73 GiB free]
       PV /dev/sda2   VG local        lvm2 [136.21 GiB / 0    free]
@@ -265,8 +271,11 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
       ACTIVE            '/dev/eucalyptus/eucalyptus' [256.00 GiB] inherit
       ACTIVE            '/dev/local/root' [72.21 GiB] inherit
       ACTIVE            '/dev/local/swap' [64.00 GiB] inherit
+    ```
 
+    ** Disk Partitions**
 
+    ```bash
     fdisk -l
 
     Disk /dev/sda: 146.8 GB, 146778685440 bytes
@@ -600,6 +609,10 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 11. Configure packet routing
 
+    This configuration is needed on a Node Controller, and used here as this environment has a 
+    single host for all components. When fully distributed, we must also configure packet routing
+    on the Cluster Controller, but in that case only the first statement below is needed.
+
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
     sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -626,14 +639,22 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 2. Install packages
 
+    Since in this environment, a single host will run all components, it's possible to install
+    all packages with a single yum command. For clarity, this step splits the package installs
+    to show the more typical separation of components into separate hosts.
+
     ```bash
     yum install -y eucalyptus-cloud eucaconsole eucalyptus-service-image
-    yum install -y eucalyptus-walrus
-    yum install -y eucalyptus-sc eucalyptus-cc
+    yum install -y eucalyptus-cloud eucalyptus-walrus
+    yum install -y eucalyptus-cloud eucalyptus-cc eucalyptus-sc
     yum install -y eucalyptus-nc
     ```
 
 3. Remove Devfault libvirt network.
+
+    The default virtual networks created during the installation of the libvirt package dependency
+    can create problems with Eucalyptus, so we remove them. They are not used in Eucalyptus
+    installations.
 
     ```bash
     virsh net-destroy default
