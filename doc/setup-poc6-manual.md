@@ -284,9 +284,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     mke2fs -t ext4 /dev/vg01/eucalyptus
 
-    e4label /dev/vg01/eucalyptus eucalyptus
+    e2label /dev/vg01/eucalyptus eucalyptus
 
-    echo "LABEL=eucalyptus /var/lib/eucalyptus ext4 defaults 1 1" >> /etc/fstab
+    echo >> /etc/fstab
+    echo "LABEL=eucalyptus        /var/lib/eucalyptus             ext4    defaults        1 1" >> /etc/fstab
 
     mkdir -p /var/lib/eucalyptus
    
@@ -317,11 +318,11 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     mke2fs -t ext4 /dev/eucalyptus/xlog
     mke2fs -t ext4 /dev/eucalyptus/archive
 
-    e4label /dev/eucalyptus/xlog xlog
-    e4label /dev/eucalyptus/archive archive
+    e2label /dev/eucalyptus/xlog xlog
+    e2label /dev/eucalyptus/archive archive
 
-    echo "LABEL=xlog /var/lib/eucalyptus/tx ext4 defaults 1 1" >> /etc/fstab
-    echo "LABEL=archive /var/lib/eucalyptus/archive ext4 defaults 1 1" >> /etc/fstab
+    echo "LABEL=xlog              /var/lib/eucalyptus/tx          ext4    defaults        1 1" >> /etc/fstab
+    echo "LABEL=archive           /var/lib/eucalyptus/archive     ext4    defaults        1 1" >> /etc/fstab
 
     mkdir -p /var/lib/eucalyptus/tx
     mkdir -p /var/lib/eucalyptus/archive
@@ -346,9 +347,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     mke2fs -t ext4 /dev/eucalyptus/bukkits
     
-    e4label /dev/eucalyptus/bukkits bukkits
+    e2label /dev/eucalyptus/bukkits bukkits
     
-    echo "LABEL=bukkits /var/lib/eucalyptus/bukkits ext4 defaults 1 1" >> /etc/fstab
+    echo "LABEL=bukkits           /var/lib/eucalyptus/bukkits     ext4    defaults        1 1" >> /etc/fstab
 
     mkdir -p /var/lib/eucalyptus/bukkits
    
@@ -387,9 +388,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     mke2fs -t ext4 /dev/eucalyptus/instances
     
-    e4label /dev/eucalyptus/instances instances
+    e2label /dev/eucalyptus/instances instances
     
-    echo "LABEL=instances /var/lib/eucalyptus/instances ext4 defaults 1 1" >> /etc/fstab
+    echo "LABEL=instances         /var/lib/eucalyptus/instances   ext4    defaults        1 1" >> /etc/fstab
 
     mkdir -p /var/lib/eucalyptus/instances
    
