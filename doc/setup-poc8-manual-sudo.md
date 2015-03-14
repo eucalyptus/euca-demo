@@ -1115,8 +1115,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 4. (NC): Start the Node Controller and Eucanetd services
 
-    Expect failure messages due to missing keys. This will be corrected when the nodes are
-    registered.
+    Expect messages about missing keys. This will be corrected when the nodes are registered.
 
     ```bash
     sudo service eucalyptus-nc start
@@ -1159,6 +1158,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     done
     ```
 
+    Register UFS services.
+
     ```bash
     sudo euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
     sleep 60
@@ -1186,9 +1187,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend
       and imagingbackend.
     * The cluster, storage and walrusbackend services should not yet be listed.
+    * sudo needed until credentials have been downloaded and sourced.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    sudo euca-describe-services | cut -f1-5
     ```
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
@@ -1262,7 +1264,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-2. (CLC): Configure EBS Storage
+2. (CLC): Confirm initial service status
+
+    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend,
+      imagingbackend, and storage.
+    * All nodes should be in the ENABLED state.
+
+    ````bash
+    euca-describe-services | cut -f1-5
+
+    euca-describe-nodes
+    ```
+
+3. (CLC): Configure EBS Storage
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1286,7 +1300,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-3. (CLC): Configure Object Storage
+4. (CLC): Configure Object Storage
 
     ```bash
     euca-modify-property -p objectstorage.providerclient=walrus
@@ -1303,7 +1317,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-4. (CLC): Refresh Eucalyptus Administrator credentials
+5. (CLC): Refresh Eucalyptus Administrator credentials
 
     As noted above, if the eucarc does not contain the environment variables for the key and
     certificate, we must patch it to add the missing variables which reference the previously
@@ -1327,14 +1341,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     source ~/creds/eucalyptus/admin/eucarc
     ```
 
-5. (CLC): Load Edge Network JSON configuration
+6. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     sleep 15
     ```
 
-6. (CLC): Install the imaging-worker and load-balancer images
+7. (CLC): Install the imaging-worker and load-balancer images
 
     ```bash
     euca-install-load-balancer --install-default
@@ -1342,7 +1356,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-install-imaging-worker --install-default
     ```
 
-7. (CLC): Confirm service status
+8. (CLC): Confirm service status
 
     All services should now be in the ENABLED state.
 
@@ -1350,10 +1364,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-services | cut -f1-5
     ```
 
-8. (CLC): Confirm apis
+9. (CLC): Confirm apis
 
     ```bash
-   euca-describe-regions
+    euca-describe-regions
+
+    euca-describe-availability-zones
+
+    euca-describe-instance-types --show-capacity
     ```
 
 ### Configure DNS
