@@ -722,7 +722,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     mydomain = mjc.$(hostname -d)
 
     # SENDING MAIL
-    myorigin = $mydomain
+    myorigin = \$mydomain
 
     sender_canonical_maps = hash:/etc/postfix/sender_canonical
 
@@ -732,7 +732,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # RELAYING MAIL (No Relay, local only)
     mynetworks = 127.0.0.0/8
 
-    relayhost = $mydomain
+    relayhost = \$mydomain
 
     # LOCAL DELIVERY (Disabled)
     mydestination =
@@ -790,12 +790,24 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     postmap sender_canonical
 
     chkconfig postfix on
-    service postfix start
+    service postfix restart
 
     popd
     ```
 
-22. (CC): Configure packet routing
+22. (ALL) Install Email test client and test email
+
+    Please update to use your own email address!
+
+    Confirm email is sent to relay by tailing /var/log/maillog on this host and on mail relay host.
+
+    ```bash
+    yum install -y mutt
+
+    echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" mcrawford@hp.com
+    ````
+
+23. (CC): Configure packet routing
 
     Note that while this is not required when using EDGE mode, as the CC no longer routes traffic, you would
     get a warning when starting the CC if this routing is not present, and it is turned on ephemerally at that
@@ -809,7 +821,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-23. (NC): Configure packet routing
+24. (NC): Configure packet routing
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
