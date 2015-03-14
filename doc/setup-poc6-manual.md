@@ -183,19 +183,244 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Initialize Dependencies
 
-1. (ALL): Disable zero-conf network
+1. (ALL): Configure common additional disk storage
+
+    The hosts which participate in this POC were created by Cobbler via kickstart 
+    with the it-centos6-x86_64-bare cobbler profile.
+
+    In this profile, we have 2 physical disks presented to the OS as /dev/sda and /dev/sdb.
+    In other Cobbler profiles, we typically use software raid on the physical disks,
+    so only /dev/sda is presented to the OS. But for this POC, we want to simulate hosts
+    with hardware RAID controllers, presenting multiple RAID sets as physical disks.
+
+    Disk sda is partitioned, with partition sda1 formatted as ext4 and mounted as /boot, 
+    and partition sda2 formatted as an LVM physical disk, and assigned to volume group vg01. 
+    Logial volumes of 8GB and 20GB were created for swap and the root filesystem, also  
+    formatted with ext4. 
+ 
+    Here is the output of some disk commands showing the initial storage layout, before we
+    perform additional configuration.
+
+    **Physical Disks and Logical Volumes**
+
+    ```bash
+    fdisk -l
+
+    Disk /dev/sda: 1000.2 GB, 1000204886016 bytes
+    255 heads, 63 sectors/track, 121601 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 4096 bytes
+    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+    Disk identifier: 0x0000f592
+
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sda1   *           1          33      262144   83  Linux
+    Partition 1 does not end on cylinder boundary.
+    /dev/sda2              33      121602   976498688   8e  Linux LVM
+
+    Disk /dev/sdb: 1000.2 GB, 1000204886016 bytes
+    255 heads, 63 sectors/track, 121601 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x0000e434
+
+       Device Boot      Start         End      Blocks   Id  System
+
+    Disk /dev/mapper/vg01-lv_swap: 8388 MB, 8388608000 bytes
+    255 heads, 63 sectors/track, 1019 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 4096 bytes
+    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/vg01-lv_root: 21.5 GB, 21474836480 bytes
+    255 heads, 63 sectors/track, 2610 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 4096 bytes
+    I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+    Disk identifier: 0x00000000
+    ```
+
+    **LVM Physical Disks, Volume Groups and Logical Volumes**
+
+    ```bash
+    pvscan
+      PV /dev/sda2   VG vg01   lvm2 [931.25 GiB / 903.44 GiB free]
+      Total: 1 [931.25 GiB] / in use: 1 [931.25 GiB] / in no VG: 0 [0   ]
+
+    vgscan
+      Reading all physical volumes.  This may take a while...
+      Found volume group "vg01" using metadata type lvm2
+
+    lvscan
+      ACTIVE            '/dev/vg01/lv_swap' [7.81 GiB] inherit
+      ACTIVE            '/dev/vg01/lv_root' [20.00 GiB] inherit
+    ```
+
+    **Mounted Filesystems**
+
+    ```bash
+    df -h
+    Filesystem            Size  Used Avail Use% Mounted on
+    /dev/mapper/vg01-lv_root
+                           20G  1.1G   18G   6% /
+    tmpfs                 3.9G     0  3.9G   0% /dev/shm
+    /dev/sda1             240M   33M  195M  15% /boot
+    ```
+    
+    On all hosts, use the remaining space in the vg01 volume group for
+    /var/lib/eucalyptus.
+
+    ```bash
+    lvcreate -l 100%FREE -n eucalyptus vg01
+
+    pvscan
+
+    vgscan
+
+    lvscan
+
+    mke2fs -t ext4 /dev/vg01/eucalyptus
+
+    e4label /dev/vg01/eucalyptus eucalyptus
+
+    echo "LABEL=eucalyptus /var/lib/eucalyptus ext4 defaults 1 1" >> /etc/fstab
+
+    mkdir -p /var/lib/eucalyptus
+   
+    mount /var/lib/eucalyptus
+    ```
+    
+2. (CLC)  Configure additional disk storage for the Cloud Controller
+
+    As we only have 2 physical disks to work with, for the CLC, use of the second disk
+    is best suited to keeping the PostgreSQL transaction logs separate from all other
+    disk activity, due to the sequential write nature of transaction logs. On many 
+    database systems, the speed at which transaction logs can be written determines
+    the maximum transactions per second rate. This second disk will also be used for a
+    separate logical volume to hold potential PostgreSQL archive logs. Normally these
+    would be kept on yet another disk, due to the potential for disk contention between
+    transactions and the log archive process, but we only have 2 disks to work with.
+
+    ```bash
+    pvcreate -Z y /dev/sdb
+
+    pvscan
+
+    vgcreate eucalyptus /dev/sdb
+
+    lvcreate -l 50%FREE xlog eucalyptus
+    lvcreate -l 50%FREE archive eucalyptus
+
+    mke2fs -t ext4 /dev/eucalyptus/xlog
+    mke2fs -t ext4 /dev/eucalyptus/archive
+
+    e4label /dev/eucalyptus/xlog xlog
+    e4label /dev/eucalyptus/archive archive
+
+    echo "LABEL=xlog /var/lib/eucalyptus/tx ext4 defaults 1 1" >> /etc/fstab
+    echo "LABEL=archive /var/lib/eucalyptus/archive ext4 defaults 1 1" >> /etc/fstab
+
+    mkdir -p /var/lib/eucalyptus/tx
+    mkdir -p /var/lib/eucalyptus/archive
+   
+    mount /var/lib/eucalyptus/tx
+    mount /var/lib/eucalyptus/archive
+    ```
+
+3. (OSP)  Configure additional disk storage for the Object Storage Provider
+
+    As we only have 2 physical disks to work with, for the OSP, use of the second disk
+    is best suited to keeping the storage buckets separate from other disk activity.
+
+    ```bash
+    pvcreate -Z y /dev/sdb
+
+    pvscan
+
+    vgcreate eucalyptus /dev/sdb
+
+    lvcreate -l 100%FREE bukkits eucalyptus
+
+    mke2fs -t ext4 /dev/eucalyptus/bukkits
+    
+    e4label /dev/eucalyptus/bukkits bukkits
+    
+    echo "LABEL=bukkits /var/lib/eucalyptus/bukkits ext4 defaults 1 1" >> /etc/fstab
+
+    mkdir -p /var/lib/eucalyptus/bukkits
+   
+    mount /var/lib/eucalyptus/bukkits
+    ```
+
+4. (SC)  Configure additional disk storage for the Storage Controller
+
+    As we only have 2 physical disks to work with, for the SC, use of the second disk
+    is best suited to an additional volume group used for the logical volumes which
+    are used for EBS volumes. Note in this case we do not explicitly create the logical
+    volumes or format filesystems on top of them, as these tasks are handled by the
+    Eucalyptus Storage Controller.
+
+    ```bash
+    pvcreate -Z y /dev/sdb
+
+    pvscan
+
+    vgcreate eucalyptus /dev/sdb
+    ```
+
+5. (NC)  Configure additional disk storage for the Node Controller
+
+    As we only have 2 physical disks to work with, for the NC, use of the second disk
+    is best suited to where the instance virtual disks are created.
+
+    ```bash
+    pvcreate -Z y /dev/sdb
+
+    pvscan
+
+    vgcreate eucalyptus /dev/sdb
+
+    lvcreate -l 100%FREE instances eucalyptus
+
+    mke2fs -t ext4 /dev/eucalyptus/instances
+    
+    e4label /dev/eucalyptus/instances instances
+    
+    echo "LABEL=instances /var/lib/eucalyptus/instances ext4 defaults 1 1" >> /etc/fstab
+
+    mkdir -p /var/lib/eucalyptus/instances
+   
+    mount /var/lib/eucalyptus/instances
+    ```
+
+7. (ALL): Confirm storage
+
+    ```bash
+    df -h
+
+    pvscan
+
+    vgscan
+
+    lvscan
+    ```
+
+8. (ALL): Disable zero-conf network
 
     ```bash
     sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
     ```
 
-2. (NC): Install bridge utilities package
+9. (NC): Install bridge utilities package
 
     ```bash
     yum -y install bridge-utils
     ```
 
-3. (NC): Create Private Bridge
+10. (NC): Create Private Bridge
 
     Move the static IP of the private interface to the private bridge
 
@@ -219,7 +444,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-4. (NC): Convert Private Ethernet Interface to Private Bridge Slave
+11. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
     ```bash
     sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
@@ -230,20 +455,20 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
     ```
 
-5. (ALL): Restart networking
+12. (ALL): Restart networking
 
     ```bash
     service network restart
     ```
 
-6. (ALL): Confirm networking
+13. (ALL): Confirm networking
 
     ```bash
     ip addr | grep " inet "
     netstat -nr
     ```
 
-7. (CLC): Configure firewall, but disable during installation
+14. (CLC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -285,7 +510,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-8. (UFS+MC): Configure firewall, but disable during installation
+15. (UFS+MC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -329,7 +554,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-9. (OSP): Configure firewall, but disable during installation
+16. (OSP): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -367,7 +592,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-10. (SC+CC): Configure firewall, but disable during installation
+17. (SC+CC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -407,7 +632,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-11. (NC): Configure firewall, but disable during installation
+18. (NC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -445,7 +670,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-12. (ALL): Disable SELinux
+19. (ALL): Disable SELinux
 
     ```bash
     sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
@@ -453,10 +678,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     setenforce 0
     ```
 
-13. (ALL): Install and Configure the NTP service
+20. (ALL): Install and Configure the NTP service
 
     ```bash
-    yum -y install ntp
+    yum install -y ntp
 
     chkconfig ntpd on
     service ntpd start
@@ -465,13 +690,111 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     hwclock --systohc
     ```
 
-14. (CLC) Install and Configure Mail Relay
+21. (ALL) Install and Configure Mail Relay
+
+    Normally, a null relay will use DNS to find the MX records associated with
+    the domain of the host, but that is not currently set for the PRC environment.
+    So, we are using the same sub-domain as is used for other DNS base-domains, 
+    where this internal record is configured.
 
     ```bash
-    # TBD - see existing Postfix null client configurations
+    yum install -y postfix
+
+    pushd /etc/postfix
+
+    cp -a main.cf main.cf.orig
+
+    cat << EOF > main.cf
+    #
+    # Postfix Null Client Configuration
+    #
+    # This configuration file defines an internal null mail client
+    # - Accepts mail from this host only
+    # - Does not accept mail from the network
+    # - Does not relay mail
+    # - Does not deliver local mail
+    #
+
+    # INTERNET HOST AND DOMAIN NAMES
+    myhostname = $(hostname)
+    #mydomain = $(hostname -d)
+    mydomain = mjc.$(hostname -d)
+
+    # SENDING MAIL
+    myorigin = $mydomain
+
+    sender_canonical_maps = hash:/etc/postfix/sender_canonical
+
+    # RECEIVING MAIL (Only local mail)
+    inet_interfaces = localhost
+
+    # RELAYING MAIL (No Relay, local only)
+    mynetworks = 127.0.0.0/8
+
+    relayhost = $mydomain
+
+    # LOCAL DELIVERY (Disabled)
+    mydestination =
+    local_transport = error:local delivery is disabled
+    alias_maps = 
+    EOF
+
+    cp -a master.cf master.cf.orig
+
+    cat << EOF > master.cf
+    #
+    # Postfix Null Client Master Configuration
+    #
+    # This configuration file defines an internal null mail client
+    # - Accepts mail from this host only
+    # - Does not accept mail from the network
+    # - Does not relay mail
+    # - Does not deliver local mail
+    #
+    # ==========================================================================
+    # service type  private unpriv  chroot  wakeup  maxproc command + args
+    #               (yes)   (yes)   (yes)   (never) (100)
+    # ==========================================================================
+    smtp      inet  n       -       n       -       -       smtpd
+    pickup    fifo  n       -       n       60      1       pickup
+    cleanup   unix  n       -       n       -       0       cleanup
+    qmgr      fifo  n       -       n       300     1       qmgr
+    tlsmgr    unix  -       -       n       1000?   1       tlsmgr
+    rewrite   unix  -       -       n       -       -       trivial-rewrite
+    bounce    unix  -       -       n       -       0       bounce
+    defer     unix  -       -       n       -       0       bounce
+    trace     unix  -       -       n       -       0       bounce
+    verify    unix  -       -       n       -       1       verify
+    flush     unix  n       -       n       1000?   0       flush
+    proxymap  unix  -       -       n       -       -       proxymap
+    smtp      unix  -       -       n       -       -       smtp
+    relay     unix  -       -       n       -       -       smtp
+            -o fallback_relay=
+    #       -o smtp_helo_timeout=5 -o smtp_connect_timeout=5
+    showq     unix  n       -       n       -       -       showq
+    error     unix  -       -       n       -       -       error
+    discard   unix  -       -       n       -       -       discard
+    anvil     unix  -       -       n       -       1       anvil
+    scache    unix  -       -       n       -       1       scache
+    EOF
+
+    cat << EOF > sender_canonical
+    #
+    # Postfix Sender Canonical Map
+    #
+
+    root	$(hostname -s)
+    EOF
+
+    postmap sender_canonical
+
+    chkconfig postfix on
+    service postfix start
+
+    popd
     ```
 
-15. (CC): Configure packet routing
+22. (CC): Configure packet routing
 
     Note that while this is not required when using EDGE mode, as the CC no longer routes traffic, you would
     get a warning when starting the CC if this routing is not present, and it is turned on ephemerally at that
@@ -485,7 +808,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-16. (NC): Configure packet routing
+23. (NC): Configure packet routing
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -816,6 +1139,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (CLC): Use Eucalyptus Administrator credentials
 
+    Note that there is a limit to the number of times the primary key and certificate
+    can be downloaded, without deleting and recreating them. So, insure you do not
+    accidentally delete any primary key or certificate files when refreshing credentials
+    on steps further down in this procedure.
+
+    Additionally, if `euca_conf --get-credentials` or `euca-get-credentials` is called
+    to refresh credentials, and the key or certificate is not included in the download
+    zip file because they were previously downloaded, the included eucarc file will be
+    missing two lines which set the EC2_PRIVATE_KEY and EC2_CERT environment variables
+    to the (now missing) files. This causes all image related API calls to fail.
+
+    To work around this issue, we must save the original eucarc file, and insure we do
+    not delete the original key and certificate files, and replace the missing lines
+    within eucarc on each refresh of credentials.
+
     ```bash
     mkdir -p ~/creds/eucalyptus/admin
 
@@ -825,6 +1163,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
 
+    cp -a ~/creds/eucalyptus/admin/eucarc ~/creds/eucalyptus/admin/eucarc.orig
+
     cat ~/creds/eucalyptus/admin/eucarc
 
     source ~/creds/eucalyptus/admin/eucarc
@@ -832,17 +1172,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 2. (CLC): Configure EBS Storage
 
-    ```bash
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=overlay
-    ```
-
-    or
+    This step assumes additional storage configuration as described above was done,
+    and there is an empty volume group named `eucalyptus` on the Storage Controller
+    intended for DAS storage mode Logical Volumes.
 
     ```bash
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
 
-    #euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/sdb # Specfify RAID volume or raw disk
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=/dev/vg01 # Specfify Volume Group
+    euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=eucalyptus
     ```
 
     Optional: Wait a few seconds for the property change to go into effect, then confirm service status.
@@ -873,12 +1210,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 4. (CLC): Refresh Eucalyptus Administrator credentials
 
+    As noted above, if the eucarc does not contain the environment variables for the key and certificate,
+    we must patch it to reference the previously downloaded versions of the key and certificate files.
+
     ```bash
     rm -f ~/creds/eucalyptus/admin.zip
 
     euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
 
     unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    fi
 
     cat ~/creds/eucalyptus/admin/eucarc
 
@@ -957,6 +1303,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 6. (CLC): Refresh Eucalyptus Administrator credentials
 
+    As noted above, if the eucarc does not contain the environment variables for the key and certificate,
+    we must patch it to reference the previously downloaded versions of the key and certificate files.
+
     ```bash
     mkdir -p ~/creds/eucalyptus/admin
 
@@ -965,6 +1314,12 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
 
     unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    fi
 
     cat ~/creds/eucalyptus/admin/eucarc
 
