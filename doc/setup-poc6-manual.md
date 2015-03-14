@@ -312,8 +312,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     vgcreate eucalyptus /dev/sdb
 
-    lvcreate -l 50%FREE xlog eucalyptus
-    lvcreate -l 50%FREE archive eucalyptus
+    lvcreate -l 50%FREE -n xlog eucalyptus
+    lvcreate -l 100%FREE -n archive eucalyptus
 
     mke2fs -t ext4 /dev/eucalyptus/xlog
     mke2fs -t ext4 /dev/eucalyptus/archive
@@ -343,7 +343,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     vgcreate eucalyptus /dev/sdb
 
-    lvcreate -l 100%FREE bukkits eucalyptus
+    lvcreate -l 100%FREE -n bukkits eucalyptus
 
     mke2fs -t ext4 /dev/eucalyptus/bukkits
     
@@ -384,7 +384,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     vgcreate eucalyptus /dev/sdb
 
-    lvcreate -l 100%FREE instances eucalyptus
+    lvcreate -l 100%FREE -n instances eucalyptus
 
     mke2fs -t ext4 /dev/eucalyptus/instances
     
