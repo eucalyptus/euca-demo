@@ -550,8 +550,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     COMMIT
     EOF
 
-    sudo  iptables on
-    sudo  iptables stop
+    sudo chkconfig iptables on
+    sudo service iptables stop
     ```
 
 15. (UFS+MC): Configure firewall, but disable during installation
@@ -892,6 +892,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
     repositories which contain subscription-only Eucalyptus software, which requires a license.
 
+    ```bash
     sudo yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
     sudo yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
