@@ -331,7 +331,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo e2label /dev/vg01/eucalyptus eucalyptus
 
     echo | sudo tee -a /etc/fstab > /dev/null
-    echo "LABEL=eucalyptus        /var/lib/eucalyptus             ext4    defaults        1 1" sudo tee -a /etc/fstab > /dev/null
+    echo "LABEL=eucalyptus        /var/lib/eucalyptus             ext4    defaults        1 1" | sudo tee -a /etc/fstab > /dev/null
 
     sudo mkdir -p /var/lib/eucalyptus
    
