@@ -32,6 +32,43 @@ Each step uses a code to indicate what node the step should be run on:
 - NCAn: Node Controller(s) (Cluster A)
 - NCBn: Node Controller(s) (Cluster B)
 
+### Configure sudo
+
+This variant of the manual procedure is designed to be run from a normal user account which has
+been configured to allow sudo. This section describes what steps related to sudo were done for 
+this poc. This is an example - others may configure sudo differently.
+
+These steps must be run as root. However, once these steps are done, all remaining sections can
+be run as a user who is in the `wheel` and/or `eucalyptus-install` groups as a secondary member.
+
+Configure sudo so that members of the group `wheel` can sudo **with** a password. Note that this
+is now standard behavior for EL 7, and was a very common convention in earlier versions. This
+adjustment is not specific to Eucalyptus hosts.
+
+```bash
+sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
+```
+
+Optional: Configure sudo so that members of the group `eucalyptus-install` can sudo **without** a
+password. This adjustment **is** specific to Eucalyptus, and can eliminate sudo asking for the user
+password, but at the cost of some increased security risk. It is recommended that users be removed
+from this group, and this group and associated sudo policy be removed once Eucalyptus installation
+and testing has been completed.
+
+```bash
+groupadd -r eucalyptus-install
+
+echo '%eucalyptus-install ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/eucalyptus-install
+
+chmod 0440 /etc/sudoers.d/eucalyptus-install
+```
+
+Add the user who will install Eucalyptus to the `wheel` and/or `eucalyptus-install` groups as a secondary member.
+
+```bash
+usermod -a -G wheel,eucalyptus-install ${user}
+```
+
 ### Define Parameters
 
 The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
