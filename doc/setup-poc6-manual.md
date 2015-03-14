@@ -797,14 +797,14 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 22. (ALL) Install Email test client and test email
 
-    Please update to use your own email address!
+    Sending to personal email address on Google Apps - Please update to use your own email address!
 
     Confirm email is sent to relay by tailing /var/log/maillog on this host and on mail relay host.
 
     ```bash
     yum install -y mutt
 
-    echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" mcrawford@hp.com
+    echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
 23. (CC): Configure packet routing
