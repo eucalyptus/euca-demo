@@ -68,36 +68,31 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_UFS_PUBLIC_INTERFACE=em1
     export EUCA_UFS_PRIVATE_INTERFACE=em2
-    export EUCA_UFS_PUBLIC_IP=10.104.10.83
-    export EUCA_UFS_PRIVATE_IP=10.105.10.83
+    export EUCA_UFS_PUBLIC_IP=10.104.10.84
+    export EUCA_UFS_PRIVATE_IP=10.105.10.84
 
     export EUCA_MC_PUBLIC_INTERFACE=em1
     export EUCA_MC_PRIVATE_INTERFACE=em2
-    export EUCA_MC_PUBLIC_IP=10.104.10.83
-    export EUCA_MC_PRIVATE_IP=10.105.10.83
+    export EUCA_MC_PUBLIC_IP=10.104.10.84
+    export EUCA_MC_PRIVATE_IP=10.105.10.84
 
     export EUCA_OSP_PUBLIC_INTERFACE=em1
     export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PUBLIC_IP=10.104.10.85
     export EUCA_OSP_PRIVATE_IP=10.105.10.85
 
-    export EUCA_CC_PUBLIC_INTERFACE=em1
-    export EUCA_CC_PRIVATE_INTERFACE=em2
-    export EUCA_CC_PUBLIC_IP=10.104.1.208
-    export EUCA_CC_PRIVATE_IP=10.105.1.208
+    export EUCA_CCA_PUBLIC_INTERFACE=em1
+    export EUCA_CCA_PRIVATE_INTERFACE=em2
+    export EUCA_CCA_PUBLIC_IP=10.104.1.208
+    export EUCA_CCA_PRIVATE_IP=10.105.1.208
 
-    export EUCA_SC_PUBLIC_INTERFACE=em1
-    export EUCA_SC_PRIVATE_INTERFACE=em2
-    export EUCA_SC_PUBLIC_IP=10.104.1.208
-    export EUCA_SC_PRIVATE_IP=10.105.1.208
+    export EUCA_SCA_PUBLIC_INTERFACE=em1
+    export EUCA_SCA_PRIVATE_INTERFACE=em2
+    export EUCA_SCA_PUBLIC_IP=10.104.1.208
+    export EUCA_SCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
-    export EUCA_NC_PUBLIC_INTERFACE=em1
-
-    export EUCA_NC1_PUBLIC_IP=10.104.1.190
-    export EUCA_NC1_PRIVATE_IP=10.105.1.190
-
     export EUCA_NC2_PUBLIC_IP=10.104.1.187
     export EUCA_NC2_PRIVATE_IP=10.105.1.187
     ```
@@ -114,7 +109,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     send and receive dummy traffic to confirm there are no external firewall or routing issues,
     prior to their removal and replacement with the actual packages
 
-2. (CLC/OSP/SC): Run tomography tool
+2. (CLC+UFS/OSP/SC): Run tomography tool
 
     This tool should be run simultaneously on all hosts running Java components.
 
@@ -281,7 +276,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     mount /var/lib/eucalyptus
     ```
     
-2. (CLC)  Configure additional disk storage for the Cloud Controller
+2. (CLC+UFS+MC)  Configure additional disk storage for the Cloud Controller
 
     As we only have 2 physical disks to work with, for the CLC, use of the second disk is best
     suited to keeping the PostgreSQL transaction logs separate from all other disk activity, due to
@@ -801,6 +796,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
     repositories which contain subscription-only Eucalyptus software, which requires a license.
 
+    ```bash
     yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
@@ -1506,6 +1502,77 @@ additonal ports we should add to ensure complete interconnectivity testing.
     ```bash
     nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
     nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
+    ```
+
+8. (Other): Verify Connectivity
+
+  Use additional commands to verify the following:
+
+  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
+    on TCP port 8773
+  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
+    available port in range 8779-8849)
+  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
+  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
+    UDP port 8773
+  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
+  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
+    TCP port 3260
+  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
+
+# Manual Installation Procedure for 5-Node (3+2) POC (region hp-gol-d1)
+
+This document describes the manual procedure to setup region hp-gol-d1,
+based on a variant of the "4-node reference architecture", but combining the CLC with the UFS, and
+with 2 Node Controllers.
+
+This variant is meant to be run as root
+
+This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
+
+The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
+
+This is using the following nodes in the PRC:
+- odc-d-13: CLC, UFS, MC
+- odc-d-15: OSP (Walrus)
+- odc-d-29: CC, SC
+- odc-d-35: NC1
+- odc-d-38: NC2
+
+Each step uses a code to indicate what node the step should be run on:
+- MW:  Management Workstation
+- CLC: Cloud Controller Host
+- UFS: User-Facing Services Host
+- MC:  Management Console Host
+- OSP: Object Storage Provider (Walrus)
+- CC:  Cluster Controller Host
+- SC:  Storage Controller Host
+- NCn: Node Controller(s)
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
+    ```
+
+5. (CC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
+    nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
+    nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
+    nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
+    ```
+
+6. (SC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
+    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
+    ```
+
+7. (NC): Verify Connectivity
+
+    ```bash
+    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
+    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
     ```
 
 8. (Other): Verify Connectivity
