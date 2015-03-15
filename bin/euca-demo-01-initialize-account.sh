@@ -480,14 +480,14 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm"
+    echo "euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm"
-        euca-install-image -b images -r x86_64 -i ~/centos.raw -n centos65 --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+        echo "# euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm"
+        euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
         next
     fi
