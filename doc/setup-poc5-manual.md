@@ -11,11 +11,11 @@ This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
 The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 
 This is using the following nodes in the PRC:
-- odc-d-13: CLC, UFS, MC
-- odc-d-15: OSP (Walrus)
-- odc-d-29: CC, SC
-- odc-d-35: NC1
-- odc-d-38: NC2
+- odc-d-13 (em1: 10.104.10.83/16, em2: 10.105.10.83/16): CLC, UFS, MC
+- odc-d-15 (em1: 10.104.10.85/16, em2: 10.105.10.85/16): OSP (Walrus)
+- odc-d-29 (em1: 10.104.1.208/16, em2: 10.105.1.208/16): CC, SC
+- odc-d-35 (em1: 10.104.1.190/16, em2: 10.105.1.190/16): NC1
+- odc-d-38 (em1: 10.104.1.187/16, em2: 10.105.1.187/16): NC2
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
@@ -93,6 +93,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
+    export EUCA_NC_PUBLIC_INTERFACE=em1
+
+    export EUCA_NC1_PUBLIC_IP=10.104.1.190
+    export EUCA_NC1_PRIVATE_IP=10.105.1.190
+
     export EUCA_NC2_PUBLIC_IP=10.104.1.187
     export EUCA_NC2_PRIVATE_IP=10.105.1.187
     ```

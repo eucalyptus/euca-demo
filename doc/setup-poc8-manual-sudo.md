@@ -10,14 +10,14 @@ This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
 The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
 
 This is using the following nodes in the PRC:
-- odc-d-13: CLC
-- odc-d-14: UFS, MC
-- odc-d-15: OSP (Walrus)
-- odc-d-29: CCA, SCA
-- odc-d-35: NCA1
-- odc-d-38: NCA2
-- odc-f-14: NCA3 (temporary)
-- odc-f-17: NCA4 (temporary)
+- odc-d-13 (em1: 10.104.10.83/16, em2: 10.105.10.83/16): CLC
+- odc-d-14 (em1: 10.104.10.84/16, em2: 10.105.10.84/16): UFS, MC
+- odc-d-15 (em1: 10.104.10.85/16, em2: 10.105.10.85/16): OSP (Walrus)
+- odc-d-29 (em1: 10.104.1.208/16, em2: 10.105.1.208/16): CCA, SCA
+- odc-d-35 (em1: 10.104.1.190/16, em2: 10.105.1.190/16): NCA1
+- odc-d-38 (em1: 10.104.1.187/16, em2: 10.105.1.187/16): NCA2
+- odc-f-14 (em1: 10.104.10.56/16, em2: 10.105.10.56/16): NCA3 (temporary)
+- odc-f-17 (em1: 10.104.10.59/16, em2: 10.105.10.59/16): NCA4 (temporary)
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
