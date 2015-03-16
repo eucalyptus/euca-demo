@@ -963,7 +963,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     {
       "InstanceDnsDomain": "${EUCA_DNS_INSTANCE_SUBDOMAIN}.${EUCA_DNS_PRIVATE_DOMAIN}",
       "InstanceDnsServers": [
-        "${EUCA_DNS_PARENT_IP}"
+        "${EUCA_CLC_PUBLIC_IP}"
       ],
       "PublicIps": [
         "${EUCA_PUBLIC_IP_RANGE}"
