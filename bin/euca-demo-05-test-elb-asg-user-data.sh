@@ -50,18 +50,20 @@ speed=100
 account=demo
 gui=0
 consoleurl=${EUCA_CONSOLE_URL:-https://$(hostname)}
+instances=2
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g] [-c url]"
-    echo "  -I          non-interactive"
-    echo "  -s          slower: increase pauses by 25%"
-    echo "  -f          faster: reduce pauses by 25%"
-    echo "  -a account  account to use in demos (default: $account)"
-    echo "  -g          add steps and time to demo GUI in another window"
-    echo "  -c url      console url (default: $consoleurl)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g] [-c url] [-n instances]"
+    echo "  -I            non-interactive"
+    echo "  -s            slower: increase pauses by 25%"
+    echo "  -f            faster: reduce pauses by 25%"
+    echo "  -a account    account to use in demos (default: $account)"
+    echo "  -g            add steps and time to demo GUI in another window"
+    echo "  -c url        console url (default: $consoleurl)"
+    echo "  -n instances  number of instances to create in autoscale group (default: $instances)"
 }
 
 run() {
@@ -144,7 +146,7 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:gc:? arg; do
+while getopts Isfa:gc:n:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
@@ -152,6 +154,7 @@ while getopts Isfa:gc:? arg; do
     a)  account="$OPTARG";;
     g)  gui=1;;
     c)  consoleurl="$OPTARG";;
+    n)  instances="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -550,7 +553,7 @@ echo
 echo "euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
 echo "                                          --availability-zones $zone \\"
 echo "                                          --load-balancers DemoELB \\"
-echo "                                          --min-size 2 --max-size 4 --desired-capacity 2"
+echo "                                          --min-size $instances --max-size $((instances*2)) --desired-capacity $instances"
 echo
 echo "euscale-describe-auto-scaling-groups DemoASG"
 echo
@@ -563,11 +566,11 @@ if [ $choice = y ]; then
     echo "# euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
     echo ">                                           --availability-zones $zone \\"
     echo ">                                           --load-balancers DemoELB \\"
-    echo ">                                           --min-size 2 --max-size 4 --desired-capacity 2"
+    echo ">                                           --min-size $instances --max-size $((instances*2)) --desired-capacity $instances"
     euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \
                                               --availability-zones $zone \
                                               --load-balancers DemoELB \
-                                              --min-size 2 --max-size 4 --desired-capacity 2
+                                              --min-size $instances --max-size $((instances*2)) --desired-capacity $instances
     pause
 
     echo "# euscale-describe-auto-scaling-groups DemoASG"
