@@ -921,18 +921,29 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-3. (SC+CC): Configure Eucalyptus Networking
+3. (CCA+SCA): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
     sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CCA_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CCA_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CCA_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-4. (NC): Configure Eucalyptus Networking
+4. (CCB+SCB): Configure Eucalyptus Networking
+
+    ```bash
+    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CCB_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CCB_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CCB_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
+
+5. (NC): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -943,7 +954,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-5. (CLC): Create Eucalyptus EDGE Networking configuration file
+6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
     This can not be loaded until the cloud is initialized.
 
@@ -989,7 +1000,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-6. (NC): Configure Eucalyptus Disk Allocation
+7. (NC): Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=2400000
@@ -999,7 +1010,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-7. (NC): Configure Eucalyptus to use Private IP for Metadata
+8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
     ```bash
     cat << EOF >> /etc/eucalyptus/eucalyptus.conf
@@ -1010,7 +1021,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-8. (CLC+UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+9. (CLC+UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
