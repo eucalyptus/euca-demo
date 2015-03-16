@@ -1162,7 +1162,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 4. (CLC): Register Cluster Controller services
 
     ```bash
-    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER2_CC_NAME} -H ${EUCA_CCB_PRIVATE_IP}
+    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
     euca_conf --register-cluster -P ${EUCA_CLUSTER2} -C ${EUCA_CLUSTER2_CC_NAME} -H ${EUCA_CCB_PRIVATE_IP}
     sleep 15
     ```
