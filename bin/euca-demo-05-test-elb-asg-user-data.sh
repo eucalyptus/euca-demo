@@ -1033,7 +1033,7 @@ echo "      and confirm a replacement Instance is created with the new"
 echo "      LaunchConfiguration and User-Data Script"
 echo "    - Wait for a replacement instance to be \"InService\""
 echo "    - When done, one instance will use the new LaunchConfiguration,"
-echo "      while the other will still use the old LaunchConfiguration"
+echo "      while the other(s) will still use the old LaunchConfiguration"
 echo "      (normally we'd iterate through all instances when updating the application)"
 echo "    - NOTE: This can take about 140 - 200 seconds (per instance)"
 if [ $gui = 1 ];  then
@@ -1072,11 +1072,11 @@ if [ $choice = y ]; then
             echo "# eulb-describe-instance-health DemoELB"
             eulb-describe-instance-health DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
             
-            if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge 2 ]; then
+            if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge $instances ]; then
                 break
             else
                 echo
-                echo -n "At least 2 instances are not \"InService\". Waiting $seconds seconds..."
+                echo -n "At least $instances instances are not \"InService\". Waiting $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi
