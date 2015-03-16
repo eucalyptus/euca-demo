@@ -4,20 +4,22 @@
 # LaunchConfiguration, AutoScalingGroup, ScalingPolicy, Alarms, 
 # Instances and User-Data Scripts.
 #
-# It should only be run on the Cloud Controller host.
+# This script was originally designed to run on a combined CLC+UFS+MC host,
+# as installed by FastStart or the Cloud Administrator Course. To run this
+# on an arbitrary management workstation, you will need to move the demo
+# account admin user's credentials zip file to ~/creds/<demo_account_name>/admin.zip
+# then expand it's contents into the ~/creds/<demo_account_name>/admin/ directory
+# Additionally, if you want to use the -g flag to pause while showing GUI 
+# aspects, you will need to set the EUCA_CONSOLE_URL environment variable
+# or specify the -c url parameter to the appropriate value.
 #
-# It can be run on top of a new FastStart install,
-# or on top of a new Cloud Administrator Course manual install.
+# Before running this (or any other demo script in the euca-demo project),
+# you should run the euca-demo-01-initialize-account.sh as the eucalyptus
+# administrator, and the euca-demo-02-initialize-dependencies.sh as the demo
+# account administrator, to setup common dependencies required by all demos.
 #
 
 #  1. Initalize Environment
-
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
@@ -47,17 +49,19 @@ interactive=1
 speed=100
 account=demo
 gui=0
+consoleurl=${EUCA_CONSOLE_URL:-https://$(hostname)}
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g] [-c url]"
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
     echo "  -a account  account to use in demos (default: $account)"
     echo "  -g          add steps and time to demo GUI in another window"
+    echo "  -c url      console url (default: $consoleurl)"
 }
 
 run() {
@@ -140,13 +144,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:g? arg; do
+while getopts Isfa:gc:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     a)  account="$OPTARG";;
     g)  gui=1;;
+    c)  consoleurl="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -324,7 +329,7 @@ if [ $choice = y ]; then
 
     if [ $gui = 1 ]; then
         echo
-        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "Browse: ${consoleurl}/?account=$account&username=admin"
         echo "        to confirm resources via management console"
 
         next 400
@@ -755,7 +760,7 @@ if [ $choice = y ]; then
 
     if [ $gui = 1 ]; then
         echo
-        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "Browse: ${consoleurl}/?account=$account&username=admin"
         echo "        to confirm resources via management console"
 
         next 400
@@ -1078,7 +1083,7 @@ if [ $choice = y ]; then
 
     if [ $gui = 1 ]; then
         echo
-        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "Browse: ${consoleurl}/?account=$account&username=admin"
         echo "        to confirm resources via management console"
 
         next 400
@@ -1375,7 +1380,7 @@ if [ $choice = y ]; then
 
     if [ $gui = 1 ]; then
         echo
-        echo "Browse: http://$EUCA_MC_PUBLIC_IP:8888/?account=$account&username=admin"
+        echo "Browse: ${consoleurl}/?account=$account&username=admin"
         echo "        to confirm resources via management console"
 
         next 400

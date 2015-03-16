@@ -20,13 +20,6 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
