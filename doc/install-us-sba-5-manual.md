@@ -21,7 +21,7 @@ This POC will use **us-sba-5** as the AWS_DEFAULT_REGION.
 
 The full parent DNS domain will be us-sba-5.mjcconsulting.com.
 
-This is using the following nodes in the PRC:
+This is using the following virtual and physical hosts in the MCrawford home virtualization environment:
 - mjcsbateucaclc01 (virtual,  eth0: 10.0.14.48/24, eth1: 10.0.30.48/24, eth2: 10.0.46.48): CLC
 - mjcsbateucaufs01 (virtual,  eth0: 10.0.14.49/24, eth1: 10.0.30.49/24, eth2: 10.0.46.49): UFS+MC
 - mjcsbateucaosp01 (virtual,  eth0: 10.0.14.50/24, eth1: 10.0.30.50/24, eth2: 10.0.46.50): OSP (Walrus)
@@ -123,58 +123,15 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_NC1_STORAGE_IP=10.0.46.17
     ```
 
-### Prepare Network
+### Install Miscellaneous Packages
 
-1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
-
-    The purpose of this section is to confirm external network dependencies are configured properly
-    for Eucalyptus network traffic.
-
-    TBD: Validate protocol source:port to dest:port traffic
-    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
-    send and receive dummy traffic to confirm there are no external firewall or routing issues,
-    prior to their removal and replacement with the actual packages
-
-2. (CLC/UFS/OSP/SC): Run tomography tool
-
-    This tool should be run simultaneously on all hosts running Java components.
+1. (ALL) Install packages
 
     ```bash
-    yum install -y java
-
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SC_PRIVATE_IP}
+    yum install -y wget zip unzip git
     ```
 
-3. (CLC): Scan for unknown SSH host keys
-
-    ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ```
-
-4. (CC): Scan for unknown SSH host keys
-
-    ```bash
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ```
-
-### Prepare External DNS
+### Initialize External DNS
 
 I will not describe this in detail here, except to note that this must be in place and working
 properly before registering services with the method outlined below, as I will be using DNS names
@@ -573,16 +530,16 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Virtual-SAN VLANs.
 
     Currently this bridging is configured manually, with these statements.
-
+ 
     ```bash
-    cat /etc/sysconfig/network
+    cat << EOF > /etc/sysconfig/network
     NETWORKING=yes
     NETWORKING_IPV6=no
     HOSTNAME=mjcsbapvs02.sba.mjcconsulting.com
     GATEWAY=10.0.14.1
     NOZEROCONF=yes
     EOF
-
+ 
     cat << EOF > /etc/sysconfig/network-scripts/ifcfg-br14
     # MJC Consulting Santa Barbara Virtual Zone
     NAME=br14
@@ -629,7 +586,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     NM_CONTROLLED=no
     EOF
 
-    cat /etc/sysconfig/network-scripts/ifcfg-br46
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-br46
     # MJC Consulting Santa Barbara Virtual-SAN Zone
     NAME=br46
     DEVICE=br46
@@ -645,6 +602,49 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     IPV6INIT=no
     STP=no
     PERSISTENT_DHCLIENT=yes
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0
+    # MJC Consulting Santa Barbara Virtual Zone
+    NAME=eth0
+    DEVICE=eth0
+    TYPE=Ethernet
+    HWADDR=74:D4:35:C6:0D:FF
+    ONBOOT=yes
+    NETBOOT=yes
+    BOOTPROTO=none
+    BRIDGE=br14
+    IPV6INIT=no
+    PERSISTENT_DHCLIENT=yes
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0.30
+    # MJC Consulting Santa Barbara Virtual-Private Zone
+    NAME=eth0.30
+    DEVICE=eth0.30
+    TYPE=Vlan
+    VLAN=yes
+    VLAN_ID=30
+    PHYSDEV=eth0
+    MASTER=br30
+    BRIDGE=br30
+    ONBOOT=yes
+    NM_CONTROLLED=no
+    EOF
+
+    cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0.46
+    # MJC Consulting Santa Barbara Virtual-Storage Zone
+    NAME=eth0.46
+    DEVICE=eth0.46
+    TYPE=Vlan
+    VLAN=yes
+    VLAN_ID=46
+    PHYSDEV=eth0
+    MASTER=br46
+    BRIDGE=br46
+    ONBOOT=yes
     NM_CONTROLLED=no
     EOF
     ```
@@ -1032,6 +1032,57 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     cat /proc/sys/net/ipv4/ip_forward
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    ```
+
+### Prepare Network
+ 
+1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+ 
+    The purpose of this section is to confirm external network dependencies are configured properly
+    for Eucalyptus network traffic.
+ 
+    TBD: Validate protocol source:port to dest:port traffic
+    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
+    send and receive dummy traffic to confirm there are no external firewall or routing issues,
+    prior to their removal and replacement with the actual packages
+ 
+2. (CLC/UFS/OSP/SC): Run tomography tool
+ 
+    This tool should be run simultaneously on all hosts running Java components.
+ 
+    ```bash
+    yum install -y java
+ 
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+ 
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SC_PRIVATE_IP}
+    ```
+ 
+3. (CLC): Scan for unknown SSH host keys
+ 
+    ```bash
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ```
+ 
+4. (CC): Scan for unknown SSH host keys
+ 
+    ```bash
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 ### Install Eucalyptus
