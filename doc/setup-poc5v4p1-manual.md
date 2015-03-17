@@ -112,7 +112,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_SC_PRIVATE_IP=10.0.30.51
     export EUCA_SC_STORAGE_IP=10.0.46.51
 
-    export EUCA_NC_PRIVATE_BRIDGE=br14
+    export EUCA_NC_PUBLIC_BRIDGE=br14
     export EUCA_NC_PRIVATE_BRIDGE=br30
     export EUCA_NC_STORAGE_BRIDGE=br46
 
