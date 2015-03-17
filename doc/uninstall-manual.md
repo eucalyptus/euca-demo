@@ -69,7 +69,7 @@ Each step uses a code to indicate what node the step should be run on:
     rm -f /etc/pki/rpm-gpg/RPM-GPG-KEY-euca2ools-release
     ```
 
-8. (ALL) Remove devmapper and losetup entries
+8. (SC) Remove devmapper and losetup entries
 
     ```bash
     if which tgtadm && tgtadm --lld iscsi -m target -o show; then 
@@ -113,7 +113,7 @@ Each step uses a code to indicate what node the step should be run on:
     losetup -a | grep euca
     ```
 
-12. (ALL) Clean iscsi sessions
+12. (CC) Clean iscsi sessions
 
     ```bash
     iscsiadm -m session -u
