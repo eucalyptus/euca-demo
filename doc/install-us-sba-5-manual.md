@@ -1,4 +1,4 @@
-# Installation Procedure for region us-sba-5
+# Install Procedure for region us-sba-5
 ## 5-Node (4+1) Hybrid (Virtual/Physical) POC
 
 This document describes the manual procedure to install region us-sba-5.mjcconsulting.com,

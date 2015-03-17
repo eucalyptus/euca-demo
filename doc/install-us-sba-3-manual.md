@@ -1,4 +1,4 @@
-# Installation Procedure for region us-sba-3
+# Install Procedure for region us-sba-3
 ## 3-Node (2+1) Hybrid (Virtual/Physical) POC
 
 This document describes the manual procedure to install region us-sba-3.mjcconsulting.com,
