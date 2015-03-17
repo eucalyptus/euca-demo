@@ -1112,8 +1112,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     [eucalyptus]
     name=Eucalyptus 4.1
-    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=$releasever&arch=$basearch&repo=eucalyptus&version=4.1
-    #baseurl=http://mirror.mjcconsulting.com/centos/$releasever/eucalyptus/4.1/$basearch/
+    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=\$releasever&arch=\$basearch&repo=eucalyptus&version=4.1
+    #baseurl=http://mirror.mjcconsulting.com/centos/\$releasever/eucalyptus/4.1/\$basearch/
     priority=1
     enabled=1
     gpgcheck=1
@@ -1136,8 +1136,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     [euca2ools]
     name=Euca2ools 3.2
-    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=$releasever&arch=$basearch&repo=euca2ools&version=3.2
-    #baseurl=http://mirror.mjcconsulting.com/centos/$releasever/euca2ools/3.2/$basearch/
+    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=\$releasever&arch=\$basearch&repo=euca2ools&version=3.2
+    #baseurl=http://mirror.mjcconsulting.com/centos/\$releasever/euca2ools/3.2/\$basearch/
     priority=1
     enabled=1
     gpgcheck=1
