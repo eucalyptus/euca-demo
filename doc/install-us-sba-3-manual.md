@@ -858,6 +858,20 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (ALL): Configure yum repositories
 
+    This first set of packages is required to configure access to the Eucalyptus yum repositories
+    which contain open source Eucalyptus software, and their dependencies.
+
+    We can either use the external repos which are configured as RPMs...
+
+    ```bash
+    yum install -y \
+        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
+        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+    ```
+
+    **OR** we can use some internal repos which I have created to speed things up.
+
     Here we will create custom repository configuration files, as there are internal mirrors in this environment designed
     for faster installation. The internal mirror configuration also has `mirrorlist` logic which returns both the internal
     and external Eucalyptus repositories, so that the external repositories will be used if the internal replicas are 
