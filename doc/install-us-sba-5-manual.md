@@ -128,7 +128,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL) Install packages
 
     ```bash
-    yum install -y wget zip unzip git bind-utils
+    yum install -y wget zip unzip git bind-utils nc tree
     ```
 
 ### Initialize External DNS
