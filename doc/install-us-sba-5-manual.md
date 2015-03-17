@@ -1,7 +1,9 @@
-# Manual Installation Procedure for 5-Node (4+1) POC (region mjcc-sba-1)
+# Installation Procedure for region us-sba-5
+## 5-Node (4+1) Hybrid (Virtual/Physical) POC
 
-This document describes the manual procedure to setup region mjcc-sba-1,
-based partially on the "4-node reference architecture", with 1 Node Controller.
+This document describes the manual procedure to install region us-sba-5.mjcconsulting.com,
+based partially on the "4-node reference architecture", with 3 Cloud-level hosts,
+1 Cluster-level host, and 1 Node Controller, in MCrawford's home virtualization environment.
 
 However, this variant will use KVM virtualization on one physical host to
 create the 4 control-plane nodes as KVM virtual machines using libvirt, but
@@ -15,9 +17,9 @@ public, private and a SAN network over the trunk.
 
 This variant is meant to be run as root
 
-This POC will use **mjcc-sba-1** as the AWS_DEFAULT_REGION.
+This POC will use **us-sba-5** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be mjcc-sba-1.mjcconsulting.com.
+The full parent DNS domain will be us-sba-5.mjcconsulting.com.
 
 This is using the following nodes in the PRC:
 - mjcsbateucaclc01 (virtual,  eth0: 10.0.14.48/24, eth1: 10.0.30.48/24, eth2: 10.0.46.48): CLC
@@ -47,7 +49,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
     ```bash
-    export AWS_DEFAULT_REGION=mjcc-sba-1
+    export AWS_DEFAULT_REGION=us-sba-5
 
     export EUCA_DNS_PUBLIC_DOMAIN=mjcconsulting.com
     export EUCA_DNS_PRIVATE_DOMAIN=internal
@@ -548,11 +550,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 6. (ALL): Disable zero-conf network
 
-    This was done in the kickstart
+    Skip: This was done in the kickstart
+
+    ```bash
+    # sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
+    ```
 
 7. (NC): Install bridge utilities package
 
-    This was done in the kickstart
+    Skip: This was done in the kickstart
+
+    ```bash
+    # yum install -y bridge-utils
+    ```
 
 9. (NC): Create Bridges
 
@@ -665,11 +675,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * udp   53 - DNS (CLC)
     * tcp   53 - DNS (CLC)
     * tcp 5005 - Debug (CLC)
+    * tcp 7500 - Diagnostics (CLC)
     * tcp 8080 - Credentials (CLC)
     * tcp 8772 - Debug (CLC)
     * tcp 8773 - Web services (CLC)
     * tcp 8777 - Database (CLC)
     * tcp 8778 - Multicast (CLC)
+    * tcp 8779-8849 - jGroups (CLC)
 
 
     ```bash
@@ -685,11 +697,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
     -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     COMMIT
@@ -781,17 +795,17 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-17. (SC+CC): Configure firewall, but disable during installation
+17. (CC+SC): Configure firewall, but disable during installation
 
     Ports to open by component
 
     * tcp   22 - Login, Control (ALL)
-    * tcp 5005 - Debug (SC, CC)
+    * tcp 5005 - Debug (CC+SC)
     * tcp 7500 - Diagnostice (SC)
-    * tcp 8772 - Debug (SC, CC)
+    * tcp 8772 - Debug (CC+SC)
     * tcp 8773 - Web services (SC)
     * tcp 8774 - Web services (CC)
-    * tcp 8778 - Multicast (SC, CC)
+    * tcp 8778 - Multicast (CC+SC)
     * tcp 8779-8849 - jGroups (SC)
 
 
@@ -1024,70 +1038,101 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 1. (ALL): Configure yum repositories
 
-   This first set of packages is required to configure access to the Eucalyptus yum repositories
-   which contain open source Eucalyptus software, and their dependencies.
+    Here we will create custom repository configuration files, as there are internal mirrors in this environment designed
+    for faster installation. The internal mirror configuration also has `mirrorlist` logic which returns both the internal
+    and external Eucalyptus repositories, so that the external repositories will be used if the internal replicas are 
+    off-line. This environment normally uses RPMs in a manner similar to Eucalyptus to install local repositories, and I will
+    be updating these instructions to reference such repos once I have time to build and publish them.
 
     ```bash
-    yum install -y \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
-        http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+    echo << EOF > /etc/yum.repos.d/eucalyptus.repo
+    # eucalyptus.repo
+    #
+    # This repo contains Eucalyptus packages
+    #
+    # The MJC Consulting mirror system uses the connecting IP address of the client
+    # and the update status of each mirror to pick mirrors that are updated to and
+    # geographically close to the client.  You should use this for MJC Consulting
+    # updates unless you are manually picking other mirrors.
+    #
+    # If the mirrorlist= does not work for you, as a fall back you can try the
+    # remarked out baseurl= line instead.
+    #
+
+    [eucalyptus]
+    name=Eucalyptus 4.1
+    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=$releasever&arch=$basearch&repo=eucalyptus&version=4.1
+    #baseurl=http://mirror.mjcconsulting.com/centos/$releasever/eucalyptus/4.1/$basearch/
+    priority=1
+    enabled=1
+    gpgcheck=1
+    gpgkey=http://mirror.mjcconsulting.com/centos/RPM-GPG-KEY-eucalyptus-release
+    EOF
+
+    echo << EOF > /etc/yum.repos.d/euca2ools.repo
+    # euca2ools.repo
+    #
+    # This repo contains Euca2ools packages
+    #
+    # The MJC Consulting mirror system uses the connecting IP address of the client
+    # and the update status of each mirror to pick mirrors that are updated to and
+    # geographically close to the client.  You should use this for MJC Consulting
+    # updates unless you are manually picking other mirrors.
+    #
+    # If the mirrorlist= does not work for you, as a fall back you can try the
+    # remarked out baseurl= line instead.
+    #
+
+    [euca2ools]
+    name=Euca2ools 3.2
+    mirrorlist=http://mirrorlist.mjcconsulting.com/?distro=centos&release=$releasever&arch=$basearch&repo=euca2ools&version=3.2
+    #baseurl=http://mirror.mjcconsulting.com/centos/$releasever/euca2ools/3.2/$basearch/
+    priority=1
+    enabled=1
+    gpgcheck=1
+    gpgkey=http://mirror.mjcconsulting.com/centos/RPM-GPG-KEY-eucalyptus-release
+    EOF
     ```
 
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
     repositories which contain subscription-only Eucalyptus software, which requires a license.
 
     ```bash
-    yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
+    yum install -y http://mirror.mjcconsulting.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
 
-2. (ALL): Override external yum repos to internal servers
-
-    Optional: This step modifies the `mirrorlist=` value in the Eucalyptus yum repo configuration
-    files, to instead reference an internal mirrorlist service running on the odc-f-38 host on the
-    mirrorlist.mjc.prc.eucalyptus-systems.com domain. 
-
-    This internal service augments the external Eucalyptus mirrors with internal release mirrors
-    which are equivalent. The yum `fastest mirror` plugin will then favor the internal mirror
-    because it is faster. This can speed up intallations within the PRC by 4 to 6 minutes.
-
-    ```bash
-    sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/eucalyptus.repo
-    sed -i -e "s/mirrors\.eucalyptus\.com\/mirrors/mirrorlist.mjc.prc.eucalyptus-systems.com\//" /etc/yum.repos.d/euca2ools.repo
-    ```
-
-3. (CLC): Install packages
+2. (CLC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-service-image
     ```
 
-4. (UFC+MC): Install packages
+3. (UFC+MC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucaconsole
     ```
 
-5. (OSP): Install packages
+4. (OSP): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-walrus
     ```
 
-6. (SC+CC): Install packages
+5. (CC+SC): Install packages
 
     ```bash
-    yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
+    yum install -y eucalyptus-cloud eucalyptus-cc eucalyptus-sc
     ```
 
-7. (NC): Install packages
+6. (NC): Install packages
 
     ```bash
     yum install -y eucalyptus-nc
     ```
 
-8. (NC): Remove Devfault libvirt network.
+7. (NC): Remove Devfault libvirt network.
 
     ```bash
     virsh net-destroy default
@@ -1097,6 +1142,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 ### Configure Eucalyptus
 
 1. (CLC):  1. Configure Eucalyptus Networking
+
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -1109,6 +1158,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 2. (UFS+MC): Configure Eucalyptus Networking
 
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
+
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -1120,6 +1173,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 3. (OSP): Configure Eucalyptus Networking
 
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
+
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
@@ -1129,7 +1186,11 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-4. (SC+CC): Configure Eucalyptus Networking
+4. (CC+SC): Configure Eucalyptus Networking
+
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -1141,6 +1202,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 5. (NC): Configure Eucalyptus Networking
+
+    This is a physical machine, which has 1 interface configured as a trunk, on which the Eucalyptus public,
+    private and storage networks are configured. Bridges corresponding to all three networks have been created,
+    with IP addresses, allowing their use by the host as well as by virtual machines when needed.
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -1218,7 +1283,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
+10. (MC): Configure Management Console with User Facing Services address
 
     The clchost parameter within console.ini is misleadingly named, as it should reference the
     public IP of the host running User Facing Services.
@@ -1309,7 +1374,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
-    sleep 60
     ```
 
     Wait for UFS services to respond.
