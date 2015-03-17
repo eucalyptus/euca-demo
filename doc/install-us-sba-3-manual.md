@@ -126,7 +126,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL) Install packages
 
     ```bash
-    yum install -y wget zip unzip git
+    yum install -y wget zip unzip git bind-utils
     ```
 
 ### Initialize External DNS
@@ -865,7 +865,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     be updating these instructions to reference such repos once I have time to build and publish them.
 
     ```bash
-    echo << EOF > /etc/yum.repos.d/eucalyptus.repo
+    cat << EOF > /etc/yum.repos.d/eucalyptus.repo
     # eucalyptus.repo
     #
     # This repo contains Eucalyptus packages
@@ -889,7 +889,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     gpgkey=http://mirror.mjcconsulting.com/centos/RPM-GPG-KEY-eucalyptus-release
     EOF
 
-    echo << EOF > /etc/yum.repos.d/euca2ools.repo
+    cat << EOF > /etc/yum.repos.d/euca2ools.repo
     # euca2ools.repo
     #
     # This repo contains Euca2ools packages
@@ -922,25 +922,35 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
 
-2. (CLC+UFS+MC+OSP): Install packages
+2. (ALL) Confirm yum repositories
+
+    Show configured repositories and any yum priorities.
+
+    ```bash
+    yum repolist
+
+    sed -n -e "/^\[/h; /priority *=/{ G; s/\n/ /; s/ity=/ity = /; p }" /etc/yum.repos.d/*.repo | sort -k3n
+    ```
+
+3. (CLC+UFS+MC+OSP): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-service-image eucaconsole eucalyptus-walrus
     ```
 
-3. (SC+CC): Install packages
+4. (SC+CC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
     ```
 
-4. (NC): Install packages
+5. (NC): Install packages
 
     ```bash
     yum install -y eucalyptus-nc
     ```
 
-5. (NC): Remove Devfault libvirt network.
+6. (NC): Remove Devfault libvirt network.
 
     ```bash
     virsh net-destroy default

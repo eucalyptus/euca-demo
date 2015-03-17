@@ -128,7 +128,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL) Install packages
 
     ```bash
-    yum install -y wget zip unzip git
+    yum install -y wget zip unzip git bind-utils
     ```
 
 ### Initialize External DNS
@@ -1096,7 +1096,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     be updating these instructions to reference such repos once I have time to build and publish them.
 
     ```bash
-    echo << EOF > /etc/yum.repos.d/eucalyptus.repo
+    cat << EOF > /etc/yum.repos.d/eucalyptus.repo
     # eucalyptus.repo
     #
     # This repo contains Eucalyptus packages
@@ -1120,7 +1120,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     gpgkey=http://mirror.mjcconsulting.com/centos/RPM-GPG-KEY-eucalyptus-release
     EOF
 
-    echo << EOF > /etc/yum.repos.d/euca2ools.repo
+    cat << EOF > /etc/yum.repos.d/euca2ools.repo
     # euca2ools.repo
     #
     # This repo contains Euca2ools packages
@@ -1153,37 +1153,47 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
     ```
 
-2. (CLC): Install packages
+2. (ALL) Confirm yum repositories
+ 
+    Show configured repositories and any yum priorities.
+ 
+    ```bash
+    yum repolist
+ 
+    sed -n -e "/^\[/h; /priority *=/{ G; s/\n/ /; s/ity=/ity = /; p }" /etc/yum.repos.d/*.repo | sort -k3n
+    ```
+
+3. (CLC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-service-image
     ```
 
-3. (UFC+MC): Install packages
+4. (UFC+MC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucaconsole
     ```
 
-4. (OSP): Install packages
+5. (OSP): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-walrus
     ```
 
-5. (CC+SC): Install packages
+6. (CC+SC): Install packages
 
     ```bash
     yum install -y eucalyptus-cloud eucalyptus-cc eucalyptus-sc
     ```
 
-6. (NC): Install packages
+7. (NC): Install packages
 
     ```bash
     yum install -y eucalyptus-nc
     ```
 
-7. (NC): Remove Devfault libvirt network.
+8. (NC): Remove Devfault libvirt network.
 
     ```bash
     virsh net-destroy default
