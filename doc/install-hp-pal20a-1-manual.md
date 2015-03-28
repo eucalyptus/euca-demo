@@ -463,13 +463,63 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     netstat -nr
     ```
 
-6. Disable firewall
+6. (CLC+UFS+MC+OSP+CC+SC+NC): Configure firewall, but disable during installation
+
+    Note: These have not been thoroughly validated. It may not be necessary to open all of these
+    when all components run on a single host, as is the case here, and some ports may be missing.
+
+    Ports to open by component
+
+    * tcp   22 - Login, Control (ALL)
+    * udp   53 - DNS (CLC)
+    * tcp   53 - DNS (CLC)
+    * tcp   80 - Console - HTTP (MC)
+    * tcp  443 - Console - HTTPS (MC)
+    * tcp 5005 - Debug (CLC+UFS+OSP+CC+SC+NC)
+    * tcp 7500 - Diagnostics (CLC+UFS+OSP+CC+SC)
+    * tcp 8080 - Credentials (CLC)
+    * tcp 8772 - Debug (CLC+UFS+OSP+CC+SC+NC)
+    * tcp 8773 - Web services (CLC+UFS+OSP+SC+NC)
+    * tcp 8774 - Web services (CC)
+    * tcp 8775 - Web services (NC)
+    * tcp 8777 - Database (CLC)
+    * tcp 8778 - Multicast (CLC+UFS+OSP+CC+SC+NC)
+    * tcp 8779-8849 - jGroups (CLC+UFS+OSP+SC)
+    * tcp 8888 - Console - Direct (MC)
+    * tcp 16514 - TLS, needed for node migrations (NC)
 
     ```bash
-    I will come back to this later, to nail down what ports are needed for a combined host.
-    Until then, just disabling IPtables
+    cat << EOF > /etc/sysconfig/iptables
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
+    -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
 
-    chkconfig iptables off
+    chkconfig iptables on
     service iptables stop
     ```
 
@@ -495,7 +545,9 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 9. Install and Configure Mail Relay
 
-    Skipping this on initial pass, until we know how EBC can route mail
+    Note: This step was run, and this will allow Eucalyptus to send Email to the Postfix instance
+    which runs on localhost. But, until the EBC installs a local mail relay and configures local
+    DNS with MX records which point to it, mail will be queued but can not leave the host.
 
     ```bash
     yum install -y postfix
@@ -730,7 +782,7 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 5. Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
-    regardless of value
+    regardless of value. This step was skipped on the initial install.
 
     ```bash
     #heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -1202,27 +1254,49 @@ dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Browse: https://${EUCA_MC_PUBLIC_IP}
     ```
 
-### Configure Images
+### Initialize Demo Accounts and Dependencies
 
-Optional: If you plan on using this system to run demos, it is preferrable to run the demo setup
-scripts, which incorporate this logic as well as performing additional setup, instead.
+Note: It's likely the euca-demo project directory structure will be refactored soon. If the
+scripts reference below are not in the locations shown, their new location should be obvious
+within any new directory structure, so update the instructions below.
 
-1. Download Images
+1. Initialize primary demo account
 
-    ```bash
-    wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
-
-    xz -v -d ~/centos.raw.xz
-    ```
-
-2. Install Image
+    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>` 
+    parameter to create additional accounts. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm
+    cd ~/src/eucalyptus/euca-demo-bin
+
+    ./euca-demo-01-initialize-account.sh
     ```
 
-3. List Images
+2. Initialize primary demo account with dependencies
+
+    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
+    parameter to create dependencies in additional accounts created for demo purposes with the
+    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    euca-describe-images
+    ./euca-demo-02-initialize-dependencies.sh
     ```
+
+### Transfer Eucalyptus and Demo Account credentials and private keys to management workstation
+
+The Eucalyptus Administrator and Demo Account Administrator `admin.zip` file and contents of the
+associated `admin` directory must be moved to at least one alternate location for backup. Ideally,
+this will be an alternate host used as a management workstation.
+
+Eucalyptus Euca2ools currently runs on UNIX-based hosts, but in the EBC, we initially do not have
+a separate UNIX workstation built for this purpose, so we will preserve the credentials on the
+Windows Jump Host in the admin account. This was done manually via Putty's SFTP client.
+
+The credentials are stored under C:\Users\admin\Credentials\<account>\<user>.zip and
+C:\Users\admin\Credentials\<account>\<user>\
+
+In the future, these instructions will be updated to show how the AWS CLI client can be modified
+to reference this additional "region", allowing their use from Windows for most Eucalyptus cloud
+management operations.
+
