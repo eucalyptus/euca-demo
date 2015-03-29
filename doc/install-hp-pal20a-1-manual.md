@@ -204,21 +204,68 @@ I will not describe this in detail here, except to note that this must be in pla
 properly before registering services with the method outlined below, as I will be using DNS names
 for the services so they look more AWS-like.
 
-You should be able to resolve these names with these results:
+Confirm external DNS is configured properly with the statements below, which should match the
+results which follow the dig command. This document shows the actual results based on variables
+set above at the time this document was written, for ease of confirming results. If the variables
+above are changed, expected results below should also be updated to match.
+
+**A Records**
 
 ```bash
-dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-172.0.1.8
+dig ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+hpccc.com. 600 IN A 10.0.1.91
 
-dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-172.0.1.8
+dig ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 
-dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-172.0.1.8
+dig ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 
-dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-172.0.1.8
+dig clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+clc.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+
+dig ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+ufs.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+
+dig console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+console.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 ```
+
+**NS Records**
+
+```bash
+dig –t NS ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+hpccc.com. 300 IN NS dc1a.hpccc.com.
+hpccc.com. 300 IN NS dc2a.hpccc.com.
+dc1a.hpccc.com. 3600 IN A 10.0.1.91
+dc2a.hpccc.com. 3600 IN A 10.0.1.92
+
+dig –t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
+hp-pal20a-1.hpccc.com. 300 IN NS dc1a.hpccc.com.
+hp-pal20a-1.hpccc.com. 300 IN NS dc2a.hpccc.com.
+hp-pal20a-1.dc1a.hpccc.com. 3600 IN A 10.0.1.91
+hp-pal20a-1.dc2a.hpccc.com. 3600 IN A 10.0.1.92
+
+dig –t NS cloud.hp-pal20a-1.hpccc.com | grep '^[a-z]'
+cloud.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
+ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+
+dig –t NS lb.hp-pal20a-1.hpccc.com | grep '^[a-z]'
+lb.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
+ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+```
+
+MX records
+
+Note: Mail was not completely setup on the initial installation, as there is no mail relay
+currently in place in the EBC.
+
+```bash
+dig –t MX hp-pal20a-1.hpccc.com | grep '^[a-z]'
+hp-pal20a-1.hpccc.com. 300 IN MX smtp.hp-pal20a-1.hpccc.com.
+smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
+```
+
 
 ### Initialize Dependencies
 
