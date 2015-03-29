@@ -255,7 +255,7 @@ lb.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
 ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 ```
 
-MX records
+**MX records**
 
 Note: Mail was not completely setup on the initial installation, as there is no mail relay
 currently in place in the EBC.
