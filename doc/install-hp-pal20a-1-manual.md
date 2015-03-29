@@ -145,18 +145,7 @@ process, not currently available for this host.
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
-3. Configure local profile
-
-    Create a local profile with some useful aliases.
-
-    ```bash
-    if [ ! -r /etc/profile.d/local.sh ]; then
-        echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
-        echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
-    fi
-    ```
-
-4. Configure root user
+3. Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
     structure, and adjusting the default GECOS information so email sent from root on a host
@@ -169,7 +158,7 @@ process, not currently available for this host.
     sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
     ```
 
-5. Clone euca-demo git project
+4. Clone euca-demo git project
 
     This is one location where demo scripts live. We will run the demo initialization
     scripts at the completion of the installation.
@@ -180,6 +169,32 @@ process, not currently available for this host.
         cd ~/src/eucalyptus
 
         git clone https://github.com/eucalyptus/euca-demo.git
+    fi
+    ```
+
+5. Configure profile
+
+    Adjust global profile with some local useful aliases.
+
+    ```bash
+    if [ ! -r /etc/profile.d/local.sh ]; then
+        echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
+        echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
+    fi
+    ```
+
+    Adjust user profile to include demo scripts on PATH, and source Eucalyptus Administrator
+    credentials on login if they exist.
+
+    ```bash
+    if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
+        sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
+    fi
+
+    if ! grep -s -q "Source Eucalyptus Administrator credentials" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
+        echo "[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source \$HOME/creds/eucalyptus/admin/eucarc" >> ~/.bash_profile
     fi
     ```
 
