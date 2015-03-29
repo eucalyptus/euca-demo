@@ -73,7 +73,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_SERVICE_API_NAME=api
 
-    export EUCA_PUBLIC_IP_RANGE=172.0.1.64-172.0.2.254
+    export EUCA_PUBLIC_IP_RANGE=172.0.1.64-172.0.1.254
 
     export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
     export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
