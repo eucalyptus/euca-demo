@@ -509,6 +509,49 @@ fi
 
 
 ((++step))
+result=$(euca-describe-instance-types | grep "m1.small" | tr -s '[:blank:]' ':' | cut -d: -f3,4,5)
+cpu=${result%%:*}
+temp=${result%:*} && memory=${temp#*:}
+disk=${result##*:}
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Modify an Instance Type"
+echo "    - Change the m1.small instance type:"
+echo "      - to use 1 GB memory instead of the 256 MB default"
+echo "      - to use 8 GB disk instead of the 5 GB default"
+echo "    - We need to increase this to use the CentOS image"
+echo
+echo "============================================================"
+echo 
+echo "Commands:"
+echo 
+echo "euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small"
+
+if [ "$memory" = 1024 -a "$disk" = 8 ]; then
+    echo
+    tput rev
+    echo "Already Modified!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small"
+        euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small
+
+        next
+    fi
+fi
+
+
+((++step))
 clear
 echo
 echo "============================================================"
@@ -524,6 +567,8 @@ echo
 echo "euca-describe-keypairs"
 echo
 echo "euare-accountlist"
+echo
+echo "euca-describe-instance-types"
 
 run 50
 
@@ -539,6 +584,10 @@ if [ $choice = y ]; then
 
     echo "# euare-accountlist"
     euare-accountlist
+    pause
+
+    echo "# euca-describe-instance-types"
+    euca-describe-instance-types
 
     next 200
 fi
