@@ -221,7 +221,9 @@ echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
 
 if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
     echo
-    echo -n "... Aready Created!  "
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
@@ -259,7 +261,9 @@ echo "euare-accountcreate -a $account"
 
 if euare-accountlist | grep -s -q "^$account"; then
     echo
-    echo -n "... Aready Created!  "
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
@@ -292,7 +296,9 @@ echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account
 
 if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
     echo
-    echo -n "... Aready Created!  "
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
@@ -336,7 +342,9 @@ echo "cat ~/creds/$account/admin/eucarc"
 
 if [ -r ~/creds/$account/admin/eucarc ]; then
     echo
-    echo -n "... Aready Downloaded!  "
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
 
     next 50
 
@@ -398,7 +406,9 @@ echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $i
 
 if [ -r $image_dir/${image_file%%.*}.raw ]; then
     echo
-    echo -n "... Aready Downloaded!  "
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
 
     next 50
 
@@ -437,7 +447,9 @@ echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_f
 
 if euca-describe-images | grep -s -q "${image_file%%.*}.raw.manifest.xml"; then
     echo
-    echo -n "... Aready Installed!  "
+    tput rev
+    echo "Already Installed!"
+    tput sgr0
 
     next 50
 
@@ -472,7 +484,9 @@ echo "euca-modify-image-attribute -l -a $account_id $image_id"
 
 if euca-describe-images -x $account_id | grep -s -q $image_id; then
     echo
-    echo -n "... Aready Authorized!  "
+    tput rev
+    echo "Already Authorized!"
+    tput sgr0
 
     next 50
 
