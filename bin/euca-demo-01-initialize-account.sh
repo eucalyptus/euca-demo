@@ -407,7 +407,7 @@ echo "wget $image_url -O $image_dir/$image_file"
 echo
 echo "xz -v -d $image_dir/$image_file"
 echo
-echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+echo "qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
 
 if [ -r $image_dir/${image_file%%.*}.raw ]; then
     echo
@@ -430,8 +430,8 @@ else
         xz -v -d $image_dir/$image_file
         pause
 
-        echo "# qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
-        qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw
+        echo "# qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+        qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw
 
         next
     fi
