@@ -29,8 +29,6 @@ tmpdir=/var/tmp
 external_image_url=http://cloud.centos.org/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
 internal_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
 
-image_dir=/var/tmp
-
 demo_admin_password=demo123
 
 step=0
@@ -403,13 +401,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "wget $image_url -O $image_dir/$image_file"
+echo "wget $image_url -O $tmpdir/$image_file"
 echo
-echo "xz -v -d $image_dir/$image_file"
+echo "xz -v -d $tmpdir/$image_file"
 echo
-echo "qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+echo "qemu-img convert -f qcow2 -O raw $tmpdir/${image_file%%.*}.qcow2 $tmpdir/${image_file%%.*}.raw"
 
-if [ -r $image_dir/${image_file%%.*}.raw ]; then
+if [ -r $tmpdir/${image_file%%.*}.raw ]; then
     echo
     tput rev
     echo "Already Downloaded!"
@@ -422,16 +420,16 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $image_url -O $image_dir/$image_file"
-        wget $image_url -O $image_dir/$image_file
+        echo "# wget $image_url -O $tmpdir/$image_file"
+        wget $image_url -O $tmpdir/$image_file
         pause
 
-        echo "# xz -v -d $image_dir/$image_file"
-        xz -v -d $image_dir/$image_file
+        echo "# xz -v -d $tmpdir/$image_file"
+        xz -v -d $tmpdir/$image_file
         pause
 
-        echo "# qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
-        qemu-img convert -f qcow2 -O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw
+        echo "# qemu-img convert -f qcow2 -O raw $tmpdir/${image_file%%.*}.qcow2 $tmpdir/${image_file%%.*}.raw"
+        qemu-img convert -f qcow2 -O raw $tmpdir/${image_file%%.*}.qcow2 $tmpdir/${image_file%%.*}.raw
 
         next
     fi
@@ -450,7 +448,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
+echo "euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${image_file%%.*}.raw --virtualization-type hvm"
 
 if euca-describe-images | grep -s -q "${image_file%%.*}.raw.manifest.xml"; then
     echo
@@ -465,8 +463,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
-        euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+        echo "# euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${image_file%%.*}.raw --virtualization-type hvm"
+        euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${image_file%%.*}.raw --virtualization-type hvm
 
         next
     fi

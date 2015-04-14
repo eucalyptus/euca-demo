@@ -30,6 +30,8 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 prefix=demo-05
 
+image_file=CentOS-6-x86_64-GenericCloud.qcow2.xz
+
 step=0
 speed_max=400
 run_default=10
@@ -165,11 +167,6 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_clc = n ]; then
-    echo "This script should only be run on the Cloud Controller host"
-    exit 10
-fi
-
 if [ ! -r ~/creds/$account/admin/eucarc ]; then
     echo "-a $account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: ~/creds/$account/admin/eucarc"
@@ -226,15 +223,15 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images | grep \"centos.raw.manifest.xml\""
+echo "euca-describe-images | grep \"${image_file%%.*}.raw.manifest.xml\""
 echo
 echo "euca-describe-keypairs | grep \"admin-demo\""
 
 next
 
 echo
-echo "# euca-describe-images | grep \"centos.raw.manifest.xml\""
-euca-describe-images | grep "centos.raw.manifest.xml" || demo_initialized=n
+echo "# euca-describe-images | grep \"${image_file%%.*}.raw.manifest.xml\""
+euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" || demo_initialized=n
 pause
 
 echo "# euca-describe-keypairs | grep \"admin-demo\""
@@ -496,7 +493,7 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep "centos.raw.manifest.xml" | cut -f2)
+image_id=$(euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" | cut -f2)
 
 clear
 echo
@@ -609,8 +606,7 @@ echo
 echo "euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\""
 echo
 echo "euscale-describe-policies"
-pause 250
-
+echo
 echo "euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
 echo "                                           --namespace \"AWS/EC2\" --statistic Average \\"
 echo "                                           --period 60 --threshold 50 \\"
@@ -777,7 +773,7 @@ result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3
 instance_id=${result%%:*}
 temp=${result%:*} && public_name=${temp#*:}
 public_ip=${result##*:}
-user=root
+user=centos
 
 clear
 echo
@@ -945,8 +941,8 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep "centos.raw.manifest.xml" | cut -f2)
-user=root
+image_id=$(euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" | cut -f2)
+user=centos
 
 clear
 echo
