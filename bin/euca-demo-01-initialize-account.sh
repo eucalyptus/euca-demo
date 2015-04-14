@@ -205,41 +205,29 @@ next
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Eucalyptus Administrator Demo Keypair"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
+echo
+echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
+
 if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Eucalyptus Administrator Demo Keypair"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
-    echo
-    echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
+    echo -n "... Aready Created!  "
 
     next 50
 
 else
     euca-delete-keypair admin-demo
     rm -f ~/creds/eucalyptus/admin/admin-demo.pem
-
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Eucalyptus Administrator Demo Keypair"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
-    echo
-    echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
 
     run 50
 
@@ -257,35 +245,25 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-accountcreate -a $account"
+
 if euare-accountlist | grep -s -q "^$account"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-accountcreate -a $account"
+    echo -n "... Aready Created!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-accountcreate -a $account"
-
     run 50
 
     if [ $choice = y ]; then
@@ -299,35 +277,26 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Login Profile"
+echo "    - This allows the Demo Account Administrator to login to the console"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $account"
+
 if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Login Profile"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $account"
+    echo -n "... Aready Created!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Login Profile"
-    echo "    - This allows the Demo Account Administrator to login to the console"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $account"
 
     run 50
 
@@ -342,56 +311,36 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo ($account) Account Administrator Credentials"
+echo "    - This allows the Demo Account Administrator to run API commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "mkdir -p ~/creds/$account/admin"
+echo
+echo "rm -f ~/creds/$account/admin.zip"
+echo
+echo "sudo euca-get-credentials -u admin -a $account \\"
+echo "                          ~/creds/$account/admin.zip"
+echo
+echo "unzip -uo ~/creds/$account/admin.zip \\"
+echo "       -d ~/creds/$account/admin/"
+echo
+echo "cat ~/creds/$account/admin/eucarc"
+
 if [ -r ~/creds/$account/admin/eucarc ]; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account Administrator Credentials"
-    echo "    - Already Downloaded!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/admin"
-    echo
-    echo "rm -f ~/creds/$account/admin.zip"
-    echo
-    echo "sudo euca-get-credentials -u admin -a $account \\"
-    echo "                          ~/creds/$account/admin.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/admin.zip \\"
-    echo "       -d ~/creds/$account/admin/"
-    echo
-    echo "cat ~/creds/$account/admin/eucarc"
+    echo -n "... Aready Downloaded!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account Administrator Credentials"
-    echo "    - This allows the Demo Account Administrator to run API commands"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/admin"
-    echo
-    echo "rm -f ~/creds/$account/admin.zip"
-    echo
-    echo "sudo euca-get-credentials -u admin -a $account \\"
-    echo "                          ~/creds/$account/admin.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/admin.zip \\"
-    echo "       -d ~/creds/$account/admin/"
-    echo
-    echo "cat ~/creds/$account/admin/eucarc"
-
     run 50
 
     if [ $choice = y ]; then
@@ -431,43 +380,29 @@ fi
 
 
 ((++step))
-if [ -r ~/centos.raw ]; then
-    clear
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "wget $image_url -O $image_dir/$image_file"
+echo
+echo "xz -v -d $image_dir/$image_file"
+echo
+echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+
+if [ -r $image_dir/${image_file%%.*}.raw ]; then
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
-    echo "    - Already Downloaded!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "wget $image_url -O $image_dir/$image_file"
-    echo
-    echo "xz -v -d $image_dir/$image_file"
-    echo
-    echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $/image_dir/${image_file%%.*}.raw"
+    echo -n "... Aready Downloaded!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "wget $image_url -O $image_dir/$image_file"
-    echo
-    echo "xz -v -d $image_dir/$image_file"
-    echo
-    echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $/image_dir/${image_file%%.*}.raw"
-
     run 50
 
     if [ $choice = y ]; then
@@ -487,36 +422,26 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Install Demo Image"
+echo "    - NOTE: This can take a couple minutes..."
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
+
 if euca-describe-images | grep -s -q "${image_file%%.*}.raw.manifest.xml"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Install Demo Image"
-    echo "    - Already Installed!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
+    echo -n "... Aready Installed!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Install Demo Image"
-    echo "    - NOTE: This can take a couple minutes..."
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
-
     run 50
 
     if [ $choice = y ]; then
@@ -533,35 +458,25 @@ fi
 account_id=$(euare-accountlist | grep "^$account" | cut -f2)
 image_id=$(euca-describe-images | grep ${image_file%%.*}.raw.manifest.xml | cut -f2)
 
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Image"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-image-attribute -l -a $account_id $image_id"
+
 if euca-describe-images -x $account_id | grep -s -q $image_id; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Image"
-    echo "    - Already Authorized!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-modify-image-attribute -l -a $account_id $image_id"
+    echo -n "... Aready Authorized!  "
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Image"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-modify-image-attribute -l -a $account_id $image_id"
-
     run 50
 
     if [ $choice = y ]; then
