@@ -217,41 +217,31 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Demo Keypair"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
+echo
+echo "chmod 0600 ~/creds/$account/admin/admin-demo.pem"
+
 if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/$account/admin/admin-demo.pem ]; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Demo Keypair"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
-    echo
-    echo "chmod 0600 ~/creds/$account/admin/admin-demo.pem"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
     euca-delete-keypair admin-demo
     rm -f ~/creds/$account/admin/admin-demo.pem
-
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Demo Keypair"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
-    echo
-    echo "chmod 0600 ~/creds/$account/admin/admin-demo.pem"
 
     run 50
 
@@ -269,35 +259,27 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user)"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-usercreate -u $demo_user"
+
 if euare-userlistbypath | grep -s -q ":user/$demo_user$"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user)"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usercreate -u $demo_user"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user)"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usercreate -u $demo_user"
-
     run 50
 
     if [ $choice = y ]; then
@@ -311,36 +293,28 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user) Login Profile"
+echo "    - This allows the Demo Account User to login to the console"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-useraddloginprofile -u $demo_user -p $demo_user_password"
+
 if euare-usergetloginprofile -u $demo_user &> /dev/null; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user) Login Profile"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-useraddloginprofile -u $demo_user -p $demo_user_password"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user) Login Profile"
-    echo "    - This allows the Demo Account User to login to the console"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-useraddloginprofile -u $demo_user -p $demo_user_password"
-
     run 50
 
     if [ $choice = y ]; then
@@ -354,56 +328,38 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo ($account) Account User ($demo_user) Credentials"
+echo "    - This allows the Demo Account User to run API commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "mkdir -p ~/creds/$account/$demo_user"
+echo
+echo "rm -f ~/creds/$account/$demo_user.zip"
+echo
+echo "sudo euca-get-credentials -u $demo_user -a $account \\"
+echo "                          ~/creds/$account/$demo_user.zip"
+echo
+echo "unzip -uo ~/creds/$account/$demo_user.zip \\"
+echo "       -d ~/creds/$account/$demo_user/"
+echo
+echo "cat ~/creds/$account/$demo_user/eucarc"
+
 if [ -r ~/creds/$account/$demo_user/eucarc ]; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account User ($demo_user) Credentials"
-    echo "    - Already Downloaded!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/$demo_user"
-    echo
-    echo "rm -f ~/creds/$account/$demo_user.zip"
-    echo
-    echo "sudo euca-get-credentials -u $demo_user -a $account \\"
-    echo "                          ~/creds/$account/$demo_user.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/$demo_user.zip \\"
-    echo "       -d ~/creds/$account/$demo_user/"
-    echo
-    echo "cat ~/creds/$account/$demo_user/eucarc"
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account User ($demo_user) Credentials"
-    echo "    - This allows the Demo Account User to run API commands"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/$demo_user"
-    echo
-    echo "rm -f ~/creds/$account/$demo_user.zip"
-    echo
-    echo "sudo euca-get-credentials -u $demo_user -a $account \\"
-    echo "                          ~/creds/$account/$demo_user.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/$demo_user.zip \\"
-    echo "       -d ~/creds/$account/$demo_user/"
-    echo
-    echo "cat ~/creds/$account/$demo_user/eucarc"
-
     run 50
 
     if [ $choice = y ]; then
@@ -443,39 +399,29 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($demo_users) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupcreate -g $demo_users"
+echo
+echo "euare-groupadduser -g $demo_users -u $demo_user"
+
 if euare-grouplistbypath | grep -s -q ":group/$demo_users$"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($demo_users) Group"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-groupcreate -g $demo_users"
-    echo
-    echo "euare-groupadduser -g $demo_users -u $demo_user"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($demo_users) Group"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-groupcreate -g $demo_users"
-    echo
-    echo "euare-groupadduser -g $demo_users -u $demo_user"
-
     run 50
 
     if [ $choice = y ]; then
@@ -492,35 +438,27 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer)"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-usercreate -u $demo_developer"
+
 if euare-userlistbypath | grep -s -q ":user/$demo_developer$"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer)"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usercreate -u $demo_developer"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer)"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-usercreate -u $demo_developer"
-
     run 50
 
     if [ $choice = y ]; then
@@ -534,36 +472,28 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer) Login Profile"
+echo "    - This allows the Demo Account Developer to login to the console"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
+
 if euare-usergetloginprofile -u $demo_developer &> /dev/null; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer) Login Profile"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer) Login Profile"
-    echo "    - This allows the Demo Account Developer to login to the console"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
-
     run 50
 
     if [ $choice = y ]; then
@@ -577,57 +507,38 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo ($account) Account Developer ($demo_developer) Credentials"
+echo "    - This allows the Demo Account Developer to run API commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "mkdir -p ~/creds/$account/$demo_developer"
+echo
+echo "rm -f ~/creds/$account/$demo_developer.zip"
+echo
+echo "sudo euca-get-credentials -u $demo_developer -a $account \\"
+echo "                          ~/creds/$account/$demo_developer.zip"
+echo
+echo "unzip -uo ~/creds/$account/$demo_developer.zip \\"
+echo "       -d ~/creds/$account/$demo_developer/"
+echo
+echo "cat ~/creds/$account/$demo_developer/eucarc"
+
 if [ -r ~/creds/$account/$demo_developer/eucarc ]; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account Developer ($demo_developer) Credentials"
-    echo "    - Already Downloaded!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/$demo_developer"
-    echo
-    echo "rm -f ~/creds/$account/$demo_developer.zip"
-    echo
-    echo "sudo euca-get-credentials -u $demo_developer -a $account \\"
-    echo "                          ~/creds/$account/$demo_developer.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/$demo_developer.zip \\"
-    echo "       -d ~/creds/$account/$demo_developer/"
-    echo
-    echo "cat ~/creds/$account/$demo_developer/eucarc"
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Download Demo ($account) Account Developer ($demo_developer) Credentials"
-    echo "    - This allows the Demo Account Developer to run API commands"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "mkdir -p ~/creds/$account/$demo_developer"
-    echo
-    echo "rm -f ~/creds/$account/$demo_developer.zip"
-    echo
-    echo "sudo euca-get-credentials -u $demo_developer -a $account \\"
-    echo "                          ~/creds/$account/$demo_developer.zip"
-    echo
-    echo "unzip -uo ~/creds/$account/$demo_developer.zip \\"
-    echo "       -d ~/creds/$account/$demo_developer/"
-    echo
-    echo "cat ~/creds/$account/$demo_developer/eucarc"
-
     run 50
 
     if [ $choice = y ]; then
@@ -667,39 +578,29 @@ fi
 
 
 ((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($demo_developers) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupcreate -g $demo_developers"
+echo
+echo "euare-groupadduser -g $demo_developers -u $demo_developer"
+
 if euare-grouplistbypath | grep -s -q ":group/$demo_developers$"; then
-    clear
     echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($demo_developers) Group"
-    echo "    - Already Created!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-groupcreate -g $demo_developers"
-    echo
-    echo "euare-groupadduser -g $demo_developers -u $demo_developer"
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
 else
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($demo_developers) Group"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euare-groupcreate -g $demo_developers"
-    echo
-    echo "euare-groupadduser -g $demo_developers -u $demo_developer"
-
     run 50
 
     if [ $choice = y ]; then

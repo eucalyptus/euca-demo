@@ -137,13 +137,13 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install nc"
+echo " $(printf '%2d' $step). Install qemu-img-rhev"
 echo
 echo "============================================================"
 echo
-if ! rpm -q --quiet nc; then
-    echo "# yum install -y nc"
-    yum install -y nc
+if ! rpm -q --quiet qemu-img-rhev; then
+    echo "# yum install -y qemu-img-rhev"
+    yum install -y qemu-img-rhev
 fi
 sleep 1
 

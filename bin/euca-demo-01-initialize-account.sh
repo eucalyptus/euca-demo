@@ -171,6 +171,11 @@ if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/nu
     exit 5
 fi
  
+if ! rpm -q --quiet qemu-img-rhev; then
+    echo "qemu-img missing: This script uses the qemu-img utility to convert images from qcow2 to raw format"
+    exit 97
+fi
+
 
 #  5. Prepare Eucalyptus for Demos
 
@@ -421,10 +426,12 @@ else
         wget $image_url -O $image_dir/$image_file
         pause
 
-        echo "xz -v -d $image_dir/$image_file"
+        echo "# xz -v -d $image_dir/$image_file"
         xz -v -d $image_dir/$image_file
+        pause
 
-        echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+        echo "# qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
+        qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw
 
         next
     fi
