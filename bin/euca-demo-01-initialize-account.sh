@@ -5,9 +5,9 @@
 # - Creates a Demo Account (default name is "demo", but this can be overridden)
 # - Creates the Demo Account Administrator Login Profile, allowing the use of the console
 # - Downloads the Demo Account Administrator Credentials, allowing use of the API
-# - Downloads a CentOS 6.5 image
-# - Installs the CentOS 6.5 image
-# - Authorizes use of the CentOS 6.5 image by the Demo Account
+# - Downloads a CentOS 6.6 image
+# - Installs the CentOS 6.6 image
+# - Authorizes use of the CentOS 6.6 image by the Demo Account
 #
 # This script should be run by the Eucalyptus Administrator, then the
 # euca-demo-02-initialize_dependencies.sh script should be run by the
@@ -26,8 +26,10 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
-external_image_url=http://eucalyptus-images.s3.amazonaws.com/public/centos.raw.xz
-internal_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz
+external_image_url=http://cloud.centos.org/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
+internal_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
+
+image_dir=/var/tmp
 
 demo_admin_password=demo123
 
@@ -162,6 +164,7 @@ if [ $local = 1 ]; then
 else
     image_url=$external_image_url
 fi
+image_file=${image_url##*/}
 
 if ! curl -s --head $image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
     echo "$image_url invalid: attempts to reach this URL failed"
@@ -211,6 +214,12 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/a
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
+    echo
+    echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
 
     next 50
 
@@ -257,6 +266,10 @@ if euare-accountlist | grep -s -q "^$account"; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-accountcreate -a $account"
 
     next 50
 
@@ -295,6 +308,10 @@ if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $account"
 
     next 50
 
@@ -334,6 +351,20 @@ if [ -r ~/creds/$account/admin/eucarc ]; then
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p ~/creds/$account/admin"
+    echo
+    echo "rm -f ~/creds/$account/admin.zip"
+    echo
+    echo "sudo euca-get-credentials -u admin -a $account \\"
+    echo "                          ~/creds/$account/admin.zip"
+    echo
+    echo "unzip -uo ~/creds/$account/admin.zip \\"
+    echo "       -d ~/creds/$account/admin/"
+    echo
+    echo "cat ~/creds/$account/admin/eucarc"
 
     next 50
 
@@ -405,10 +436,18 @@ if [ -r ~/centos.raw ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.5)"
+    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "wget $image_url -O $image_dir/$image_file"
+    echo
+    echo "xz -v -d $image_dir/$image_file"
+    echo
+    echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $/image_dir/${image_file%%.*}.raw"
 
     next 50
 
@@ -417,26 +456,30 @@ else
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.5)"
+    echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "wget $image_url -O ~/centos.raw.xz"
+    echo "wget $image_url -O $image_dir/$image_file"
     echo
-    echo "xz -v -d ~/centos.raw.xz"
+    echo "xz -v -d $image_dir/$image_file"
+    echo
+    echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $/image_dir/${image_file%%.*}.raw"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $image_url -O ~/centos.raw.xz"
-        wget $image_url -O ~/centos.raw.xz
+        echo "# wget $image_url -O $image_dir/$image_file"
+        wget $image_url -O $image_dir/$image_file
         pause
 
-        echo "xz -v -d ~/centos.raw.xz"
-        xz -v -d ~/centos.raw.xz
+        echo "xz -v -d $image_dir/$image_file"
+        xz -v -d $image_dir/$image_file
+
+        echo "qemu-img convert –f qcow2 –O raw $image_dir/${image_file%%.*}.qcow2 $image_dir/${image_file%%.*}.raw"
 
         next
     fi
@@ -444,7 +487,7 @@ fi
 
 
 ((++step))
-if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
+if euca-describe-images | grep -s -q "${image_file%%.*}.raw.manifest.xml"; then
     clear
     echo
     echo "============================================================"
@@ -453,6 +496,10 @@ if euca-describe-images | grep -s -q "centos.raw.manifest.xml"; then
     echo "    - Already Installed!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
 
     next 50
 
@@ -468,14 +515,14 @@ else
     echo
     echo "Commands:"
     echo
-    echo "euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm"
+    echo "euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm"
-        euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
+        echo "# euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm"
+        euca-install-image -n centos66 -b images -r x86_64 -i $image_dir/${image_file%%.*}.raw --virtualization-type hvm | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-install-image.out
 
         next
     fi
@@ -484,7 +531,7 @@ fi
 
 ((++step))
 account_id=$(euare-accountlist | grep "^$account" | cut -f2)
-image_id=$(euca-describe-images | grep centos.raw.manifest.xml | cut -f2)
+image_id=$(euca-describe-images | grep ${image_file%%.*}.raw.manifest.xml | cut -f2)
 
 if euca-describe-images -x $account_id | grep -s -q $image_id; then
     clear
@@ -495,6 +542,10 @@ if euca-describe-images -x $account_id | grep -s -q $image_id; then
     echo "    - Already Authorized!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-modify-image-attribute -l -a $account_id $image_id"
 
     next 50
 

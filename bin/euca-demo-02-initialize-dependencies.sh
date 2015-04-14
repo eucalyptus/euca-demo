@@ -226,6 +226,12 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/$account/adm
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-create-keypair admin-demo | tee ~/creds/$account/admin/admin-demo.pem"
+    echo
+    echo "chmod 0600 ~/creds/$account/admin/admin-demo.pem"
 
     next 50
 
@@ -272,6 +278,10 @@ if euare-userlistbypath | grep -s -q ":user/$demo_user$"; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-usercreate -u $demo_user"
 
     next 50
 
@@ -310,6 +320,10 @@ if euare-usergetloginprofile -u $demo_user &> /dev/null; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-useraddloginprofile -u $demo_user -p $demo_user_password"
 
     next 50
 
@@ -349,6 +363,20 @@ if [ -r ~/creds/$account/$demo_user/eucarc ]; then
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p ~/creds/$account/$demo_user"
+    echo
+    echo "rm -f ~/creds/$account/$demo_user.zip"
+    echo
+    echo "sudo euca-get-credentials -u $demo_user -a $account \\"
+    echo "                          ~/creds/$account/$demo_user.zip"
+    echo
+    echo "unzip -uo ~/creds/$account/$demo_user.zip \\"
+    echo "       -d ~/creds/$account/$demo_user/"
+    echo
+    echo "cat ~/creds/$account/$demo_user/eucarc"
 
     next 50
 
@@ -424,6 +452,12 @@ if euare-grouplistbypath | grep -s -q ":group/$demo_users$"; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-groupcreate -g $demo_users"
+    echo
+    echo "euare-groupadduser -g $demo_users -u $demo_user"
 
     next 50
 
@@ -467,6 +501,10 @@ if euare-userlistbypath | grep -s -q ":user/$demo_developer$"; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-usercreate -u $demo_developer"
 
     next 50
 
@@ -505,6 +543,10 @@ if euare-usergetloginprofile -u $demo_developer &> /dev/null; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-useraddloginprofile -u $demo_developer -p $demo_developer_password"
 
     next 50
 
@@ -544,6 +586,20 @@ if [ -r ~/creds/$account/$demo_developer/eucarc ]; then
     echo "    - Already Downloaded!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "mkdir -p ~/creds/$account/$demo_developer"
+    echo
+    echo "rm -f ~/creds/$account/$demo_developer.zip"
+    echo
+    echo "sudo euca-get-credentials -u $demo_developer -a $account \\"
+    echo "                          ~/creds/$account/$demo_developer.zip"
+    echo
+    echo "unzip -uo ~/creds/$account/$demo_developer.zip \\"
+    echo "       -d ~/creds/$account/$demo_developer/"
+    echo
+    echo "cat ~/creds/$account/$demo_developer/eucarc"
 
     next 50
 
@@ -620,6 +676,12 @@ if euare-grouplistbypath | grep -s -q ":group/$demo_developers$"; then
     echo "    - Already Created!"
     echo
     echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euare-groupcreate -g $demo_developers"
+    echo
+    echo "euare-groupadduser -g $demo_developers -u $demo_developer"
 
     next 50
 
