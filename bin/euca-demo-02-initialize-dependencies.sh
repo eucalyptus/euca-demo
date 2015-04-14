@@ -153,11 +153,6 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_clc = n ]; then
-    echo "This script should only be run on the Cloud Controller host"
-    exit 10
-fi
-
 if [ ! -r ~/creds/$account/admin/eucarc ]; then
     echo "-a $account invalid: Could not find Account Administrator credentials!"
     echo "   Expected to find: ~/creds/$account/admin/eucarc"
