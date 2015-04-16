@@ -256,20 +256,18 @@ echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"cloudformation-url = cfn_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"sts-url = sts_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"swf-url = swf_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
 echo
 echo "more /root/.euca/euca2ools.ini"
 
-echo "
-
-if [ -r ~/.euca/euca2ools.ini ] && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$eucalyptus_admin_secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -284,6 +282,11 @@ else
 
     if [ $choice = y ]; then
         echo
+        echo "# mkdir -p ~/.euca"
+        mkdir -p ~/.euca
+        echo "# chmod 0700 ~/.euca"
+        chmod 0700 ~/.euca
+        echo "#"
         echo "# echo \"[user admin]\" > ~/.euca/euca2ools.ini"
         echo "# echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
@@ -296,24 +299,24 @@ else
 
         echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"cloudformation-url = cfn_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"sts-url = sts_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"swf-url = swf_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
         echo "[region $region]" >> ~/.euca/euca2ools.ini
         echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
-        echo "cloudformation-url = cfn_url" >> ~/.euca/euca2ools.ini
+        echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
         echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
         echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
         echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
         echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
         echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
-        echo "sts-url = sts_url" >> ~/.euca/euca2ools.ini
-        echo "swf-url = swf_url" >> ~/.euca/euca2ools.ini
+        echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
+        echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
         pause
 
         echo "# more /root/.euca/euca2ools.ini"
