@@ -32,24 +32,46 @@ Each step uses a code to indicate what node the step should be run on:
 The hardware configuration and operating system installation were done manually for this first
 iteration of the demo, as a PXE boot and kickstart environment were not yet available.
 
-The host will eventually have 8 480GB SSD disks, configured into the following RAID groups:
+The host will eventually have 10 480GB SSD disks, with 5 installed in the top disk chassis, and
+5 installed in the lower disk chassis, and configured by the SmartArray P830i Controller
+into the following RAID groups:
 
-- Disks 1-2, RAID1, /dev/sda, used for boot (/boot), root (/), and swap.
-- Disks 3-8, RAID10, /dev/sdb, used for eucalyptus (/var/lib/eucalyptus) and EBS volumes
-
-Initiallly, the SSDs were not available, and standard 300GB disks were used for the install.
-The system will be rebuilt via these instructions once the SSDs arrive and can be installed.
+- Disks 1,6, RAID1, /dev/sda, used for boot (/boot), root (/), and swap.
+- Disks 2-5,7-10, RAID10, /dev/sdb, used for eucalyptus (/var/lib/eucalyptus) and EBS volumes
 
 A manual installation of CentOS 6.6 was done via the 
 [CentOS-6.6-x86_64-minimal.iso](http://mirrors.kernel.org/centos/6.6/isos/x86_64/CentOS-6.6-x86_64-minimal.iso)
 DVD, mounted as a virtual CD-ROM via the iLo management console.
 
-During the manual installation, we chose automatic disk formatting with an ability to edit to
-get an initial disk partitioning configuration, but then this was modified heavily. We switched
-the standard name of the VG which uses `sda` to `local`, removed the `/home` partition, and 
-increased the size of `swap` to 64G (to allow for RAM overcommit). We created a new VG named
-`eucalyptus`, and an LV also named `eucalyptus` which used 256G for `/var/lib/eucalyptus`.
-The remainder of the `eucalyptus` VG is reserved for use by the Eucalyptus Storage Controller.
+During the manual installation, we chose manual disk formatting. The result is shown in the
+Anaconda-generated kickstart file located on the host: /root/anaconda-ks.cfg. From this file,
+you can obtain the original kickstart configuration if you need to perform another manual OS
+installation. Hopefully we can replace with a kickstart-based method which automates most of 
+this before that is needed. Here is the relevant section in case the original kickstart is lost:
+
+clearpart --all --drives=sda,sdb
+part /boot --fstype=ext4 --ondisk=sda --asprimary --size=1024
+part pv01 --ondisk=sda --asprimary --size=1 --grow
+part pv02 --ondisk=sdb --size=1 --grow
+volgroup local --pesize=4096 pv01
+volgroup eucalyptus --pesize=4096 pv02
+logvol swap --name=swap --vgname=local --size=65536
+logvol / --fstype=ext4 --name=root --vgname=local --size=260196
+logvol /var/lib/eucalyptus/archive --fstype=ext4 --name=archive --vgname=local --size=131072
+logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=1048576
+
+How we've allocated disk space can be described as follows:
+- Increased size of /boot to 1 GiB, just in case this system lives for a while with extra kernels
+- Created local VG on rest of initial RAID 1 disk set, for swap, OS, and archives
+- Created eucalyptus VG on RAID 10, for use by Eucalyptus
+- Created swap LV on local VG, with larger 64 GiB size in case we want to test memory overcommit
+- Created root LV on local VG, with all space except that used for swap and archive
+- Created archive LV on local VG, mount point /var/lib/eucalyptus/archive, with 128 GiB, to store
+  db backups on a disk separate from the eucalyptus database
+- Created eucalyptus LV on eucalyptus VG, mount point /var/lib/eucalyptus, with 1 TiB, for use
+  by most eucalyptus functions
+- Reserved remaining space on eucalyptus VG, about 760 GiB, for use by Eucalyptus Storage Controller
+  for EBS Volumes and Snapshots
 
 ### Define Parameters
 
@@ -71,7 +93,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_DNS_PARENT_HOST=dc1a.hpccc.com
     export EUCA_DNS_PARENT_IP=10.0.1.91
 
-    export EUCA_SERVICE_API_NAME=api
 
     export EUCA_PUBLIC_IP_RANGE=172.0.1.64-172.0.1.254
 
