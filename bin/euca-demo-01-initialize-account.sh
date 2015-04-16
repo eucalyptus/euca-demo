@@ -1,10 +1,12 @@
 #!/bin/bash
 #
 # This script initializes Eucalyptus with a Demo Account, including:
-# - Within the Eucalyptus Account, creates a Demo Keypair
+# - Configure Euca2ools for the Eucalyptus Account Administrator
+# - Creates the Eucalyptus Account Administrator Demo Keypair, allowing ssh login to instances
 # - Creates a Demo Account (default name is "demo", but this can be overridden)
 # - Creates the Demo Account Administrator Login Profile, allowing the use of the console
 # - Downloads the Demo Account Administrator Credentials, allowing use of the API
+# - Configure Euca2ools for the Demo Account Administrator
 # - Downloads a CentOS 6.6 image
 # - Installs the CentOS 6.6 image
 # - Authorizes use of the CentOS 6.6 image by the Demo Account
@@ -26,8 +28,11 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
-external_image_url=http://cloud.centos.org/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
-internal_image_url=http://mirror.mjc.prc.eucalyptus-systems.com/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
+external_mirror=cloud.centos.org
+internal_mirror=mirror.mjc.prc.eucalyptus-systems.com
+
+external_image_url=http://$internal_mirror/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
+internal_image_url=http://$external_mirror/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
 
 demo_admin_password=demo123
 
@@ -205,6 +210,118 @@ echo "# source ~/creds/eucalyptus/admin/eucarc"
 source ~/creds/eucalyptus/admin/eucarc
 
 next
+
+
+((++step))
+# Obtain all values we need from eucarc
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/eucalyptus/admin/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/eucalyptus/admin/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/eucalyptus/admin/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/eucalyptus/admin/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/eucalyptus/admin/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/eucalyptus/admin/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/eucalyptus/admin/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/eucalyptus/admin/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/eucalyptus/admin/eucarc)
+eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/eucalyptus/admin/eucarc)
+eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/eucalyptus/admin/eucarc)
+
+# This is an AWS convention I've been using in my own URLs, but which may not work for others
+# Obtain the AWS region name from the second-to-the-right domain name component of the URL:
+# - if not an IP address, and
+# - if consistent with AWS region syntax ("*-*-*")
+# otherwise use "eucalyptus"
+region=$(echo $ec2_url | sed -n -r -e "s/^.*\/\/compute\.([^-.]*-[^-.]*-[^-.]*)\..*$/\1/p")
+if [ -z $region ]; then
+    region=eucalyptus
+fi
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Eucalyptus Administrator Tools Profile"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "mkdir -p ~/.euca"
+echo "chmod 0700 ~/.euca"
+echo
+echo "echo \"[user admin]\" > ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
+echo
+echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"cloudformation-url = cfn_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"sts-url = sts_url\" >> ~/.euca/euca2ools.ini"
+echo "echo \"swf-url = swf_url\" >> ~/.euca/euca2ools.ini"
+echo
+echo "more /root/.euca/euca2ools.ini"
+
+echo "
+
+if [ -r ~/.euca/euca2ools.ini ] && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    rm -f ~/.euca/euca2ools.ini
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# echo \"[user admin]\" > ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "[user admin]" > ~/.euca/euca2ools.ini
+        echo "key-id = $eucalyptus_admin_access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $eucalyptus_admin_secret_key" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"cloudformation-url = cfn_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"sts-url = sts_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"swf-url = swf_url\" >> ~/.euca/euca2ools.ini"
+        echo "[region $region]" >> ~/.euca/euca2ools.ini
+        echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
+        echo "cloudformation-url = cfn_url" >> ~/.euca/euca2ools.ini
+        echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
+        echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
+        echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
+        echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
+        echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
+        echo "sts-url = sts_url" >> ~/.euca/euca2ools.ini
+        echo "swf-url = swf_url" >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# more /root/.euca/euca2ools.ini"
+        more /root/.euca/euca2ools.ini
+
+        next
+    fi
+fi
 
 
 ((++step))
