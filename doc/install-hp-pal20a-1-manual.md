@@ -49,6 +49,7 @@ you can obtain the original kickstart configuration if you need to perform anoth
 installation. Hopefully we can replace with a kickstart-based method which automates most of 
 this before that is needed. Here is the relevant section in case the original kickstart is lost:
 
+```
 clearpart --all --drives=sda,sdb
 part /boot --fstype=ext4 --ondisk=sda --asprimary --size=1024
 part pv01 --ondisk=sda --asprimary --size=1 --grow
@@ -59,6 +60,7 @@ logvol swap --name=swap --vgname=local --size=65536
 logvol / --fstype=ext4 --name=root --vgname=local --size=260196
 logvol /var/lib/eucalyptus/archive --fstype=ext4 --name=archive --vgname=local --size=131072
 logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=1048576
+```
 
 How we've allocated disk space can be described as follows:
 - Increased size of /boot to 1 GiB, just in case this system lives for a while with extra kernels
@@ -236,9 +238,6 @@ above are changed, expected results below should also be updated to match.
 dig ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
 hpccc.com. 600 IN A 10.0.1.91
 
-dig ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
-
 dig ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
 ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 
@@ -257,15 +256,10 @@ console.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
 ```bash
 dig –t NS ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
 hpccc.com. 300 IN NS dc1a.hpccc.com.
-hpccc.com. 300 IN NS dc2a.hpccc.com.
-dc1a.hpccc.com. 3600 IN A 10.0.1.91
-dc2a.hpccc.com. 3600 IN A 10.0.1.92
 
 dig –t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
 hp-pal20a-1.hpccc.com. 300 IN NS dc1a.hpccc.com.
-hp-pal20a-1.hpccc.com. 300 IN NS dc2a.hpccc.com.
 hp-pal20a-1.dc1a.hpccc.com. 3600 IN A 10.0.1.91
-hp-pal20a-1.dc2a.hpccc.com. 3600 IN A 10.0.1.92
 
 dig –t NS cloud.hp-pal20a-1.hpccc.com | grep '^[a-z]'
 cloud.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
@@ -305,14 +299,15 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
 
     ```bash
     clearpart --all --drives=sda,sdb
-    part /boot --ondisk=sda --asprimary --fstype=ext4 --name=boot --size=500
-    part pv.01 --ondisk=sda --grow --size=1
-    part pv.02 --ondisk-sdb --grow --size=1
-    volgroup local --pesize=4096 pv.01
-    volgroup eucalyptus --pesize=4096 pv.02
+    part /boot --fstype=ext4 --ondisk=sda --asprimary --size=1024
+    part pv01 --ondisk=sda --asprimary --size=1 --grow
+    part pv02 --ondisk=sdb --size=1 --grow
+    volgroup local --pesize=4096 pv01
+    volgroup eucalyptus --pesize=4096 pv02
     logvol swap --name=swap --vgname=local --size=65536
-    logvol / --fstype=ext4 --name=root --vgname=local --size=65536 --grow
-    logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=262144
+    logvol / --fstype=ext4 --name=root --vgname=local --size=260196
+    logvol /var/lib/eucalyptus/archive --fstype=ext4 --name=archive --vgname=local --size=131072
+    logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=1048576
     ```
 
     Note that we are leaving about half of VG `eucalyptus` on disk `sdb` un-reserved and
@@ -325,23 +320,25 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     **Mounted Filesystems**
 
     ```bash
-    df -h
     Filesystem            Size  Used Avail Use% Mounted on
     /dev/mapper/local-root
-                           71G  730M   67G   2% /
+                          250G  981M  237G   1% /
     tmpfs                  63G     0   63G   0% /dev/shm
-    /dev/sda1             477M   25M  427M   6% /boot
+    /dev/sda1             976M   47M  879M   5% /boot
     /dev/mapper/eucalyptus-eucalyptus
-                          252G   60M  240G   1% /var/lib/eucalyptus
+                         1008G   72M  957G   1% /var/lib/eucalyptus
+    /dev/mapper/local-archive
+                          126G   60M  120G   1% /var/lib/eucalyptus/archive
     ```
 
     **Logical Volume Management**
 
     ```bash
+
     pvscan
-      PV /dev/sdb1   VG eucalyptus   lvm2 [558.73 GiB / 302.73 GiB free]
-      PV /dev/sda2   VG local        lvm2 [136.21 GiB / 0    free]
-      Total: 2 [694.93 GiB] / in use: 2 [694.93 GiB] / in no VG: 0 [0   ]
+      PV /dev/sdb1   VG eucalyptus   lvm2 [1.75 TiB / 764.39 GiB free]
+      PV /dev/sda2   VG local        lvm2 [446.10 GiB / 0    free]
+      Total: 2 [2.18 TiB] / in use: 2 [2.18 TiB] / in no VG: 0 [0   ]
 
     vgscan
       Reading all physical volumes.  This may take a while...
@@ -349,8 +346,9 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
       Found volume group "local" using metadata type lvm2
 
     lvscan
-      ACTIVE            '/dev/eucalyptus/eucalyptus' [256.00 GiB] inherit
-      ACTIVE            '/dev/local/root' [72.21 GiB] inherit
+      ACTIVE            '/dev/eucalyptus/eucalyptus' [1.00 TiB] inherit
+      ACTIVE            '/dev/local/root' [254.10 GiB] inherit
+      ACTIVE            '/dev/local/archive' [128.00 GiB] inherit
       ACTIVE            '/dev/local/swap' [64.00 GiB] inherit
     ```
 
@@ -359,30 +357,30 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     ```bash
     fdisk -l
 
-    Disk /dev/sda: 146.8 GB, 146778685440 bytes
-    255 heads, 63 sectors/track, 17844 cylinders
+    Disk /dev/sda: 480.1 GB, 480070426624 bytes
+    255 heads, 63 sectors/track, 58365 cylinders
     Units = cylinders of 16065 * 512 = 8225280 bytes
     Sector size (logical/physical): 512 bytes / 512 bytes
     I/O size (minimum/optimal): 262144 bytes / 262144 bytes
-    Disk identifier: 0x000e63c1
+    Disk identifier: 0x000a1ab6
 
        Device Boot      Start         End      Blocks   Id  System
-    /dev/sda1   *           1          64      512000   83  Linux
+    /dev/sda1   *           1         131     1048576   83  Linux
     Partition 1 does not end on cylinder boundary.
-    /dev/sda2              64       17845   142825472   8e  Linux LVM
+    /dev/sda2             131       58366   467768320   8e  Linux LVM
 
-    Disk /dev/sdb: 599.9 GB, 599932581888 bytes
-    255 heads, 63 sectors/track, 72937 cylinders
+    Disk /dev/sdb: 1920.3 GB, 1920279076864 bytes
+    255 heads, 63 sectors/track, 233460 cylinders
     Units = cylinders of 16065 * 512 = 8225280 bytes
     Sector size (logical/physical): 512 bytes / 512 bytes
-    I/O size (minimum/optimal): 262144 bytes / 524288 bytes
-    Disk identifier: 0x00010ae1
+    I/O size (minimum/optimal): 262144 bytes / 1048576 bytes
+    Disk identifier: 0x000c1938
 
        Device Boot      Start         End      Blocks   Id  System
-    /dev/sdb1               1       72938   585870336   8e  Linux LVM
+    /dev/sdb1               1      233461  1875270656   8e  Linux LVM
 
-    Disk /dev/mapper/local-root: 77.5 GB, 77531709440 bytes
-    255 heads, 63 sectors/track, 9426 cylinders
+    Disk /dev/mapper/local-root: 272.8 GB, 272835280896 bytes
+    255 heads, 63 sectors/track, 33170 cylinders
     Units = cylinders of 16065 * 512 = 8225280 bytes
     Sector size (logical/physical): 512 bytes / 512 bytes
     I/O size (minimum/optimal): 262144 bytes / 262144 bytes
@@ -397,11 +395,19 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     Disk identifier: 0x00000000
 
 
-    Disk /dev/mapper/eucalyptus-eucalyptus: 274.9 GB, 274877906944 bytes
-    255 heads, 63 sectors/track, 33418 cylinders
+    Disk /dev/mapper/local-archive: 137.4 GB, 137438953472 bytes
+    255 heads, 63 sectors/track, 16709 cylinders
     Units = cylinders of 16065 * 512 = 8225280 bytes
     Sector size (logical/physical): 512 bytes / 512 bytes
-    I/O size (minimum/optimal): 262144 bytes / 524288 bytes
+    I/O size (minimum/optimal): 262144 bytes / 262144 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/eucalyptus-eucalyptus: 1099.5 GB, 1099511627776 bytes
+    255 heads, 63 sectors/track, 133674 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 262144 bytes / 1048576 bytes
     Disk identifier: 0x00000000
     ```
     
