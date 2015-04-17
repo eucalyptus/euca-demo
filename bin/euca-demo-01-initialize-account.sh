@@ -249,11 +249,8 @@ echo
 echo "mkdir -p ~/.euca"
 echo "chmod 0700 ~/.euca"
 echo
-echo "echo \"[user admin]\" > ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
-echo
 echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
@@ -264,8 +261,16 @@ echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
 echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
 echo
-echo "more /root/.euca/euca2ools.ini"
+echo "echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
+echo
+echo "more ~/.euca/euca2ools.ini"
+echo
+echo "euca-describe-availability-zones verbose --region admin@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$eucalyptus_admin_secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -287,16 +292,8 @@ else
         echo "# chmod 0700 ~/.euca"
         chmod 0700 ~/.euca
         echo "#"
-        echo "# echo \"[user admin]\" > ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "[user admin]" > ~/.euca/euca2ools.ini
-        echo "key-id = $eucalyptus_admin_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $eucalyptus_admin_secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        pause
-
         echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
@@ -307,6 +304,9 @@ else
         echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
         echo "[region $region]" >> ~/.euca/euca2ools.ini
         echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
         echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
@@ -317,10 +317,25 @@ else
         echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
         echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
         echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# more /root/.euca/euca2ools.ini"
-        more /root/.euca/euca2ools.ini
+        echo "# echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "[user admin]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $eucalyptus_admin_access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $eucalyptus_admin_secret_key" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# more ~/.euca/euca2ools.ini"
+        more ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availability-zones verbose --region admin@$region"
+        euca-describe-availability-zones verbose --region admin@$region
 
         next
     fi
@@ -504,6 +519,85 @@ else
 
         echo "# cat ~/creds/$account/admin/eucarc"
         cat ~/creds/$account/admin/eucarc
+
+        next
+    fi
+fi
+
+
+((++step))
+# Obtain all values we need from eucarc
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/$account/admin/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/$account/admin/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/$account/admin/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/$account/admin/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/$account/admin/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/$account/admin/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/$account/admin/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/$account/admin/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/$account/admin/eucarc)
+demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/$account/admin/eucarc)
+demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/$account/admin/eucarc)
+
+# This is an AWS convention I've been using in my own URLs, but which may not work for others
+# Obtain the AWS region name from the second-to-the-right domain name component of the URL:
+# - if not an IP address, and
+# - if consistent with AWS region syntax ("*-*-*")
+# otherwise use "eucalyptus"
+region=$(echo $ec2_url | sed -n -r -e "s/^.*\/\/compute\.([^-.]*-[^-.]*-[^-.]*)\..*$/\1/p")
+if [ -z $region ]; then
+    region=eucalyptus
+fi
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Tools Profile"
+echo "    - This allows the Demo Account Administrator to run API commands via Euca2ools"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"[user $account-admin]\" > ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
+echo
+echo "more ~/.euca/euca2ools.ini"
+echo
+echo "euca-describe-availability-zones verbose --region $account-admin@$region"
+
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$demo_admin_secret_key" ~/.euca/euca2ools.ini; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $demo_admin_access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $demo_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "[user $account-admin]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $demo_admin_access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $demo_admin_secret_key" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# more ~/.euca/euca2ools.ini"
+        more ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availability-zones verbose --region $account-admin@$region"
+        euca-describe-availability-zones verbose --region $account-admin@$region
 
         next
     fi
