@@ -560,7 +560,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[user $account-admin]\" > ~/.euca/euca2ools.ini"
+echo "echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
 echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
@@ -735,16 +735,16 @@ echo
 echo "$(printf '%2d' $step). Modify an Instance Type"
 echo "    - Change the m1.small instance type:"
 echo "      - to use 1 GB memory instead of the 256 MB default"
-echo "      - to use 8 GB disk instead of the 5 GB default"
+echo "      - to use 10 GB disk instead of the 5 GB default"
 echo "    - We need to increase this to use the CentOS image"
 echo
 echo "============================================================"
 echo 
 echo "Commands:"
 echo 
-echo "euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small"
+echo "euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small"
 
-if [ "$memory" = 1024 -a "$disk" = 8 ]; then
+if [ "$memory" = 1024 -a "$disk" = 10 ]; then
     echo
     tput rev
     echo "Already Modified!"
@@ -757,8 +757,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small"
-        euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small
+        echo "# euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small"
+        euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small
 
         next
     fi
