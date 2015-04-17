@@ -6,10 +6,12 @@
 # - Creates a Demo User (named "user"), intended for user-level, mostly read-only, operations
 # - Creates the Demo User Login Profile, allowing the use of the console
 # - Downloads the Demo User Credentials, allowing use of the API
+# - Configures Euca2ools for the Demo User, allowing use of the API via euca2ools
 # - Creates a Demo Users Group (named "users"), and makes the Demo User a member
 # - Creates a Demo Developer (named "developer"), intended for developer-level, mostly read-write, operations
 # - Creates the Demo Developer Login Profile, allowing the use of the console
 # - Downloads the Demo Developer Credentials, allowing use of the API
+# - Configures Euca2ools for the Demo Developer, allowing use of the API via euca2ools
 # - Creates a Demo Developers Group (named "developers"), and makes the Demo Developer a member
 #
 # The euca-demo-01-initialize-account.sh script should be run by the Eucalyptus Administrator
@@ -398,6 +400,135 @@ else
 fi
 
 
+
+((++step))
+# Obtain all values we need from eucarc
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/$account/$demo_user/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/$account/$demo_user/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/$account/$demo_user/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/$account/$demo_user/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/$account/$demo_user/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/$account/$demo_user/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/$account/$demo_user/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/$account/$demo_user/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/$account/$demo_user/eucarc)
+demo_user_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/$account/$demo_user/eucarc)
+demo_user_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/$account/$demo_user/eucarc)
+
+# This is an AWS convention I've been using in my own URLs, but which may not work for others
+# Obtain the AWS region name from the second-to-the-right domain name component of the URL:
+# - if not an IP address, and
+# - if consistent with AWS region syntax ("*-*-*")
+# otherwise use "eucalyptus"
+region=$(echo $ec2_url | sed -n -r -e "s/^.*\/\/compute\.([^-.]*-[^-.]*-[^-.]*)\..*$/\1/p")
+if [ -z $region ]; then
+    region=eucalyptus
+fi
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user) Tools Profile"
+echo "    - This allows the Demo Account User to run API commands via Euca2ools"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+    echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo
+fi
+echo "echo \"[user $account-$demo_user]\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $demo_user_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $demo_user_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
+echo
+echo "more ~/.euca/euca2ools.ini"
+echo
+echo "euca-describe-availability-zones verbose --region $account-$demo_user@$region"
+
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$demo_user_secret_key" ~/.euca/euca2ools.ini; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.euca
+        chmod 0700 ~/.euca
+        echo
+
+        if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+            echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            echo "[region $region]" >> ~/.euca/euca2ools.ini
+            echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
+            echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
+            echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
+            echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
+            echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
+            echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
+            echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
+            echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
+            echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            pause
+        fi
+
+        echo "# echo \"[user $account-$demo_user]\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $demo_user_access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $demo_user_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "[user $account-$demo_user]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $demo_user_access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $demo_user_secret_key" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# more ~/.euca/euca2ools.ini"
+        more ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availability-zones verbose --region $account-$demo_user@$region"
+        euca-describe-availability-zones verbose --region $account-$demo_user@$region
+
+        next
+    fi
+fi
+
+
 ((++step))
 clear
 echo
@@ -571,6 +702,134 @@ else
 
         echo "# cat ~/creds/$account/$demo_developer/eucarc"
         cat ~/creds/$account/$demo_developer/eucarc
+
+        next
+    fi
+fi
+
+
+((++step))
+# Obtain all values we need from eucarc
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/$account/$demo_developer/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/$account/$demo_developer/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/$account/$demo_developer/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/$account/$demo_developer/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/$account/$demo_developer/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/$account/$demo_developer/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/$account/$demo_developer/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/$account/$demo_developer/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/$account/$demo_developer/eucarc)
+demo_developer_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/$account/$demo_developer/eucarc)
+demo_developer_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/$account/$demo_developer/eucarc)
+
+# This is an AWS convention I've been using in my own URLs, but which may not work for others
+# Obtain the AWS region name from the second-to-the-right domain name component of the URL:
+# - if not an IP address, and
+# - if consistent with AWS region syntax ("*-*-*")
+# otherwise use "eucalyptus"
+region=$(echo $ec2_url | sed -n -r -e "s/^.*\/\/compute\.([^-.]*-[^-.]*-[^-.]*)\..*$/\1/p")
+if [ -z $region ]; then
+    region=eucalyptus
+fi
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer) Tools Profile"
+echo "    - This allows the Demo Account Developer to run API commands via Euca2ools"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+    echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo
+fi
+echo "echo \"[user $account-$demo_developer]\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $demo_developer_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $demo_developer_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo >> ~/.euca/euca2ools.ini"
+echo
+echo "more ~/.euca/euca2ools.ini"
+echo
+echo "euca-describe-availability-zones verbose --region $account-$demo_developer@$region"
+
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$demo_developer_secret_key" ~/.euca/euca2ools.ini; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.euca
+        chmod 0700 ~/.euca
+        echo
+
+        if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+            echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            echo "[region $region]" >> ~/.euca/euca2ools.ini
+            echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
+            echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
+            echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
+            echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
+            echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
+            echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
+            echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
+            echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
+            echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            pause
+        fi
+
+        echo "# echo \"[user $account-$demo_developer]\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $demo_developer_access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $demo_developer_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "[user $account-$demo_developer]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $demo_developer_access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $demo_developer_secret_key" >> ~/.euca/euca2ools.ini
+        echo >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# more ~/.euca/euca2ools.ini"
+        more ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availability-zones verbose --region $account-$demo_developer@$region"
+        euca-describe-availability-zones verbose --region $account-$demo_developer@$region
 
         next
     fi

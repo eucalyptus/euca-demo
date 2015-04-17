@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 # This script initializes Eucalyptus with a Demo Account, including:
-# - Configure Euca2ools for the Eucalyptus Account Administrator
+# - Configures Euca2ools for the Eucalyptus Account Administrator, allowing use of the API via euca2ools
 # - Creates the Eucalyptus Account Administrator Demo Keypair, allowing ssh login to instances
 # - Creates a Demo Account (default name is "demo", but this can be overridden)
 # - Creates the Demo Account Administrator Login Profile, allowing the use of the console
 # - Downloads the Demo Account Administrator Credentials, allowing use of the API
-# - Configure Euca2ools for the Demo Account Administrator
+# - Configures Euca2ools for the Demo Account Administrator, allowing use of the API via euca2ools
 # - Downloads a CentOS 6.6 image
 # - Installs the CentOS 6.6 image
 # - Authorizes use of the CentOS 6.6 image by the Demo Account
@@ -241,13 +241,11 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create Eucalyptus Administrator Tools Profile"
+echo "    - This allows the Eucalyptus Administrator to run API commands via Euca2ools"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
-echo
-echo "mkdir -p ~/.euca"
-echo "chmod 0700 ~/.euca"
 echo
 echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
@@ -281,17 +279,12 @@ if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$eucalyptus_admin_secret_key" ~/.
     next 50
 
 else
-    rm -f ~/.euca/euca2ools.ini
-
     run 50
 
     if [ $choice = y ]; then
-        echo
-        echo "# mkdir -p ~/.euca"
         mkdir -p ~/.euca
-        echo "# chmod 0700 ~/.euca"
         chmod 0700 ~/.euca
-        echo "#"
+        echo
         echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
@@ -560,6 +553,22 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+    echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo "echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+    echo "echo >> ~/.euca/euca2ools.ini"
+    echo
+fi
 echo "echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
 echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
@@ -581,7 +590,40 @@ else
     run 50
 
     if [ $choice = y ]; then
+        mkdir -p ~/.euca
+        chmod 0700 ~/.euca
         echo
+
+        if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
+            echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# echo \"[region $region]\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
+            echo "# echo >> ~/.euca/euca2ools.ini"
+            echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            echo "[region $region]" >> ~/.euca/euca2ools.ini
+            echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
+            echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
+            echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
+            echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
+            echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
+            echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
+            echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
+            echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
+            echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
+            echo >> ~/.euca/euca2ools.ini
+            pause
+        fi
+
         echo "# echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"key-id = $demo_admin_access_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo \"secret-key = $demo_admin_secret_key\" >> ~/.euca/euca2ools.ini"
@@ -610,6 +652,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Download Demo Image (CentOS 6.6)"
+echo "    - Decompress and convert image to raw format"
 echo
 echo "============================================================"
 echo
