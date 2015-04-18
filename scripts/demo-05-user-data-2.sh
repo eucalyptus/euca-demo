@@ -48,3 +48,17 @@ EOF
 chkconfig httpd on
 service httpd start
 
+# Allow web traffic through the firewall
+cat << EOF > /tmp/iptables_www_$$.sed
+/^-A INPUT -j REJECT/i\\
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\\
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+EOF
+
+grep -q "dport 80" /etc/sysconfig/iptables ||
+sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables
+
+rm -f /tmp/iptables_www_$$.sed
+
+service iptables restart
+
