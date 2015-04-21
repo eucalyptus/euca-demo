@@ -18,6 +18,7 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
 logdir=${bindir%/*}/log
+certsdir=${bindir%/*}/certs
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
@@ -419,6 +420,150 @@ if [ $choice = y ]; then
     echo
     echo "# service eucaconsole start"
     service eucaconsole start
+
+    next 50
+fi
+
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
+echo " - We will use the Helion Eucalyptus Development Root Certificate Authority to sign SSL certificates"
+echo " - We must add this CA cert to the trusted root certificate authorities on all servers which use"
+echo "   these certificates, and on all browsers which must trust websites served by them"
+echo " - You can copy the body of the certificate from below to install on your browser"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt"
+cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+echo "EOF"
+echo
+echo "update-ca-trust extract"
+
+run
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt"
+    cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt | sed -e 's/^/> /'
+    echo "> EOF"
+    cp $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt /etc/pki/ca-trust/source/anchors
+    chown root:root /etc/pki/ca-trust/source/anchor/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+    echo "#"
+    echo "# update-ca-trust extract"
+    update-ca-trust extract
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Install Wildcard SSL Key and Certificate"
+echo " - We use a wildcard SSL certificate signed by the local CA to prevent unknown CA SSL warnings"
+echo " - This replaces the self-signed SSL certificate installed originally"
+echo " - This key and certificate are insecure and should not be exposed to an external audience"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
+cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+echo "EOF"
+echo
+echo "chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
+echo
+echo "cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
+cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+echo "EOF"
+echo
+echo "chmod 444 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
+
+run
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
+    cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key | sed -e 's/^/> /'
+    echo "> EOF"
+    cp $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key /etc/pki/tls/private
+    chown root:root /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    echo "#"
+    echo "# chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
+    chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    pause
+
+    echo "# cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
+    cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt | sed -e 's/^/> /'
+    echo "> EOF"
+    cp $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt /etc/pki/tls/certs
+    chown root:root /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+    echo "#"
+    echo "# chmod 440 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
+    chmod 440 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Configure Nginx to use wildcard SSL certificate"
+echo " - This certificate is signed by the Helion Eucalyptus Development Root Certificate Authority"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/${ssl_crt_url##*/}/\" \\"
+echo "       -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/${ssl_key_url##*/}/\" /etc/nginx/nginx.conf"
+
+run
+
+if [ $choice = y ]; then
+    echo
+    echo "# sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/${ssl_crt_url##*/}/\" \\"
+    echo ">        -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/${ssl_key_url##*/}/\" /etc/nginx/nginx.conf"
+    sed -i -e "s/\/etc\/eucaconsole\/console.crt/\/etc\/pki\/tls\/certs\/${ssl_crt_url##*/}/" \
+           -e "s/\/etc\/eucaconsole\/console.key/\/etc\/pki\/tls\/private\/${ssl_key_url##*/}/" /etc/nginx/nginx.conf
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Restart Nginx service"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "service nginx restart"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# service nginx restart"
+    service nginx restart
 
     next 50
 fi
