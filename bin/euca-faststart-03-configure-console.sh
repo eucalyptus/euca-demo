@@ -534,17 +534,17 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/${ssl_crt_url##*/}/\" \\"
-echo "       -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/${ssl_key_url##*/}/\" /etc/nginx/nginx.conf"
+echo "sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt/\" \\"
+echo "       -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key/\" /etc/nginx/nginx.conf"
 
 run
 
 if [ $choice = y ]; then
     echo
-    echo "# sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/${ssl_crt_url##*/}/\" \\"
-    echo ">        -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/${ssl_key_url##*/}/\" /etc/nginx/nginx.conf"
-    sed -i -e "s/\/etc\/eucaconsole\/console.crt/\/etc\/pki\/tls\/certs\/${ssl_crt_url##*/}/" \
-           -e "s/\/etc\/eucaconsole\/console.key/\/etc\/pki\/tls\/private\/${ssl_key_url##*/}/" /etc/nginx/nginx.conf
+    echo "# sed -i -e \"s/\\/etc\\/eucaconsole\\/console.crt/\\/etc\\/pki\\/tls\\/certs\\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt/\" \\"
+    echo ">        -e \"s/\\/etc\\/eucaconsole\\/console.key/\\/etc\\/pki\\/tls\\/private\\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key/\" /etc/nginx/nginx.conf"
+    sed -i -e "s/\/etc\/eucaconsole\/console.crt/\/etc\/pki\/tls\/certs\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt/" \
+           -e "s/\/etc\/eucaconsole\/console.key/\/etc\/pki\/tls\/private\/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key/" /etc/nginx/nginx.conf
 
     next 50
 fi
