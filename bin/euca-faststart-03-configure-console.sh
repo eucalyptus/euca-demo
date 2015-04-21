@@ -445,6 +445,8 @@ echo "cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Developmen
 cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
 echo "EOF"
 echo
+echo "update-ca-trust enable"
+echo
 echo "update-ca-trust extract"
 
 run
@@ -455,7 +457,10 @@ if [ $choice = y ]; then
     cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt | sed -e 's/^/> /'
     echo "> EOF"
     cp $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt /etc/pki/ca-trust/source/anchors
-    chown root:root /etc/pki/ca-trust/source/anchor/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+    chown root:root /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+    echo "#"
+    echo "# update-ca-trust enable"
+    update-ca-trust enable
     echo "#"
     echo "# update-ca-trust extract"
     update-ca-trust extract
