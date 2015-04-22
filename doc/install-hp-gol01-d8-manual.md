@@ -172,15 +172,15 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 This section will initialize the host with some conventions normally added during the kickstart
 process, not currently available for this host.
 
-1. Install additional packages
+1. (All) Install additional packages
 
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git nc w3m rsync bind-utils tree
+    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
     ```
 
-2. Configure Sudo
+2. (All) Configure Sudo
 
     Allow members of group `wheel` to sudo with a password.
 
@@ -188,7 +188,7 @@ process, not currently available for this host.
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
-3. Configure root user
+3. (All) Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
     structure, and adjusting the default GECOS information so email sent from root on a host
@@ -201,7 +201,7 @@ process, not currently available for this host.
     sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
     ```
 
-4. Clone euca-demo git project
+4. (All) Clone euca-demo git project
 
     This is one location where demo scripts live. We will run the demo initialization
     scripts at the completion of the installation.
@@ -215,7 +215,7 @@ process, not currently available for this host.
     fi
     ```
 
-5. Configure profile
+5. (All) Configure profile
 
     Adjust global profile with some local useful aliases.
 
@@ -255,49 +255,33 @@ above are changed, expected results below should also be updated to match.
 **A Records**
 
 ```bash
-dig ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-mjc.prc.eucalyptus-systems.com. 95 IN   A       10.104.10.80
-mjc.prc.eucalyptus-systems.com. 95 IN   NS      ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 107 IN A    10.104.10.80
+dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.80
 
-dig ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 75 IN A     10.104.10.80
+dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
 
-dig ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-ns1.hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 38 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 53 IN A     10.104.10.80
+dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
 
-dig clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-clc.hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 22 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 37 IN A     10.104.10.80
+dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
 
-dig ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-ufs.hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 9 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 24 IN A     10.104.10.80
+dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
 
-dig console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-console.hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 12 IN A     10.104.10.80
+dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
 ```
 
 **NS Records**
 
 ```bash
-dig –t NS ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-mjc.prc.eucalyptus-systems.com. 300 IN  A       10.104.10.80
-mjc.prc.eucalyptus-systems.com. 300 IN  NS      ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 300 IN A    10.104.10.80
+dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+ns1.mjc.prc.eucalyptus-systems.com.
 
-dig –t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 60 IN A 10.104.10.83
-hp-gol01-d8.mjc.prc.eucalyptus-systems.com. 13 IN NS ns1.mjc.prc.eucalyptus-systems.com.
-ns1.mjc.prc.eucalyptus-systems.com. 300 IN A    10.104.10.80
+dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+ns1.mjc.prc.eucalyptus-systems.com.
 ```
 
 
@@ -917,7 +901,6 @@ ns1.mjc.prc.eucalyptus-systems.com. 300 IN A    10.104.10.80
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
-
 ### Prepare Network
 
 1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
@@ -980,7 +963,6 @@ ns1.mjc.prc.eucalyptus-systems.com. 300 IN A    10.104.10.80
     ssh-keyscan ${EUCA_NCB1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_NCB2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
-
 
 ### Install Eucalyptus
 
@@ -1649,6 +1631,24 @@ ns1.mjc.prc.eucalyptus-systems.com. 300 IN A    10.104.10.80
     euare-usermodloginprofile -u admin -p password
     ```
 
+### Configure Support-Related Properties
+
+1. (CLC): Create Eucalyptus Administrator Support Keypair
+
+    ```bash
+    euca-create-keypair admin-support | tee ~/creds/eucalyptus/admin/admin-support.pem
+    ```
+
+2. (CLC): Configure Service Instance Login
+
+    ```bash
+    euca-modify-property -p services.database.worker.keyname=admin-support
+
+    euca-modify-property -p services.imaging.worker.keyname=admin-support
+
+    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
+    ```
+
 ### Configure SSL Certificates
 
 We have an internal certificate authority used to sign development wildcard certificates.
@@ -1660,6 +1660,10 @@ must be updated with the new text. Since this repository is public, these should
 considered insecure, and not used to protect hosts or sites accessible from the Internet.
 
 1. (ALL) Configure SSL to trust local Certificate Authority
+
+    You should save this certificate and import into the trusted certificate store of all
+    workstations where you may access the management console, so that you do not get the
+    unknown certificate authority warning.
 
     ```bash
     cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
@@ -1781,13 +1785,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 440 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    chmod 444 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
     ```
 
 4. (CLC+UFS+MC) Install Wildcard Site SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEpQIBAAKCAQEAxYGf/J0nk3BsIaQIQjoZZv9AVGm4A5T38E5GDsIrhQtbWL3c
     zo36ZZssrFoF+73kn7D7fePqt1pYvfOfyUTiQLwcE05BcOmde4xdA85tDctISK0g
@@ -1817,14 +1821,14 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
     ```
 
 5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
 
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
     -----BEGIN CERTIFICATE-----
     MIIFuDCCA6CgAwIBAgIBCTANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1860,16 +1864,15 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
     ```
-
 
 ### Configure Management Console for SSL
 
 1. (MW): Confirm Eucalyptus Console service on default port
 
     ```bash
-    Browse: http://${EUCA_MC_PUBLIC_IP}:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
     ```
 
 2. (MC):  4. Stop Eucalyptus Console service
@@ -1891,8 +1894,8 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 
     sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
            -e "s/# \(ssl_certificate\)/\1/" \
-           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
-           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
@@ -1920,7 +1923,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 10. (MC): Confirm Eucalyptus Console service
 
     ```bash
-    Browse: https://${EUCA_MC_PUBLIC_IP}
+    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
     ```
 
 ### Configure for Demos
@@ -1931,14 +1934,17 @@ system for use by users.
 
 1. (CLC): Initialize Demo Account 
 
+    By default, running this script creates an account named `demo`. You can create additional
+    accounts for demo purposes by using the `-a <account>` flag.
+
     ```bash
-    euca-demo-01-initialize-account.sh
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
     ```
 
 2. (CLC): Initiali Demo Account Dependencies.sh
 
     ```bash
-    euca-demo-02-initialize-dependencies.sh
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
     ```
 
 ### Test Inter-Component Connectivity
