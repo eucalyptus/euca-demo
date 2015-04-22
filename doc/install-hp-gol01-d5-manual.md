@@ -1,24 +1,32 @@
-# Manual Installation Procedure for 8-Node (2+(1+2)+(1+2)) POC (region hp-gol-d1)
+# Install Procedure for region hp-gol01-d5
+## 5-Node (3+2) POC
 
-This document describes the manual procedure to setup region hp-gol-d1 in a multiple cluster
-configuration, with 2 cloud level control nodes for CLC+UFS+MC and Walrus, combined with
-1 cluster level control node for CC+SC and 2 NCs per cluster, total of 2 clusters.
+This document describes the manual procedure to setup region hp-gol01-d5,
+based on a variant of the "4-node reference architecture", but combining the 
+CLC with the UFS, and with 2 Node Controllers.
 
 This variant is meant to be run as root
 
-This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
+This POC will use **hp-gol01-d5** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
+The full parent DNS domain will be hp-gol01-d5.mjc.prc.eucalyptus-systems.com.
 
 This is using the following nodes in the PRC:
-- odc-d-13 (em1: 10.104.10.83/16, em2: 10.105.10.83/16): CLC, UFS, MC
-- odc-d-14 (em1: 10.104.10.84/16, em2: 10.105.10.84/16): OSP (Walrus)
-- odc-d-15 (em1: 10.104.10.85/16, em2: 10.105.10.85/16): CCA, SCA
-- odc-d-29 (em1: 10.104.1.208/16, em2: 10.105.1.208/16): CCB, SCB
-- odc-d-35 (em1: 10.104.1.190/16, em2: 10.105.1.190/16): NCA1
-- odc-d-38 (em1: 10.104.1.187/16, em2: 10.105.1.187/16): NCA2
-- odc-f-14 (em1: 10.104.10.56/16, em2: 10.105.10.56/16): NCB1
-- odc-f-17 (em1: 10.104.10.59/16, em2: 10.105.10.59/16): NCB2
+- odc-d-13.prc.eucalyptus-systems.com: CLC+UFS+MC
+  - Public: 10.104.10.83/16 (em1)
+  - Private: 10.105.10.83/16 (em2)
+- odc-d-15.prc.eucalyptus-systems.com: OSP (Walrus)
+  - Public: 10.104.10.85/16 (em1)
+  - Private: 10.105.10.85/16 (em2)
+- odc-d-29.prc.eucalyptus-systems.com: CC+SC
+  - Public: 10.104.1.208/16 (em1)
+  - Private: 10.105.1.208/16 (em2)
+- odc-d-35.prc.eucalyptus-systems.com: NC1
+  - Public: 10.104.1.190/16 (em1)
+  - Private: 10.105.1.190/16 (em2)
+- odc-d-38.prc.eucalyptus-systems.com: NC2
+  - Public: 10.104.1.187/16 (em1)
+  - Private: 10.105.1.187/16 (em2)
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
@@ -26,12 +34,9 @@ Each step uses a code to indicate what node the step should be run on:
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
 - OSP: Object Storage Provider (Walrus)
-- CCA:  Cluster Controller Host (Cluster A)
-- SCA:  Storage Controller Host (Cluster A)
-- NCAn: Node Controller(s) (Cluster A)
-- CCB:  Cluster Controller Host (Cluster B)
-- SCB:  Storage Controller Host (Cluster B)
-- NCBn: Node Controller(s) (Cluster B)
+- CC:  Cluster Controller Host
+- SC:  Storage Controller Host
+- NCn: Node Controller(s)
 
 ### Define Parameters
 
@@ -61,21 +66,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
     export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
 
-    export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.127
+    export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
     export EUCA_CLUSTER1_PRIVATE_NAME=10.105.0.0
     export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
     export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
     export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
-
-    export EUCA_CLUSTER2=${AWS_DEFAULT_REGION}b
-    export EUCA_CLUSTER2_CC_NAME=${EUCA_CLUSTER2}-cc
-    export EUCA_CLUSTER2_SC_NAME=${EUCA_CLUSTER2}-sc
-
-    export EUCA_CLUSTER2_PRIVATE_IP_RANGE=10.105.40.128-10.105.40.254
-    export EUCA_CLUSTER2_PRIVATE_NAME=10.105.0.0
-    export EUCA_CLUSTER2_PRIVATE_SUBNET=10.105.0.0
-    export EUCA_CLUSTER2_PRIVATE_NETMASK=255.255.0.0
-    export EUCA_CLUSTER2_PRIVATE_GATEWAY=10.105.0.1
 
     export EUCA_CLC_PUBLIC_INTERFACE=em1
     export EUCA_CLC_PRIVATE_INTERFACE=em2
@@ -84,54 +79,38 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_UFS_PUBLIC_INTERFACE=em1
     export EUCA_UFS_PRIVATE_INTERFACE=em2
-    export EUCA_UFS_PUBLIC_IP=10.104.10.83
-    export EUCA_UFS_PRIVATE_IP=10.105.10.83
+    export EUCA_UFS_PUBLIC_IP=10.104.10.84
+    export EUCA_UFS_PRIVATE_IP=10.105.10.84
 
     export EUCA_MC_PUBLIC_INTERFACE=em1
     export EUCA_MC_PRIVATE_INTERFACE=em2
-    export EUCA_MC_PUBLIC_IP=10.104.10.83
-    export EUCA_MC_PRIVATE_IP=10.105.10.83
+    export EUCA_MC_PUBLIC_IP=10.104.10.84
+    export EUCA_MC_PRIVATE_IP=10.105.10.84
 
     export EUCA_OSP_PUBLIC_INTERFACE=em1
     export EUCA_OSP_PRIVATE_INTERFACE=em2
-    export EUCA_OSP_PUBLIC_IP=10.104.10.84
-    export EUCA_OSP_PRIVATE_IP=10.105.10.84
+    export EUCA_OSP_PUBLIC_IP=10.104.10.85
+    export EUCA_OSP_PRIVATE_IP=10.105.10.85
 
     export EUCA_CCA_PUBLIC_INTERFACE=em1
     export EUCA_CCA_PRIVATE_INTERFACE=em2
-    export EUCA_CCA_PUBLIC_IP=10.104.10.85
-    export EUCA_CCA_PRIVATE_IP=10.105.10.85
+    export EUCA_CCA_PUBLIC_IP=10.104.1.208
+    export EUCA_CCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_SCA_PUBLIC_INTERFACE=em1
     export EUCA_SCA_PRIVATE_INTERFACE=em2
-    export EUCA_SCA_PUBLIC_IP=10.104.10.85
-    export EUCA_SCA_PRIVATE_IP=10.105.10.85
-
-    export EUCA_CCB_PUBLIC_INTERFACE=em1
-    export EUCA_CCB_PRIVATE_INTERFACE=em2
-    export EUCA_CCB_PUBLIC_IP=10.104.1.208
-    export EUCA_CCB_PRIVATE_IP=10.105.1.208
-
-    export EUCA_SCB_PUBLIC_INTERFACE=em1
-    export EUCA_SCB_PRIVATE_INTERFACE=em2
-    export EUCA_SCB_PUBLIC_IP=10.104.1.208
-    export EUCA_SCB_PRIVATE_IP=10.105.1.208
+    export EUCA_SCA_PUBLIC_IP=10.104.1.208
+    export EUCA_SCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
     export EUCA_NC_PUBLIC_INTERFACE=em1
 
-    export EUCA_NCA1_PUBLIC_IP=10.104.1.190
-    export EUCA_NCA1_PRIVATE_IP=10.105.1.190
+    export EUCA_NC1_PUBLIC_IP=10.104.1.190
+    export EUCA_NC1_PRIVATE_IP=10.105.1.190
 
-    export EUCA_NCA2_PUBLIC_IP=10.104.1.187
-    export EUCA_NCA2_PRIVATE_IP=10.105.1.187
-
-    export EUCA_NCB1_PUBLIC_IP=10.104.10.56
-    export EUCA_NCB1_PRIVATE_IP=10.105.10.56
-
-    export EUCA_NCB2_PUBLIC_IP=10.104.10.59
-    export EUCA_NCB2_PRIVATE_IP=10.105.10.59
+    export EUCA_NC2_PUBLIC_IP=10.104.1.187
+    export EUCA_NC2_PRIVATE_IP=10.105.1.187
     ```
 
 ### Prepare Network
@@ -146,7 +125,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     send and receive dummy traffic to confirm there are no external firewall or routing issues,
     prior to their removal and replacement with the actual packages
 
-2. (CLC+UFS/OSP/SCA/SCB): Run tomography tool
+2. (CLC+UFS/OSP/SC): Run tomography tool
 
     This tool should be run simultaneously on all hosts running Java components.
 
@@ -158,7 +137,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     git clone https://github.com/eucalyptus/deveutils
 
     cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP} ${EUCA_SCB_PRIVATE_IP}
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SC_PRIVATE_IP}
     ```
 
 3. (CLC): Scan for unknown SSH host keys
@@ -170,31 +149,18 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_CCB_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CCB_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
-4. (CCA): Scan for unknown SSH host keys
+4. (CC): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ```
-
-
-5. (CCB): Scan for unknown SSH host keys
-
-    ```bash
-    ssh-keyscan ${EUCA_NCB1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 ### Prepare External DNS
@@ -921,29 +887,18 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-3. (CCA+SCA): Configure Eucalyptus Networking
+3. (SC+CC): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
 
     sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CCA_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CCA_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CCA_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CC_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CC_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-4. (CCB+SCB): Configure Eucalyptus Networking
-
-    ```bash
-    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
-
-    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
-           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_CCB_PRIVATE_INTERFACE}\"/" \
-           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_CCB_PUBLIC_INTERFACE}\"/" \
-           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CCB_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
-5. (NC): Configure Eucalyptus Networking
+4. (NC): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -954,7 +909,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-6. (CLC): Create Eucalyptus EDGE Networking configuration file
+5. (CLC): Create Eucalyptus EDGE Networking configuration file
 
     This can not be loaded until the cloud is initialized.
 
@@ -981,26 +936,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
           "PrivateIps": [
             "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
           ]
-        },
-        {
-          "Name": "${EUCA_CLUSTER2}",
-          "MacPrefix": "d0:0d",
-          "Subnet": {
-            "Name": "${EUCA_CLUSTER2_PRIVATE_NAME}",
-            "Subnet": "${EUCA_CLUSTER2_PRIVATE_SUBNET}",
-            "Netmask": "${EUCA_CLUSTER2_PRIVATE_NETMASK}",
-            "Gateway": "${EUCA_CLUSTER2_PRIVATE_GATEWAY}"
-          },
-          "PrivateIps": [
-            "${EUCA_CLUSTER2_PRIVATE_IP_RANGE}"
-          ]
         }
       ]
     }
     EOF
     ```
 
-7. (NC): Configure Eucalyptus Disk Allocation
+6. (NC): Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=2400000
@@ -1010,7 +952,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-8. (NC): Configure Eucalyptus to use Private IP for Metadata
+7. (NC): Configure Eucalyptus to use Private IP for Metadata
 
     ```bash
     cat << EOF >> /etc/eucalyptus/eucalyptus.conf
@@ -1021,7 +963,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-9. (CLC+UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+8. (CLC/OSP/SC): Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
@@ -1034,7 +976,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with User Facing Services Address
+10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
 
     The clchost parameter within console.ini is misleadingly named, as it should reference the
     public IP of the host running User Facing Services.
@@ -1062,7 +1004,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca_conf --initialize
     ```
 
-2. (CLC+UFS/OSP/SC): Start the Cloud Controller service
+2. (CLC/OSP/SC): Start the Cloud Controller service
 
     ```bash
     service eucalyptus-cloud start
@@ -1162,37 +1104,28 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sleep 15
     ```
 
-3. (CLC): Register Storage Controller services
+3. (CLC): Register Storage Controller service
 
     ```bash
-    euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
-    euca_conf --register-sc -P ${EUCA_CLUSTER2} -C ${EUCA_CLUSTER2_SC_NAME} -H ${EUCA_SCB_PRIVATE_IP}
+    euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SC_PRIVATE_IP}
     sleep 15
     ```
 
-4. (CLC): Register Cluster Controller services
+4. (CLC): Register Cluster Controller service
 
     ```bash
-    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
-    euca_conf --register-cluster -P ${EUCA_CLUSTER2} -C ${EUCA_CLUSTER2_CC_NAME} -H ${EUCA_CCB_PRIVATE_IP}
+    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CC_PRIVATE_IP}
     sleep 15
     ```
 
-5. (CCA): Register Node Controller host(s) associated with Cluster 1
+5. (CC): Register Node Controller host(s)
 
     ```bash
-    euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP}"
+    euca_conf --register-nodes="${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}"
     sleep 15
     ```
 
-6. (CCB): Register Node Controller host(s) associated with Cluster 2
-
-    ```bash
-    euca_conf --register-nodes="${EUCA_NCB1_PRIVATE_IP} ${EUCA_NCB2_PRIVATE_IP}"
-    sleep 15
-    ```
-
-7. (NC): Restart the Node Controller services
+6. (NC): Restart the Node Controller services
 
     The failure messages due to missing keys should no longer be there on restart.
 
@@ -1244,10 +1177,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ````bash
     euca-describe-services | cut -f1-5
 
-    euca-describe-regions
-
-    euca-describe-availability-zones
-
     euca-describe-nodes
     ```
 
@@ -1259,11 +1188,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
-    euca-modify-property -p ${EUCA_CLUSTER2}.storage.blockstoragemanager=das
     sleep 15
 
     euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=eucalyptus
-    euca-modify-property -p ${EUCA_CLUSTER2}.storage.dasdevice=eucalyptus
     sleep 15
     ```
 
@@ -1347,8 +1274,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca-describe-regions
 
     euca-describe-availability-zones
-
-    euca-describe-nodes
 
     euca-describe-instance-types --show-capacity
     ```

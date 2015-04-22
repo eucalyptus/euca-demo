@@ -321,6 +321,7 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     **Mounted Filesystems**
 
     ```bash
+    df -h
     Filesystem            Size  Used Avail Use% Mounted on
     /dev/mapper/local-root
                           250G  981M  237G   1% /
@@ -335,7 +336,6 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     **Logical Volume Management**
 
     ```bash
-
     pvscan
       PV /dev/sdb1   VG eucalyptus   lvm2 [1.75 TiB / 764.39 GiB free]
       PV /dev/sda2   VG local        lvm2 [446.10 GiB / 0    free]
