@@ -1710,7 +1710,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 2. (ALL) Install Wildcard Host SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.${EUCA_DNS_REGION_DOMAIN#*.}.key
+    cat << EOF > /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEowIBAAKCAQEApyjRCMhXk96DWLBbjsDiXSmHuCTVNIHMowQqXv1Mvi9W98xF
     VtJYDJz0yhgshbO3DGuYqTr2R451CELmYbBYlhQQMi0tWO4IxwseBJRoxJcAAxx1
@@ -1740,13 +1740,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.${EUCA_DNS_REGION_DOMAIN#*.}.key
+    chmod 400 /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
     ```
 
 3. (ALL) Install Wildcard Host SSL Certificate
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.${EUCA_DNS_REGION_DOMAIN#*.}.crt
+    cat << EOF > /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
     -----BEGIN CERTIFICATE-----
     MIIFiDCCA3CgAwIBAgIBDjANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1781,13 +1781,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 440 /etc/pki/tls/certs/star.${EUCA_DNS_REGION_DOMAIN#*.}.crt
+    chmod 440 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
     ```
 
 4. (CLC+UFS+MC) Install Wildcard Site SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEpQIBAAKCAQEAxYGf/J0nk3BsIaQIQjoZZv9AVGm4A5T38E5GDsIrhQtbWL3c
     zo36ZZssrFoF+73kn7D7fePqt1pYvfOfyUTiQLwcE05BcOmde4xdA85tDctISK0g
@@ -1817,14 +1817,14 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
     ```
 
 5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
 
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
     -----BEGIN CERTIFICATE-----
     MIIFuDCCA6CgAwIBAgIBCTANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1860,7 +1860,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
     ```
 
 
@@ -1891,8 +1891,8 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 
     sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
            -e "s/# \(ssl_certificate\)/\1/" \
-           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt/" \
-           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key/" /etc/nginx/nginx.conf
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/$EUCA_DNS_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
