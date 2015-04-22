@@ -147,16 +147,16 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r /root/creds/eucalyptus/admin/eucarc ]; then
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Administrator credentials!"
-    echo "Expected to find: /root/creds/eucalyptus/admin/eucarc"
+    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
     sleep 2
 
     if [ -r /root/admin.zip ]; then
         echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-        mkdir -p /root/creds/eucalyptus/admin
-        cp -a /root/admin.zip /root/creds/eucalyptus/admin.zip
-        unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
+        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
         sleep 2
     else
         echo "Could not convert FastStart Eucalyptus Administrator credentials!"
@@ -181,19 +181,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 echo
-echo "source /root/creds/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 
 next
 
 echo
-echo "# cat /root/creds/eucalyptus/admin/eucarc"
-cat /root/creds/eucalyptus/admin/eucarc
+echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 pause
 
-echo "# source /root/creds/eucalyptus/admin/eucarc"
-source /root/creds/eucalyptus/admin/eucarc
+echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
 next
 
@@ -381,52 +381,52 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "rm -f /root/creds/eucalyptus/admin.zip"
+echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
 echo
-echo "euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
+echo "euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
 echo
-echo "unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
+echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
 echo
-echo "cat /root/creds/eucalyptus/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 echo
-echo "source /root/creds/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# mkdir -p /root/creds/eucalyptus/admin"
-    mkdir -p /root/creds/eucalyptus/admin
+    echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
     pause
 
-    echo "# rm -f /root/creds/eucalyptus/admin.zip"
-    rm -f /root/creds/eucalyptus/admin.zip
+    echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
     pause
 
-    echo "# euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip"
-    euca-get-credentials -u admin /root/creds/eucalyptus/admin.zip
+    echo "# euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
     pause
 
-    echo "# unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/"
-    unzip -uo /root/creds/eucalyptus/admin.zip -d /root/creds/eucalyptus/admin/
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" /root/creds/eucalyptus/admin/eucarc; then
+    echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
         # invisibly fix missing environment variables needed for image import
-        pk_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 /root/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" /root/creds/eucalyptus/admin/eucarc
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
     if [ -r /root/eucarc ]; then
         # invisibly update Faststart credentials location
-        cp -a /root/creds/eucalyptus/admin/eucarc /root/eucarc
+        cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc /root/eucarc
     fi
     pause
 
-    echo "# cat /root/creds/eucalyptus/admin/eucarc"
-    cat /root/creds/eucalyptus/admin/eucarc
+    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     pause
 
-    echo "# source /root/creds/eucalyptus/admin/eucarc"
-    source /root/creds/eucalyptus/admin/eucarc
+    echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     pause
 
     next

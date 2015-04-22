@@ -156,9 +156,9 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ ! -r ~/creds/eucalyptus/admin/eucarc ]; then
-    echo "Could not find Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: ~/creds/eucalyptus/admin/eucarc"
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
+    echo "Could not find $AWS_DEFAULT_REGION Eucalyptus Account Administrator credentials!"
+    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
     exit 20
 fi
 
@@ -195,36 +195,36 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/creds/eucalyptus/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 echo
-echo "source ~/creds/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 
 next
 
 echo
-echo "# cat ~/creds/eucalyptus/admin/eucarc"
-cat ~/creds/eucalyptus/admin/eucarc
+echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 pause
 
-echo "# source ~/creds/eucalyptus/admin/eucarc"
-source ~/creds/eucalyptus/admin/eucarc
+echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
 next
 
 
 ((++step))
 # Obtain all values we need from eucarc
-ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/eucalyptus/admin/eucarc)
-s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/eucalyptus/admin/eucarc)
-iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/eucalyptus/admin/eucarc)
-sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/eucalyptus/admin/eucarc)
-as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/eucalyptus/admin/eucarc)
-cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/eucalyptus/admin/eucarc)
-cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/eucalyptus/admin/eucarc)
-elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/eucalyptus/admin/eucarc)
-swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/eucalyptus/admin/eucarc)
-eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/eucalyptus/admin/eucarc)
-eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/eucalyptus/admin/eucarc)
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 
 # This is an AWS convention I've been using in my own URLs, but which may not work for others
 # Obtain the AWS region name from the second-to-the-right domain name component of the URL:
@@ -346,11 +346,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
+echo "euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
 echo
-echo "chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
+echo "chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
 
-if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/admin/admin-demo.pem ]; then
+if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -360,17 +360,17 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/creds/eucalyptus/a
 
 else
     euca-delete-keypair admin-demo
-    rm -f ~/creds/eucalyptus/admin/admin-demo.pem
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee ~/creds/eucalyptus/admin/admin-demo.pem
+        echo "# euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+        euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
         echo "#"
-        echo "# chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem"
-        chmod 0600 ~/creds/eucalyptus/admin/admin-demo.pem
+        echo "# chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+        chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
 
         next
     fi
@@ -459,19 +459,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/creds/$account/admin"
+echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin"
 echo
-echo "rm -f ~/creds/$account/admin.zip"
+echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
 echo
 echo "sudo euca-get-credentials -u admin -a $account \\"
-echo "                          ~/creds/$account/admin.zip"
+echo "                          ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
 echo
-echo "unzip -uo ~/creds/$account/admin.zip \\"
-echo "       -d ~/creds/$account/admin/"
+echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \\"
+echo "       -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/"
 echo
-echo "cat ~/creds/$account/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
 
-if [ -r ~/creds/$account/admin/eucarc ]; then
+if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc ]; then
     echo
     tput rev
     echo "Already Downloaded!"
@@ -484,34 +484,34 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/creds/$account/admin"
-        mkdir -p ~/creds/$account/admin
+        echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin"
+        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin
         pause
 
-        echo "# rm -f ~/creds/$account/admin.zip"
-        rm -f ~/creds/$account/admin.zip
+        echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
+        rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip
         pause
 
         echo "# sudo euca-get-credentials -u admin -a $account \\"
-        echo ">                           ~/creds/$account/admin.zip"
+        echo ">                           ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
         sudo euca-get-credentials -u admin -a $account \
-                                  ~/creds/$account/admin.zip
+                                  ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip
         pause
 
-        echo "# unzip -uo ~/creds/$account/admin.zip \\"
-        echo ">        -d ~/creds/$account/admin/"
-        unzip -uo ~/creds/$account/admin.zip \
-               -d ~/creds/$account/admin/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/$account/admin/eucarc; then
+        echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \\"
+        echo ">        -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/"
+        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \
+               -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc; then
             # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 ~/creds/$account/admin/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 ~/creds/$account/admin/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/$account/admin/eucarc
+            pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/$account/admin/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/$account/admin/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
         fi
         pause
 
-        echo "# cat ~/creds/$account/admin/eucarc"
-        cat ~/creds/$account/admin/eucarc
+        echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+        cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
 
         next
     fi
@@ -520,17 +520,17 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/creds/$account/admin/eucarc)
-s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/creds/$account/admin/eucarc)
-iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/creds/$account/admin/eucarc)
-sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/creds/$account/admin/eucarc)
-as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/creds/$account/admin/eucarc)
-cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/creds/$account/admin/eucarc)
-cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/creds/$account/admin/eucarc)
-elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/creds/$account/admin/eucarc)
-swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/creds/$account/admin/eucarc)
-demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/creds/$account/admin/eucarc)
-demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/creds/$account/admin/eucarc)
+ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
 
 # This is an AWS convention I've been using in my own URLs, but which may not work for others
 # Obtain the AWS region name from the second-to-the-right domain name component of the URL:

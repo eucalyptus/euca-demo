@@ -6,8 +6,10 @@
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
 # on an arbitrary management workstation, you will need to move the demo
-# account admin user's credentials zip file to ~/creds/<demo_account_name>/admin.zip
-# then expand it's contents into the ~/creds/<demo_account_name>/admin/ directory
+# account admin user's credentials zip file to
+#   ~/.creds/<region>/<demo_account_name>/admin.zip
+# then expand it's contents into the
+#   ~/.creds/<region>/<demo_account_name>/admin/ directory
 # Additionally, if you want to use the -g flag to pause while showing GUI 
 # aspects, you will need to set the EUCA_CONSOLE_URL environment variable
 # or specify the -c url parameter to the appropriate value.
@@ -166,9 +168,9 @@ if [ $is_clc = n ]; then
     exit 10
 fi
 
-if [ ! -r ~/creds/$account/admin/eucarc ]; then
-    echo "-a $account invalid: Could not find Account Administrator credentials!"
-    echo "   Expected to find: ~/creds/$account/admin/eucarc"
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc ]; then
+    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION Demo Account Administrator credentials!"
+    echo "   Expected to find: ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
     exit 21
 fi
 
@@ -197,19 +199,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/creds/$account/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
 echo
-echo "source ~/creds/$account/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
 
 next
 
 echo
-echo "# cat ~/creds/$account/admin/eucarc"
-cat ~/creds/$account/admin/eucarc
+echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
 pause
 
-echo "# source ~/creds/$account/admin/eucarc"
-source ~/creds/$account/admin/eucarc
+echo "# source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
 
 next
 
@@ -530,7 +532,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name"
+echo "ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name"
 
 run 50
 
@@ -544,12 +546,12 @@ if [ $choice = y ]; then
         ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
         echo
-        echo "# ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name"
+        echo "# ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i ~/creds/$account/admin/admin-demo.pem $user@$public_name
+            ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name
             RC=$?
         else
-            ssh -T -i ~/creds/$account/admin/admin-demo.pem $user@$public_name << EOF
+            ssh -T -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5

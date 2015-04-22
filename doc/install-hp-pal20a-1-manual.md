@@ -218,7 +218,9 @@ process, not currently available for this host.
     if ! grep -s -q "Source Eucalyptus Administrator credentials" ~/.bash_profile; then
         echo >> ~/.bash_profile
         echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
-        echo "[ -r \$HOME/creds/eucalyptus/admin/eucarc ] && source \$HOME/creds/eucalyptus/admin/eucarc" >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin
+        echo "[ -r \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ] && source \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc" >> ~/.bash_profile
     fi
     ```
 
@@ -1058,19 +1060,19 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     within eucarc on each refresh of credentials.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
+    euca_conf --get-credentials ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    cp -a ~/creds/eucalyptus/admin/eucarc ~/creds/eucalyptus/admin/eucarc.orig
+    cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc.orig
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 2. Confirm initial service status
@@ -1133,21 +1135,21 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     downloaded versions of the key and certificate files.
 
     ```bash
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 6. Load Edge Network JSON configuration
@@ -1232,23 +1234,23 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     downloaded versions of the key and certificate files.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 7. Display Parent DNS Server Sample Configuration (skipped)
