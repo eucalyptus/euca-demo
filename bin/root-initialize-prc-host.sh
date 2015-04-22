@@ -240,17 +240,6 @@ if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" /root/.bash_profile; then
     echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile"
     sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile
 fi
-if ! grep -s -q "Source Eucalyptus Administrator credentials" /root/.bash_profile; then
-    echo "#"
-    echo "# echo >> /root/.bash_profile"
-    echo >> /root/.bash_profile
-    echo "# echo \"# Source Eucalyptus Administrator credentials if they exist\" >> /root/.bash_profile"
-    echo "# Source Eucalyptus Administrator credentials if they exist" >> /root/.bash_profile
-    echo "export AWS_DEFAULT_REGION=hp-gol01-d8"
-    echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin
-    echo "# echo \"[ -r \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ] && source \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc\" >> /root/.bash_profile"
-    echo "[ -r \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ] && source \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc" >> /root/.bash_profile
-fi
 echo
 echo "Please logout, then login to pick up profile changes"
 sleep 1

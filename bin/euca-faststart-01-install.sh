@@ -214,6 +214,15 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+echo
+if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+    echo "echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
+    echo
+fi
+if grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+    echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+    echo
+fi
 echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
 echo
 echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
@@ -224,12 +233,22 @@ echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$A
 echo
 echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
 run 50
 
 if [ $choice = y ]; then
     echo
+    if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+        echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
     echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
     pause
