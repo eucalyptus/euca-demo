@@ -241,11 +241,13 @@ if [ $choice = y ]; then
     echo
     if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
+        echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
         pause
     fi
     if grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
         echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+        echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
         pause
     fi

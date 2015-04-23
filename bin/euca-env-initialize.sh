@@ -189,6 +189,8 @@ if [ $valid = y ]; then
     echo
     echo "Commands:"
     echo
+    echo "export AWS_DEFAULT_REGION=\"$dns_region\""
+    echo 
     echo "export EUCA_VNET_MODE=\"$vnet_mode\""
     echo "export EUCA_VNET_PRIVINTERFACE=\"$vnet_privinterface\""
     echo "export EUCA_VNET_PUBINTERFACE=\"$vnet_pubinterface\""
@@ -262,6 +264,9 @@ if [ $valid = y ]; then
     run 50
 
     if [ $choice = y ]; then
+        echo
+        echo "# export AWS_DEFAULT_REGION=\"$dns_region\""
+        export AWS_DEFAULT_REGION="$dns_region"
         echo
         echo "# export EUCA_VNET_MODE=\"$vnet_mode\""
         export EUCA_VNET_MODE="$vnet_mode"
