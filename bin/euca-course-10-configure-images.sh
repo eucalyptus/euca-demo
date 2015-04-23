@@ -573,7 +573,7 @@ if [ $is_clc = y ]; then
         next 50
 
     else
-        euca-delete-keypair ops-admin
+        euca-delete-keypair ops-admin &> /dev/null
         rm -f /root/creds/ops/admin/ops-admin.pem
 
         clear

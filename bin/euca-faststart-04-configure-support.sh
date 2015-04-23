@@ -198,7 +198,7 @@ if euca-describe-keypairs | grep -s -q "admin-support" && [ -r ~/.creds/$AWS_DEF
     next 50
 
 else
-    euca-delete-keypair admin-support
+    euca-delete-keypair admin-support &> /dev/null
     rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
 
     run 50

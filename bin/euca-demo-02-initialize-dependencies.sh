@@ -242,7 +242,7 @@ if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/.creds/$AWS_DEFAUL
     next 50
 
 else
-    euca-delete-keypair admin-demo
+    euca-delete-keypair admin-demo &> /dev/null
     rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem
 
     run 50
