@@ -215,11 +215,11 @@ echo
 echo "Commands:"
 echo
 echo
-if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
     echo "echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
     echo
 fi
-if grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
     echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
     echo
 fi
@@ -233,19 +233,19 @@ echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$A
 echo
 echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
         pause
     fi
-    if grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
         echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
@@ -259,8 +259,8 @@ if [ $choice = y ]; then
     rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
     pause
 
-    echo "# cp -a root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    cp -a root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    echo "# cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+    cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
     pause
 
     echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
