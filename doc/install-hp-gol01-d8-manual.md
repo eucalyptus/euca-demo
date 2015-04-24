@@ -1,7 +1,7 @@
 # Install Procedure for region hp-gol01-d8
 ## 8-Node (2+(1+2)+(1+2)) POC
 
-This document describes the manual procedure to setup region hp-gol08-d1,
+This document describes the manual procedure to setup region **hp-gol08-d1**,
 in a multiple cluster configuration, with 2 cloud level control nodes for CLC+UFS+MC
 and Walrus, combined with 1 cluster level control node for CC+SC and 2 NCs per cluster,
 with a total of 2 clusters.
@@ -10,7 +10,7 @@ This variant is meant to be run as root
 
 This POC will use **hp-gol01-d8** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be hp-gol01-d8.mjc.prc.eucalyptus-systems.com.
+The full parent DNS domain will be **hp-gol01-d8.mjc.prc.eucalyptus-systems.com**.
 
 This is using the following nodes in the PRC:
 - odc-d-13.prc.eucalyptus-systems.com: CLC+UFS+MC
@@ -191,31 +191,31 @@ process, not currently available for this host.
 3. (All) Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
-    structure, and adjusting the default GECOS information so email sent from root on a host
-    is identified by the host shortname.
+    structure, adjusting the default GECOS information so email sent from root on a host
+    is identified by the host shortname, pre-populating ssh known hosts, and creating a git
+    configuration file.
 
     ```bash
-    mkdir -p ~/{bin,doc,log,.ssh}
-    chmod og-rwx ~/{bin,log,.ssh}
+    mkdir -p ~/{bin,doc,log,src,.ssh}
+    chmod og-rwx ~/{bin,log,src,.ssh}
 
     sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
-    ```
 
-4. (All) Clone euca-demo git project
+    if ! grep -s -q "^github.com" /root/.ssh/known_hosts; then
+        ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+    fi
+    if ! grep -s -q "^bitbucket.org" /root/.ssh/known_hosts; then
+        ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
+    fi
 
-    This is one location where demo scripts live. We will run the demo initialization
-    scripts at the completion of the installation.
-
-    ```bash
-    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
-        mkdir -p ~/src/eucalyptus
-        cd ~/src/eucalyptus
-
-        git clone https://github.com/eucalyptus/euca-demo.git
+    if [ ! -r /root/.gitconfig ]; then
+        echo -e "[user]" > /root/.gitconfig
+        echo -e "\tname = Administrator" >> /root/.gitconfig
+        echo -e "\temail = admin@eucalyptus.com" >> /root/.gitconfig
     fi
     ```
 
-5. (All) Configure profile
+4. (All) Configure profile
 
     Adjust global profile with some local useful aliases.
 
@@ -226,20 +226,37 @@ process, not currently available for this host.
     fi
     ```
 
-    Adjust user profile to include demo scripts on PATH, and source Eucalyptus Administrator
-    credentials on login if they exist.
+    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
+    and profile.
 
     ```bash
     if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
         sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
     fi
 
-    if ! grep -s -q "Source Eucalyptus Administrator credentials" ~/.bash_profile; then
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo >> ~/.bash_profile
-        echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
-        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
-        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin
-        echo "[ -r \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ] && source \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc" >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
+    ```
+
+5. (All) Clone euca-demo git project
+
+    This is one location where demo scripts live. We will run the demo initialization
+    scripts at the completion of the installation.
+
+    ```bash
+    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+
+        git clone https://github.com/eucalyptus/euca-demo.git
     fi
     ```
 
@@ -286,7 +303,6 @@ dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 ```
 
-
 ### Initialize Dependencies
 
 1. (ALL): Configure common additional disk storage
@@ -324,10 +340,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     pvscan
       PV /dev/sda2   VG vg01   lvm2 [931.25 GiB / 903.44 GiB free]
       Total: 1 [931.25 GiB] / in use: 1 [931.25 GiB] / in no VG: 0 [0   ]
-
-    vgscan
-      Reading all physical volumes.  This may take a while...
-      Found volume group "vg01" using metadata type lvm2
 
     lvscan
       ACTIVE            '/dev/vg01/lv_swap' [7.81 GiB] inherit
@@ -383,8 +395,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     lvcreate -l 100%FREE -n eucalyptus vg01
 
     pvscan
-
-    vgscan
 
     lvscan
 
@@ -509,8 +519,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     pvscan
 
-    vgscan
-
     lvscan
     ```
 
@@ -593,7 +601,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     * tcp 8779-8849 - jGroups (UFS)
     * tcp 8888 - Console - Direct (MC)
 
-
     ```bash
     cat << EOF > /etc/sysconfig/iptables
     *filter
@@ -638,7 +645,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     * tcp 8778 - Multicast (OSP)
     * tcp 8779-8849 - jGroups (OSP)
 
-
     ```bash
     cat << EOF > /etc/sysconfig/iptables
     *filter
@@ -677,7 +683,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     * tcp 8778 - Multicast (CC+SC)
     * tcp 8779-8849 - jGroups (SC)
 
-
     ```bash
     cat << EOF > /etc/sysconfig/iptables
     *filter
@@ -715,7 +720,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     * tcp  8775 - Web services (NC)
     * tcp  8778 - Multicast (NC)
     * tcp 16514 - TLS, needed for node migrations (NC)
-
 
     ```bash
     cat << EOF > /etc/sysconfig/iptables
@@ -1259,7 +1263,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     Register UFS services.
 
-
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
     ```
@@ -1382,7 +1385,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     euca-describe-regions
 
-    euca-describe-availability-zones
+    euca-describe-availability-zones verbose
 
     euca-describe-nodes
     ```
@@ -1482,7 +1485,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     euca-describe-regions
 
-    euca-describe-availability-zones
+    euca-describe-availability-zones verbose
 
     euca-describe-nodes
 

@@ -1,12 +1,13 @@
-# Install Procedure for region us-sba-3
-## 3-Node (2+1) Hybrid (Virtual/Physical) POC
+# Install Procedure for region mjc-sba-5
+## 5-Node (4+1) Hybrid (Virtual/Physical) POC
 
-This document describes the manual procedure to install region us-sba-3.mjcconsulting.com,
-based partially on the "4-node reference architecture", with 1 Cloud-level host,
-1 Cluster-level host, and 1 Node Controller, in MCrawford's home virtualization environment.
+This document describes the manual procedure to install region **mjc-sba-5**,
+based partially on the "4-node reference architecture", with 3 Cloud-level hosts,
+1 Cluster-level host, and 1 Node Controller, in the MCrawford home virtualization
+environment.
 
 However, this variant will use KVM virtualization on one physical host to
-create the 2 control-plane nodes as KVM virtual machines using libvirt, but
+create the 4 control-plane nodes as KVM virtual machines using libvirt, but
 outside of the control of Eucalyptus. Combined with a second physical host
 which has Eucalyptus directly installed to act as a node controller.
 This variant is also setup to use a VLAN trunk into the node controller host
@@ -17,14 +18,32 @@ public, private and a SAN network over the trunk.
 
 This variant is meant to be run as root
 
-This POC will use **us-sba-3** as the AWS_DEFAULT_REGION.
+This POC will use **mjc-sba-5** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be us-sba-3.mjcconsulting.com.
+The full parent DNS domain will be **mjc-sba-5.mjcconsulting.com**.
 
-This is using the following virtual and physical hosts in the MCrawford home virtualization environment:
-- mjcsbateucaclc01 (virtual,  eth0: 10.0.14.48/24, eth1: 10.0.30.48/24, eth2: 10.0.46.48): CLC+UFS+MC+OSP
-- mjcsbateucacc01  (virtual,  eth0: 10.0.14.51/24, eth1: 10.0.30.51/24, eth2: 10.0.46.51): CC+SC
-- mjcsbapvs02      (physical, br14: 10.0.14.17/24, eth1: 10.0.30.17/24, eth2: 10.0.46.17): NC1
+This is using the following virtual and physical hosts in the MCrawford home 
+virtualization environment:
+- mjcsbateucaclc01.sba.mjcconsulting.com (virtual): CLC
+  - Public 10.0.14.48/24 (eth0, VLAN 14)
+  - Private 10.0.30.48/24 (eth1, VLAN 30)
+  - Storage 10.0.46.48/24 (eth2, VLAN 46)
+- mjcsbateucaufs01.sba.mjcconsulting.com (virtual): UFS+MC
+  - Public 10.0.14.49/24 (eth0, VLAN 14)
+  - Private 10.0.30.49/24 (eth1, VLAN 30)
+  - Storage 10.0.46.49/24 (eth2, VLAN 46)
+- mjcsbateucaosp01.sba.mjcconsulting.com (virtual): OSP (Walrus)
+  - Public 10.0.14.50/24 (eth0, VLAN 14)
+  - Private 10.0.30.50/24 (eth1, VLAN 30)
+  - Storage 10.0.46.50/24 (eth2, VLAN 46)
+- mjcsbateucacc01.sba.mjcconsulting.com (virtual): CC+SC
+  - Public 10.0.14.51/24 (eth0, VLAN 14)
+  - Private 10.0.30.51/24 (eth1, VLAN 30)
+  - Storage 10.0.46.51/24 (eth2, VLAN 46)
+- mjcsbapvs02.sba.mjcconsulting.com (physical,): NC1
+  - Public 10.0.14.17/24 (br14, VLAN 14)
+  - Private 10.0.30.17/24 (br30, VLAN 30)
+  - Storage 10.0.46.17/24 (br46, VLAN 46)
 
 Each step uses a code to indicate what node the step should be run on:
 - MW:  Management Workstation
@@ -35,6 +54,23 @@ Each step uses a code to indicate what node the step should be run on:
 - CC:  Cluster Controller Host
 - SC:  Storage Controller Host
 - NCn: Node Controller(s)
+
+### Hardware Configuration and Operating System Installation
+
+An internal PXE boot environment exists, which allows full customization of the kickstart
+process for physical hosts. Unfortunately, there is a mis-match between how PXE boot works
+within KVM and how KVM hosts boot via DHCP once PXE boot is finished, which prevents 
+equivalent use of the same PXE boot process for virtual guests. However, there is a workaround
+where we can inject a kickstart file to a guest ramdisk, and specify this with boot parameters
+when creating virtual guests via virt-install, and this allows the kickstart files to be used
+in a similar way.
+
+This section will be filled out when time allows. At this time, the kickstart files are only
+used to install the operating system and perform common convenience setup tasks. But in the
+future, more of the manual steps below may be moved into the kickstart process to speed up
+re-installs.
+
+Additional disk space allocation is manually performed, as described below.
 
 ### Define Parameters
 
@@ -47,7 +83,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
     ```bash
-    export AWS_DEFAULT_REGION=us-sba-3
+    export AWS_DEFAULT_REGION=mjc-sba-5
 
     export EUCA_DNS_PUBLIC_DOMAIN=mjcconsulting.com
     export EUCA_DNS_PRIVATE_DOMAIN=internal
@@ -80,23 +116,23 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_UFS_PUBLIC_INTERFACE=eth0
     export EUCA_UFS_PRIVATE_INTERFACE=eth1
     export EUCA_UFS_STORAGE_INTERFACE=eth2
-    export EUCA_UFS_PUBLIC_IP=10.0.14.48
-    export EUCA_UFS_PRIVATE_IP=10.0.30.48
-    export EUCA_UFS_STORAGE_IP=10.0.46.48
+    export EUCA_UFS_PUBLIC_IP=10.0.14.49
+    export EUCA_UFS_PRIVATE_IP=10.0.30.49
+    export EUCA_UFS_STORAGE_IP=10.0.46.49
 
     export EUCA_MC_PUBLIC_INTERFACE=eth0
     export EUCA_MC_PRIVATE_INTERFACE=eth1
     export EUCA_MC_STORAGE_INTERFACE=eth2
-    export EUCA_MC_PUBLIC_IP=10.0.14.48
-    export EUCA_MC_PRIVATE_IP=10.0.30.48
-    export EUCA_MC_STORAGE_IP=10.0.46.48
+    export EUCA_MC_PUBLIC_IP=10.0.14.49
+    export EUCA_MC_PRIVATE_IP=10.0.30.49
+    export EUCA_MC_STORAGE_IP=10.0.46.49
 
     export EUCA_OSP_PUBLIC_INTERFACE=eth0
     export EUCA_OSP_PRIVATE_INTERFACE=eth1
     export EUCA_OSP_STORAGE_INTERFACE=eth2
-    export EUCA_OSP_PUBLIC_IP=10.0.14.48
-    export EUCA_OSP_PRIVATE_IP=10.0.30.48
-    export EUCA_OSP_STORAGE_IP=10.0.46.48
+    export EUCA_OSP_PUBLIC_IP=10.0.14.50
+    export EUCA_OSP_PRIVATE_IP=10.0.30.50
+    export EUCA_OSP_STORAGE_IP=10.0.46.50
 
     export EUCA_CC_PUBLIC_INTERFACE=eth0
     export EUCA_CC_PRIVATE_INTERFACE=eth1
@@ -121,12 +157,97 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_NC1_STORAGE_IP=10.0.46.17
     ```
 
-### Install Miscellaneous Packages
+### Initialize Host Conventions
 
-1. (ALL) Install packages
+This section will be added to the kickstart, but parts of it may need to be run manually 
+until then.
+
+1. (All) Install additional packages
+
+    Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y wget zip unzip git bind-utils nc tree
+    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
+    ```
+
+2. (All) Configure Sudo
+
+    Allow members of group `wheel` to sudo with a password.
+
+    ```bash
+    sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
+    ```
+
+3. (All) Configure root user
+
+    Configure the root user with some useful conventions, including a consistent directory
+    structure, adjusting the default GECOS information so email sent from root on a host
+    is identified by the host shortname, pre-populating ssh known hosts, and creating a git
+    configuration file.
+
+    ```bash
+    mkdir -p ~/{bin,doc,log,src,.ssh}
+    chmod og-rwx ~/{bin,log,src,.ssh}
+
+    sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
+
+    if ! grep -s -q "^github.com" /root/.ssh/known_hosts; then
+        ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+    fi
+    if ! grep -s -q "^bitbucket.org" /root/.ssh/known_hosts; then
+        ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
+    fi
+
+    if [ ! -r /root/.gitconfig ]; then
+        echo -e "[user]" > /root/.gitconfig
+        echo -e "\tname = Administrator" >> /root/.gitconfig
+        echo -e "\temail = admin@eucalyptus.com" >> /root/.gitconfig
+    fi
+    ```
+
+4. (All) Configure profile
+
+    Adjust global profile with some local useful aliases.
+
+    ```bash
+    if [ ! -r /etc/profile.d/local.sh ]; then
+        echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
+        echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
+    fi
+    ```
+
+    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
+    and profile.
+
+    ```bash
+    if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
+        sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
+    fi
+
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
+    ```
+
+5. (All) Clone euca-demo git project
+
+    This is one location where demo scripts live. We will run the demo initialization
+    scripts at the completion of the installation.
+
+    ```bash
+    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+
+        git clone https://github.com/eucalyptus/euca-demo.git
+    fi
     ```
 
 ### Initialize External DNS
@@ -135,19 +256,48 @@ I will not describe this in detail here, except to note that this must be in pla
 properly before registering services with the method outlined below, as I will be using DNS names
 for the services so they look more AWS-like.
 
-You should be able to resolve these names with these results:
+Confirm external DNS is configured properly with the statements below, which should match the
+results which follow the dig command. This document shows the actual results based on variables
+set above at the time this document was written, for ease of confirming results. If the variables
+above are changed, expected results below should also be updated to match.
+
+**A Records**
 
 ```bash
+dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+72.215.179.163
+
 dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.0.14.49
+
+dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.0.14.48
 
 dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.0.14.48
+
+dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.0.14.49
+
+dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.0.14.49
+```
+
+**NS Records**
+
+```bash
+dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+mjcsbapns42.sba.mjcconsulting.com.
+mjcsbapns41.sba.mjcconsulting.com.
+
+dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+mjcsbapns42.sba.mjcconsulting.com.
+mjcsbapns41.sba.mjcconsulting.com.
 ```
 
 ### Initialize Dependencies
 
-1. (CLC+UFS+MC+OSP): Confirm storage
+1. (CLC): Confirm storage
 
     The virtual hosts which participate in this hybrid virtual/physical POC were created by
     virt-install using a kickstart inserted into the initial ramdisk, which installs minimal
@@ -159,6 +309,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     Here is the output of some disk commands showing the storage layout created by kickstart.
 
+    **Mounted Filesystems**
+
     ```bash
     df -h
     Filesystem            Size  Used Avail Use% Mounted on
@@ -168,7 +320,25 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     /dev/vda1             488M   55M  408M  12% /boot
     /dev/mapper/eucalyptus-eucalyptus
                           126G   60M  120G   1% /var/lib/eucalyptus
+    ```
 
+    **Logical Volume Management**
+
+    ```bash
+    pvscan
+      PV /dev/vdb    VG eucalyptus   lvm2 [128.00 GiB / 0    free]
+      PV /dev/vda2   VG local        lvm2 [7.47 GiB / 0    free]
+      Total: 2 [135.46 GiB] / in use: 2 [135.46 GiB] / in no VG: 0 [0   ]
+
+    lvscan
+      ACTIVE            '/dev/eucalyptus/eucalyptus' [128.00 GiB] inherit
+      ACTIVE            '/dev/local/swap' [2.00 GiB] inherit
+      ACTIVE            '/dev/local/root' [5.47 GiB] inherit
+    ```
+
+    **Disk Partitions**
+
+    ```bash
     fdisk -l
 
     Disk /dev/vda: 8589 MB, 8589934592 bytes
@@ -214,7 +384,28 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Sector size (logical/physical): 512 bytes / 512 bytes
     I/O size (minimum/optimal): 512 bytes / 512 bytes
     Disk identifier: 0x00000000
+    ```
 
+2. (UFS+MC): Confirm storage
+ 
+    Here is the output of some disk commands showing the storage layout created by kickstart.
+
+    **Mounted Filesystems**
+
+    ```bash
+    df -h
+    Filesystem            Size  Used Avail Use% Mounted on
+    /dev/mapper/local-root
+                          5.3G  1.1G  4.0G  21% /
+    tmpfs                 939M     0  939M   0% /dev/shm
+    /dev/vda1             488M   55M  408M  12% /boot
+    /dev/mapper/eucalyptus-eucalyptus
+                          126G   60M  120G   1% /var/lib/eucalyptus
+    ```
+
+    **Logical Volume Management**
+
+    ```bash
     pvscan
       PV /dev/vdb    VG eucalyptus   lvm2 [128.00 GiB / 0    free]
       PV /dev/vda2   VG local        lvm2 [7.47 GiB / 0    free]
@@ -226,9 +417,142 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
       ACTIVE            '/dev/local/root' [5.47 GiB] inherit
     ```
 
-2. (CC+SC): Confirm storage
+    **Disk Partitions**
+
+    ```bash
+    fdisk -l
+
+    Disk /dev/vda: 8589 MB, 8589934592 bytes
+    16 heads, 63 sectors/track, 16644 cylinders
+    Units = cylinders of 1008 * 512 = 516096 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x0002a481
+
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/vda1   *           3        1043      524288   83  Linux
+    Partition 1 does not end on cylinder boundary.
+    /dev/vda2            1043       16645     7863296   8e  Linux LVM
+    Partition 2 does not end on cylinder boundary.
+
+    Disk /dev/vdb: 137.4 GB, 137438953472 bytes
+    16 heads, 63 sectors/track, 266305 cylinders
+    Units = cylinders of 1008 * 512 = 516096 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/local-swap: 2147 MB, 2147483648 bytes
+    255 heads, 63 sectors/track, 261 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/local-root: 5872 MB, 5872025600 bytes
+    255 heads, 63 sectors/track, 713 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/eucalyptus-eucalyptus: 137.4 GB, 137434759168 bytes
+    255 heads, 63 sectors/track, 16708 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+    ```
+
+3. (OSP): Confirm storage
  
     Here is the output of some disk commands showing the storage layout created by kickstart.
+
+    **Mounted Filesystems**
+
+    ```bash
+    df -h
+    Filesystem            Size  Used Avail Use% Mounted on
+    /dev/mapper/local-root
+                          5.3G  1.1G  4.0G  21% /
+    tmpfs                 939M     0  939M   0% /dev/shm
+    /dev/vda1             488M   55M  408M  12% /boot
+    /dev/mapper/eucalyptus-eucalyptus
+                          126G   60M  120G   1% /var/lib/eucalyptus
+    ```
+
+    **Logical Volume Management**
+
+    ```bash
+    pvscan
+      PV /dev/vdb    VG eucalyptus   lvm2 [128.00 GiB / 0    free]
+      PV /dev/vda2   VG local        lvm2 [7.47 GiB / 0    free]
+      Total: 2 [135.46 GiB] / in use: 2 [135.46 GiB] / in no VG: 0 [0   ]
+
+    lvscan
+      ACTIVE            '/dev/eucalyptus/eucalyptus' [128.00 GiB] inherit
+      ACTIVE            '/dev/local/swap' [2.00 GiB] inherit
+      ACTIVE            '/dev/local/root' [5.47 GiB] inherit
+    ```
+
+    **Disk Partitions**
+
+    ```bash
+    fdisk -l
+
+    Disk /dev/vda: 8589 MB, 8589934592 bytes
+    16 heads, 63 sectors/track, 16644 cylinders
+    Units = cylinders of 1008 * 512 = 516096 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x0002866f
+
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/vda1   *           3        1043      524288   83  Linux
+    Partition 1 does not end on cylinder boundary.
+    /dev/vda2            1043       16645     7863296   8e  Linux LVM
+    Partition 2 does not end on cylinder boundary.
+
+    Disk /dev/vdb: 137.4 GB, 137438953472 bytes
+    16 heads, 63 sectors/track, 266305 cylinders
+    Units = cylinders of 1008 * 512 = 516096 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/local-swap: 2147 MB, 2147483648 bytes
+    255 heads, 63 sectors/track, 261 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/local-root: 5872 MB, 5872025600 bytes
+    255 heads, 63 sectors/track, 713 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+
+
+    Disk /dev/mapper/eucalyptus-eucalyptus: 137.4 GB, 137434759168 bytes
+    255 heads, 63 sectors/track, 16708 cylinders
+    Units = cylinders of 16065 * 512 = 8225280 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00000000
+    ```
+
+4. (CC+SC): Confirm storage
+ 
+    Here is the output of some disk commands showing the storage layout created by kickstart.
+
+    **Mounted Filesystems**
 
     ```bash
     df -h
@@ -239,7 +563,26 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     /dev/vda1             488M   55M  408M  12% /boot
     /dev/mapper/eucalyptus-eucalyptus
                            32G   48M   30G   1% /var/lib/eucalyptus
+    ```
 
+    **Logical Volume Management**
+
+    ```bash
+    pvscan
+      PV /dev/vdb    VG eucalyptus   lvm2 [128.00 GiB / 96.00 GiB free]
+      PV /dev/vdc    VG eucalyptus   lvm2 [128.00 GiB / 128.00 GiB free]
+      PV /dev/vda2   VG local        lvm2 [7.47 GiB / 0    free]
+      Total: 3 [263.46 GiB] / in use: 3 [263.46 GiB] / in no VG: 0 [0   ]
+
+    lvscan
+      ACTIVE            '/dev/eucalyptus/eucalyptus' [32.00 GiB] inherit
+      ACTIVE            '/dev/local/swap' [2.00 GiB] inherit
+      ACTIVE            '/dev/local/root' [5.47 GiB] inherit
+    ```
+
+    **Disk Partitions**
+
+    ```bash
     fdisk -l
 
     Disk /dev/vda: 8589 MB, 8589934592 bytes
@@ -293,20 +636,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Sector size (logical/physical): 512 bytes / 512 bytes
     I/O size (minimum/optimal): 512 bytes / 512 bytes
     Disk identifier: 0x00000000
-
-    pvscan
-      PV /dev/vdb    VG eucalyptus   lvm2 [128.00 GiB / 96.00 GiB free]
-      PV /dev/vdc    VG eucalyptus   lvm2 [128.00 GiB / 128.00 GiB free]
-      PV /dev/vda2   VG local        lvm2 [7.47 GiB / 0    free]
-      Total: 3 [263.46 GiB] / in use: 3 [263.46 GiB] / in no VG: 0 [0   ]
-
-    lvscan
-      ACTIVE            '/dev/eucalyptus/eucalyptus' [32.00 GiB] inherit
-      ACTIVE            '/dev/local/swap' [2.00 GiB] inherit
-      ACTIVE            '/dev/local/root' [5.47 GiB] inherit
     ```
 
-3. (NC): Confirm storage
+5. (NC): Confirm storage
  
     The physical hosts which participate in this hybrid virtual/physical POC were created by 
     PXE boot with a network OS and kickstart, which installs minimal CentOS and some custom
@@ -315,6 +647,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     Here is the output of some disk commands showing the storage layout created by kickstart.
 
+    **Mounted Filesystems**
+
     ```bash
     df -h
     Filesystem            Size  Used Avail Use% Mounted on
@@ -322,7 +656,23 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
                           427G  2.4G  403G   1% /
     tmpfs                 7.8G  232K  7.8G   1% /dev/shm
     /dev/sda1             240M   58M  170M  26% /boot
+    ```
 
+    **Logical Volume Management**
+
+    ```bash
+    pvscan
+      PV /dev/sda2   VG local   lvm2 [465.50 GiB / 0    free]
+      Total: 1 [465.50 GiB] / in use: 1 [465.50 GiB] / in no VG: 0 [0   ]
+
+    lvscan
+      ACTIVE            '/dev/local/swap' [32.00 GiB] inherit
+      ACTIVE            '/dev/local/root' [433.50 GiB] inherit
+    ```
+
+    **Disk Partitions**
+
+    ```bash
     fdisk -l
 
     Disk /dev/sda: 500.1 GB, 500107862016 bytes
@@ -351,17 +701,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Sector size (logical/physical): 512 bytes / 512 bytes
     I/O size (minimum/optimal): 512 bytes / 512 bytes
     Disk identifier: 0x00000000
-
-    pvscan
-      PV /dev/sda2   VG local   lvm2 [465.50 GiB / 0    free]
-      Total: 1 [465.50 GiB] / in use: 1 [465.50 GiB] / in no VG: 0 [0   ]
-
-    lvscan
-      ACTIVE            '/dev/local/swap' [32.00 GiB] inherit
-      ACTIVE            '/dev/local/root' [433.50 GiB] inherit
     ```
 
-4. (ALL): Disable zero-conf network
+6. (ALL): Disable zero-conf network
 
     Skip: This was done in the kickstart
 
@@ -369,7 +711,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
     ```
 
-5. (NC): Install bridge utilities package
+7. (NC): Install bridge utilities package
 
     Skip: This was done in the kickstart
 
@@ -377,7 +719,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # yum install -y bridge-utils
     ```
 
-6. (NC): Create Bridges
+9. (NC): Create Bridges
 
     To simplify the configuration and more closely match the bridge configuration of the
     first physical host which runs the 4 virtual control-plane VMs, we have a single
@@ -386,7 +728,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Virtual-SAN VLANs.
 
     Currently this bridging is configured manually, with these statements.
-
+ 
     ```bash
     cat << EOF > /etc/sysconfig/network
     NETWORKING=yes
@@ -395,7 +737,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     GATEWAY=10.0.14.1
     NOZEROCONF=yes
     EOF
-
+ 
     cat << EOF > /etc/sysconfig/network-scripts/ifcfg-br14
     # MJC Consulting Santa Barbara Virtual Zone
     NAME=br14
@@ -505,13 +847,13 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-7. (ALL): Restart networking
+12. (ALL): Restart networking
 
     ```bash
     service network restart
     ```
 
-8. (ALL): Confirm networking
+13. (ALL): Confirm networking
 
     What you should see is 3 interfaces on all virtual hosts, using eth0, eth1, and eth2,
     for the public, private and storage networks, respectively. And 3 bridges on all
@@ -523,25 +865,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     netstat -nr
     ```
 
-9. (CLC+UFS+MC+OSP): Configure firewall, but disable during installation
+14. (CLC): Configure firewall, but disable during installation
 
     Ports to open by component
 
     * tcp   22 - Login, Control (ALL)
     * udp   53 - DNS (CLC)
     * tcp   53 - DNS (CLC)
-    * tcp   80 - Console - HTTP (MC)
-    * tcp  443 - Console - HTTPS (MC)
-    * tcp 5005 - Debug (CLC+UFS+OSP)
-    * tcp 7500 - Diagnostics (CLC+UFS+OSP)
+    * tcp 5005 - Debug (CLC)
+    * tcp 7500 - Diagnostics (CLC)
     * tcp 8080 - Credentials (CLC)
-    * tcp 8772 - Debug (CLC+UFS+OSP)
-    * tcp 8773 - Web services (CLC+UFS+OSP)
+    * tcp 8772 - Debug (CLC)
+    * tcp 8773 - Web services (CLC)
     * tcp 8777 - Database (CLC)
-    * tcp 8778 - Multicast (CLC+UFS+OSP)
-    * tcp 8779-8849 - jGroups (CLC+UFS+OSP)
-    * tcp 8888 - Console - Direct (MC)
-
+    * tcp 8778 - Multicast (CLC)
+    * tcp 8779-8849 - jGroups (CLC)
 
     ```bash
     cat << EOF > /etc/sysconfig/iptables
@@ -555,8 +893,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
     -A INPUT -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
@@ -564,7 +900,49 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
+
+    chkconfig iptables on
+    service iptables stop
+    ```
+
+15. (UFS+MC): Configure firewall, but disable during installation
+
+    Ports to open by component
+
+    * tcp   22 - Login, Control (ALL)
+    * tcp   80 - Console - HTTP (MC)
+    * tcp  443 - Console - HTTPS (MC)
+    * tcp 5005 - Debug (UFS)
+    * tcp 7500 - Diagnostics (UFS)
+    * tcp 8772 - Debug (UFS)
+    * tcp 8773 - Web services (UFS)
+    * tcp 8778 - Multicast (UFS)
+    * tcp 8779-8849 - jGroups (UFS)
+    * tcp 8888 - Console - Direct (MC)
+
+    ```bash
+    cat << EOF > /etc/sysconfig/iptables
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
@@ -575,7 +953,44 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-10. (CC+SC): Configure firewall, but disable during installation
+16. (OSP): Configure firewall, but disable during installation
+
+    Ports to open by component
+
+    * tcp   22 - Login, Control (ALL)
+    * tcp 5005 - Debug (OSP)
+    * tcp 7500 - Diagnostics (OSP)
+    * tcp 8772 - Debug (OSP)
+    * tcp 8773 - Web services (OSP)
+    * tcp 8778 - Multicast (OSP)
+    * tcp 8779-8849 - jGroups (OSP)
+
+    ```bash
+    cat << EOF > /etc/sysconfig/iptables
+    *filter
+    :INPUT ACCEPT [0:0]
+    :FORWARD ACCEPT [0:0]
+    :OUTPUT ACCEPT [0:0]
+    -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 5005 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 7500 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
+    -A INPUT -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+    COMMIT
+    EOF
+
+    chkconfig iptables on
+    service iptables stop
+    ```
+
+17. (CC+SC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -587,7 +1002,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8774 - Web services (CC)
     * tcp 8778 - Multicast (CC+SC)
     * tcp 8779-8849 - jGroups (SC)
-
 
     ```bash
     cat << EOF > /etc/sysconfig/iptables
@@ -605,7 +1019,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     COMMIT
@@ -615,7 +1029,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-11. (NC): Configure firewall, but disable during installation
+18. (NC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -626,7 +1040,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp  8775 - Web services (NC)
     * tcp  8778 - Multicast (NC)
     * tcp 16514 - TLS, needed for node migrations (NC)
-
 
     ```bash
     cat << EOF > /etc/sysconfig/iptables
@@ -653,7 +1066,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     service iptables stop
     ```
 
-12. (ALL): Disable SELinux
+19. (ALL): Disable SELinux
 
     ```bash
     sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
@@ -661,7 +1074,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     setenforce 0
     ```
 
-13. (ALL): Install and Configure the NTP service
+20. (ALL): Install and Configure the NTP service
 
     ```bash
     yum install -y ntp
@@ -673,7 +1086,11 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     hwclock --systohc
     ```
 
-14. (ALL) Install and Configure Mail Relay
+21. (ALL) Install and Configure Mail Relay
+
+    Normally, a null relay will use DNS to find the MX records associated with the domain of the
+    host, but that is not currently set for the PRC environment. So, we are using the same
+    sub-domain as is used for other DNS base-domains, where this internal record is configured.
 
     ```bash
     yum install -y postfix
@@ -695,7 +1112,8 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     # INTERNET HOST AND DOMAIN NAMES
     myhostname = $(hostname)
-    mydomain = $(hostname -d)
+    #mydomain = $(hostname -d)
+    mydomain = mjc.$(hostname -d)
 
     # SENDING MAIL
     myorigin = \$mydomain
@@ -771,7 +1189,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     popd
     ```
 
-15. (ALL) Install Email test client and test email
+22. (ALL) Install Email test client and test email
 
     Sending to personal email address on Google Apps - Please update to use your own email address!
 
@@ -783,7 +1201,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
-16. (CC): Configure packet routing
+23. (CC): Configure packet routing
 
     Note that while this is not required when using EDGE mode, as the CC no longer routes traffic,
     you will get a warning when starting the CC if this routing has not been configured, and the
@@ -797,7 +1215,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-17. (NC): Configure packet routing
+24. (NC): Configure packet routing
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -810,7 +1228,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 ### Prepare Network
-
+ 
 1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
  
     The purpose of this section is to confirm external network dependencies are configured properly
@@ -821,7 +1239,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     send and receive dummy traffic to confirm there are no external firewall or routing issues,
     prior to their removal and replacement with the actual packages
  
-2. (CLC+UFS+OSP/SC): Run tomography tool
+2. (CLC/UFS/OSP/SC): Run tomography tool
  
     This tool should be run simultaneously on all hosts running Java components.
  
@@ -833,7 +1251,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     git clone https://github.com/eucalyptus/deveutils
  
     cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_SC_PRIVATE_IP}
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SC_PRIVATE_IP}
     ```
  
 3. (CLC): Scan for unknown SSH host keys
@@ -841,6 +1259,12 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+ 
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
  
     ssh-keyscan ${EUCA_CC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CC_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
@@ -937,34 +1361,46 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
 2. (ALL) Confirm yum repositories
-
+ 
     Show configured repositories and any yum priorities.
-
+ 
     ```bash
     yum repolist
-
+ 
     sed -n -e "/^\[/h; /priority *=/{ G; s/\n/ /; s/ity=/ity = /; p }" /etc/yum.repos.d/*.repo | sort -k3n
     ```
 
-3. (CLC+UFS+MC+OSP): Install packages
+3. (CLC): Install packages
 
     ```bash
-    yum install -y eucalyptus-cloud eucalyptus-service-image eucaconsole eucalyptus-walrus
+    yum install -y eucalyptus-cloud eucalyptus-service-image
     ```
 
-4. (SC+CC): Install packages
+4. (UFC+MC): Install packages
 
     ```bash
-    yum install -y eucalyptus-cloud eucalyptus-sc eucalyptus-cc
+    yum install -y eucalyptus-cloud eucaconsole
     ```
 
-5. (NC): Install packages
+5. (OSP): Install packages
+
+    ```bash
+    yum install -y eucalyptus-cloud eucalyptus-walrus
+    ```
+
+6. (CC+SC): Install packages
+
+    ```bash
+    yum install -y eucalyptus-cloud eucalyptus-cc eucalyptus-sc
+    ```
+
+7. (NC): Install packages
 
     ```bash
     yum install -y eucalyptus-nc
     ```
 
-6. (NC): Remove Devfault libvirt network.
+8. (NC): Remove Devfault libvirt network.
 
     ```bash
     virsh net-destroy default
@@ -973,7 +1409,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
 ### Configure Eucalyptus
 
-1. (CLC+UFS+MC+OSP):  1. Configure Eucalyptus Networking
+1. (CLC):  1. Configure Eucalyptus Networking
 
     This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
     private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
@@ -988,7 +1424,37 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CLC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-2. (CC+SC): Configure Eucalyptus Networking
+2. (UFS+MC): Configure Eucalyptus Networking
+
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
+
+    ```bash
+    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_UFS_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_UFS_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_UFS_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
+
+3. (OSP): Configure Eucalyptus Networking
+
+    This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
+    private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
+    into the physical host via a trunk.
+
+    ```bash
+    cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
+
+    sed -i -e "s/^VNET_MODE=.*$/VNET_MODE=\"EDGE\"/" \
+           -e "s/^VNET_PRIVINTERFACE=.*$/VNET_PRIVINTERFACE=\"${EUCA_OSP_PRIVATE_INTERFACE}\"/" \
+           -e "s/^VNET_PUBINTERFACE=.*$/VNET_PUBINTERFACE=\"${EUCA_OSP_PUBLIC_INTERFACE}\"/" \
+           -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
+    ```
+
+4. (CC+SC): Configure Eucalyptus Networking
 
     This is a virtual machine, which has 3 interfaces eth0, eth1, eth2, corresponding to the Eucalyptus public,
     private and storage networks created within KVM, and bridged to the corresponding VLANs which are brought
@@ -1003,7 +1469,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_CC_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-3. (NC): Configure Eucalyptus Networking
+5. (NC): Configure Eucalyptus Networking
 
     This is a physical machine, which has 1 interface configured as a trunk, on which the Eucalyptus public,
     private and storage networks are configured. Bridges corresponding to all three networks have been created,
@@ -1018,7 +1484,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^VNET_BRIDGE=.*$/VNET_BRIDGE=\"${EUCA_NC_PRIVATE_BRIDGE}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-4. (CLC): Create Eucalyptus EDGE Networking configuration file
+6. (CLC): Create Eucalyptus EDGE Networking configuration file
 
     This can not be loaded until the cloud is initialized.
 
@@ -1051,7 +1517,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-5. (NC): Configure Eucalyptus Disk Allocation
+7. (NC): Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=2400000
@@ -1061,7 +1527,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
            -e "s/^#NC_CACHE_SIZE=.*$/NC_CACHE_SIZE=\"$nc_cache_size\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-6. (NC): Configure Eucalyptus to use Private IP for Metadata
+8. (NC): Configure Eucalyptus to use Private IP for Metadata
 
     ```bash
     cat << EOF >> /etc/eucalyptus/eucalyptus.conf
@@ -1072,7 +1538,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     EOF
     ```
 
-7. (CLC+UFS+OSP/SC): Configure Eucalyptus Java Memory Allocation
+9. (CLC/UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
@@ -1085,7 +1551,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-8. (MC): Configure Management Console with User Facing Services address
+10. (MC): Configure Management Console with User Facing Services address
 
     The clchost parameter within console.ini is misleadingly named, as it should reference the
     public IP of the host running User Facing Services.
@@ -1113,7 +1579,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     euca_conf --initialize
     ```
 
-2. (CLC+UFS+OSP/SC): Start the Cloud Controller service
+2. (CLC/UFS/OSP/SC): Start the Cloud Controller service
 
     ```bash
     service eucalyptus-cloud start
@@ -1172,7 +1638,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```
 
     Register UFS services.
-
 
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
@@ -1261,19 +1726,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     within eucarc on each refresh of credentials.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
+    euca_conf --get-credentials ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    cp -a ~/creds/eucalyptus/admin/eucarc ~/creds/eucalyptus/admin/eucarc.orig
+    cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc.orig
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 2. (CLC): Confirm initial service status
@@ -1284,6 +1749,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ````bash
     euca-describe-services | cut -f1-5
+
+    euca-describe-regions
+
+    euca-describe-availability-zones verbose
 
     euca-describe-nodes
     ```
@@ -1336,21 +1805,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     downloaded versions of the key and certificate files.
 
     ```bash
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 6. (CLC): Load Edge Network JSON configuration
@@ -1381,7 +1850,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euca-describe-regions
 
-    euca-describe-availability-zones
+    euca-describe-availability-zones verbose
+
+    euca-describe-nodes
 
     euca-describe-instance-types --show-capacity
     ```
@@ -1435,23 +1906,23 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     downloaded versions of the key and certificate files.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 7. (CLC): Display Parent DNS Server Sample Configuration (skipped)
@@ -1487,6 +1958,26 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euare-usermodloginprofile -u admin -p password
     ```
+
+### Configure Support-Related Properties
+
+1. (CLC): Create Eucalyptus Administrator Support Keypair
+
+    ```bash
+    euca-create-keypair admin-support | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
+    ```
+
+2. (CLC): Configure Service Instance Login
+
+    ```bash
+    euca-modify-property -p services.database.worker.keyname=admin-support
+
+    euca-modify-property -p services.imaging.worker.keyname=admin-support
+
+    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
+    ```
+
+YOU ARE HERE
 
 ### Configure Management Console for SSL
 

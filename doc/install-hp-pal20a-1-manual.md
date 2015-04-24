@@ -1,18 +1,17 @@
 # Install Procedure for region hp-pal20a-1
 ## 1-Node POC
 
-This document describes the manual procedure to setup region hp-pal20a-1,
+This document describes the manual procedure to setup region **hp-pal20a-1**,
 with 1 large host for all components.
 
 This variant is meant to be run as root
 
 This POC will use **hp-pal10a-1** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be hp-pal20a-1.hpccc.com. Note that this
+The full parent DNS domain will be **hp-pal20a-1.hpccc.com**. Note that this
 domain only resolves inside the EBC.
 
 This is using the following node in the EBC machine room:
-
 - dl580gen8a.hpccc.com: CLC+UFS+MC+Walrus+CC+SC+NC
   - Public: 172.0.1.8/24 (VLAN 10)
   - Private: 172.0.2.8/24 (VLAN 20)
@@ -62,7 +61,7 @@ logvol /var/lib/eucalyptus/archive --fstype=ext4 --name=archive --vgname=local -
 logvol /var/lib/eucalyptus --fstype=ext4 --name=eucalyptus --vgname=eucalyptus --size=1048576
 ```
 
-How we've allocated disk space can be described as follows:
+How we have allocated disk space can be described as follows:
 - Increased size of /boot to 1 GiB, just in case this system lives for a while with extra kernels
 - Created local VG on rest of initial RAID 1 disk set, for swap, OS, and archives
 - Created eucalyptus VG on RAID 10, for use by Eucalyptus
@@ -147,21 +146,20 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_NC1_PRIVATE_IP=172.0.2.8
     ```
 
-
 ### Initialize Host Conventions
 
 This section will initialize the host with some conventions normally added during the kickstart
 process, not currently available for this host.
 
-1. Install additional packages
+1. (All) Install additional packages
 
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git nc w3m rsync bind-utils tree
+    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
     ```
 
-2. Configure Sudo
+2. (All) Configure Sudo
 
     Allow members of group `wheel` to sudo with a password.
 
@@ -169,34 +167,34 @@ process, not currently available for this host.
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
-3. Configure root user
+3. (All) Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
-    structure, and adjusting the default GECOS information so email sent from root on a host
-    is identified by the host's shortname.  
+    structure, adjusting the default GECOS information so email sent from root on a host
+    is identified by the host shortname, pre-populating ssh known hosts, and creating a git
+    configuration file.
 
     ```bash
-    mkdir -p ~/{bin,doc,log,.ssh}
-    chmod og-rwx ~/{bin,log,.ssh}
+    mkdir -p ~/{bin,doc,log,src,.ssh}
+    chmod og-rwx ~/{bin,log,src,.ssh}
 
     sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
-    ```
 
-4. Clone euca-demo git project
+    if ! grep -s -q "^github.com" /root/.ssh/known_hosts; then
+        ssh-keyscan github.com 2> /dev/null >> /root/.ssh/known_hosts
+    fi
+    if ! grep -s -q "^bitbucket.org" /root/.ssh/known_hosts; then
+        ssh-keyscan bitbucket.org 2> /dev/null >> /root/.ssh/known_hosts
+    fi
 
-    This is one location where demo scripts live. We will run the demo initialization
-    scripts at the completion of the installation.
-
-    ```bash
-    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
-        mkdir -p ~/src/eucalyptus
-        cd ~/src/eucalyptus
-
-        git clone https://github.com/eucalyptus/euca-demo.git
+    if [ ! -r /root/.gitconfig ]; then
+        echo -e "[user]" > /root/.gitconfig
+        echo -e "\tname = Administrator" >> /root/.gitconfig
+        echo -e "\temail = admin@eucalyptus.com" >> /root/.gitconfig
     fi
     ```
 
-5. Configure profile
+4. (All) Configure profile
 
     Adjust global profile with some local useful aliases.
 
@@ -207,20 +205,37 @@ process, not currently available for this host.
     fi
     ```
 
-    Adjust user profile to include demo scripts on PATH, and source Eucalyptus Administrator
-    credentials on login if they exist.
+    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
+    and profile.
 
     ```bash
     if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
         sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
     fi
 
-    if ! grep -s -q "Source Eucalyptus Administrator credentials" ~/.bash_profile; then
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo >> ~/.bash_profile
-        echo "# Source Eucalyptus Administrator credentials if they exist" >> ~/.bash_profile
-        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
-        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin
-        echo "[ -r \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ] && source \$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc" >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
+    ```
+
+5. (All) Clone euca-demo git project
+
+    This is one location where demo scripts live. We will run the demo initialization
+    scripts at the completion of the installation.
+
+    ```bash
+    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+
+        git clone https://github.com/eucalyptus/euca-demo.git
     fi
     ```
 
@@ -238,39 +253,30 @@ above are changed, expected results below should also be updated to match.
 **A Records**
 
 ```bash
-dig ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hpccc.com. 600 IN A 10.0.1.91
+dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+10.0.1.91
 
-dig ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
 
-dig clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-clc.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
 
-dig ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-ufs.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
 
-dig console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-console.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+172.0.1.8
 ```
 
 **NS Records**
 
 ```bash
-dig –t NS ${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hpccc.com. 300 IN NS dc1a.hpccc.com.
+dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+dc1a.hpccc.com.
 
-dig –t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN} | grep '^[a-z]'
-hp-pal20a-1.hpccc.com. 300 IN NS dc1a.hpccc.com.
-hp-pal20a-1.dc1a.hpccc.com. 3600 IN A 10.0.1.91
-
-dig –t NS cloud.hp-pal20a-1.hpccc.com | grep '^[a-z]'
-cloud.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
-ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
-
-dig –t NS lb.hp-pal20a-1.hpccc.com | grep '^[a-z]'
-lb.hp-pal20a-1.hpccc.com. 300 IN NS ns1.hp-pal20a-1.hpccc.com.
-ns1.hp-pal20a-1.hpccc.com. 3600 IN A 172.0.1.8
+dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dc1a.hpccc.com.
 ```
 
 **MX records**
@@ -279,11 +285,9 @@ Note: Mail was not completely setup on the initial installation, as there is no 
 currently in place in the EBC.
 
 ```bash
-dig –t MX hp-pal20a-1.hpccc.com | grep '^[a-z]'
-hp-pal20a-1.hpccc.com. 300 IN MX smtp.hp-pal20a-1.hpccc.com.
-smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
+dig +short -t MX hp-pal20a-1.hpccc.com
+smtp.hp-pal20a-1.hpccc.com.
 ```
-
 
 ### Initialize Dependencies
 
@@ -342,11 +346,6 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
       PV /dev/sdb1   VG eucalyptus   lvm2 [1.75 TiB / 764.39 GiB free]
       PV /dev/sda2   VG local        lvm2 [446.10 GiB / 0    free]
       Total: 2 [2.18 TiB] / in use: 2 [2.18 TiB] / in no VG: 0 [0   ]
-
-    vgscan
-      Reading all physical volumes.  This may take a while...
-      Found volume group "eucalyptus" using metadata type lvm2
-      Found volume group "local" using metadata type lvm2
 
     lvscan
       ACTIVE            '/dev/eucalyptus/eucalyptus' [1.00 TiB] inherit
@@ -603,7 +602,7 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8775 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 16514 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
@@ -781,7 +780,7 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
 
 2. Install packages
 
-    Since in this environment, a single host will run all components, it's possible to install
+    Since in this environment, a single host will run all components, it is possible to install
     all packages with a single yum command. For clarity, this step splits the package installs
     to show the more typical separation of components into separate hosts.
 
@@ -972,7 +971,6 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
 
     Register UFS services.
 
-
     ```bash
     euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
     ```
@@ -1084,6 +1082,10 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     ````bash
     euca-describe-services | cut -f1-5
 
+    euca-describe-regions
+
+    euca-describe-availability-zones verbose
+
     euca-describe-nodes
     ```
 
@@ -1180,7 +1182,9 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     ```bash
     euca-describe-regions
 
-    euca-describe-availability-zones
+    euca-describe-availability-zones verbose
+
+    euca-describe-nodes
 
     euca-describe-instance-types --show-capacity
     ```
@@ -1286,6 +1290,26 @@ smtp.hp-pal20a-1.hpccc.com. 3600 IN A XX.X.X.XX
     ```bash
     euare-usermodloginprofile -u admin -p password
     ```
+
+### Configure Support-Related Properties
+
+1. (CLC): Create Eucalyptus Administrator Support Keypair
+
+    ```bash
+    euca-create-keypair admin-support | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
+    ```
+
+2. (CLC): Configure Service Instance Login
+
+    ```bash
+    euca-modify-property -p services.database.worker.keyname=admin-support
+
+    euca-modify-property -p services.imaging.worker.keyname=admin-support
+
+    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
+    ```
+
+YOU ARE HERE
 
 ### Configure Management Console for SSL
 

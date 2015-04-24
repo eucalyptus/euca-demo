@@ -1,14 +1,14 @@
 # Install Procedure for region hp-gol01-d6 
 ## 6-Node (4+2) POC
 
-This document describes the manual procedure to setup region hp-gol01-d6,
+This document describes the manual procedure to setup region **hp-gol01-d6**,
 based on the "4-node reference architecture", with 2 Node Controllers.
 
 This variant is meant to be run as a normal user, with sudo used where needed.
 
 This POC will use **hp-gol01-d6** as the AWS_DEFAULT_REGION.
 
-The full parent DNS domain will be hp-gol01-d6.mjc.prc.eucalyptus-systems.com.
+The full parent DNS domain will be **hp-gol01-d6.mjc.prc.eucalyptus-systems.com**.
 
 This is using the following nodes in the PRC:
 - odc-d-13.prc.eucalyptus-systems.com: CLC
@@ -43,11 +43,26 @@ Each step uses a code to indicate what node the step should be run on:
 - NCAn: Node Controller(s) (Cluster A)
 - NCBn: Node Controller(s) (Cluster B)
 
+### Hardware Configuration and Operating System Installation
+
+The hardware configuration and operating system installation were done by the PRC Cobbler system,
+using the it-centos6-x86_64-bare profile. This system leaves little room for customization.
+
+Each host has 2 1TB disks configured as follows:
+
+- Disk 1, /dev/sda, used for boot (/boot), root (/), and swap, with most space left unreserved.
+- Disk 2, /dev/sdb, is not initially configured.
+
+A manual installation of CentOS 6.6 is done, but additional configuration is also included.
+Local repos are also installed.
+
+Additional disk space allocation is manually performed, as described below.
+
 ### Configure sudo
 
 This variant of the manual procedure is designed to be run from a normal user account which has
 been configured to allow sudo. This section describes what steps related to sudo were done for 
-this poc. This is an example - others may configure sudo differently.
+this POC. This is an example - others may configure sudo differently.
 
 These steps must be run as root. However, once these steps are done, all remaining sections can
 be run as a user who is in the `wheel` and/or `eucalyptus-install` groups as a secondary member.
@@ -91,7 +106,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 1. (ALL): Define Environment Variables used in upcoming code blocks
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol-d1
+    export AWS_DEFAULT_REGION=hp-gol01-d6
 
     export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PRIVATE_DOMAIN=internal
@@ -153,87 +168,136 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_NCA2_PUBLIC_IP=10.104.1.187
     export EUCA_NCA2_PRIVATE_IP=10.105.1.187
-
-    export EUCA_NCA3_PUBLIC_IP=10.104.10.56
-    export EUCA_NCA3_PRIVATE_IP=10.105.10.56
-
-    export EUCA_NCA4_PUBLIC_IP=10.104.10.59
-    export EUCA_NCA4_PRIVATE_IP=10.105.10.59
     ```
 
-### Prepare Network
+### Initialize Host Conventions
 
-1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+This section will initialize the host with some conventions normally added during the kickstart
+process, not currently available for this host.
 
-    The purpose of this section is to confirm external network dependencies are configured properly
-    for Eucalyptus network traffic.
+This section assumes the sudo configuration was performed as documented above.
 
-    TBD: Validate protocol source:port to dest:port traffic
-    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
-    send and receive dummy traffic to confirm there are no external firewall or routing issues,
-    prior to their removal and replacement with the actual packages
+1. (All) Install additional packages
 
-2. (CLC/UFS/OSP/SC): Run tomography tool
-
-    This tool should be run simultaneously on all hosts running Java components.
+    Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    sudo yum install -y java
-
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    sudo yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
     ```
 
-3. (CLC): Scan for unknown SSH host keys
+2. (All) Configure root user
 
-    Note: sudo tee needed to append output to file owned by root
+    Configure the root user with some useful conventions, including a consistent directory
+    structure, adjusting the default GECOS information so email sent from root on a host
+    is identified by the host shortname, pre-populating ssh known hosts, and creating a git
+    configuration file.
 
     ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    sudo mkdir -p ~/{bin,doc,log,src,.ssh}
+    sudo chmod og-rwx ~/{bin,log,src,.ssh}
 
-    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    sudo sed -i -e "1 s/root:x:0:0:root/root:x:0:0:$(hostname -s)/" /etc/passwd
 
-    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    if ! sudo grep -s -q "^github.com" /root/.ssh/known_hosts; then
+        ssh-keyscan github.com 2> /dev/null | sudo tee -a /root/.ssh/known_hosts >> /dev/null
+    fi
+    if ! sudo grep -s -q "^bitbucket.org" /root/.ssh/known_hosts; then
+        ssh-keyscan bitbucket.org 2> /dev/null | sudo tee -a /root/.ssh/known_hosts >> /dev/null
+    fi
 
-    ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    if sudo [ ! -r /root/.gitconfig ]; then
+        echo -e "[user]" | sudo tee /root/.gitconfig >> /dev/null
+        echo -e "\tname = Administrator" | sudo tee -a /root/.gitconfig >> /dev/null
+        echo -e "\temail = admin@eucalyptus.com" | sudo tee -a /root/.gitconfig >> /dev/null
+    fi
     ```
 
-4. (CC): Scan for unknown SSH host keys
+3. (All) Configure profile
+
+    Adjust global profile with some local useful aliases.
 
     ```bash
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA3_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
-    ssh-keyscan ${EUCA_NCA4_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    if [ ! -r /etc/profile.d/local.sh ]; then
+        echo "alias lsa='ls -lAF'" | sudo tee /etc/profile.d/local.sh >> /dev/null
+        echo "alias ip4='ip addr | grep \" inet \"'" | sudo tee -a /etc/profile.d/local.sh >> /dev/null
+    fi
     ```
 
-### Prepare External DNS
+    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
+    and profile.
+
+    ```bash
+    if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
+        sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
+    fi
+
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
+    ```
+
+4. (All) Clone euca-demo git project
+
+    This is one location where demo scripts live. We will run the demo initialization
+    scripts at the completion of the installation.
+
+    ```bash
+    if [ ! -r ~/src/eucalyptus/euca-demo/README.md ]; then
+        mkdir -p ~/src/eucalyptus
+        cd ~/src/eucalyptus
+
+        git clone https://github.com/eucalyptus/euca-demo.git
+    fi
+    ```
+
+### Initialize External DNS
 
 I will not describe this in detail here, except to note that this must be in place and working
 properly before registering services with the method outlined below, as I will be using DNS names
 for the services so they look more AWS-like.
 
-You should be able to resolve these names with these results:
+Confirm external DNS is configured properly with the statements below, which should match the
+results which follow the dig command. This document shows the actual results based on variables
+set above at the time this document was written, for ease of confirming results. If the variables
+above are changed, expected results below should also be updated to match.
+
+**A Records**
 
 ```bash
+dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.80
+
 dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.104.10.84
 
+dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.83
+
 dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 10.104.10.83
+
+dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.84
+
+dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+10.104.10.84
+```
+
+**NS Records**
+
+```bash
+dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+ns1.mjc.prc.eucalyptus-systems.com.
+
+dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+ns1.mjc.prc.eucalyptus-systems.com.
 ```
 
 ### Initialize Dependencies
@@ -256,7 +320,30 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Here is the output of some disk commands showing the initial storage layout, before we perform
     additional configuration.
 
-    **Physical Disks and Logical Volumes**
+    **Mounted Filesystems**
+
+    ```bash
+    df -h
+    Filesystem            Size  Used Avail Use% Mounted on
+    /dev/mapper/vg01-lv_root
+                           20G  1.1G   18G   6% /
+    tmpfs                 3.9G     0  3.9G   0% /dev/shm
+    /dev/sda1             240M   33M  195M  15% /boot
+    ```
+
+    **Logical Volume Management**
+
+    ```bash
+    sudo pvscan
+      PV /dev/sda2   VG vg01   lvm2 [931.25 GiB / 903.44 GiB free]
+      Total: 1 [931.25 GiB] / in use: 1 [931.25 GiB] / in no VG: 0 [0   ]
+
+    sudo lvscan
+      ACTIVE            '/dev/vg01/lv_swap' [7.81 GiB] inherit
+      ACTIVE            '/dev/vg01/lv_root' [20.00 GiB] inherit
+    ```
+
+    **Disk Partitions**
 
     ```bash
     sudo disk -l
@@ -298,33 +385,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     Disk identifier: 0x00000000
     ```
 
-    **LVM Physical Disks, Volume Groups and Logical Volumes**
-
-    ```bash
-    sudo pvscan
-      PV /dev/sda2   VG vg01   lvm2 [931.25 GiB / 903.44 GiB free]
-      Total: 1 [931.25 GiB] / in use: 1 [931.25 GiB] / in no VG: 0 [0   ]
-
-    sudo vgscan
-      Reading all physical volumes.  This may take a while...
-      Found volume group "vg01" using metadata type lvm2
-
-    sudo lvscan
-      ACTIVE            '/dev/vg01/lv_swap' [7.81 GiB] inherit
-      ACTIVE            '/dev/vg01/lv_root' [20.00 GiB] inherit
-    ```
-
-    **Mounted Filesystems**
-
-    ```bash
-    df -h
-    Filesystem            Size  Used Avail Use% Mounted on
-    /dev/mapper/vg01-lv_root
-                           20G  1.1G   18G   6% /
-    tmpfs                 3.9G     0  3.9G   0% /dev/shm
-    /dev/sda1             240M   33M  195M  15% /boot
-    ```
-    
     On all hosts, use the remaining space in the vg01 volume group for
     /var/lib/eucalyptus.
 
@@ -332,8 +392,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     sudo lvcreate -l 100%FREE -n eucalyptus vg01
 
     sudo pvscan
-
-    sudo vgscan
 
     sudo lvscan
 
@@ -458,8 +516,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     sudo pvscan
 
-    sudo vgscan
-
     sudo lvscan
     ```
 
@@ -536,7 +592,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8773 - Web services (CLC)
     * tcp 8777 - Database (CLC)
     * tcp 8778 - Multicast (CLC)
-
+    * tcp 8779-8849 - jGroups (CLC)
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -556,6 +612,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8777 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     COMMIT
@@ -580,7 +637,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8779-8849 - jGroups (UFS)
     * tcp 8888 - Console - Direct (MC)
 
-
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
     *filter
@@ -598,7 +654,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8888 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
@@ -621,7 +677,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8778 - Multicast (OSP)
     * tcp 8779-8849 - jGroups (OSP)
 
-
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
     *filter
@@ -637,7 +692,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8772 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     COMMIT
@@ -660,7 +715,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp 8778 - Multicast (SC, CC)
     * tcp 8779-8849 - jGroups (SC)
 
-
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
     *filter
@@ -677,7 +731,7 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8773 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8774 -j ACCEPT
     -A INPUT -m state --state NEW -m tcp -p tcp --dport 8778 -j ACCEPT
-    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779-8849 -j ACCEPT
+    -A INPUT -m state --state NEW -m tcp -p tcp --dport 8779:8849 -j ACCEPT
     -A INPUT -j REJECT --reject-with icmp-host-prohibited
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     COMMIT
@@ -698,7 +752,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     * tcp  8775 - Web services (NC)
     * tcp  8778 - Multicast (NC)
     * tcp 16514 - TLS, needed for node migrations (NC)
-
 
     ```bash
     cat << EOF | sudo tee /etc/sysconfig/iptables > /dev/null
@@ -884,6 +937,61 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     cat /proc/sys/net/ipv4/ip_forward
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    ```
+
+### Prepare Network
+
+1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+
+    The purpose of this section is to confirm external network dependencies are configured properly
+    for Eucalyptus network traffic.
+
+    TBD: Validate protocol source:port to dest:port traffic
+    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
+    send and receive dummy traffic to confirm there are no external firewall or routing issues,
+    prior to their removal and replacement with the actual packages
+
+2. (CLC/UFS/OSP/SC): Run tomography tool
+
+    This tool should be run simultaneously on all hosts running Java components.
+
+    ```bash
+    sudo yum install -y java
+
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    ```
+
+3. (CLC): Scan for unknown SSH host keys
+
+    Note: sudo tee needed to append output to file owned by root
+
+    ```bash
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+    ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+
+    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ```
+
+4. (CC): Scan for unknown SSH host keys
+
+    ```bash
+    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
+    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null | sudo tee -a /root/.ssh/known_hosts > /dev/null
     ```
 
 ### Install Eucalyptus
@@ -1173,7 +1281,6 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ```bash
     sudo euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
-    sleep 60
     ```
 
     Wait for UFS services to respond.
@@ -1260,19 +1367,19 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     within eucarc on each refresh of credentials.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    sudo euca_conf --get-credentials ~/creds/eucalyptus/admin.zip
+    sudo euca_conf --get-credentials ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    cp -a ~/creds/eucalyptus/admin/eucarc ~/creds/eucalyptus/admin/eucarc.orig
+    cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc.orig
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 2. (CLC): Confirm initial service status
@@ -1283,6 +1390,10 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
 
     ````bash
     euca-describe-services | cut -f1-5
+
+    euca-describe-regions
+
+    euca-describe-availability-zones verbose
 
     euca-describe-nodes
     ```
@@ -1335,21 +1446,21 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     downloaded versions of the key and certificate files.
 
     ```bash
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    sudo euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 6. (CLC): Load Edge Network JSON configuration
@@ -1380,7 +1491,9 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euca-describe-regions
 
-    euca-describe-availability-zones
+    euca-describe-availability-zones verbose
+
+    euca-describe-nodes
 
     euca-describe-instance-types --show-capacity
     ```
@@ -1434,23 +1547,23 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     downloaded versions of the key and certificate files.
 
     ```bash
-    mkdir -p ~/creds/eucalyptus/admin
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/creds/eucalyptus/admin.zip
+    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    sudo euca-get-credentials -u admin ~/creds/eucalyptus/admin.zip
+    sudo euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
 
-    unzip -uo ~/creds/eucalyptus/admin.zip -d ~/creds/eucalyptus/admin/
+    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/creds/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/creds/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/creds/eucalyptus/admin/eucarc
+    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
+        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
+        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
+        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
 
-    cat ~/creds/eucalyptus/admin/eucarc
+    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
 
-    source ~/creds/eucalyptus/admin/eucarc
+    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
 7. (CLC): Display Parent DNS Server Sample Configuration (skipped)
@@ -1486,6 +1599,88 @@ dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
     ```bash
     euare-usermodloginprofile -u admin -p password
     ```
+
+### Configure Support-Related Properties
+
+1. (CLC): Create Eucalyptus Administrator Support Keypair
+
+    ```bash
+    euca-create-keypair admin-support | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
+    ```
+
+2. (CLC): Configure Service Instance Login
+
+    ```bash
+    euca-modify-property -p services.database.worker.keyname=admin-support
+
+    euca-modify-property -p services.imaging.worker.keyname=admin-support
+
+    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
+    ```
+
+### Configure SSL Certificates
+
+We have an internal certificate authority used to sign development wildcard certificates.
+This reduces the number of SSL certificates we need to manage, while still protecting SSL
+websites in a manner similar to how things work in production.
+
+All keys and certificates are included in-line below. If these are reissued, this document
+must be updated with the new text. Since this repository is public, these should be
+considered insecure, and not used to protect hosts or sites accessible from the Internet.
+
+1. (ALL) Configure SSL to trust local Certificate Authority
+
+    You should save this certificate and import into the trusted certificate store of all
+    workstations where you may access the management console, so that you do not get the
+    unknown certificate authority warning.
+
+    ```bash
+    cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+    -----BEGIN CERTIFICATE-----
+    MIIGfDCCBGSgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+    SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+    bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+    Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTA0MjAyMzI2MzNaFw0y
+    NTA0MTcyMzI2MzNaMIG6MQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+    YTEPMA0GA1UEBwwGR29sZXRhMRgwFgYDVQQKDA9IZXdsZXR0LVBhY2thcmQxJjAk
+    BgNVBAsMHUhlbGlvbiBFdWNhbHlwdHVzIERldmVsb3BtZW50MUMwQQYDVQQDDDpI
+    ZWxpb24gRXVjYWx5cHR1cyBEZXZlbG9wbWVudCBSb290IENlcnRpZmljYXRpb24g
+    QXV0aG9yaXR5MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzTy4eoFV
+    BNQYawVhvzZ2rawfV6+oOOr6bNfg8K+TV3faLBXicN1q2XIMuGh2DGMNe0kPskku
+    Tn1kk1SMatC8FtrwNQZRlZCqYQP2PC3jabOawo4yJU+3AMMvR+j33MSDY4Tm2uuh
+    lwXKzxDgMadpRTxDSbMmBQXqHTAPubIOTM4Nu8LEUiNmTv4tvUJjRxYqTYfbsSUd
+    Ox8cvQKr4k/R/kuxD6iwTwdyZ227oXqSv/cQC+7lcyCuq+7+ergbmz52uzAD0klL
+    GLxeFpNLk+WcL6LV/KlTBPuMmIlT/ZsJ9plHsNB6lVWXsacVSG2jHQhylLu32rvT
+    47D1AXCvIDQeMxzLvJeLQoUM7XXV/oAMZww6b4aXTsFl07avEE7u7I6vNSqiRWtn
+    23DuiD6QExSWiwDUEzj0DxCsU366jiHw7j5fgjg3k7TNIKn3oTYnx8WFJMH7/DPc
+    HwZ7zOYj3hzCASy2ROqV4/K8mniicQHWpfrvgX980EWsrgNlgDbPCBXBqKwCp5I9
+    WDCjx7IDtY3peDfa8+rKzWCE+cwjH7v+1avm16Y/rq4cuP/uUazbT3HtEPbAZHvb
+    qAwace0g57w1Yckk3WtzbaQqI+rkV503HT7DCNDZ+MryuWxSU8+xSHUdKsEmPpr1
+    ejMcYAEjdau1x5+jMgpBMN2opZZfmWoNWRsCAwEAAaOBijCBhzAdBgNVHQ4EFgQU
+    NkKFNpC6OqbkLgVZoFATE+TS21gwHwYDVR0jBBgwFoAUNkKFNpC6OqbkLgVZoFAT
+    E+TS21gwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwEQYJYIZIAYb4QgEB
+    BAQDAgEGMAkGA1UdEQQCMAAwCQYDVR0SBAIwADANBgkqhkiG9w0BAQsFAAOCAgEA
+    OBZU/IohiseYPFFhhvUfKyCvoAlb2tx9jL0UxQifgd02G3wyWOa5q0sRVGynd/qa
+    jjTkw0DN/9gt8dQIUU1XdfJ+KT8sfTd6z4/w/yqU6uJ3EvCTV3+G67W9UOtyJqub
+    sdCYP24v2uZdF4WLU6Gacq2C/oL0yAngXcEdEC8uwo62WKJftN+AiV7YByWyrX4d
+    vaNjxoa/ZF2sXPeY76ZliprgG4xEe9v0SdE7qU8wVlDVc8DtdUkAyosc38HynizI
+    kCxPZKgyn+doBXNwMPeq/yyeWjt7av9MozBSgdUhnpHWbmPTouBc+8p58wiolBap
+    oMHur98tQYDpwTYwPXL9gQ6V22GaKjJmMGZ8S9pNGhUeHzLVyaFiLBeKh1am7HiX
+    wzoERgKZX8Pcs/Rk6/Z0IK1AG7aOHTrE9jrmFNHWDqme0Y7sIRukkd88JgthRRZD
+    zq/GCP6kaAclH4Cm6bgeXw7TvEv2B7ocoBoWhV3cqnNJbujB66H59ItCfG9xG3j8
+    qkU3RQU7V9UDb/2+anPE+w/SukYILKHT9GCqsyC3Afc855ugPhXC7EMMyd+Xp88M
+    Hx6H/MmbW0Pe72Fs27ipgJrEzRXd5FHIzpj2qug9SHEw3d7H7LrqDYs6eA07oL8I
+    Zg+lWqylmGZ/aaG3qEnB1I+q6dUCrKDmxtOk6HAJ6PI=
+    -----END CERTIFICATE-----
+    EOF
+
+    update-ca-trust enable
+
+    update-ca-trust extract
+    ```
+
+YOU ARE HERE
 
 ### Configure Management Console for SSL
 
