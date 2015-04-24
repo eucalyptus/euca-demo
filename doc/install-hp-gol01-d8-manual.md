@@ -1939,14 +1939,20 @@ system for use by users.
 
 1. (CLC): Initialize Demo Account 
 
-    By default, running this script creates an account named `demo`. You can create additional
-    accounts for demo purposes by using the `-a <account>` flag.
+    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>` 
+    parameter to create additional accounts. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
     ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
     ```
 
 2. (CLC): Initiali Demo Account Dependencies.sh
+
+    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
+    parameter to create dependencies in additional accounts created for demo purposes with the
+    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
     ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh

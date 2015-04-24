@@ -1309,14 +1309,137 @@ smtp.hp-pal20a-1.hpccc.com.
     euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
     ```
 
-YOU ARE HERE
+### Configure SSL Certificates
+
+We have an internal certificate authority used to sign development wildcard certificates.
+This reduces the number of SSL certificates we need to manage, while still protecting SSL
+websites in a manner similar to how things work in production.
+
+All keys and certificates are included in-line below. If these are reissued, this document
+must be updated with the new text. Since this repository is public, these should be
+considered insecure, and not used to protect hosts or sites accessible from the Internet.
+
+1. (ALL) Configure SSL to trust local Certificate Authority
+
+    You should save this certificate and import into the trusted certificate store of all
+    workstations where you may access the management console, so that you do not get the
+    unknown certificate authority warning.
+
+    ```bash
+    cat << EOF > /etc/pki/ca-trust/source/anchors/HPCCC_DC1A_CA.crt
+    -----BEGIN CERTIFICATE-----
+    MIIDpDCCAoygAwIBAgIQY375YpycpI9MLtbaTAMeUTANBgkqhkiG9w0BAQUFADBE
+    MRMwEQYKCZImiZPyLGQBGRYDY29tMRUwEwYKCZImiZPyLGQBGRYFaHBjY2MxFjAU
+    BgNVBAMTDWhwY2NjLURDMUEtQ0EwHhcNMTUwNDE0MjExNzI4WhcNMjAwNDEzMjEy
+    NzI3WjBEMRMwEQYKCZImiZPyLGQBGRYDY29tMRUwEwYKCZImiZPyLGQBGRYFaHBj
+    Y2MxFjAUBgNVBAMTDWhwY2NjLURDMUEtQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+    DwAwggEKAoIBAQCmoHR7XOde9LHGmEa0rNAkAt6jDMpxypW3C1xcKi+T8ZcMUwdv
+    K9oQv9ZnRAhyCEqQc/VobiiR3JO9/lz86Y9XsoysbrU2gZTfyYw03DH32Tm3tYaI
+    xsK+ThBRkM0HhKZiGAO5d5UFz2f3xWWgaahHEbXoOYbuBYxJ6TWpmhrV/NbVdJXI
+    /44mdCI4TAjIlQemFa91ZyKdEuT76vt13leyzld4eyl0LU1go3vaLLNo1G7tY5jW
+    2aUw7hgpd5jWFPrCNkdvuk04KHl617H+qGGvWKlapG8f7e6voHjgbA2Zqsoa4lQr
+    6Is13kAZIQRCEUrppeYWOkhzks/iwWIyJMQZAgMBAAGjgZEwgY4wEwYJKwYBBAGC
+    NxQCBAYeBABDAEEwDgYDVR0PAQH/BAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYD
+    VR0OBBYEFO8xVEl5RiVrrtGK9Ou+YdNuDNRtMBIGCSsGAQQBgjcVAQQFAgMDAAMw
+    IwYJKwYBBAGCNxUCBBYEFMuCtZAjoURHCHCk5JSf7gpClFeyMA0GCSqGSIb3DQEB
+    BQUAA4IBAQAlkTqoUmW6NMzpVQC4aaWVhpwFgU61Vg9d/eDbYZ8OKRxObpjjJv3L
+    kHIxVlKnt/XjQ/6KOsneo0cgdxts7vPDxEyMW1/Svronzau3LnMjnnwp2RV0Rn/B
+    TQi1NgNLzDATqo1naan6WCiZwL+O2kDJlp5xXfFLx3Gapl3Opa9ShbO1XQmbCdPT
+    A7FriDiLLBTWAd6TqhmfH+dcz56TGr36itJAh8i2jb2gGErB0DvBN2S4bCvJ1e54
+    gYH1DylEpeALZeYK3M30AoRivO5eAivFRpUi/CBLVaFqmD4E2MI8mdbWtLH1t0Qi
+    3hyLaqkOlbnIuxMLe4X041c3cZ+PI7wm
+    -----END CERTIFICATE-----
+    EOF
+
+    update-ca-trust enable
+
+    update-ca-trust extract
+    ```
+
+2. (CLC+UFS+MC) Install Wildcard Site SSL Key
+
+    ```bash
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEpQIBAAKCAQEAvubSKR8pfmgK0U6NuA8YymNrXT1m51PdRozNQu11cvyOOyM0
+    68NoJ2p69IeXL4PuWJizcAGtFA3FbO5zMUrTuwY/vfJlYkkgCA8YdEGD1VdOvfKq
+    ceXu8BolttCmhPKUB1mGIAQXmKB3HDJ0ps3rJniOGxqPsyvDoJUWMjeIyEykm5jI
+    79hgjtWF9kPHSoX8Nx6UBuAoXv/4HvuOwnsteVD2DG91cTbDXLB1phMOByIwWWer
+    JB/RkUggc8xa5V38HBTSYq+4s6xCr6eU1kHjyRJS5VVmH6OwCmp2sT6oYKb44Vw/
+    cHargIooiN6tjohBll5q8uaDhQ3aoYBEF0GLCwIDAQABAoIBAQCF2NS1XFH9fPlI
+    s6kNyhf5nydh4nFJ9DULCCHKsS9OBeG7eP3b59AZAsFevcq01+2/VKFLAQHXM6ie
+    rbk6cFpvoPwEM/X9qYO54sukh2LlrCdbas8yuKKE2fBjc3utb192n8A4pmXc73VT
+    4dSEN5COEqygOElUuHSbHKzJXMKcnFnvth5JW8KVGGyNVks7QdJirbokluBX87OA
+    EekNWwsddPsLltRw7YEK5nn7KAhRwUVqAO4mSFqMK6uP4TRjsQODY+G5bQk8kp+D
+    DcvW8Le0I6KWscpaRMkXPu5+reTcKpkRVRH/qQmBepQncjZhr2qj9NQqPmUOf22s
+    9X3cHHyRAoGBAOaMf/XUvs2XGafyqxwk0wJPss2lQD12sMaCY8yGyTLcQm2bMhrA
+    cqxC33NLQjIQlQrvX8vV0uzhbXIcgtCTRt5yn8LqAz1xUUguIu9HIZ9CocG8tome
+    I7dXkTJJe7+hVDpML0AbwXLFs/dG5jxAFJ6euYJzSXH9tMVzO0OV5V0PAoGBANP5
+    2+Wu8zjGcdxEGImIXyRD4Zd1VIWd+igs28+nJGvixnAalbQOGKPZ6qeIrbI/IAJx
+    F9xpxmuhopdHRWqDzO7n01H2euHfgrk5OqqXZt/Y9DZPyNRZZDroT322ro3m3wLX
+    o+oT9sRGtWbl1Koza8d/AbxvVMePO/SFED+kJSpFAoGAEyIv8HgCic9zeqPCHajU
+    tklk/norda5nB2KE49F/2y+6d5w8sUmteqxmHQxu5vbHV8v7+E+7nJss2R6SoLrI
+    U+fRaHzBXhUMeOATWCZgHPaLtCd0QsGUF0A2NaUxlvrNobT26uwixuKvh+Mjcnai
+    /3MO1Eu7GbHDket5TKehDHMCgYEAqPYJ7wQKXoDfFOE6ZbXLkE6DLISbQH3xfcBz
+    3QqvH0d9QLIQDZsGzOPQBIYPXXqvewLGMCwnunb18Hsgu4we93bVnAlJXW0Y96bE
+    OmG/4EFAN2JVA93U5JdzdRL+A6G4tL1JrDUJht2Njl03rAqcqEF2Esry2rYy5e6C
+    Sxf9f7kCgYEA4m8O9inj16giGig4hUj8RHk9Fa/e0hEY/2EFKfJdcxq0oDpSHnSH
+    T36I8Fks0LPBDETJNV8HJlMG6+Ul1lJpjx5N2S//f5Ypolp/3xbVkdAXZTINZG8B
+    HKRCzCUN6anVsxLcx+Ja1hy7aNbNOtOki+GLlz53XQ/xFiBYcmqXH5E=
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    ```
+
+3. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
+
+
+    ```bash
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    -----BEGIN CERTIFICATE-----
+    MIIFeTCCBGGgAwIBAgIKHMDJeAADAAAAcDANBgkqhkiG9w0BAQUFADBEMRMwEQYK
+    CZImiZPyLGQBGRYDY29tMRUwEwYKCZImiZPyLGQBGRYFaHBjY2MxFjAUBgNVBAMT
+    DWhwY2NjLURDMUEtQ0EwHhcNMTUwNDE3MjEzOTA3WhcNMTcwNDE2MjEzOTA3WjCB
+    ljELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCVBh
+    bG8gQWx0bzEYMBYGA1UEChMPSGV3bGV0dC1QYWNrYXJkMSIwIAYDVQQLExlFeGVj
+    dXRpdmUgQnJpZWZpbmcgQ2VudGVyMSAwHgYDVQQDDBcqLmhwLXBhbDIwYS0xLmhw
+    Y2NjLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL7m0ikfKX5o
+    CtFOjbgPGMpja109ZudT3UaMzULtdXL8jjsjNOvDaCdqevSHly+D7liYs3ABrRQN
+    xWzuczFK07sGP73yZWJJIAgPGHRBg9VXTr3yqnHl7vAaJbbQpoTylAdZhiAEF5ig
+    dxwydKbN6yZ4jhsaj7Mrw6CVFjI3iMhMpJuYyO/YYI7VhfZDx0qF/DcelAbgKF7/
+    +B77jsJ7LXlQ9gxvdXE2w1ywdaYTDgciMFlnqyQf0ZFIIHPMWuVd/BwU0mKvuLOs
+    Qq+nlNZB48kSUuVVZh+jsApqdrE+qGCm+OFcP3B2q4CKKIjerY6IQZZeavLmg4UN
+    2qGARBdBiwsCAwEAAaOCAhgwggIUMB0GA1UdDgQWBBQv6vCxpW14sawNAvvzN1s4
+    ihboBTAfBgNVHSMEGDAWgBTvMVRJeUYla67RivTrvmHTbgzUbTCByQYDVR0fBIHB
+    MIG+MIG7oIG4oIG1hoGybGRhcDovLy9DTj1ocGNjYy1EQzFBLUNBKDMpLENOPURD
+    MUEsQ049Q0RQLENOPVB1YmxpYyUyMEtleSUyMFNlcnZpY2VzLENOPVNlcnZpY2Vz
+    LENOPUNvbmZpZ3VyYXRpb24sREM9aHBjY2MsREM9Y29tP2NlcnRpZmljYXRlUmV2
+    b2NhdGlvbkxpc3Q/YmFzZT9vYmplY3RDbGFzcz1jUkxEaXN0cmlidXRpb25Qb2lu
+    dDCBvQYIKwYBBQUHAQEEgbAwga0wgaoGCCsGAQUFBzAChoGdbGRhcDovLy9DTj1o
+    cGNjYy1EQzFBLUNBLENOPUFJQSxDTj1QdWJsaWMlMjBLZXklMjBTZXJ2aWNlcyxD
+    Tj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWhwY2NjLERDPWNvbT9jQUNl
+    cnRpZmljYXRlP2Jhc2U/b2JqZWN0Q2xhc3M9Y2VydGlmaWNhdGlvbkF1dGhvcml0
+    eTAhBgkrBgEEAYI3FAIEFB4SAFcAZQBiAFMAZQByAHYAZQByMA4GA1UdDwEB/wQE
+    AwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQUFAAOCAQEAd1r/
+    2koqygZF0CJdEhyI3BhSthF+vaKqesNBlOgct5gY39nO8yXVjqwUONy9lG0qJ0zW
+    untXK395/ifwq2C3nHEXQKQt1pQ45qLKJhA+9DpFrnNcunSbDv9uVSa1Or9cDsoF
+    tBIy2x+omkr7gE6QQUBlnl0Bolxc6QYrpNfzuNuDbngELOKi4UlpaZmPCAe0RN0f
+    T0wNO/GNebzwg4zEf0uegQO0OMLOtEEWfrPKrXEEAMRZBkDIqv2qUY6DbdCC1dLX
+    JhwqRwLbQRtYdjV2xQQ8yYdAtsMtKH7v8vMT+IYVVfj/UyrviveXuwOMjW/RfSlp
+    Os/7sQZddG9kdBx8KA==
+    -----END CERTIFICATE-----
+    EOF
+
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    ```
 
 ### Configure Management Console for SSL
 
 1. Confirm Eucalyptus Console service on default port
 
     ```bash
-    Browse: http://${EUCA_MC_PUBLIC_IP}:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
     ```
 
 2. Stop Eucalyptus Console service
@@ -1336,10 +1459,10 @@ YOU ARE HERE
     ```bash
     \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
 
-    sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
-           -e 's/# \(ssl_certificate\)/\1/' \
-           -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
-           -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
+           -e "s/# \(ssl_certificate\)/\1/" \
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. Start Nginx service
@@ -1367,28 +1490,27 @@ YOU ARE HERE
 10. Confirm Eucalyptus Console service
 
     ```bash
-    Browse: https://${EUCA_MC_PUBLIC_IP}
+    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
     ```
 
-### Initialize Demo Accounts and Dependencies
 
-Note: It's likely the euca-demo project directory structure will be refactored soon. If the
-scripts reference below are not in the locations shown, their new location should be obvious
-within any new directory structure, so update the instructions below.
+### Configure for Demos
 
-1. Initialize primary demo account
+There are scripts within this git project which can be used to configure a new Eucalyptus region for use in
+demos. These are useful for any system, as they indicate the type of setup usually needed to prepare any
+system for use by users.
 
-    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>` 
+1. (CLC): Initialize Demo Account
+
+    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>`
     parameter to create additional accounts. Without this parameter, the default demo account
     is named "demo", and that will be used here.
 
     ```bash
-    cd ~/src/eucalyptus/euca-demo-bin
-
-    ./euca-demo-01-initialize-account.sh
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
     ```
 
-2. Initialize primary demo account with dependencies
+2. (CLC): Initiali Demo Account Dependencies.sh
 
     The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
     parameter to create dependencies in additional accounts created for demo purposes with the
@@ -1396,7 +1518,7 @@ within any new directory structure, so update the instructions below.
     is named "demo", and that will be used here.
 
     ```bash
-    ./euca-demo-02-initialize-dependencies.sh
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
     ```
 
 ### Transfer Eucalyptus and Demo Account credentials and private keys to management workstation

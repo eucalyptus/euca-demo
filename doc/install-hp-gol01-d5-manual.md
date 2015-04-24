@@ -1572,14 +1572,168 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     update-ca-trust extract
     ```
 
-YOU ARE HERE
+2. (ALL) Install Wildcard Host SSL Key
+
+    ```bash
+    cat << EOF > /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEApyjRCMhXk96DWLBbjsDiXSmHuCTVNIHMowQqXv1Mvi9W98xF
+    VtJYDJz0yhgshbO3DGuYqTr2R451CELmYbBYlhQQMi0tWO4IxwseBJRoxJcAAxx1
+    8dSp2anxvcyPk8xomMC3c1t3AyEF+Y1YQKpMPcCqOZhdbQgRUKCrY6kcLrgCcCZf
+    8GFPNEPBS3iwYz9V8QD9QSLks5MJblTPwRxDHoMMfMxB8SPeCqEmlTUUz+IJ7wev
+    z/3HXgNQZ7a9P8vgGMyKj7+BudgwidR8ENYv0/zM1QzDoCtRHNxID51j/Y70Dobc
+    jmvzX9Mlgke0gc1wraI8P1w+CTNCKewNs9Ng9wIDAQABAoIBACQVYII31QfbeZj0
+    gN8g7fxUUbLDaK6r8kOiS48zuJQ5Xdmh47npMA6Q9xqE+19lOvdYZpzpWG575vGA
+    l4Cw8356GEDslaRjxctJsBInAzKkseD6DM/GK2AMGl3xQXETJ+UJfNBPBzLKtyJ2
+    i31yBYEzDMvgAxLdMfeopzadM7M1tiFd2+DEbT66PSsTih9xnDtY2mHicZXFEd1w
+    M/3b+S0jfKcytG2nUwc1wI5QVlaks6DU1bkrIkW6ZfTsnTOlKmWc6CJg5Tj1/1SP
+    OKcgRmug8JF+KU8CUhTZV8qLF/x/UXgFuKmojLRSTiJ1GDEo6gFliKrYFRAXeW+a
+    xDVwCVECgYEA1IQt2wR7A4QSscpVnmF1gqlnajoQzx0C6WBUEORxWO+Nxiq6pxCe
+    Qy2wNb6xsAVyzJhRYyxW/WE0EyrjEFnxKwh7SxUMnn6WbeUYsGj6DqW/GGdVP26E
+    RiSFRs+SyziBeVKtTA0RJgRL5Cduyo7Ej6YENXS389aI5QlzHifmbMkCgYEAyVzM
+    N2yggBKRus+Rr5EOk6fr/LF2hm3amH2Ub1kqsBy959Sa0Dwb112NJa0cuZZtPoFa
+    9dWGn/1pozN6qQnuNrSVsMV4PyRl5GZm55t3MzAGp3I1oQRwI4p9wRpZoRVD8rhj
+    4CyABLuUh3+F7uvLYwYRw/mx9Crybe+zaAYs/78CgYBGuR5RjvIpP2DBTiakKKbk
+    rt+9mElTw8HeTLJtVLjr8fzqf/nR81PX43KK0EVt4MJNmDstl+nzNNARuOoL3QLH
+    YXE2kXC7pkEFnYJT4vukuEAaLPlPvMXEWg8Ie7fMbaeY6ozFjGuyjSd8bCsQueZs
+    L8Gi0I8PVMwF/NkUpg6nEQKBgDuOrvhVsMMwutm+OyDqjp0ttabv9lacd2NTAWxN
+    u0qLtb+0KnYc0T9J9E2Ifk6GJ5mtOPItTbxUf8I9n7IPtd2IXB4EyiQi5+A+SYGH
+    giIpuk4cgbA2V9SrSbarzIbQe2B3GVNc1iCQOsY4+axJIccQLIECgZfue/X4R+Ak
+    s3qRAoGBAJ2ifqj9iTHKPwb4HfFWW18qfffS4Hoes0OTR9AlpMlPDGqHkyRAjCqc
+    w6cfovJya2WnJ/6/ukF1arPFGycXnjM94l20S61dmjwfq/VOA98kuiol97hnUl3u
+    Q0FKCwro7Wt37jb9eEwYEg9w3qtq7xzD6YbsRosR02okSymHRgqO
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 400 /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    ```
+
+3. (ALL) Install Wildcard Host SSL Certificate
+
+    ```bash
+    cat << EOF > /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    -----BEGIN CERTIFICATE-----
+    MIIFiDCCA3CgAwIBAgIBDjANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+    SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+    bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+    Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTA0MjEwNTI4NTJaFw0x
+    ODA0MjAwNTI4NTJaMIGLMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+    YTEYMBYGA1UECgwPSGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVj
+    YWx5cHR1cyBEZXZlbG9wbWVudDElMCMGA1UEAwwcKi5wcmMuZXVjYWx5cHR1cy1z
+    eXN0ZW1zLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKco0QjI
+    V5Peg1iwW47A4l0ph7gk1TSBzKMEKl79TL4vVvfMRVbSWAyc9MoYLIWztwxrmKk6
+    9keOdQhC5mGwWJYUEDItLVjuCMcLHgSUaMSXAAMcdfHUqdmp8b3Mj5PMaJjAt3Nb
+    dwMhBfmNWECqTD3AqjmYXW0IEVCgq2OpHC64AnAmX/BhTzRDwUt4sGM/VfEA/UEi
+    5LOTCW5Uz8EcQx6DDHzMQfEj3gqhJpU1FM/iCe8Hr8/9x14DUGe2vT/L4BjMio+/
+    gbnYMInUfBDWL9P8zNUMw6ArURzcSA+dY/2O9A6G3I5r81/TJYJHtIHNcK2iPD9c
+    PgkzQinsDbPTYPcCAwEAAaOBxTCBwjAMBgNVHRMBAf8EAjAAMB0GA1UdJQQWMBQG
+    CCsGAQUFBwMBBggrBgEFBQcDAjAOBgNVHQ8BAf8EBAMCBaAwHwYDVR0jBBgwFoAU
+    NkKFNpC6OqbkLgVZoFATE+TS21gwQwYDVR0RBDwwOoIcKi5wcmMuZXVjYWx5cHR1
+    cy1zeXN0ZW1zLmNvbYIacHJjLmV1Y2FseXB0dXMtc3lzdGVtcy5jb20wHQYDVR0O
+    BBYEFFUkmTKb9nyPcXGltziX45SRHIx3MA0GCSqGSIb3DQEBCwUAA4ICAQC71q6x
+    Hyc/wft+ohM+xo6dotoCZVJJF7hzz+9Qm//yHqB0KR55mLljD9Wq+8C/RYDJ+6dn
+    Q79uC/Toa51W1QrZssk3qQAcXZNgtC92+8boXRwqJ9GwrZ8bMAk3IthqQxQp++RF
+    IVk4QjPJOQXCuT57orIa39bB78aAXBrmjLRfK0+UPS495DCxeEdfZ2gNBGTogDjs
+    rmh/w/umcXN/vGaQUxslcSmXHvIivSASsUAdDltVQbDuRrx6k3zJDRcL7aEtckwV
+    OdjbBr6NTb1vNw7MHKIC+hCc7Rg/UP2bFCchLQ3Hjy5xzkP74l9AjXpJHKwOxCJ2
+    jL96j5rNGpCNZfYYrRbNiflMLvm8FKibFyVwNagWMc8rYHpPwQIVa2FoPYSHdfLw
+    42NlawlalIZemzpHOUuk5cthBt1jqACnI5Gn2G2sn+QP8rMT4iLKyIBxQt3dkxnO
+    fjRK/MrEiQUJpWtwZi+TSFPklTjW9gJS1xBLkcaB5qDrALNBWM5XNXGE76JiNuWO
+    UK7ghFq6IMyabMUB1fLYExXwI4CwHLJZypPjjW4Vv3pi4OUBfTMXAZhMyLVQ5TZV
+    5P+BwsXvGEN+BnGtmsOOnq+x5sNv/ok+iXQClYC4VxzqfEXCotNfE0UwEZaH1Bh2
+    j+SI2pU9Ic50YPF3Q2fLT8WmNLp9OBmmt7RfeA==
+    -----END CERTIFICATE-----
+    EOF
+
+    chmod 444 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    ```
+
+4. (CLC+UFS+MC) Install Wildcard Site SSL Key
+
+    ```bash
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEpAIBAAKCAQEArfmuL6I7Q01VTwxi01LSY5BTSDZ4k4Iymo63+ymRGaOxfG82
+    d2kTTyR6eIq0cMjNXtYbklFyA/+m/Kxr+Nlq4dJvp+vykW39fHVJ0z5okfwOCB4T
+    jr7PkWy0l8ObwEgG5pCqgph3HJB70wJY8e0xiglpsDLV+dw0Vzbx1PDACF83l4m6
+    C5BqYNWi5z1t9hEj+sxg9Fd5xrjlooklEqwrL9nmkRQz94rm7+C986BuiTWGd/87
+    wo0aKQpojwmsAyQsaF3xZOWRVzHlWdnvWM7IQiOf3ddBp4aWNxKnTOT2IcMLnPbR
+    yMuor8gRKSj7gOQSpMhr76JdVS/tAW+TgoL78QIDAQABAoIBAH5R2QCrGb6fSv7P
+    bn4kF7DFHUNEkb4A/f8s+zc5kip8qaVBFtoTCDshsG8Pvz5Y/o0KhxBxZIi0uqmi
+    A++25Z0772iMsB6aL0CL5OOl38WHrySDug2eTBY6SNIc7Fzrr17/0V5rl6i827t1
+    a+GVKLAib4PJFYaLNdHRijvj5nrsfD/q8WTkvCD7/JG8qkw3rHZzDStsEgR3+nLo
+    FaekwIj6cBW3vZPjHVDLWmH8K08oIAIbvF8GAJ9Hsh+f4acRSuLodHldPTazh44u
+    Bid5WO8rvvUB35AJoiieGkwt6a1ET3y7Y1d/ljpTMWbrx/6GioFklo/kRK67f4Bl
+    s4KzE/UCgYEA5rscoPi8mnGGAvc9socp3s60X4EQ2HA4MGV3m76g8JpZc3PWMgyP
+    KRpZEskxvvilqGkHMOl7OLM16Nqnl56RZkbA2UsRLUqOkkMBMlWbhZ3/bYhHczW2
+    //UxcZnDmGApMFzvdFepcDr3iEmzZij/9nowjRIqHHQLriE8aitrR4sCgYEAwQdX
+    FPmYYCYDP92dYKui+us/akNnnJhpSjknjDlfr6PgeWWlJ1j1uGwmu8xlIo6iN5lx
+    MaYPvy8KU9HKEhMNhVG36R6iqWrcrB80LCLMe0WkBsZiJ8Wje14VuRA0t+OlDaBz
+    0oNs7/Pc30MIrfnalQfGPV1rZzzd84a13CdEmfMCgYEAxMKsF1oG/G3zKnRNWQGK
+    40bC6u7Vvr10LVFaPqbB+Gyn+5y8/NFZBGRDsZGBqqnAG231g/CX9DJftsNASDwh
+    ImcT7jnl3AnIq1IYoyP+DGRAftfIlqcn9/7Qu1+1PSxD88pNKZnYFK00ijTPmD8+
+    iKKK5MKoxrrvev881g1Q3yECgYEAlk/69fBvQeAYA7G1jcPaRH7QgRVAJ+dfhlb/
+    fuhmpMV+VcpbU0qo/hXqC6/cyY48sAMi7ECeXohpCGCDdJO1oa3DAxvCGx+F+9rI
+    q93lUdEnK8dsRABZkAXx8Iy4IMJ6kyPxTWred/R0eL8gkSnRlt/Y9Yw7yMbTJ4It
+    N+S0PRUCgYBbvNpWfOJAFC1ya+lq2H/qkYpqbnnCTk3sWxJNT0mD47nZoWqc3Vaz
+    ztrOpuNQYzZHOurLa4p5+ZPcFjEmIgTb+TgwCbEpTmgmvihxhvvZRk3tbIQ3Y+dZ
+    EaO5O/OcOsMVSwYKCUK+Nbm/+LrisJe33cNBhxmdh44hIvOMSgh4ZA==
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    ```
+
+5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
+
+
+    ```bash
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    -----BEGIN CERTIFICATE-----
+    MIIFuDCCA6CgAwIBAgIBBzANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+    SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+    bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+    Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTA0MjEwNDU0MzZaFw0x
+    ODA0MjAwNDU0MzZaMIGbMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+    YTEYMBYGA1UECgwPSGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVj
+    YWx5cHR1cyBEZXZlbG9wbWVudDE1MDMGA1UEAwwsKi5ocC1nb2wwMS1kNS5tamMu
+    cHJjLmV1Y2FseXB0dXMtc3lzdGVtcy5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IB
+    DwAwggEKAoIBAQCt+a4vojtDTVVPDGLTUtJjkFNINniTgjKajrf7KZEZo7F8bzZ3
+    aRNPJHp4irRwyM1e1huSUXID/6b8rGv42Wrh0m+n6/KRbf18dUnTPmiR/A4IHhOO
+    vs+RbLSXw5vASAbmkKqCmHcckHvTAljx7TGKCWmwMtX53DRXNvHU8MAIXzeXiboL
+    kGpg1aLnPW32ESP6zGD0V3nGuOWiiSUSrCsv2eaRFDP3iubv4L3zoG6JNYZ3/zvC
+    jRopCmiPCawDJCxoXfFk5ZFXMeVZ2e9YzshCI5/d10GnhpY3EqdM5PYhwwuc9tHI
+    y6ivyBEpKPuA5BKkyGvvol1VL+0Bb5OCgvvxAgMBAAGjgeUwgeIwDAYDVR0TAQH/
+    BAIwADAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDgYDVR0PAQH/BAQD
+    AgWgMB8GA1UdIwQYMBaAFDZChTaQujqm5C4FWaBQExPk0ttYMGMGA1UdEQRcMFqC
+    LCouaHAtZ29sMDEtZDUubWpjLnByYy5ldWNhbHlwdHVzLXN5c3RlbXMuY29tgipo
+    cC1nb2wwMS1kNS5tamMucHJjLmV1Y2FseXB0dXMtc3lzdGVtcy5jb20wHQYDVR0O
+    BBYEFF3rUNKRx0a63RRCgR4QehDq8R9EMA0GCSqGSIb3DQEBCwUAA4ICAQBjgpvf
+    hNHmoMQXUzfN6o4aOJX/tQSU2dWu4LoGFBAdBQ/ZOg3NP0Mjvmd7YEOw+o7H3jG3
+    grZcc8dQmzKcw5OOWBmsxTdUsvx+Qtfjgr7q/J8vzHb1l+7ywEvIJENPO7Fcaylo
+    gBIYqQZKegIFvsE9ppPq69Ne3A/VEpcPiowoZSnk+BphvQ7C0gXFdpbEluFHQ2tb
+    xmV0lT43yk17Hk7UE+Fa8dvHzY8NLK16Zd2pq5uXFmpVprb41yQ/lOgK88wVYUzq
+    D7tjmCGhI/O/8Bt93knIyuZil2vxBrokTCr6TGDC8vdaoCqKeKTrGRBqoiv+/UWb
+    f3Vmu+PShC7e3dIgjnkS5SczN+TTOpMcdFdwnU+y52ufz2bbSR+rwl34l3hsxGdq
+    l4HXdW8yz4On66OBJ8SwsJgFUrS2/ZxubL2+gR31x+aBETgkF+U8DbFIoruwrTWs
+    YLTOrVN5X2+PtUU71ZkqDY4mwcNLCU9ahdpV4RTrmjMm8IoETosFjCVMH30/L+9Q
+    oQxgL1gjyt6aeL/w5F5yhgBj4a7Pvd+D0znEFVz6REKj+8vtmttClmkJPe0ltr+f
+    uhEUutlEl+51RW8FoZ3YLk14Ct8H8iLeaMHjHlPb3OhNHZUA7L+Goqn7jjBb9B30
+    getcdPJWTvr4l4ecDxKK6aAOgFc0Itc4XhwkEQ==
+    -----END CERTIFICATE-----
+    EOF
+
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    ```
 
 ### Configure Management Console for SSL
 
 1. (MW): Confirm Eucalyptus Console service on default port
 
     ```bash
-    Browse: http://${EUCA_MC_PUBLIC_IP}:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
     ```
 
 2. (MC):  4. Stop Eucalyptus Console service
@@ -1599,10 +1753,10 @@ YOU ARE HERE
     ```bash
     \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
 
-    sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
-           -e 's/# \(ssl_certificate\)/\1/' \
-           -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
-           -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
+           -e "s/# \(ssl_certificate\)/\1/" \
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
@@ -1630,32 +1784,34 @@ YOU ARE HERE
 10. (MC): Confirm Eucalyptus Console service
 
     ```bash
-    Browse: https://${EUCA_MC_PUBLIC_IP}
+    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
     ```
 
-### Configure Images
+### Configure for Demos
 
-Optional: If you plan on using this system to run demos, it is preferrable to run the demo setup
-scripts, which incorporate this logic as well as performing additional setup, instead.
+There are scripts within this git project which can be used to configure a new Eucalyptus region for use in
+demos. These are useful for any system, as they indicate the type of setup usually needed to prepare any
+system for use by users.
 
-1. (CLC): Download Images
+1. (CLC): Initialize Demo Account
+
+    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>`
+    parameter to create additional accounts. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
-
-    xz -v -d ~/centos.raw.xz
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
     ```
 
-2. (CLC): Install Image
+2. (CLC): Initiali Demo Account Dependencies.sh
+
+    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
+    parameter to create dependencies in additional accounts created for demo purposes with the
+    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm
-    ```
-
-3. (CLC): List Images
-
-    ```bash
-    euca-describe-images
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
     ```
 
 ### Test Inter-Component Connectivity
@@ -1712,77 +1868,6 @@ additonal ports we should add to ensure complete interconnectivity testing.
     ```bash
     nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
     nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
-    ```
-
-8. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
-    on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
-    available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
-    UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
-    TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
-
-# Manual Installation Procedure for 5-Node (3+2) POC (region hp-gol-d1)
-
-This document describes the manual procedure to setup region hp-gol-d1,
-based on a variant of the "4-node reference architecture", but combining the CLC with the UFS, and
-with 2 Node Controllers.
-
-This variant is meant to be run as root
-
-This POC will use **hp-gol-d1** as the AWS_DEFAULT_REGION.
-
-The full parent DNS domain will be hp-gol-d1.mjc.prc.eucalyptus-systems.com.
-
-This is using the following nodes in the PRC:
-- odc-d-13: CLC, UFS, MC
-- odc-d-15: OSP (Walrus)
-- odc-d-29: CC, SC
-- odc-d-35: NC1
-- odc-d-38: NC2
-
-Each step uses a code to indicate what node the step should be run on:
-- MW:  Management Workstation
-- CLC: Cloud Controller Host
-- UFS: User-Facing Services Host
-- MC:  Management Console Host
-- OSP: Object Storage Provider (Walrus)
-- CC:  Cluster Controller Host
-- SC:  Storage Controller Host
-- NCn: Node Controller(s)
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-    ```
-
-5. (CC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
-    nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
-    nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
-    nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
-    ```
-
-6. (SC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
-    ```
-
-7. (NC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
     ```
 
 8. (Other): Verify Connectivity

@@ -1711,14 +1711,103 @@ mjcsbapns41.sba.mjcconsulting.com.
     euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
     ```
 
-YOU ARE HERE
+### Configure SSL Certificates
+
+We have an internal certificate authority used to sign development wildcard certificates.
+This reduces the number of SSL certificates we need to manage, while still protecting SSL
+websites in a manner similar to how things work in production.
+
+All keys and certificates are included in-line below. If these are reissued, this document
+must be updated with the new text. Since this repository is public, these should be
+considered insecure, and not used to protect hosts or sites accessible from the Internet.
+
+1. (ALL) Configure SSL to trust local Certificate Authority
+
+    You should save this certificate and import into the trusted certificate store of all
+    workstations where you may access the management console, so that you do not get the
+    unknown certificate authority warning.
+
+    ```bash
+    cat << EOF > /etc/pki/ca-trust/source/anchors/MJC_Consulting_Root_Certification_Authority.crt
+    -----BEGIN CERTIFICATE-----
+    MIIHTDCCBTSgAwIBAgIBADANBgkqhkiG9w0BAQUFADCB1TELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExETAPBgNVBAcMCFNhbiBKb3NlMRcwFQYDVQQK
+    DA5NSkMgQ29uc3VsdGluZzEgMB4GA1UECwwXQ2VydGlmaWNhdGlvbiBBdXRob3Jp
+    dHkxNDAyBgNVBAMMK01KQyBDb25zdWx0aW5nIFJvb3QgQ2VydGlmaWNhdGlvbiBB
+    dXRob3JpdHkxLTArBgkqhkiG9w0BCQEWHmNlcnRpZmljYXRlc0BtamNjb25zdWx0
+    aW5nLmNvbTAeFw0xMzA3MDIxNzM4MDNaFw0zMzA2MjcxNzM4MDNaMIHVMQswCQYD
+    VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTERMA8GA1UEBwwIU2FuIEpvc2Ux
+    FzAVBgNVBAoMDk1KQyBDb25zdWx0aW5nMSAwHgYDVQQLDBdDZXJ0aWZpY2F0aW9u
+    IEF1dGhvcml0eTE0MDIGA1UEAwwrTUpDIENvbnN1bHRpbmcgUm9vdCBDZXJ0aWZp
+    Y2F0aW9uIEF1dGhvcml0eTEtMCsGCSqGSIb3DQEJARYeY2VydGlmaWNhdGVzQG1q
+    Y2NvbnN1bHRpbmcuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
+    wt08DhKN+lerLBId6Xv3/CaACzbN09NyspjOz9Z6GgUWMzNZWz8DiG0cWsyKPOig
+    eo6eE+QK7r3DbNMNYwuOejLBRQjIyem8C0j/NOIRkwIvetkVXps8hpOJSNC0fhXE
+    z4OjOr0fiGbdKY8LCqDQxnMkWaW4kV/+79HawJt5W3muwq/PYf8VZF21/2lpA4Qp
+    1R9PY1nchqNpwE18pURnZbNpWBbK7zcCtTZo3hhSKnGTXVqtHre86r4Aai0cHEW2
+    lt+m9WDqb1bdVK6fyKCI1VU1k3QQCNCJN/wqLUPl0JAb/t1chaL8sBn/oV7ziKb9
+    s+7SiuDbHsJMOKEJSjl5nG8YjsJSdNOGFAi9tZwVwzvE00NVmczdg/zgP3ZrIApD
+    tp9Ao1RVz8NuYfd/bOC10uU/gQeQs/B2b1Qu78QFpvZZhValelxiaKOJIU32BWya
+    X22e2vIRpN4MvQRng02CLZ5p4u/agEpDPduKjiJEuU2i9Xyo+NLcndKkG9KKC1F8
+    E+4A3bpZGavGHuNgtOcXohpEzs8XNaQdMt7eA1GQSE/Sjtv1T7GFZTWqRHpx06Z8
+    mvQJPJKyeblQYzQhxEG/Ds1XEXwl+6UlIthXjTuV5j5YtiZNaiBDdzaeADs6Y0Nx
+    pkmFqVRK7H9pJyDiyQhPBd+7zgIsEKAvn9VLZQSAjm8CAwEAAaOCASMwggEfMB0G
+    A1UdDgQWBBQcUgUMSMcwO2UG28oNMFcOL0WWejAfBgNVHSMEGDAWgBQcUgUMSMcw
+    O2UG28oNMFcOL0WWejAMBgNVHRMEBTADAQH/MAsGA1UdDwQEAwIBBjARBglghkgB
+    hvhCAQEEBAMCAQYwWQYDVR0fBFIwUDBOoEygSoZIaHR0cDovL3BraS5tamNjb25z
+    dWx0aW5nLmNvbS9NSkNDb25zdWx0aW5nUm9vdENlcnRpZmljYXRpb25BdXRob3Jp
+    dHkuY3JsMCkGA1UdEQQiMCCBHmNlcnRpZmljYXRlc0BtamNjb25zdWx0aW5nLmNv
+    bTApBgNVHRIEIjAggR5jZXJ0aWZpY2F0ZXNAbWpjY29uc3VsdGluZy5jb20wDQYJ
+    KoZIhvcNAQEFBQADggIBAHoQceQFzCqDUmr1U+vf3wF6Mdv0GxWRZkDCdwyteVgW
+    HFKfulzr6R4T2RP2l3Vh75EP5my5iMqxJlMVVQpaJezNqe1OM0o61MkXeHcPhFJv
+    ZX9O0c1adIA1fkzTwIa85dh8SPKnHzwShsxRk8GlTbeALdBoAEWKGpAbelFxIg30
+    w1utIHGt8vbZrzX2OLojNOQmWs4wJOQMEA0jY/gwJehHQoQxyxUMvjHYOMFnQLxv
+    j1UMsLpw+u9fYsuFA0V3gMp069gFm/fAXhqymRthqmn1QcSY0zzC5AsipQCzy2kq
+    W4wv9TO0J4Ysrb9yOSSdOu5MNPIrg23k75n1hgIpd5ovOdXzi8zSZEM9DWsZz4Vu
+    kQ+dSvIcDDvnC3LFdmluLfm/yX8YAVTOETUpDo9NPMZSdtu6ECiNHeYHNXXJgtg0
+    tX/vmyIAlsQUDXwwCzWJ++XpBNad2vTvi0UXx00AJmm5Sw9xjZdTuXpm2QraL5hK
+    j2veWaFmIkcgMttPX1b3B9evYWeseOAjxP1kn+AKJ1RzFv68rdCwQDMn16w0iCD0
+    UvPaTaTXdKcLVYdz3nvedtmqr4G/8y3kzinqwgenVU0T1n3HnRfQx1HHr1jv/oET
+    4FJwvb0SfFHn157T6WLOaZXrW8WljOb7i+u2GcvpwKV0i3iOJK+vBKdIdMUwqVtt
+    -----END CERTIFICATE-----
+    EOF
+
+    update-ca-trust enable
+
+    update-ca-trust extract
+    ```
+
+2. (CLC+UFS+MC) Install Wildcard Site SSL Key
+
+    ```bash
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+FIX -----BEGIN RSA PRIVATE KEY-----
+FIX MIIEpQIBAAKCAQEAxYGf/J0nk3BsIaQIQjoZZv9AVGm4A5T38E5GDsIrhQtbWL3c
+FIX -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    ```
+
+3. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
+
+
+    ```bash
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+FIX -----BEGIN CERTIFICATE-----
+FIX MIIFuDCCA6CgAwIBAgIBCTANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+FIX -----END CERTIFICATE-----
+    EOF
+
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    ```
 
 ### Configure Management Console for SSL
 
 1. (MW): Confirm Eucalyptus Console service on default port
 
     ```bash
-    Browse: http://${EUCA_MC_PUBLIC_IP}:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
     ```
 
 2. (MC):  4. Stop Eucalyptus Console service
@@ -1738,10 +1827,10 @@ YOU ARE HERE
     ```bash
     \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
 
-    sed -i -e 's/# \(listen 443 ssl;$\)/\1/' \
-           -e 's/# \(ssl_certificate\)/\1/' \
-           -e 's/\/path\/to\/ssl\/pem_file/\/etc\/eucaconsole\/console.crt/' \
-           -e 's/\/path\/to\/ssl\/certificate_key/\/etc\/eucaconsole\/console.key/' /etc/nginx/nginx.conf
+    sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
+           -e "s/# \(ssl_certificate\)/\1/" \
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
@@ -1769,32 +1858,34 @@ YOU ARE HERE
 10. (MC): Confirm Eucalyptus Console service
 
     ```bash
-    Browse: https://${EUCA_MC_PUBLIC_IP}
+    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
     ```
 
-### Configure Images
+### Configure for Demos
 
-Optional: If you plan on using this system to run demos, it is preferrable to run the demo setup
-scripts, which incorporate this logic as well as performing additional setup, instead.
+There are scripts within this git project which can be used to configure a new Eucalyptus region for use in
+demos. These are useful for any system, as they indicate the type of setup usually needed to prepare any
+system for use by users.
 
-1. (CLC): Download Images
+1. (CLC): Initialize Demo Account
+
+    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>`
+    parameter to create additional accounts. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    wget http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/images/centos.raw.xz -O ~/centos.raw.xz
-
-    xz -v -d ~/centos.raw.xz
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
     ```
 
-2. (CLC): Install Image
+2. (CLC): Initiali Demo Account Dependencies.sh
+
+    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
+    parameter to create dependencies in additional accounts created for demo purposes with the
+    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
+    is named "demo", and that will be used here.
 
     ```bash
-    euca-install-image -n centos65 -b images -r x86_64 -i ~/centos.raw --virtualization-type hvm
-    ```
-
-3. (CLC): List Images
-
-    ```bash
-    euca-describe-images
+    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
     ```
 
 ### Test Inter-Component Connectivity
