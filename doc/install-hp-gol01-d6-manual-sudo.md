@@ -255,6 +255,14 @@ This section assumes the sudo configuration was performed as documented above.
     fi
     ```
 
+5. (All) Refresh Profile
+
+    The easiest way to do this is simply to log out, then log back in.
+
+    ```bash
+    exit
+    ```
+
 ### Initialize External DNS
 
 I will not describe this in detail here, except to note that this must be in place and working

@@ -213,40 +213,12 @@ process, not currently available for this host.
     fi
     ```
 
-### Prepare Network
+6. (All) Refresh Profile
 
-1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
-
-    The purpose of this section is to confirm external network dependencies are configured properly
-    for Eucalyptus network traffic.
-
-    TBD: Validate protocol source:port to dest:port traffic
-    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
-    send and receive dummy traffic to confirm there are no external firewall or routing issues,
-    prior to their removal and replacement with the actual packages
-
-2. (CLC+UFS/OSP/SC): Run tomography tool
-
-    This tool should be run simultaneously on all hosts running Java components.
+    The easiest way to do this is simply to log out, then log back in.
 
     ```bash
-    yum install -y java
-
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP}
-    ```
-
-3. (CLC): Scan for unknown SSH host keys
-
-    ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-
-    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    exit
     ```
 
 ### Initialize External DNS
@@ -712,6 +684,42 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     cat /proc/sys/net/ipv4/ip_forward
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    ```
+
+### Prepare Network
+
+1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
+
+    The purpose of this section is to confirm external network dependencies are configured properly
+    for Eucalyptus network traffic.
+
+    TBD: Validate protocol source:port to dest:port traffic
+    TBD: It would be ideal if we could create RPMs for a simulator for each node type, which couldi
+    send and receive dummy traffic to confirm there are no external firewall or routing issues,
+    prior to their removal and replacement with the actual packages
+
+2. (CLC+UFS/OSP/SC): Run tomography tool
+
+    This tool should be run simultaneously on all hosts running Java components.
+
+    ```bash
+    yum install -y java
+
+    mkdir -p ~/src/eucalyptus
+    cd ~/src/eucalyptus
+    git clone https://github.com/eucalyptus/deveutils
+
+    cd deveutils/network-tomography
+    ./network-tomography ${EUCA_CLC_PRIVATE_IP}
+    ```
+
+3. (CLC): Scan for unknown SSH host keys
+
+    ```bash
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 ### Install Eucalyptus
