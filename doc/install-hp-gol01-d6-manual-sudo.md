@@ -234,12 +234,10 @@ This section assumes the sudo configuration was performed as documented above.
     if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
-        pause
     fi
     if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
-        pause
     fi
     ```
 
