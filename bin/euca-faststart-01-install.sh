@@ -165,7 +165,7 @@ start=$(date +%s)
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Install"
 echo "    - Responses to questions:"
@@ -181,7 +181,7 @@ echo "      What's the first address of your available IP range?     ${EUCA_VNET
 echo "      What's the last address of your available IP range?      ${EUCA_VNET_PUBLICIPS#*-}"
 echo "      Install additional services? [Y/n]                       <enter>"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -203,14 +203,14 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Move Credentials into Demo Directory Structure"
 echo "    - We need to create additional accounts and users, so move"
 echo "      the Eucalyptus Administrator credentials into a more"
 echo "      hierarchical credentials storage directory structure"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -292,11 +292,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Confirm Public IP addresses"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -316,12 +316,12 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Confirm service status"
 echo "    - Truncating normal output for readability"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo

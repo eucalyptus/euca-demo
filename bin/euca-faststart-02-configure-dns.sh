@@ -173,11 +173,11 @@ start=$(date +%s)
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -202,13 +202,13 @@ next
 if [ $EUCA_DNS_MODE = "PARENT" ]; then
     clear
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
     echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
     echo "    - Instances will use the parent DNS Server, which will delegate"
     echo "      Eucalyptus zones to the Cloud Controller DNS Server"
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
     echo "Commands:"
     echo
@@ -231,12 +231,12 @@ if [ $EUCA_DNS_MODE = "PARENT" ]; then
 else
     clear
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
     echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
     echo "    - Instances will use the Cloud Controller's DNS Server directly"
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
     echo "Commands:"
     echo
@@ -262,11 +262,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Configure DNS Timeout and TTL"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -291,11 +291,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Configure DNS Domain"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -315,11 +315,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Configure DNS Sub-Domains"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -344,11 +344,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Enable DNS"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -373,11 +373,11 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Refresh Administrator Credentials"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -414,6 +414,10 @@ if [ $choice = y ]; then
         pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
         cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
         sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+        sed -i -e "/WARN: Certificate credentials not present./d" \
+               -e "/WARN: Review authentication.credential_download_generate_certificate and/d" \
+               -e "/WARN: authentication.signing_certificates_limit properties for current/d" \
+               -e "/WARN: certificate download limits./d" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     fi
     if [ -r /root/eucarc ]; then
         # invisibly update Faststart credentials location
@@ -438,7 +442,7 @@ if [ $showdnsconfig = 1 ]; then
     if [ $EUCA_DNS_MODE = "PARENT" ]; then
         clear
         echo
-        echo "============================================================"
+        echo "================================================================================"
         echo
         echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
         echo "    - This is an example of what changes need to be made on the"
@@ -452,7 +456,7 @@ if [ $showdnsconfig = 1 ]; then
         echo "    - This configuration is based on the BIND configuration"
         echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
         echo
-        echo "============================================================"
+        echo "================================================================================"
         echo
         echo "Commands:"
         echo
@@ -502,7 +506,7 @@ if [ $showdnsconfig = 1 ]; then
 else
         clear
         echo
-        echo "============================================================"
+        echo "================================================================================"
         echo
         echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
         echo "    - This is an example of what changes need to be made on the"
@@ -515,7 +519,7 @@ else
         echo "    - This configuration is based on the BIND configuration"
         echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
         echo
-        echo "============================================================"
+        echo "================================================================================"
         echo
         echo "Commands:"
         echo
@@ -557,12 +561,12 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Confirm DNS resolution for Services"
 echo "    - Confirm service URLS in eucarc resolve"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
@@ -624,12 +628,12 @@ fi
 ((++step))
 clear
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Confirm API commands work with new URLs"
 echo "    - Confirm service describe commands still work"
 echo
-echo "============================================================"
+echo "================================================================================"
 echo
 echo "Commands:"
 echo
