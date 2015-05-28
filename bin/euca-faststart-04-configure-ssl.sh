@@ -32,6 +32,7 @@ next_default=5
 interactive=1
 speed=100
 password=N0t5ecret
+cacerts_password=changeit
 export_password=N0t5ecret2
 ufs_ssl=1
 mc_ssl=1
@@ -221,6 +222,56 @@ clear
 echo
 echo "================================================================================"
 echo
+echo "$(printf '%2d' $step). Configure Java to trust local Certificate Authority"
+echo " - We will use the Helion Eucalyptus Development Root Certificate Authority to"
+echo "   sign SSL certificates"
+echo " - We must add this CA cert to Java's trusted root certificate authorities on all"
+echo "   servers which use these certificates with Java code"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "keytool -import -alias helioneucalyptusdevelopmentrootca \\"
+echo "        -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password"
+echo
+echo "keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca"
+
+if keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep -s -q helioneucalyptusdevelopmentrootca; then
+    echo
+    tput rev
+    echo "Already Trusted!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# keytool -import -alias helioneucalyptusdevelopmentrootca \\"
+        echo ">         -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+        echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password"
+        keytool -import -alias helioneucalyptusdevelopmentrootca \
+                -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \
+                -keystore /etc/pki/java/cacerts -storepass $cacerts_password
+        pause
+
+        echo "# keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca"
+        keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca
+
+        next 50
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
 echo "$(printf '%2d' $step). Install SSL Key"
 echo " - This key is insecure, so this website should not be exposed to the Internet"
 echo
@@ -388,7 +439,7 @@ if [ "$ufs_ssl" = "1" ]; then
     echo "        -deststorepass eucalyptus"
     echo
     echo "euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
-    #echo "euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
+    echo "euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
     echo
     echo "euca-modify-property -p bootstrap.webservices.default_https_enabled=true"
     echo "euca-modify-property -p bootstrap.webservices.port=443"
@@ -430,8 +481,8 @@ if [ "$ufs_ssl" = "1" ]; then
 
             echo "# euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
             euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs
-            #echo "# euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
-            #euca-modify-property -p bootstrap.webservices.ssl.server_password=$password
+            echo "# euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
+            euca-modify-property -p bootstrap.webservices.ssl.server_password=$password
             pause
 
             echo "# euca-modify-property -p bootstrap.webservices.default_https_enabled=true"
