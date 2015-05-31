@@ -23,6 +23,8 @@ scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
+date=$(date +%Y%m%d-%H%M)
+
 step=0
 speed_max=400
 run_default=10
@@ -163,12 +165,16 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
-echo " - We will use the Helion Eucalyptus Development Root Certificate Authority to"
-echo "   sign SSL certificates"
-echo " - We must add this CA cert to the trusted root certificate authorities on all"
-echo "   servers which use these certificates, and on all browsers which must trust"
-echo "   websites served by them"
-echo " - You can copy the body of the certificate below to install on your browser"
+echo "     - We will use the Helion Eucalyptus Development Root Certificate Authority"
+echo "       to sign SSL certificates"
+echo "     - We must add this CA cert to the trusted root certificate authorities on"
+echo "       all servers which use these certificates, and on all browsers which must"
+echo "       trust websites served by them"
+echo "     - The \"update-ca-trust extract\" command updates both the OpenSSL and"
+echo "       Java trusted ca bundles"
+echo "     - Verify certificate was added to the OpenSSL trusted ca bundle"
+echo "     - Verify certificate was added to the Java trusted ca bundle"
+echo "     - You can copy the body of the certificate below to install on your browser"
 echo
 echo "================================================================================"
 echo
@@ -182,7 +188,17 @@ echo "cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Developmen
 cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
 echo "EOF"
 echo
+echo "openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+echo "             -sha1 -noout -fingerprint"
+echo
 echo "update-ca-trust extract"
+echo
+echo "awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+echo "    < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"<fingerprint>\""
+echo
+echo "keytool -list \\"
+echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+echo "   grep -A1 helioneucalyptusdevelopmentrootcertificationauthority"
 
 if [ -e /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt ]; then
     echo
@@ -209,58 +225,29 @@ else
         cp $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt /etc/pki/ca-trust/source/anchors
         chown root:root /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
         echo "#"
-        echo "# update-ca-trust extract"
-        update-ca-trust extract
-
-        next 50
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Configure Java to trust local Certificate Authority"
-echo " - We will use the Helion Eucalyptus Development Root Certificate Authority to"
-echo "   sign SSL certificates"
-echo " - We must add this CA cert to Java's trusted root certificate authorities on all"
-echo "   servers which use these certificates with Java code"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "keytool -import -alias helioneucalyptusdevelopmentrootca \\"
-echo "        -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
-echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password"
-echo
-echo "keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca"
-
-if keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep -s -q helioneucalyptusdevelopmentrootca; then
-    echo
-    tput rev
-    echo "Already Trusted!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# keytool -import -alias helioneucalyptusdevelopmentrootca \\"
-        echo ">         -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
-        echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password"
-        keytool -import -alias helioneucalyptusdevelopmentrootca \
-                -file /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \
-                -keystore /etc/pki/java/cacerts -storepass $cacerts_password
+        echo "# openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+        echo ">              -sha1 -noout -fingerprint"
+        fingerprint=$(openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \
+                                   -sha1 -noout -fingerprint)
+        echo $fingerprint
+        fingerprint=${fingerprint#*=}
         pause
 
-        echo "# keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca"
-        keytool -keystore /etc/pki/java/cacerts -storepass $cacerts_password -list | grep helioneucalyptusdevelopmentrootca
+        echo "# update-ca-trust extract"
+        update-ca-trust extract
+        pause
+
+        echo "# awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+        echo ">     < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"$fingerprint\""
+        awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \
+            < /etc/pki/tls/certs/ca-bundle.trust.crt | grep "$fingerprint"
+        echo "#"
+        echo "# keytool -list \\"
+        echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+        echo ">    grep -A1 helioneucalyptusdevelopmentrootcertificationauthority"
+        keytool -list \
+                -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \
+           grep -A1 helioneucalyptusdevelopmentrootcertificationauthority
 
         next 50
     fi
@@ -273,7 +260,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install SSL Key"
-echo " - This key is insecure, so this website should not be exposed to the Internet"
+echo "     - This key is insecure, websites using it should not be exposed to the"
+echo "       Internet"
 echo
 echo "================================================================================"
 echo
@@ -318,8 +306,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install Wildcard SSL Certificate"
-echo " - We use a wildcard SSL certificate signed by the local CA to prevent unknown"
-echo "   CA SSL warnings"
+echo "     - We use a wildcard SSL certificate signed by the local CA to prevent"
+echo "       unknown CA SSL warnings"
 echo
 echo "================================================================================"
 echo
@@ -364,8 +352,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Create PKCS#12 Archive"
-echo " - This archive format combines the Key and SSL Certificate in a single file"
-echo " - This is needed for configuration of SSL for Java Services"
+echo "     - This archive format combines the Key and SSL Certificate in a single file"
+echo "     - This is needed for configuration of SSL for Java Services"
 echo
 echo "================================================================================"
 echo
@@ -418,25 +406,28 @@ if [ "$ufs_ssl" = "1" ]; then
     echo "================================================================================"
     echo
     echo "$(printf '%2d' $step). Configure User-Facing Services to use SSL and HTTPS port"
-    echo " - Backup current keystore before modifications"
-    echo " - Import PKCS#12 Archive into Eucalyptus Keystore"
-    echo " - Configure Eucalyptus to use the Keystore after import"
-    echo " - Configure Eucalyptus to listen on standard HTTPS port"
-    echo " - Restart Eucalyptus-Cloud to pick up the changes"
+    echo "     - Backup current Eucalyptus Keystore before modifications"
+    echo "     - Import PKCS#12 Archive into Eucalyptus Keystore"
+    echo "     - List contents of Eucalyptus Keystore (confirm ufs certificate exists)"
+    echo "     - Configure Eucalyptus to use the new certificate after import"
+    echo "     - Configure Eucalyptus to listen on standard HTTPS port"
+    echo "     - Restart Eucalyptus-Cloud to pick up the changes"
     echo
     echo "================================================================================"
     echo
     echo "Commands:"
     echo
-    echo "cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$(date +%Y%m%d-%H%M).p12"
+    echo "cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$date.p12"
     echo
     echo "keytool -importkeystore -alias ufs \\"
-    echo "        -srckeystore /var/tmp/ufs.p12 \\"
-    echo "        -srcstoretype pkcs12 \\"
-    echo "        -srcstorepass $password \\"
-    echo "        -destkeystore /var/lib/eucalyptus/keys/euca.p12 \\"
-    echo "        -deststoretype pkcs12 \\"
-    echo "        -deststorepass eucalyptus"
+    echo "        -srckeystore /var/tmp/ufs.p12 -srcstoretype pkcs12 \\"
+    echo "        -srcstorepass $password -srckeypass $password \\"
+    echo "        -destkeystore /var/lib/eucalyptus/keys/euca.p12 -deststoretype pkcs12 \\"
+    echo "        -deststorepass eucalyptus -destkeypass $password"
+    echo
+    echo "keytool -list \\"
+    echo "        -keystore /var/lib/eucalyptus/keys/euca.p12 -storetype pkcs12 \\"
+    echo "        -storepass eucalyptus"
     echo
     echo "euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
     echo "euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
@@ -459,24 +450,28 @@ if [ "$ufs_ssl" = "1" ]; then
 
         if [ $choice = y ]; then
             echo
-            echo "# cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$(date +%Y%m%d-%H%M).p12"
-            cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$(date +%Y%m%d-%H%M).p12
+            echo "# cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$date.p12"
+            cp -a /var/lib/eucalyptus/keys/euca.p12 /var/lib/eucalyptus/keys/euca-$date.p12
             pause
 
             echo "# keytool -importkeystore -alias ufs \\"
-            echo ">         -srckeystore /var/tmp/ufs.p12 \\"
-            echo ">         -srcstoretype pkcs12 \\"
-            echo ">         -srcstorepass $password \\"
-            echo ">         -destkeystore /var/lib/eucalyptus/keys/euca.p12 \\"
-            echo ">         -deststoretype pkcs12 \\"
-            echo ">         -deststorepass eucalyptus"
+            echo ">         -srckeystore /var/tmp/ufs.p12 -srcstoretype pkcs12 \\"
+            echo ">         -srcstorepass $password -srckeypass $password \\"
+            echo ">         -destkeystore /var/lib/eucalyptus/keys/euca.p12 -deststoretype pkcs12 \\"
+            echo ">         -deststorepass eucalyptus -destkeypass $password"
             keytool -importkeystore -alias ufs \
-                    -srckeystore /var/tmp/ufs.p12 \
-                    -srcstoretype pkcs12 \
-                    -srcstorepass $password \
-                    -destkeystore /var/lib/eucalyptus/keys/euca.p12 \
-                    -deststoretype pkcs12 \
-                    -deststorepass eucalyptus
+                    -srckeystore /var/tmp/ufs.p12 -srcstoretype pkcs12 \
+                    -srcstorepass $password -srckeypass $password \
+                    -destkeystore /var/lib/eucalyptus/keys/euca.p12 -deststoretype pkcs12 \
+                    -deststorepass eucalyptus -destkeypass $password
+            pause
+
+            echo "# keytool -list \\"
+            echo ">         -keystore /var/lib/eucalyptus/keys/euca.p12 -storetype pkcs12 \\"
+            echo ">         -storepass eucalyptus"
+            keytool -list \
+                    -keystore /var/lib/eucalyptus/keys/euca.p12 -storetype pkcs12 \
+                    -storepass eucalyptus
             pause
 
             echo "# euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
@@ -504,7 +499,7 @@ else
     echo "================================================================================"
     echo
     echo "$(printf '%2d' $step). Configure User-Facing Services to use HTTP port"
-    echo " - Configure Eucalyptus to listen on standard HTTP port"
+    echo "     - Configure Eucalyptus to listen on standard HTTP port"
     echo
     echo "================================================================================"
     echo
@@ -540,6 +535,7 @@ echo
 echo "============================================================"
 echo
 echo " $(printf '%2d' $step). Refresh Administrator Credentials"
+echo "     - Wait for services to become available after restart"
 echo
 echo "============================================================"
 echo
@@ -558,6 +554,20 @@ echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
 run 50
 
 if [ $choice = y ]; then
+    echo
+    while true; do
+        echo -n "Testing services... "
+        if curl -s https://$(hostname -i)/services/User-API | grep -s -q 404; then
+            echo " Started"
+            break
+        else
+            echo " Not yet running"
+            echo -n "Waiting another 15 seconds..."
+            sleep 15
+            echo " Done"
+        fi
+    done
+
     echo
     echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
