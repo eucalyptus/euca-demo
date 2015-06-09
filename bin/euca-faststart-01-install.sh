@@ -158,7 +158,7 @@ else
 fi
 
 
-#  5. Execute Demo
+#  5. Execute Procedure
 
 start=$(date +%s)
 
@@ -168,18 +168,18 @@ echo
 echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Install"
-echo "    - Responses to questions:"
-echo "      Laptop power warning: Continue?                          <enter>"
-echo "      DHCP warning: Continue Anyway?                           y"
-echo "      What's the NTP server which we will update time from?    <enter>"
-echo "      What's the physical NIC that will be used for bridging?  <enter>"
-echo "      What's the IP address of this host?                      <enter>"
-echo "      What's the gateway for this host?                        <enter>"
-echo "      What's the netmask for this host?                        <enter>"
-echo "      What's the subnet for this host?                         <enter>"
-echo "      What's the first address of your available IP range?     ${EUCA_VNET_PUBLICIPS%-*}"
-echo "      What's the last address of your available IP range?      ${EUCA_VNET_PUBLICIPS#*-}"
-echo "      Install additional services? [Y/n]                       <enter>"
+echo "     - Responses to questions:"
+echo "       Laptop power warning: Continue?                          <enter>"
+echo "       DHCP warning: Continue Anyway?                           y"
+echo "       What's the NTP server which we will update time from?    <enter>"
+echo "       What's the physical NIC that will be used for bridging?  <enter>"
+echo "       What's the IP address of this host?                      <enter>"
+echo "       What's the gateway for this host?                        <enter>"
+echo "       What's the netmask for this host?                        <enter>"
+echo "       What's the subnet for this host?                         <enter>"
+echo "       What's the first address of your available IP range?     ${EUCA_VNET_PUBLICIPS%-*}"
+echo "       What's the last address of your available IP range?      ${EUCA_VNET_PUBLICIPS#*-}"
+echo "       Install additional services? [Y/n]                       <enter>"
 echo
 echo "================================================================================"
 echo
@@ -206,9 +206,9 @@ echo
 echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Move Credentials into Demo Directory Structure"
-echo "    - We need to create additional accounts and users, so move"
-echo "      the Eucalyptus Administrator credentials into a more"
-echo "      hierarchical credentials storage directory structure"
+echo "     - We need to create additional accounts and users, so move"
+echo "       the Eucalyptus Administrator credentials into a more"
+echo "       hierarchical credentials storage directory structure"
 echo
 echo "================================================================================"
 echo
@@ -319,7 +319,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Confirm service status"
-echo "    - Truncating normal output for readability"
+echo "     - Truncating normal output for readability"
 echo
 echo "================================================================================"
 echo

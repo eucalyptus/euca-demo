@@ -166,7 +166,7 @@ if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
 fi
 
 
-#  5. Execute Demo
+#  5. Execute Procedure
 
 start=$(date +%s)
 
@@ -205,8 +205,8 @@ if [ $EUCA_DNS_MODE = "PARENT" ]; then
     echo "================================================================================"
     echo
     echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
-    echo "    - Instances will use the parent DNS Server, which will delegate"
-    echo "      Eucalyptus zones to the Cloud Controller DNS Server"
+    echo "     - Instances will use the parent DNS Server, which will delegate"
+    echo "       Eucalyptus zones to the Cloud Controller DNS Server"
     echo
     echo "================================================================================"
     echo
@@ -234,7 +234,7 @@ else
     echo "================================================================================"
     echo
     echo " $(printf '%2d' $step). Configure Eucalyptus DNS Server"
-    echo "    - Instances will use the Cloud Controller's DNS Server directly"
+    echo "     - Instances will use the Cloud Controller's DNS Server directly"
     echo
     echo "================================================================================"
     echo
@@ -445,16 +445,16 @@ if [ $showdnsconfig = 1 ]; then
         echo "================================================================================"
         echo
         echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
-        echo "    - This is an example of what changes need to be made on the"
-        echo "      parent DNS server which will delgate DNS to Eucalyptus"
-        echo "      for Eucalyptus DNS names used for instances, ELBs and"
-        echo "      services"
-        echo "    - You should make these changes to the parent DNS server"
-        echo "      manually, once, outside of creating and running demos"
-        echo "    - Instances will use the parent DNS Server, which will delegate"
-        echo "      Eucalyptus zones to the Cloud Controller DNS Server"
-        echo "    - This configuration is based on the BIND configuration"
-        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+        echo "     - This is an example of what changes need to be made on the"
+        echo "       parent DNS server which will delgate DNS to Eucalyptus"
+        echo "       for Eucalyptus DNS names used for instances, ELBs and"
+        echo "       services"
+        echo "     - You should make these changes to the parent DNS server"
+        echo "       manually, once, outside of creating and running demos"
+        echo "     - Instances will use the parent DNS Server, which will delegate"
+        echo "       Eucalyptus zones to the Cloud Controller DNS Server"
+        echo "     - This configuration is based on the BIND configuration"
+        echo "       conventions used on the cs.prc.eucalyptus-systems.com DNS server"
         echo
         echo "================================================================================"
         echo
@@ -509,15 +509,15 @@ else
         echo "================================================================================"
         echo
         echo " $(printf '%2d' $step). Display Parent DNS Server Configuration"
-        echo "    - This is an example of what changes need to be made on the"
-        echo "      parent DNS server which will delgate DNS to Eucalyptus"
-        echo "      for Eucalyptus DNS names used for instances, ELBs and"
-        echo "      services"
-        echo "    - You should make these changes to the parent DNS server"
-        echo "      manually, once, outside of creating and running demos"
-        echo "    - Instances will use the Cloud Controller's DNS Server directly"
-        echo "    - This configuration is based on the BIND configuration"
-        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+        echo "     - This is an example of what changes need to be made on the"
+        echo "       parent DNS server which will delgate DNS to Eucalyptus"
+        echo "       for Eucalyptus DNS names used for instances, ELBs and"
+        echo "       services"
+        echo "     - You should make these changes to the parent DNS server"
+        echo "       manually, once, outside of creating and running demos"
+        echo "     - Instances will use the Cloud Controller's DNS Server directly"
+        echo "     - This configuration is based on the BIND configuration"
+        echo "       conventions used on the cs.prc.eucalyptus-systems.com DNS server"
         echo
         echo "================================================================================"
         echo
@@ -564,7 +564,7 @@ echo
 echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Confirm DNS resolution for Services"
-echo "    - Confirm service URLS in eucarc resolve"
+echo "     - Confirm service URLS in eucarc resolve"
 echo
 echo "================================================================================"
 echo
@@ -631,7 +631,7 @@ echo
 echo "================================================================================"
 echo
 echo " $(printf '%2d' $step). Confirm API commands work with new URLs"
-echo "    - Confirm service describe commands still work"
+echo "     - Confirm service describe commands still work"
 echo
 echo "================================================================================"
 echo

@@ -418,8 +418,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Start Nginx service"
-echo "    - Confirm Nginx is running via a browser:"
-echo "      http://$(hostname)"
+echo "     - Confirm Nginx is running via a browser:"
+echo "       http://$(hostname)"
 echo
 echo "================================================================================"
 echo
@@ -998,8 +998,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx service"
-echo "    - Confirm Nginx is running via a browser:"
-echo "      http://$(hostname)"
+echo "     - Confirm Nginx is running via a browser:"
+echo "       http://$(hostname)"
 echo
 echo "================================================================================"
 echo
@@ -1211,11 +1211,11 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx service"
-echo "    - Confirm Eucalyptus User-Facing Services are running via a browser:"
-echo "      http://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "      https://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "    - These should respond with a 403 (Forbidden) error, indicating the"
-echo "      AWSAccessKeyId is missing, if working correctly"
+echo "     - Confirm Eucalyptus User-Facing Services are running via a browser:"
+echo "       http://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "       https://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "     - These should respond with a 403 (Forbidden) error, indicating the"
+echo "       AWSAccessKeyId is missing, if working correctly"
 echo
 echo "================================================================================"
 echo
@@ -1433,9 +1433,9 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx and Eucalyptus Console services"
-echo "    - Confirm Eucalyptus Console is running via a browser:"
-echo "      http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "      https://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "     - Confirm Eucalyptus Console is running via a browser:"
+echo "       http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "       https://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
 echo "================================================================================"
 echo
