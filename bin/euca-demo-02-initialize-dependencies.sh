@@ -175,7 +175,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
+echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
 echo
 echo "============================================================"
 echo

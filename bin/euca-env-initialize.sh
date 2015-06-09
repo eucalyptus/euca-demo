@@ -183,7 +183,7 @@ if [ $valid = y ]; then
     echo
     echo "============================================================"
     echo
-    echo " $(printf '%2d' $step). Initialize Environment"
+    echo "$(printf '%2d' $step). Initialize Environment"
     echo
     echo "============================================================"
     echo

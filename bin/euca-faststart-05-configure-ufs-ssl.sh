@@ -168,8 +168,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Create PKCS#12 Archive"
-echo "     - This archive format combines the Key and SSL Certificate in a single file"
-echo "     - This is needed for configuration of SSL for Java Services"
+echo "    - This archive format combines the Key and SSL Certificate in a single file"
+echo "    - This is needed for configuration of SSL for Java Services"
 echo
 echo "================================================================================"
 echo
@@ -221,12 +221,12 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure User-Facing Services to use SSL and HTTPS port"
-echo "     - Backup current Eucalyptus Keystore before modifications"
-echo "     - Import PKCS#12 Archive into Eucalyptus Keystore"
-echo "     - List contents of Eucalyptus Keystore (confirm ufs certificate exists)"
-echo "     - Configure Eucalyptus to use the new certificate after import"
-echo "     - Configure Eucalyptus to listen on standard HTTPS port"
-echo "     - Restart Eucalyptus-Cloud to pick up the changes"
+echo "    - Backup current Eucalyptus Keystore before modifications"
+echo "    - Import PKCS#12 Archive into Eucalyptus Keystore"
+echo "    - List contents of Eucalyptus Keystore (confirm ufs certificate exists)"
+echo "    - Configure Eucalyptus to use the new certificate after import"
+echo "    - Configure Eucalyptus to listen on standard HTTPS port"
+echo "    - Restart Eucalyptus-Cloud to pick up the changes"
 echo
 echo "================================================================================"
 echo
@@ -312,7 +312,7 @@ echo
 echo "============================================================"
 echo
 echo " $(printf '%2d' $step). Refresh Administrator Credentials"
-echo "     - Wait for services to become available after restart"
+echo "    - Wait for services to become available after restart"
 echo
 echo "============================================================"
 echo

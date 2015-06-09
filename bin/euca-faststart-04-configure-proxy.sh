@@ -152,7 +152,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Eucalyptus Console Configuration file"
-echo "     - Using sed to edit file, then displaying changes made"
+echo "    - Using sed to edit file, then displaying changes made"
 echo
 echo "================================================================================"
 echo
@@ -219,8 +219,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
-echo "     - When this step is complete, use browser to verify:"
-echo "       http://console.q$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
+echo "    - When this step is complete, use browser to verify:"
+echo "      http://console.q$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
 echo
 echo "================================================================================"
 echo
@@ -251,7 +251,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install Nginx yum repository"
-echo "     - We need a later version of Nginx than is currently in EPEL"
+echo "    - We need a later version of Nginx than is currently in EPEL"
 echo
 echo "================================================================================"
 echo
@@ -295,7 +295,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install Nginx"
-echo "     - This is needed for HTTP and HTTPS support running on standard ports"
+echo "    - This is needed for HTTP and HTTPS support running on standard ports"
 echo
 echo "================================================================================"
 echo
@@ -364,7 +364,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Allow Nginx through firewall"
-echo "     - Assumes iptables was configured per normal minimal install"
+echo "    - Assumes iptables was configured per normal minimal install"
 echo
 echo "================================================================================"
 echo
@@ -418,8 +418,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Start Nginx service"
-echo "     - Confirm Nginx is running via a browser:"
-echo "       http://$(hostname)"
+echo "    - Confirm Nginx is running via a browser:"
+echo "      http://$(hostname)"
 echo
 echo "================================================================================"
 echo
@@ -514,8 +514,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Default Server"
-echo "     - We also need to update or create the default home and error pages"
-echo "     - We will not display the default home and error pages due to length"
+echo "    - We also need to update or create the default home and error pages"
+echo "    - We will not display the default home and error pages due to length"
 echo
 echo "================================================================================"
 echo
@@ -998,8 +998,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx service"
-echo "     - Confirm Nginx is running via a browser:"
-echo "       http://$(hostname)"
+echo "    - Confirm Nginx is running via a browser:"
+echo "      http://$(hostname)"
 echo
 echo "================================================================================"
 echo
@@ -1024,7 +1024,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Eucalyptus User-Facing Services Reverse Proxy Server"
-echo "     - This server will proxy all API URLs via standard HTTP and HTTPS ports"
+echo "    - This server will proxy all API URLs via standard HTTP and HTTPS ports"
 echo
 echo "================================================================================"
 echo
@@ -1211,11 +1211,11 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx service"
-echo "     - Confirm Eucalyptus User-Facing Services are running via a browser:"
-echo "       http://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "       https://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "     - These should respond with a 403 (Forbidden) error, indicating the"
-echo "       AWSAccessKeyId is missing, if working correctly"
+echo "    - Confirm Eucalyptus User-Facing Services are running via a browser:"
+echo "      http://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "      https://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "    - These should respond with a 403 (Forbidden) error, indicating the"
+echo "      AWSAccessKeyId is missing, if working correctly"
 echo
 echo "================================================================================"
 echo
@@ -1240,9 +1240,9 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Eucalyptus Console Reverse Proxy Server"
-echo "     - This server will proxy the console via standard HTTP and HTTPS ports"
-echo "     - Requests which use HTTP are immediately rerouted to use HTTPS"
-echo "     - Once proxy is configured, configure the console to expect HTTPS"
+echo "    - This server will proxy the console via standard HTTP and HTTPS ports"
+echo "    - Requests which use HTTP are immediately rerouted to use HTTPS"
+echo "    - Once proxy is configured, configure the console to expect HTTPS"
 echo
 echo "================================================================================"
 echo
@@ -1433,9 +1433,9 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Restart Nginx and Eucalyptus Console services"
-echo "     - Confirm Eucalyptus Console is running via a browser:"
-echo "       http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "       https://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "    - Confirm Eucalyptus Console is running via a browser:"
+echo "      http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "      https://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
 echo
 echo "================================================================================"
 echo

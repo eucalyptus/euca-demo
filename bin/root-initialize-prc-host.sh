@@ -23,7 +23,7 @@ fi
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Configure Sudo"
+echo "$(printf '%2d' $step). Configure Sudo"
 echo "    - This makes CentOS 6.x behave like CentOS 7.x"
 echo "      - Members of wheel can sudo with a password"
 echo "    - Members of eucalyptus-install can sudo without a password"
@@ -48,7 +48,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Setup local aliases"
+echo "$(printf '%2d' $step). Setup local aliases"
 echo "    - alias lsa='ls -lAF'"
 echo "    - alias ip4='ip addr | grep \" inet \"'"
 echo
@@ -69,7 +69,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Configure root user"
+echo "$(printf '%2d' $step). Configure root user"
 echo "    - Identify mail sent by root as the hostname"
 echo "    - Create ~/bin, ~/doc, ~/log and ~/.ssh directories"
 echo "    - Populate ssh host keys for github.com and bitbucket.org"
@@ -122,7 +122,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install git"
+echo "$(printf '%2d' $step). Install git"
 echo
 echo "============================================================"
 echo
@@ -137,7 +137,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install qemu-img-rhev"
+echo "$(printf '%2d' $step). Install qemu-img-rhev"
 echo
 echo "============================================================"
 echo
@@ -152,7 +152,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install w3m"
+echo "$(printf '%2d' $step). Install w3m"
 echo
 echo "============================================================"
 echo
@@ -167,7 +167,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install nc"
+echo "$(printf '%2d' $step). Install nc"
 echo
 echo "============================================================"
 echo
@@ -182,7 +182,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install screen"
+echo "$(printf '%2d' $step). Install screen"
 echo
 echo "============================================================"
 echo
@@ -197,7 +197,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Install tree"
+echo "$(printf '%2d' $step). Install tree"
 echo
 echo "============================================================"
 echo
@@ -212,7 +212,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Clone euca-demo git project"
+echo "$(printf '%2d' $step). Clone euca-demo git project"
 echo
 echo "============================================================"
 echo
@@ -232,7 +232,7 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Add euca-demo scripts to PATH"
+echo "$(printf '%2d' $step). Add euca-demo scripts to PATH"
 echo
 echo "============================================================"
 echo

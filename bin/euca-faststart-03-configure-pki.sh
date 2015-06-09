@@ -155,16 +155,16 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
-echo "     - We will use the Helion Eucalyptus Development Root Certificate Authority"
-echo "       to sign SSL certificates"
-echo "     - We must add this CA cert to the trusted root certificate authorities on"
-echo "       all servers which use these certificates, and on all browsers which must"
-echo "       trust websites served by them"
-echo "     - The \"update-ca-trust extract\" command updates both the OpenSSL and"
-echo "       Java trusted ca bundles"
-echo "     - Verify certificate was added to the OpenSSL trusted ca bundle"
-echo "     - Verify certificate was added to the Java trusted ca bundle"
-echo "     - You can copy the body of the certificate below to install on your browser"
+echo "    - We will use the Helion Eucalyptus Development Root Certificate Authority"
+echo "      to sign SSL certificates"
+echo "    - We must add this CA cert to the trusted root certificate authorities on"
+echo "      all servers which use these certificates, and on all browsers which must"
+echo "      trust websites served by them"
+echo "    - The \"update-ca-trust extract\" command updates both the OpenSSL and"
+echo "      Java trusted ca bundles"
+echo "    - Verify certificate was added to the OpenSSL trusted ca bundle"
+echo "    - Verify certificate was added to the Java trusted ca bundle"
+echo "    - You can copy the body of the certificate below to install on your browser"
 echo
 echo "================================================================================"
 echo
@@ -250,8 +250,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install SSL Key"
-echo "     - This key is insecure, websites using it should not be exposed to the"
-echo "       Internet"
+echo "    - This key is insecure, websites using it should not be exposed to the"
+echo "      Internet"
 echo
 echo "================================================================================"
 echo
@@ -296,8 +296,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install Wildcard SSL Certificate"
-echo "     - We use a wildcard SSL certificate signed by the local CA to prevent"
-echo "       unknown CA SSL warnings"
+echo "    - We use a wildcard SSL certificate signed by the local CA to prevent"
+echo "      unknown CA SSL warnings"
 echo
 echo "================================================================================"
 echo

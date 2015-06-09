@@ -172,7 +172,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo " $(printf '%2d' $step). Use Eucalyptus Administrator credentials"
+echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 echo
 echo "================================================================================"
 echo
@@ -249,10 +249,10 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure AWS CLI to trust local Certificate Authority"
-echo "     - We will use the Helion Eucalyptus Development Root Certificate Authority"
-echo "       to sign SSL certificates"
-echo "     - We must add this CA cert to the trusted root certificate authorities"
-echo "       used by botocore on all clients where AWS CLI is run"
+echo "    - We will use the Helion Eucalyptus Development Root Certificate Authority"
+echo "      to sign SSL certificates"
+echo "    - We must add this CA cert to the trusted root certificate authorities"
+echo "      used by botocore on all clients where AWS CLI is run"
 echo
 echo "================================================================================"
 echo
@@ -423,14 +423,14 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure AWS CLI to support local Eucalyptus region"
-echo "     - This creates a modified version of the _endpoints.json file which the"
-echo "       botocore Python module within AWS CLI uses to configure AWS endpoints,"
-echo "       adding the new local Eucalyptus region endpoints"
-echo "     - We then rename the original _endpoints.json file with the .orig extension,"
-echo "       then create a symlink with the original name pointing to our version"
-echo "     - The files created are too long to display - view it in the location"
-echo "       shown below. You can compare with the original to see what changes have"
-echo "       been made."
+echo "    - This creates a modified version of the _endpoints.json file which the"
+echo "      botocore Python module within AWS CLI uses to configure AWS endpoints,"
+echo "      adding the new local Eucalyptus region endpoints"
+echo "    - We then rename the original _endpoints.json file with the .orig extension,"
+echo "      then create a symlink with the original name pointing to our version"
+echo "    - The files created are too long to display - view it in the location"
+echo "      shown below. You can compare with the original to see what changes have"
+echo "      been made."
 echo
 echo "================================================================================"
 echo

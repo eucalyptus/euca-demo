@@ -191,7 +191,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Use Eucalyptus Administrator credentials"
+echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
 echo
 echo "============================================================"
 echo
