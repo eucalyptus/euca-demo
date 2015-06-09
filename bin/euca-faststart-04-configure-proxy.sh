@@ -1303,7 +1303,7 @@ echo "chmod 644 /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DO
 echo
 echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
 echo "       -e \"/^session.secure/a\\"
-echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\"
+echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\\\"
 echo "sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key\" /etc/eucaconsole/console.ini"
 
 run 50
@@ -1416,11 +1416,11 @@ if [ $choice = y ]; then
 
     echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
     echo "       -e \"/^session.secure/a\\"
-    echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\"
+    echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\\\"
     echo "sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key\" /etc/eucaconsole/console.ini"
     sed -i -e "/^session.secure =/s/= .*$/= true/" \
            -e "/^session.secure/a\
-sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\
 sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key" /etc/eucaconsole/console.ini
 
     next
