@@ -220,7 +220,7 @@ echo "==========================================================================
 echo
 echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
 echo "    - When this step is complete, use browser to verify:"
-echo "      http://console.q$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
+echo "      http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
 echo
 echo "================================================================================"
 echo
