@@ -181,7 +181,7 @@ if [ $choice = y ]; then
     echo
    if [ ! -f /etc/eucaconsole/console.ini.faststart ]; then
         echo "# \cp /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.faststart"
-        \cp /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini
+        \cp /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.faststart
         echo "#"
     fi
     echo "# sed -i -e \"/^clchost = localhost\$/s/localhost/$EUCA_UFS_PUBLIC_IP/\" \\"
@@ -220,7 +220,7 @@ echo "==========================================================================
 echo
 echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
 echo "     - When this step is complete, use browser to verify:"
-echo "       https://$EUCA_UFS_PUBLIC_IP:8888"
+echo "       http://console.q$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
 echo
 echo "================================================================================"
 echo
@@ -329,6 +329,8 @@ if [ ! -f /etc/nginx/nginx.conf.orig ]; then
     echo "\cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig"
     echo
 fi
+echo "mkdir -p /etc/nginx/server.d"
+echo
 echo "sed -i -e '/include.*conf\\.d/a\\    include /etc/nginx/server.d/*.conf;' \\"
 echo "       -e '/tcp_nopush/a\\\\n    server_names_hash_bucket_size 128;' \\"
 echo "       /etc/nginx/nginx.conf"
@@ -340,8 +342,11 @@ if [ $choice = y ]; then
     if [ ! -f /etc/nginx/nginx.conf.orig ]; then
         echo "# \cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig"
         \cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
-        echo
+        echo "#"
     fi
+    echo "# mkdir -p /etc/nginx/server.d"
+    mkdir -p /etc/nginx/server.d
+    echo "#"
     echo "# sed -i -e '/include.*conf\\.d/a\\    include /etc/nginx/server.d/*.conf;' \\"
     echo ">        -e '/tcp_nopush/a\\\\n    server_names_hash_bucket_size 128;' \\"
     echo ">        /etc/nginx/nginx.conf"
@@ -1415,7 +1420,7 @@ if [ $choice = y ]; then
     echo "sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key\" /etc/eucaconsole/console.ini"
     sed -i -e "/^session.secure =/s/= .*$/= true/" \
            -e "/^session.secure/a\
-sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\
+sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
 sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key" /etc/eucaconsole/console.ini
 
     next
