@@ -1255,13 +1255,13 @@ echo "#"
 echo
 echo "server {"
 echo "    listen       80;"
-echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.com;"
+echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
 echo "    return       301 https://\$server_name\$request_uri;"
 echo "}"
 echo
 echo "server {"
 echo "    listen       443 ssl;"
-echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.com;"
+echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
 echo
 echo "    access_log  /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"
 echo "    error_log   /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"
@@ -1367,13 +1367,13 @@ if [ $choice = y ]; then
     echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "server {"                                                                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "    listen       80;"                                                                             >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.com;"                           >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                               >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "    return       301 https://\$server_name\$request_uri;"                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "}"                                                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "server {"                                                                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "    listen       443 ssl;"                                                                        >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.com;"                           >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                               >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "    access_log  /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"      >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
     echo "    error_log   /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"       >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
