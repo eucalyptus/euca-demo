@@ -2,11 +2,13 @@
 #
 # This script initializes Eucalyptus with a Demo Account, including:
 # - Configures Euca2ools for the Eucalyptus Account Administrator, allowing use of the API via euca2ools
+# - Configures AWS CLI for the Eucalyptus Account Administrator, allowing use of the AWS CLI
 # - Creates the Eucalyptus Account Administrator Demo Keypair, allowing ssh login to instances
 # - Creates a Demo Account (default name is "demo", but this can be overridden)
 # - Creates the Demo Account Administrator Login Profile, allowing the use of the console
 # - Downloads the Demo Account Administrator Credentials, allowing use of the API
 # - Configures Euca2ools for the Demo Account Administrator, allowing use of the API via euca2ools
+# - Configures AWS CLI for the Demo Account Administrator, allowing use of the AWS CLI
 # - Downloads a CentOS 6.6 image
 # - Installs the CentOS 6.6 image
 # - Authorizes use of the CentOS 6.6 image by the Demo Account
@@ -338,6 +340,141 @@ fi
 
 
 ((++step))
+# Obtain all values we need from eucarc
+eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Eucalyptus Administrator AWS CLI Profile"
+echo "    - This allows the Eucalyptus Administrator to run AWS CLI commands"
+echo "    - This assumes the AWS CLI was previously installed and configured"
+echo "      to support this region"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"#\" > ~/.aws/config"
+echo "echo \"# AWS Config file\" >> ~/.aws/config"
+echo "echo \"#\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo "echo \"[default]\" >> ~/.aws/config"
+echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+echo "echo \"output = text\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo "echo \"[profile $AWS_DEFAULT_REGION-admin]\" >> ~/.aws/config"
+echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+echo "echo \"output = text\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo
+echo "more ~/.aws/config"
+echo
+echo "echo \"#\" > ~/.aws/credentials"
+echo "echo \"# AWS Credentials file\" >> ~/.aws/credentials"
+echo "echo \"#\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo "echo \"[default]\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo "echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo
+echo "more ~/.aws/credentials"
+echo
+echo "aws ec2 describe-availability-zones"
+
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-admin]" ~/.aws/config; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.aws
+        chmod 0700 ~/.aws
+        echo
+        echo "# echo \"#\" > ~/.aws/config"
+        echo "# echo \"# AWS Config file\" >> ~/.aws/config"
+        echo "# echo \"#\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "# echo \"[default]\" >> ~/.aws/config"
+        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+        echo "# echo \"output = text\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "# echo \"[profile $AWS_DEFAULT_REGION-admin]\" >> ~/.aws/config"
+        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+        echo "# echo \"output = text\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "#" > ~/.aws/config
+        echo "# AWS Config file" >> ~/.aws/config
+        echo "#" >> ~/.aws/config
+        echo >> ~/.aws/config
+        echo "[default]" >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+        echo "output = text" >> ~/.aws/config
+        echo >> ~/.aws/config
+        echo "[profile $AWS_DEFAULT_REGION-admin]" >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+        echo "output = text" >> ~/.aws/config
+        echo >> ~/.aws/config
+        chmod 0600 ~/.aws/config
+        pause
+
+        echo "# more ~/.aws/config"
+        more ~/.aws/config
+        pause
+
+        echo "# echo \"#\" > ~/.aws/credentials"
+        echo "# echo \"# AWS Credentials file\" >> ~/.aws/credentials"
+        echo "# echo \"#\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "# echo \"[default]\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "# echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "#" > ~/.aws/credentials
+        echo "# AWS Credentials file" >> ~/.aws/credentials
+        echo "#" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        echo "[default]" >> ~/.aws/credentials
+        echo "aws_access_key_id = $eucalyptus_admin_access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $eucalyptus_admin_secret_key" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        echo "[$AWS_DEFAULT_REGION-admin]" >> ~/.aws/credentials
+        echo "aws_access_key_id = $eucalyptus_admin_access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $eucalyptus_admin_secret_key" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        chmod 0600 ~/.aws/credentials
+        pause
+
+        echo "# more ~/.aws/credentials"
+        more ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availability-zones"
+        aws ec2 describe-availability-zones
+
+        next
+    fi
+fi
+
+
+((++step))
 clear
 echo
 echo "============================================================"
@@ -572,8 +709,8 @@ if ! grep -s -q "\[region $region\]" ~/.euca/euca2ools.ini; then
     echo
 fi
 echo "echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $demo_admin_access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $demo_admin_secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
@@ -642,6 +779,89 @@ else
 
         echo "# euca-describe-availability-zones verbose --region $account-admin@$region"
         euca-describe-availability-zones verbose --region $account-admin@$region
+
+        next
+    fi
+fi
+
+
+((++step))
+# Obtain all values we need from eucarc
+demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator AWS CLI Profile"
+echo "    - This allows the Demo Account Administrator to run AWS CLI commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"[profile $AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/config"
+echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+echo "echo \"output = text\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo
+echo "more ~/.aws/config"
+echo
+echo "echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $demo_admin_access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $demo_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo
+echo "more ~/.aws/credentials"
+echo
+echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
+
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.aws
+        chmod 0700 ~/.aws
+        echo
+        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/config"
+        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+        echo "# echo \"output = text\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "[profile $AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+        echo "output = text" >> ~/.aws/config
+        echo >> ~/.aws/config
+        pause
+
+        echo "# more ~/.aws/config"
+        more ~/.aws/config
+        pause
+
+        echo "# echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $demo_admin_access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $demo_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "[$AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/credentials
+        echo "aws_access_key_id = $demo_admin_access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $demo_admin_secret_key" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        pause
+
+        echo "more ~/.aws/credentials"
+        more ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
+        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin
 
         next
     fi

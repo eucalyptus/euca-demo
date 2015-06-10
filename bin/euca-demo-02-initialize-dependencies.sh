@@ -7,11 +7,13 @@
 # - Creates the Demo User Login Profile, allowing the use of the console
 # - Downloads the Demo User Credentials, allowing use of the API
 # - Configures Euca2ools for the Demo User, allowing use of the API via euca2ools
+# - Configures AWS CLI for the Demo User, allowing use of the AWS CLI
 # - Creates a Demo Users Group (named "users"), and makes the Demo User a member
 # - Creates a Demo Developer (named "developer"), intended for developer-level, mostly read-write, operations
 # - Creates the Demo Developer Login Profile, allowing the use of the console
 # - Downloads the Demo Developer Credentials, allowing use of the API
 # - Configures Euca2ools for the Demo Developer, allowing use of the API via euca2ools
+# - Configures AWS CLI for the Demo Developer, allowing use of the AWS CLI
 # - Creates a Demo Developers Group (named "developers"), and makes the Demo Developer a member
 #
 # The euca-demo-01-initialize-account.sh script should be run by the Eucalyptus Administrator
@@ -534,6 +536,89 @@ fi
 
 
 ((++step))
+# Obtain all values we need from eucarc
+demo_user_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$demo_user/eucarc)
+demo_user_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$demo_user/eucarc)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account User ($demo_user) AWS CLI Profile"
+echo "    - This allows the Demo Account User to run AWS CLI commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"[profile $AWS_DEFAULT_REGION-$account-user]\" >> ~/.aws/config"
+echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+echo "echo \"output = text\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo
+echo "more ~/.aws/config"
+echo
+echo "echo \"[$AWS_DEFAULT_REGION-$account-user]\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $demo_user_access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $demo_user_secret_key\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo
+echo "more ~/.aws/credentials"
+echo
+echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-user"
+
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-user]" ~/.aws/config; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.aws
+        chmod 0700 ~/.aws
+        echo
+        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-user]\" >> ~/.aws/config"
+        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+        echo "# echo \"output = text\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "[profile $AWS_DEFAULT_REGION-$account-user]" >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+        echo "output = text" >> ~/.aws/config
+        echo >> ~/.aws/config
+        pause
+
+        echo "# more ~/.aws/config"
+        more ~/.aws/config
+        pause
+
+        echo "# echo \"[$AWS_DEFAULT_REGION-$account-user]\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $demo_user_access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $demo_user_secret_key\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "[$AWS_DEFAULT_REGION-$account-user]" >> ~/.aws/credentials
+        echo "aws_access_key_id = $demo_user_access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $demo_user_secret_key" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        pause
+
+        echo "more ~/.aws/credentials"
+        more ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-user"
+        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-user
+
+        next
+    fi
+fi
+
+
+((++step))
 clear
 echo
 echo "============================================================"
@@ -834,6 +919,89 @@ else
 
         echo "# euca-describe-availability-zones verbose --region $account-$demo_developer@$region"
         euca-describe-availability-zones verbose --region $account-$demo_developer@$region
+
+        next
+    fi
+fi
+
+
+((++step))
+# Obtain all values we need from eucarc
+demo_developer_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$demo_developer/eucarc)
+demo_developer_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$demo_developer/eucarc)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($demo_developer) AWS CLI Profile"
+echo "    - This allows the Demo Account Developer to run AWS CLI commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"[profile $AWS_DEFAULT_REGION-$account-developer]\" >> ~/.aws/config"
+echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+echo "echo \"output = text\" >> ~/.aws/config"
+echo "echo >> ~/.aws/config"
+echo
+echo "more ~/.aws/config"
+echo
+echo "echo \"[$AWS_DEFAULT_REGION-$account-developer]\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $demo_developer_access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $demo_developer_secret_key\" >> ~/.aws/credentials"
+echo "echo >> ~/.aws/credentials"
+echo
+echo "more ~/.aws/credentials"
+echo
+echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-developer"
+
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-developer]" ~/.aws/config; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.aws
+        chmod 0700 ~/.aws
+        echo
+        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-developer]\" >> ~/.aws/config"
+        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
+        echo "# echo \"output = text\" >> ~/.aws/config"
+        echo "# echo >> ~/.aws/config"
+        echo "[profile $AWS_DEFAULT_REGION-$account-developer]" >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+        echo "output = text" >> ~/.aws/config
+        echo >> ~/.aws/config
+        pause
+
+        echo "# more ~/.aws/config"
+        more ~/.aws/config
+        pause
+
+        echo "# echo \"[$AWS_DEFAULT_REGION-$account-developer]\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $demo_developer_access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $demo_developer_secret_key\" >> ~/.aws/credentials"
+        echo "# echo >> ~/.aws/credentials"
+        echo "[$AWS_DEFAULT_REGION-$account-developer]" >> ~/.aws/credentials
+        echo "aws_access_key_id = $demo_developer_access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $demo_developer_secret_key" >> ~/.aws/credentials
+        echo >> ~/.aws/credentials
+        pause
+
+        echo "more ~/.aws/credentials"
+        more ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-developer"
+        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-developer
 
         next
     fi
