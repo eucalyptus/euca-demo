@@ -358,58 +358,59 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Allow Nginx through firewall"
-echo "    - Assumes iptables was configured per normal minimal install"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF > /tmp/iptables_www_$$.sed"
-echo "/^-A INPUT -j REJECT/i\\"
-echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\\"
-echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT"
-echo "EOF"
-echo
-echo "grep -q "dport 80" /etc/sysconfig/iptables ||"
-echo "sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables"
-echo
-echo "rm -f /tmp/iptables_www_$$.sed"
-echo
-echo "cat /etc/sysconfig/iptables"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# cat << EOF > /tmp/iptables_www_$$.sed"
-    echo "> /^-A INPUT -j REJECT/i\\"
-    echo "> -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\\"
-    echo "> -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT"
-    echo "> EOF"
-    echo "/^-A INPUT -j REJECT/i\" > /tmp/iptables_www_$$.sed
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\" >> /tmp/iptables_www_$$.sed
-    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /tmp/iptables_www_$$.sed
-    echo "#"
-    echo "# grep -q "dport 80" /etc/sysconfig/iptables ||"
-    echo "> sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables"
-    grep -q "dport 80" /etc/sysconfig/iptables ||
-    sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables
-    echo "#"
-    echo "# rm -f /tmp/iptables_www_$$.sed"
-    rm -f /tmp/iptables_www_$$.sed
-    pause
-
-    echo "# cat /etc/sysconfig/iptables"
-    cat /etc/sysconfig/iptables
-
-    next 50
-fi
+# Comment this out for now, as at least in PRC, iptables is not setup per CentOS minimum conventions
+#((++step))
+#clear
+#echo
+#echo "================================================================================"
+#echo
+#echo "$(printf '%2d' $step). Allow Nginx through firewall"
+#echo "    - Assumes iptables was configured per normal minimal install"
+#echo
+#echo "================================================================================"
+#echo
+#echo "Commands:"
+#echo
+#echo "cat << EOF > /tmp/iptables_www_$$.sed"
+#echo "/^-A INPUT -j REJECT/i\\"
+#echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\\"
+#echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT"
+#echo "EOF"
+#echo
+#echo "grep -q "dport 80" /etc/sysconfig/iptables ||"
+#echo "sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables"
+#echo
+#echo "rm -f /tmp/iptables_www_$$.sed"
+#echo
+#echo "cat /etc/sysconfig/iptables"
+#
+#run 50
+#
+#if [ $choice = y ]; then
+#    echo
+#    echo "# cat << EOF > /tmp/iptables_www_$$.sed"
+#    echo "> /^-A INPUT -j REJECT/i\\"
+#    echo "> -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\\"
+#    echo "> -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT"
+#    echo "> EOF"
+#    echo "/^-A INPUT -j REJECT/i\" > /tmp/iptables_www_$$.sed
+#    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT\" >> /tmp/iptables_www_$$.sed
+#    echo "-A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT" >> /tmp/iptables_www_$$.sed
+#    echo "#"
+#    echo "# grep -q "dport 80" /etc/sysconfig/iptables ||"
+#    echo "> sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables"
+#    grep -q "dport 80" /etc/sysconfig/iptables ||
+#    sed -i -f /tmp/iptables_www_$$.sed /etc/sysconfig/iptables
+#    echo "#"
+#    echo "# rm -f /tmp/iptables_www_$$.sed"
+#    rm -f /tmp/iptables_www_$$.sed
+#    pause
+#
+#    echo "# cat /etc/sysconfig/iptables"
+#    cat /etc/sysconfig/iptables
+#
+#    next 50
+#fi
 
 
 ((++step))
