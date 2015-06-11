@@ -10,6 +10,7 @@ is useful to stick with predictable conventions like these to simplify the modif
 which must be made to the botocore _endpoints.json file.
 
 ### Install AWS CLI (Linux)
+This assumes the EPEL yum repository has been configured.
 
 ```bash
 yum install python-pip
@@ -17,16 +18,28 @@ yum install python-pip
 pip install awscli
 ```
 
-### Modify BotoCore to Support Eucalyptus Regions (Linux)
+### Modify BotoCore to Support Eucalyptus Regions with SSL proxy (Linux)
 
 ```bash
-cd /usr/lib/python2.7/site-packages/botocore/data/aws/
+if [ -e /usr/lib/python2.7/site-packages/botocore/data/aws/_endpoints.json ]; then
+    cd /usr/lib/python2.7/site-packages/botocore/data/aws/    # CentOS 7
+elif [ -e /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json ]; then
+    cd /usr/lib/python2.6/site-packages/botocore/data/        # CentOS 6
+else
+    echo "Can't find _endpoints.json"
+fi
 
-cp -a _endpoints.json _endpoints.json.orig
+mv _endpoints.json _endpoints.json.orig
 
-cat << EOF > _endpoints.json
+cat << EOF > _endpoints-local-ssl.json
 {
   "_default":[
+    {
+      "uri":"{scheme}://{service}.{region}.mjc.prc.eucalyptus-systems.com",
+      "constraints":[
+        ["region", "startsWith", "hp-gol01-"]
+      ]
+    },
     {
       "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
       "constraints":[
@@ -45,7 +58,7 @@ cat << EOF > _endpoints.json
   ],
   "ec2": [
     {
-      "uri":"http://compute.{region}.mjc.prc.eucalyptus-systems.com:8773/",
+      "uri":"{scheme}://compute.{region}.mjc.prc.eucalyptus-systems.com",
       "constraints": [
         ["region","startsWith","hp-gol01-"]
       ]
@@ -53,31 +66,15 @@ cat << EOF > _endpoints.json
   ],
   "elasticloadbalancing": [
    {
-    "uri":"http://loadbalancing.{region}.mjc.prc.eucalyptus-systems.com:8773/",
+    "uri":"{scheme}://loadbalancing.{region}.mjc.prc.eucalyptus-systems.com",
     "constraints": [
       ["region","startsWith","hp-gol01-"]
     ]
    }
   ],
-  "autoscaling":[
-   {
-    "uri":"http://autoscaling.{region}.mjc.prc.eucalyptus-systems.com:8773/",
-    "constraints": [
-     ["region","startsWith","hp-gol01-"]
-    ]
-   }
-  ],
-  "cloudformation":[
-   {
-    "uri":"http://cloudformation.{region}.mjc.prc.eucalyptus-systems.com:8773/",
-    "constraints": [
-     ["region","startsWith","hp-gol01-"]
-    ]
-   }
-  ],
   "monitoring":[
     {
-      "uri":"http://cloudwatch.{region}.mjc.prc.eucalyptus-systems.com:8773/",
+      "uri":"{scheme}://cloudwatch.{region}.mjc.prc.eucalyptus-systems.com",
       "constraints": [
        ["region","startsWith","hp-gol01-"]
       ]
@@ -85,13 +82,19 @@ cat << EOF > _endpoints.json
   ],
   "swf":[
    {
-    "uri":"http://simpleworkflow.{region}.mjc.prc.eucalyptus-systems.com:8773/",
+    "uri":"{scheme}://simpleworkflow.{region}.mjc.prc.eucalyptus-systems.com",
     "constraints": [
      ["region","startsWith","hp-gol01-"]
     ]
    }
   ],
   "iam":[
+    {
+      "uri":"https://euare.{region}.mjc.prc.eucalyptus-systems.com",
+      "constraints":[
+        ["region", "startsWith", "hp-gol01-"]
+      ]
+    },
     {
       "uri":"https://{service}.cn-north-1.amazonaws.com.cn",
       "constraints":[
@@ -102,12 +105,6 @@ cat << EOF > _endpoints.json
       "uri":"https://{service}.us-gov.amazonaws.com",
       "constraints":[
         ["region", "startsWith", "us-gov"]
-      ]
-    },
-    {
-      "uri":"http://euare.{region}.mjc.prc.eucalyptus-systems.com:8773/",
-      "constraints":[
-        ["region", "startsWith", "hp-gol01-"]
       ]
     },
     {
@@ -129,6 +126,12 @@ cat << EOF > _endpoints.json
   ],
   "sts":[
     {
+      "uri":"https://tokens.{region}.mjc.prc.eucalyptus-systems.com",
+      "constraints":[
+        ["region", "startsWith", "hp-gol01-"]
+      ]
+    },
+    {
       "uri":"{scheme}://{service}.cn-north-1.amazonaws.com.cn",
       "constraints":[
         ["region", "startsWith", "cn-"]
@@ -138,12 +141,6 @@ cat << EOF > _endpoints.json
       "uri":"https://{service}.{region}.amazonaws.com",
       "constraints":[
         ["region", "startsWith", "us-gov"]
-      ]
-    },
-    {
-      "uri":"http://tokens.{region}.mjc.prc.eucalyptus-systems.com:8773/",
-      "constraints":[
-        ["region", "startsWith", "hp-gol01-"]
       ]
     },
     {
@@ -168,6 +165,15 @@ cat << EOF > _endpoints.json
       }
     },
     {
+      "uri":"{scheme}://objectstorage.{region}.mjc.prc.eucalyptus-systems.com//",
+      "constraints": [
+        ["region", "startsWith", "hp-gol01-"]
+      ],
+      "properties": {
+        "signatureVersion": "s3"
+      }
+    },
+    {
       "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
       "constraints": [
         ["region", "startsWith", "cn-"]
@@ -184,15 +190,6 @@ cat << EOF > _endpoints.json
                              "us-west-1", "eu-west-1", "us-gov-west-1",
                              "fips-us-gov-west-1"]]
       ]
-    },
-    {
-      "uri":"http://objectstorage.{region}.mjc.prc.eucalyptus-systems.com:8773/",
-      "constraints": [
-        ["region", "startsWith", "hp-gol01-"]
-      ],
-      "properties": {
-        "signatureVersion": "s3"
-      }
     },
     {
       "uri":"{scheme}://{service}.{region}.amazonaws.com",
@@ -303,6 +300,8 @@ cat << EOF > _endpoints.json
   ]
 }
 EOF
+
+ln -s _endpoints-local-ssl.json _endpoints.json
 ```
 
 ### Configure AWS CLI (Linux)
