@@ -3,7 +3,7 @@
 # This script initializes Eucalyptus with a Demo Account, including:
 # - Configures Euca2ools for the Eucalyptus Account Administrator, allowing use of the API via euca2ools
 # - Configures AWS CLI for the Eucalyptus Account Administrator, allowing use of the AWS CLI
-# - Creates the Eucalyptus Account Administrator Demo Keypair, allowing ssh login to instances
+# - Imports or Creates the Eucalyptus Account Administrator Demo Keypair, allowing ssh login to instances
 # - Creates a Demo Account (default name is "demo", but this can be overridden)
 # - Creates the Demo Account Administrator Login Profile, allowing the use of the console
 # - Downloads the Demo Account Administrator Credentials, allowing use of the API
@@ -26,6 +26,7 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 docdir=${bindir%/*}/doc
 logdir=${bindir%/*}/log
+keysdir=${bindir%/*}/keys
 scriptsdir=${bindir%/*}/scripts
 templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
@@ -47,18 +48,20 @@ interactive=1
 speed=100
 account=demo
 demo_admin_password=${account}123
+create=0
 [ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-p password] [-l]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-p password] [-c] [-l]"
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
     echo "  -a account  account to create for use in demos (default: $account)"
     echo "  -p password password for demo account administrator (default: $demo_admin_password)"
+    echo "  -c          Create new key pairs instead of importing existing public keys"
     echo "  -l          Use local mirror for Demo CentOS image"
 }
 
@@ -142,13 +145,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:p:l? arg; do
+while getopts Isfa:p:cl? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     a)  account="$OPTARG";;
     p)  demo_admin_password="$OPTARG";;
+    c)  create=1;;
     l)  local=1;;
     ?)  usage
         exit 1;;
@@ -475,24 +479,45 @@ fi
 
 
 ((++step))
+cp $keysdir/eucalyptus/admin-demo.pem /tmp/eucalyptus-admin-demo.pem
+chmod 400 /tmp/eucalyptus-admin-demo.pem
+
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Eucalyptus Administrator Demo Keypair"
+if [ "$create" = 1 ]; then
+    echo "$(printf '%2d' $step). Create Eucalyptus Administrator Demo Keypair"
+else
+    echo "$(printf '%2d' $step). Import Eucalyptus Administrator Demo Keypair"
+fi
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
-echo
-echo "chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+if [ "$create" = 1 ]; then
+    echo "euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+    echo
+    echo "chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+else
+    echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+    cat $keysdir/eucalyptus/admin-demo.pem
+    echo "EOF"
+    echo
+    echo "chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+    echo
+    echo "cat << EOF > /tmp/eucalyptus-admin-demo.public.key"
+    ssh-keygen -y -f /tmp/eucalyptus-admin-demo.pem
+    echo "EOF"
+    echo
+    echo "euca-import-keypair -f /tmp/eucalyptus-admin-demo.public.key admin-demo"
+fi
 
 if euca-describe-keypairs | grep -s -q "admin-demo" && [ -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem ]; then
     echo
     tput rev
-    echo "Already Created!"
+    echo "Already Created or Imported!"
     tput sgr0
 
     next 50
@@ -505,11 +530,30 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
-        euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
-        echo "#"
-        echo "# chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
-        chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
+        if [ "$create" = 1 ]; then
+            echo "# euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+            euca-create-keypair admin-demo | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
+            echo "#"
+            echo "# chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+            chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
+        else
+            echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+            cat $keysdir/eucalyptus/admin-demo.pem | sed -e 's/^/> /'
+            echo "> EOF"
+            cp $keysdir/eucalyptus/admin-demo.pem ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
+            echo "#"
+            echo "# chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem"
+            chmod 0600 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-demo.pem
+            pause
+
+            echo "# cat << EOF > /tmp/eucalyptus-admin-demo.public.key"
+            ssh-keygen -y -f /tmp/eucalyptus-admin-demo.pem | sed -e 's/^/> /'
+            echo "> EOF"
+            ssh-keygen -y -f /tmp/eucalyptus-admin-demo.pem > /tmp/eucalyptus-admin-demo.public.key
+            echo "#"
+            echo "# euca-import-keypair -f /tmp/eucalyptus-admin-demo.public.key admin-demo"
+            euca-import-keypair -f /tmp/eucalyptus-admin-demo.public.key admin-demo
+        fi
 
         next
     fi
