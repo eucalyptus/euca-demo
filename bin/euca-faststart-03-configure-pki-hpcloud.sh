@@ -1,7 +1,7 @@
 #/bin/bash
 #
 # This script configures Eucalyptus PKI, including a local trusted root CA and SSL certificates
-# - This variant uses the Helion Eucalyptus Development Root Certification Authority
+# - This variant uses the HP Cloud Certification Authority Hierarchy
 #
 # This should be run immediately after the Faststart DNS configuration script
 #
@@ -159,8 +159,8 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
-echo "    - We will use the Helion Eucalyptus Development Root Certification Authority"
-echo "      to sign SSL certificates"
+echo "    - We will use the HP Cloud Root Certification Authority, along with 2 more"
+echo "      intermediate Certification Authorities to sign SSL certificates"
 echo "    - We must add this CA cert to the trusted root certificate authorities on"
 echo "      all servers which use these certificates, and on all browsers which must"
 echo "      trust websites served by them"
@@ -178,11 +178,11 @@ if [ ! -L /etc/pki/tls/certs/ca-bundle.crt ]; then
     echo "update-ca-trust enable"
     echo
 fi
-echo "cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt"
-cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+echo "cat << EOF > /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt"
+cat $certsdir/cloudca.hpcloud.ms.crt
 echo "EOF"
 echo
-echo "openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+echo "openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt \\"
 echo "             -sha1 -noout -fingerprint"
 echo
 echo "update-ca-trust extract"
@@ -192,9 +192,9 @@ echo "    < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"<fingerprint>\""
 echo
 echo "keytool -list \\"
 echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
-echo "   grep -A1 helioneucalyptusdevelopmentrootcertificationauthority"
+echo "   grep -A1 cloudca.hpcloud.ms"
 
-if [ -e /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt ]; then
+if [ -e /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt ]; then
     echo
     tput rev
     echo "Already Trusted!"
@@ -213,15 +213,15 @@ else
             pause
         fi
 
-        echo "# cat << EOF > /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt"
-        cat $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt | sed -e 's/^/> /'
+        echo "# cat << EOF > /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt"
+        cat $certsdir/cloudca.hpcloud.ms.crt | sed -e 's/^/> /'
         echo "> EOF"
-        cp $certsdir/Helion_Eucalyptus_Development_Root_Certification_Authority.crt /etc/pki/ca-trust/source/anchors
-        chown root:root /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt
+        cp $certsdir/cloudca.hpcloud.ms.crt /etc/pki/ca-trust/source/anchors
+        chown root:root /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt
         echo "#"
-        echo "# openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \\"
+        echo "# openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt \\"
         echo ">              -sha1 -noout -fingerprint"
-        fingerprint=$(openssl x509 -in /etc/pki/ca-trust/source/anchors/Helion_Eucalyptus_Development_Root_Certification_Authority.crt \
+        fingerprint=$(openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudca.hpcloud.ms.crt \
                                    -sha1 -noout -fingerprint)
         echo $fingerprint
         fingerprint=${fingerprint#*=}
@@ -238,10 +238,200 @@ else
         echo "#"
         echo "# keytool -list \\"
         echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
-        echo ">    grep -A1 helioneucalyptusdevelopmentrootcertificationauthority"
+        echo ">    grep -A1 cloudca.hpcloud.ms"
         keytool -list \
                 -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \
-           grep -A1 helioneucalyptusdevelopmentrootcertificationauthority
+           grep -A1 cloudca.hpcloud.ms
+
+        next 50
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
+echo "    - We will use the HP Cloud Root Certification Authority, along with 2 more"
+echo "      intermediate Certification Authorities to sign SSL certificates"
+echo "    - We must add this CA cert to the trusted root certificate authorities on"
+echo "      all servers which use these certificates, and on all browsers which must"
+echo "      trust websites served by them"
+echo "    - The \"update-ca-trust extract\" command updates both the OpenSSL and"
+echo "      Java trusted ca bundles"
+echo "    - Verify certificate was added to the OpenSSL trusted ca bundle"
+echo "    - Verify certificate was added to the Java trusted ca bundle"
+echo "    - You can copy the body of the certificate below to install on your browser"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+if [ ! -L /etc/pki/tls/certs/ca-bundle.crt ]; then
+    echo "update-ca-trust enable"
+    echo
+fi
+echo "cat << EOF > /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt"
+cat $certsdir/cloudpca.uswest.hpcloud.ms.crt
+echo "EOF"
+echo
+echo "openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt \\"
+echo "             -sha1 -noout -fingerprint"
+echo
+echo "update-ca-trust extract"
+echo
+echo "awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+echo "    < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"<fingerprint>\""
+echo
+echo "keytool -list \\"
+echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+echo "   grep -A1 cloudpca"
+
+if [ -e /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt ]; then
+    echo
+    tput rev
+    echo "Already Trusted!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        if [ ! -L /etc/pki/tls/certs/ca-bundle.crt ]; then
+            echo "# update-ca-trust enable"
+            update-ca-trust enable
+            pause
+        fi
+
+        echo "# cat << EOF > /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt"
+        cat $certsdir/cloudpca.uswest.hpcloud.ms.crt | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $certsdir/cloudpca.uswest.hpcloud.ms.crt /etc/pki/ca-trust/source/anchors
+        chown root:root /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt
+        echo "#"
+        echo "# openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt \\"
+        echo ">              -sha1 -noout -fingerprint"
+        fingerprint=$(openssl x509 -in /etc/pki/ca-trust/source/anchors/cloudpca.uswest.hpcloud.ms.crt \
+                                   -sha1 -noout -fingerprint)
+        echo $fingerprint
+        fingerprint=${fingerprint#*=}
+        pause
+
+        echo "# update-ca-trust extract"
+        update-ca-trust extract
+        pause
+
+        echo "# awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+        echo ">     < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"$fingerprint\""
+        awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \
+            < /etc/pki/tls/certs/ca-bundle.trust.crt | grep "$fingerprint"
+        echo "#"
+        echo "# keytool -list \\"
+        echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+        echo ">    grep -A1 cloudpca"
+        keytool -list \
+                -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \
+           grep -A1 cloudpca
+
+        next 50
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure SSL to trust local Certificate Authority"
+echo "    - We will use the HP Cloud Root Certification Authority, along with 2 more"
+echo "      intermediate Certification Authorities to sign SSL certificates"
+echo "    - We must add this CA cert to the trusted root certificate authorities on"
+echo "      all servers which use these certificates, and on all browsers which must"
+echo "      trust websites served by them"
+echo "    - The \"update-ca-trust extract\" command updates both the OpenSSL and"
+echo "      Java trusted ca bundles"
+echo "    - Verify certificate was added to the OpenSSL trusted ca bundle"
+echo "    - Verify certificate was added to the Java trusted ca bundle"
+echo "    - You can copy the body of the certificate below to install on your browser"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+if [ ! -L /etc/pki/tls/certs/ca-bundle.crt ]; then
+    echo "update-ca-trust enable"
+    echo
+fi
+echo "cat << EOF > /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt"
+cat $certsdir/aw2cloudica03.uswest.hpcloud.ms.crt
+echo "EOF"
+echo
+echo "openssl x509 -in /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt \\"
+echo "             -sha1 -noout -fingerprint"
+echo
+echo "update-ca-trust extract"
+echo
+echo "awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+echo "    < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"<fingerprint>\""
+echo
+echo "keytool -list \\"
+echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+echo "   grep -A1 aw2cloudica03"
+
+if [ -e /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt ]; then
+    echo
+    tput rev
+    echo "Already Trusted!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        if [ ! -L /etc/pki/tls/certs/ca-bundle.crt ]; then
+            echo "# update-ca-trust enable"
+            update-ca-trust enable
+            pause
+        fi
+
+        echo "# cat << EOF > /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt"
+        cat $certsdir/aw2cloudica03.uswest.hpcloud.ms.crt | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $certsdir/aw2cloudica03.uswest.hpcloud.ms.crt /etc/pki/ca-trust/source/anchors
+        chown root:root /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt
+        echo "#"
+        echo "# openssl x509 -in /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt \\"
+        echo ">              -sha1 -noout -fingerprint"
+        fingerprint=$(openssl x509 -in /etc/pki/ca-trust/source/anchors/aw2cloudica03.uswest.hpcloud.ms.crt \
+                                   -sha1 -noout -fingerprint)
+        echo $fingerprint
+        fingerprint=${fingerprint#*=}
+        pause
+
+        echo "# update-ca-trust extract"
+        update-ca-trust extract
+        pause
+
+        echo "# awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \\"
+        echo ">     < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"$fingerprint\""
+        awk -v cmd='openssl x509 -noout -sha1 -fingerprint' ' /BEGIN/{close(cmd)};{print | cmd}' \
+            < /etc/pki/tls/certs/ca-bundle.trust.crt | grep "$fingerprint"
+        echo "#"
+        echo "# keytool -list \\"
+        echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
+        echo ">    grep -A1 aw2cloudica03"
+        keytool -list \
+                -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \
+           grep -A1 aw2cloudica03
 
         next 50
     fi
