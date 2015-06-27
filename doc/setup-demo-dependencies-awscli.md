@@ -256,15 +256,15 @@ before you can run this procedure.
     This allows the Demo Account Demo User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/demo
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/demo
 
     result=$(aws iam create-access-key --user-name demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
     read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
     ```
 
 9. Create Demo (demo) Account Demo (demo) User Tools Profile
@@ -322,15 +322,15 @@ before you can run this procedure.
     This allows the Demo Account Developer User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/developer
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/developer
 
     result=$(aws iam create-access-key --user-name developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
     read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/developer/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
     ```
 
 14. Create Demo (demo) Account Developer (developer) User Tools Profile
@@ -388,15 +388,15 @@ before you can run this procedure.
     This allows the Demo Account User User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/user
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/user
 
     result=$(aws iam create-access-key --user-name user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
     read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
     ```
 
 19. Create Demo (demo) Account User (user) User Tools Profile
