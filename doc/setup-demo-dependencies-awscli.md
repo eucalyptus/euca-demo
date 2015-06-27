@@ -1,24 +1,24 @@
-# Demo Dependencies Manual Installation
+# Demo Dependencies Manual Installation (via AWS CLI)
 
-This is the set of manual steps to setup additional dependencies within the demo account.
+This is the set of manual steps to setup additional dependencies within the demo account,
+using the AWS CLI whenever possible.
 
 ### Initialize Demo Dependencies Script
 
 A script to automate the steps described in the manual procedure which follows can be found here:
-https://github.com/eucalyptus/euca-demo/blob/feature/poc/bin/euca-demo-02-initialize-dependencies.sh
+https://github.com/eucalyptus/euca-demo/blob/feature/poc/bin/euca-demo-02-initialize-dependencies-awscli.sh
 
 Help is available when running this script, via the -? flag.
 
 ```bash
-euca-demo-02-initialize-dependencies.sh -?
-Usage: euca-demo-02-initialize-dependencies.sh [-I [-s | -f]] [-a account] [-p password] [-c]
+euca-demo-02-initialize-dependencies-awscli.sh -?
+Usage: euca-demo-02-initialize-dependencies-awscli.sh [-I [-s | -f]] [-a account] [-p password] [-c]
   -I          non-interactive
   -s          slower: increase pauses by 25%
   -f          faster: reduce pauses by 25%
-  -a account  account to create for use in demos (default: demo)
+  -a account  account to use in demos (default: demo)
   -p password password prefix for demo account users (default: demo123)
   -c          Create new key pairs instead of importing existing public keys
-
 ```
 
 By default, the demo account used is named "demo", but this can be overridden with the -a account flag.
@@ -26,25 +26,39 @@ This allows alternate and/or multiple demo accounts to be used.
 
 Credentials are now stored in a directory structure which allows for multiple regions.
 
+This script also assumes you have additionally configured AWS CLI tools with appropriate region entries.
+
 Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to reference the local region.
+Your ~/.bash_profile should set the environment variable AWS_DEFAULT_PROFILE to reference the demo admin account.
 
 ### Initialize Demo Dependencies Manual Procedure
+
+This procedure must obtain certain data from the Demo (demo) Account Administrator eucarc file,
+which it expects to find here: ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc. Please insure this
+file, and all other files within the same directory, are transferred to this host if this procedure
+is run on a host other than the Cloud Controller.
+
+Additionally, since this script uses the AWS CLI, you must already have a valid AWS CLI profile
+created for the Demo (demo) Account Administrator, as referenced by the AWS_DEFAULT_PROFILE
+environment variable. This is created by the setup-demo-account manual procedure or the 
+euca-demo-01-initialize-account.sh script, but if this procedure is run on a different host, you
+will have to transfer the profile from the Cloud Controller ~/.aws directory to the new host
+before you can run this procedure.
 
 1. Use Demo (demo) Account Administrator credentials
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-f1
-
-    source ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc
+    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-demo-admin
     ```
 
 2. List Images available to Demo (demo) Account Administrator
 
     ```bash
-    euca-describe-images -a
+    aws ec2 describe-images
     ```
 
-3. Import Demo (demo) Account Administrator Demo Keypair
+3. Import Demo Keypair into Demo (demo) Account
 
     ```bash
     cat << EOF > ~/.ssh/demo_id_rsa
@@ -88,7 +102,8 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     lN9/vp/T+iQ9jgHvs1WcqF4PRTJLaUd3Dy+yv9Bu37vWZNCngmJwvKifKUcb
     EOF
 
-    euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo
+    aws ec2 import-key-pair --key-name=demo \
+                            --public-key-material file://$HOME/.ssh/demo_id_rsa.pub
     ```
 
 4. Initialize Euca2ools Configuration
@@ -185,7 +200,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 
 5. Initialize AWS CLI Configuration
 
-    This may already have been done if this script is being run on the Cloud Controller, when the
+    This should already have been done if this script is being run on the Cloud Controller, when the
     Demo (demo) Account was created, so test before re-initializing.
 
     This assumes the AWS CLI was installed and configured with Eucalyptus endpoints via separate instructions.
@@ -225,7 +240,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 6. Create Demo (demo) Account Demo (demo) User
 
     ```bash
-    euare-usercreate -u demo
+    aws iam create-user --user-name demo
     ```
 
 7. Create Demo (demo) Account Demo (demo) User Login Profile
@@ -233,7 +248,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account Demo User to login to the console
 
     ```bash
-    euare-useraddloginprofile -u demo -p demo123-demo
+    aws iam create-login-profile --user-name demo --password demo123-demo
     ```
 
 8. Create Demo (demo) Account Demo (demo) User Access Key
@@ -241,15 +256,15 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account Demo User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/demo
+    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/demo
 
-    result=$(euare-useraddkey -u demo)
-    read access_key secret_key <<< $result
+    result=$(aws iam create-access-key --user-name demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    cat ~/.creds/$AWS_DEFAULT_USER/demo/demo/iamrc
     ```
 
 9. Create Demo (demo) Account Demo (demo) User Tools Profile
@@ -291,7 +306,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 11. Create Demo (demo) Account Developer (developer) User
 
     ```bash
-    euare-usercreate -u developer
+    aws iam create-user --user-name developer
     ```
 
 12. Create Demo (demo) Account Developer (developer) User Login Profile
@@ -299,7 +314,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account Developer User to login to the console
 
     ```bash
-    euare-useraddloginprofile -u developer -p demo123-developer
+    aws iam create-login-profile --user-name developer --password demo123-developer
     ```
 
 13. Create Demo (demo) Account Developer (developer) User Access Key
@@ -307,15 +322,15 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account Developer User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/developer
+    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/developer
 
-    result=$(euare-useraddkey -u developer)
-    read access_key secret_key <<< $result
+    result=$(aws iam create-access-key --user-name developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/developer/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
+    cat ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
     ```
 
 14. Create Demo (demo) Account Developer (developer) User Tools Profile
@@ -357,7 +372,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 16. Create Demo (demo) Account User (user) User
 
     ```bash
-    euare-usercreate -u demo
+    aws iam create-user --user-name user
     ```
 
 17. Create Demo (demo) Account User (user) User Login Profile
@@ -365,7 +380,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account User User to login to the console
 
     ```bash
-    euare-useraddloginprofile -u user -p demo123-user
+    aws iam create-login-profile --user-name user --password demo123-user
     ```
 
 18. Create Demo (demo) Account User (user) User Access Key
@@ -373,15 +388,15 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This allows the Demo Account User User to run API commands
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/user
+    mkdir -p ~/.creds/$AWS_DEFAULT_USER/demo/user
 
-    result=$(euare-useraddkey -u user)
-    read access_key secret_key <<< $result
+    result=$(aws iam create-access-key --user-name user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    cat ~/.creds/$AWS_DEFAULT_USER/demo/user/iamrc
     ```
 
 19. Create Demo (demo) Account User (user) User Tools Profile
@@ -425,7 +440,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This Group is intended for Demos which have Administrator access to Resources.
 
     ```bash
-    euare-groupcreate -g Demos
+    aws iam create-group --group-name Demos
     ```
 
 22. Create Demo (demo) Account Demos (Demos) Group Policy
@@ -446,14 +461,14 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     }
     EOF
 
-    euare-groupuploadpolicy -g Demos -p DemosPolicy \
-                            -f /var/tmp/DemosGroupPolicy.json
+    aws iam put-group-policy --group-name Demos --policy-name DemosPolicy \
+                             --policy-document file:///var/tmp/DemosGroupPolicy.json
     ```
 
 23. Add Demo (demo) Account Demos (Demos) Group members
 
     ```bash
-    euare-groupadduser -g Demos -u demo
+    aws iam add-user-to-group --group-name Demos --user-name demo
     ```
 
 24. Create Demo (demo) Account Developers (Developers) Group
@@ -461,7 +476,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This Group is intended for Developers who can modify Resources.
 
     ```bash
-    euare-groupcreate -g Developers
+    aws iam create-group --group-name Developers
     ```
 
 25. Create Demo (demo) Account Developers (Developers) Group Policy
@@ -482,14 +497,14 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     }
     EOF
 
-    euare-groupuploadpolicy -g Developers -p DevelopersPolicy \
-                            -f /var/tmp/DevelopersGroupPolicy.json
+    aws iam put-group-policy --group-name Developers --policy-name DevelopersPolicy \
+                             --policy-document file:///var/tmp/DevelopersGroupPolicy.json
     ```
 
 26. Add Demo (demo) Account Developers (Developers) Group members
 
     ```bash
-    euare-groupadduser -g Developers -u developer
+    aws iam add-user-to-group --group-name Developers --user-name developer
     ```
 
 27. Create Demo (demo) Account Users (Users) Group
@@ -497,7 +512,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     This Group is intended for Users who can view but not modify Resources.
 
     ```bash
-    euare-groupcreate -g Users
+    aws iam create-group --group-name Users
     ```
 
 28. Create Demo (demo) Account Users (Users) Group Policy
@@ -542,14 +557,14 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     }
     EOF
 
-    euare-groupuploadpolicy -g Users -p UsersPolicy \
-                            -f /var/tmp/UsersGroupPolicy.json
+    aws iam put-group-policy --group-name Users --policy-name UsersPolicy \
+                             --policy-document file:///var/tmp/UsersGroupPolicy.json
     ```
 
 29. Add Demo (demo) Account Users (Users) Group members
 
     ```bash
-    euare-groupadduser -g Users -u user
+    aws iam add-user-to-group --group-name Users --user-name user
     ```
 
 30. Create Demo (demo) Account Demos (Demos) Role and associated Instance Profile
@@ -570,11 +585,12 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     }
     EOF
 
-    euare-rolecreate -r Demos -f /var/tmp/DemosRoleTrustPolicy.json
+    aws iam create-role --role-name Demos \
+                        --assume-role-policy-document file://var/tmp/DemosRoleTrustPolicy.json
 
-    euare-instanceprofilecreate -s Demos
+    aws iam create-instance-profile --instance-profile-name Demos
 
-    aws iam add-role-to-instance-profile -s Demos -r Demos
+    aws iam add-role-to-instance-profile --instance-profile-name Demos --role-name Demos
     ```
 
 31. Create Demo (demo) Account Demos (Demos) Role Policy
@@ -629,27 +645,27 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     }
     EOF
 
-    euare-roleuploadpolicy -r Demos -p DemosPolicy \
-                           -f /var/tmp/DemosRolePolicy.json
+    aws iam put-role-policy --role-name Demos --policy-name DemosPolicy \
+                            --policy-document file:///var/tmp/DemosRolePolicy.json
     ```
 
 32. List Demo Resources
 
     ```bash
-    euca-describe-images
+    aws ec2 describe-images
 
-    euca-describe-keypairs
+    aws ec2 describe-key-pairs
 
-    euare-userlistbypath
+    aws iam list-users
 
-    euare-grouplistbypath
-    euare-grouplistusers -g Demos
-    euare-grouplistusers -g Developers
-    euare-grouplistusers -g Users
+    aws iam list-groups
+    aws iam get-group --group-name Demos
+    aws iam get-group --group-name Developers
+    aws iam get-group --group-name Users
 
-    euare-rolelistbypath
-    euare-instanceprofilelistbypath
-    euare-instanceprofilelistforrole
+    aws iam list-roles
+    aws iam list-instance-profiles
+    aws iam get-instance-profile --instance-profile-name Demos
     ```
 
 33. List Tools Configuration
