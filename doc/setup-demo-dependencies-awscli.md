@@ -586,7 +586,7 @@ before you can run this procedure.
     EOF
 
     aws iam create-role --role-name Demos \
-                        --assume-role-policy-document file://var/tmp/DemosRoleTrustPolicy.json
+                        --assume-role-policy-document file:///var/tmp/DemosRoleTrustPolicy.json
 
     aws iam create-instance-profile --instance-profile-name Demos
 
@@ -671,9 +671,9 @@ before you can run this procedure.
 33. List Tools Configuration
 
     ```bash
-    cat ~/.euca2ools.ini
+    cat ~/.euca/euca2ools.ini
 
-    cat ~/.euca2ools-ssl.ini
+    cat ~/.euca/euca2ools-ssl.ini
     ```
 
 34. List Tools Configuration
