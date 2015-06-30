@@ -316,7 +316,9 @@ before you can run this procedure.
     This Policy provides full access to all resources, except users and groups.
 
     ```bash
-    cat << EOF >> /var/tmp/DemosGroupPolicy.json
+    mkdir -p /var/tmp/demo
+
+    cat << EOF >> /var/tmp/demo/DemosGroupPolicy.json
     {
       "Version": "2012-10-17",
       "Statement": [
@@ -330,7 +332,7 @@ before you can run this procedure.
     EOF
 
     aws iam put-group-policy --group-name Demos --policy-name DemosPolicy \
-                             --policy-document file:///var/tmp/DemosGroupPolicy.json
+                             --policy-document file:///var/tmp/demo/DemosGroupPolicy.json
     ```
 
 21. Add Demo (demo) Account Demos (Demos) Group members
@@ -352,7 +354,7 @@ before you can run this procedure.
     This Policy provides full access to all resources, except users and groups.
 
     ```bash
-    cat << EOF >> /var/tmp/DevelopersGroupPolicy.json
+    cat << EOF >> /var/tmp/demo/DevelopersGroupPolicy.json
     {
       "Version": "2012-10-17",
       "Statement": [
@@ -366,7 +368,7 @@ before you can run this procedure.
     EOF
 
     aws iam put-group-policy --group-name Developers --policy-name DevelopersPolicy \
-                             --policy-document file:///var/tmp/DevelopersGroupPolicy.json
+                             --policy-document file:///var/tmp/demo/DevelopersGroupPolicy.json
     ```
 
 24. Add Demo (demo) Account Developers (Developers) Group members
@@ -388,7 +390,7 @@ before you can run this procedure.
     This Policy provides ReadOnly access to all resources
 
     ```bash
-    cat << EOF >> /var/tmp/UsersGroupPolicy.json
+    cat << EOF >> /var/tmp/demo/UsersGroupPolicy.json
     {
       "Version": "2012-10-17",
       "Statement": [
@@ -426,7 +428,7 @@ before you can run this procedure.
     EOF
 
     aws iam put-group-policy --group-name Users --policy-name UsersPolicy \
-                             --policy-document file:///var/tmp/UsersGroupPolicy.json
+                             --policy-document file:///var/tmp/demo/UsersGroupPolicy.json
     ```
 
 27. Add Demo (demo) Account Users (Users) Group members
@@ -440,7 +442,7 @@ before you can run this procedure.
     This Role is intended for Demos which need Administrator access to Resources.
 
     ```bash
-    cat << EOF > /var/tmp/DemosRoleTrustPolicy.json
+    cat << EOF > /var/tmp/demo/DemosRoleTrustPolicy.json
     {
       "Version": "2012-10-17",
       "Statement": [
@@ -454,7 +456,7 @@ before you can run this procedure.
     EOF
 
     aws iam create-role --role-name Demos \
-                        --assume-role-policy-document file:///var/tmp/DemosRoleTrustPolicy.json
+                        --assume-role-policy-document file:///var/tmp/demo/DemosRoleTrustPolicy.json
 
     aws iam create-instance-profile --instance-profile-name Demos
 
@@ -466,7 +468,7 @@ before you can run this procedure.
     This Policy provides full access to all resources, except users and groups.
 
     ```bash
-    cat << EOF >> /var/tmp/DemosRolePolicy.json
+    cat << EOF >> /var/tmp/demo/DemosRolePolicy.json
     {
       "Version": "2012-10-17",
       "Statement": [
@@ -514,7 +516,7 @@ before you can run this procedure.
     EOF
 
     aws iam put-role-policy --role-name Demos --policy-name DemosPolicy \
-                            --policy-document file:///var/tmp/DemosRolePolicy.json
+                            --policy-document file:///var/tmp/demo/DemosRolePolicy.json
     ```
 
 30. List Demo Resources

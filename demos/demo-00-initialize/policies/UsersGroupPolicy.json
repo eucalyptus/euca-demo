@@ -1,0 +1,34 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "autoscaling:Describe*",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DescribeStackResource",
+        "cloudformation:DescribeStackResources",
+        "cloudformation:DescribeStacks",
+        "cloudformation:GetTemplate",
+        "cloudformation:List*",
+        "cloudwatch:Describe*",
+        "cloudwatch:Get*",
+        "cloudwatch:List*",
+        "ec2:Describe*",
+        "ec2:GetConsoleOutput",
+        "elasticloadbalancing:Describe*",
+        "iam:GenerateCredentialReport",
+        "iam:Get*",
+        "iam:List*",
+        "s3:Get*",
+        "s3:List*",
+        "swf:Count*",
+        "swf:Describe*",
+        "swf:Get*",
+        "swf:List*",
+        "tag:Get*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
