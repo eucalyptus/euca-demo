@@ -1191,7 +1191,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json
+echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
 cat $policiesdir/DemosGroupPolicy.json
 echo "EOF"
 echo
@@ -1239,7 +1239,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_demos -u $user_demo
+echo "euare-groupadduser -g $group_demos -u $user_demo"
 
 if euare-grouplistusers -g $group_demos | grep -s -q ":user/$user_demo$"; then
     echo
@@ -1308,7 +1308,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json
+echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
 cat $policiesdir/DevelopersGroupPolicy.json
 echo "EOF"
 echo
@@ -1356,7 +1356,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_developers -u $user_developer
+echo "euare-groupadduser -g $group_developers -u $user_developer"
 
 if euare-grouplistusers -g $group_developers | grep -s -q ":user/$user_developer$"; then
     echo
@@ -1425,7 +1425,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json
+echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
 cat $policiesdir/UsersGroupPolicy.json
 echo "EOF"
 echo
@@ -1473,7 +1473,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_users -u $user_user
+echo "euare-groupadduser -g $group_users -u $user_user"
 
 if euare-grouplistusers -g $group_users | grep -s -q ":user/$user_user$"; then
     echo
@@ -1508,7 +1508,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
 cat $policiesdir/DemosRoleTrustPolicy.json
 echo "EOF"
 echo
@@ -1531,7 +1531,7 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
         cat $policiesdir/DemosRoleTrustPolicy.json | sed -e 's/^/> /'
         echo "> EOF"
         cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
@@ -1564,7 +1564,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
 cat $policiesdir/DemosRolePolicy.json
 echo "EOF"
 echo
