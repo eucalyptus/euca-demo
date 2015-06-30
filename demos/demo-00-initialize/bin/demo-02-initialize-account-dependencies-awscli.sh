@@ -187,11 +187,11 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if ! grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
-    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION-$account-admin profile!"
-    echo "   Expected to find: [profile $AWS_DEFAULT_REGION-$account-admin] in ~/.aws/config"
-    exit 21
-fi
+#if ! grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
+#    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION-$account-admin profile!"
+#    echo "   Expected to find: [profile $AWS_DEFAULT_REGION-$account-admin] in ~/.aws/config"
+#    exit 21
+#fi
 
 mkdir -p $tmpdir/$account
 
@@ -275,7 +275,7 @@ echo
 echo "aws ec2 import-key-pair --key-name=demo \\"
 echo "                        --public-key-material file://~/.ssh/demo_id_rsa.pub"
 
-if aws ec2 describe-key-pairs | cut -f3 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa.pub ]; then
+if aws ec2 describe-key-pairs | cut -f3 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
     echo
     tput rev
     echo "Already Imported!"
@@ -285,6 +285,7 @@ if aws ec2 describe-key-pairs | cut -f3 | grep -s -q "^demo$" && [ -r ~/.ssh/dem
 
 else
     aws ec2 delete-key-pair --key-name demo &> /dev/null
+    rm -f ~/.ssh/demo_id_rsa
     rm -f ~/.ssh/demo_id_rsa.pub
 
     run 50
@@ -445,8 +446,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_demo_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
-user_demo_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
 
 clear
 echo
@@ -460,15 +461,15 @@ echo
 echo "Commands:"
 echo
 echo "echo \"[user $account-$user_demo]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $user_demo_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $user_demo_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
 echo
 echo "euca-describe-availability-zones verbose --region $account-$user_demo@$AWS_DEFAULT_REGION"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$user_demo_secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -484,17 +485,17 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# echo \"[user $account-$user_demo]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $user_demo_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $user_demo_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "[user $account-$user_demo]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $user_demo_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $user_demo_secret_key" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
         echo >> ~/.euca/euca2ools.ini
         # Invisibly create the ssl variant
         echo "[user $account-$user_demo]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $user_demo_access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $user_demo_secret_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
         pause
 
@@ -512,8 +513,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_demo_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
-user_demo_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
 
 clear
 echo
@@ -534,8 +535,8 @@ echo
 echo "more ~/.aws/config"
 echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $user_demo_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $user_demo_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo
 echo "more ~/.aws/credentials"
@@ -572,12 +573,12 @@ else
         pause
 
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $user_demo_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $user_demo_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "[$AWS_DEFAULT_REGION-$account-$user_demo]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $user_demo_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $user_demo_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         pause
 
@@ -722,8 +723,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_developer_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
-user_developer_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
 
 clear
 echo
@@ -737,15 +738,15 @@ echo
 echo "Commands:"
 echo
 echo "echo \"[user $account-$user_developer]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $user_developer_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $user_developer_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
 echo
 echo "euca-describe-availability-zones verbose --region $account-$user_developer@$AWS_DEFAULT_REGION"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$user_developer_secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -761,17 +762,17 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# echo \"[user $account-$user_developer]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $user_developer_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $user_developer_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "[user $account-$user_developer]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $user_developer_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $user_developer_secret_key" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
         echo >> ~/.euca/euca2ools.ini
         # Invisibly create the ssl variant
         echo "[user $account-$user_developer]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $user_developer_access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $user_developer_secret_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
         pause
 
@@ -789,8 +790,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_developer_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
-user_developer_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
 
 clear
 echo
@@ -811,8 +812,8 @@ echo
 echo "more ~/.aws/config"
 echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $user_developer_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $user_developer_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo
 echo "more ~/.aws/credentials"
@@ -849,12 +850,12 @@ else
         pause
 
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $user_developer_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $user_developer_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "[$AWS_DEFAULT_REGION-$account-$user_developer]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $user_developer_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $user_developer_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         pause
 
@@ -998,8 +999,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_user_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
-user_user_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
 
 clear
 echo
@@ -1013,15 +1014,15 @@ echo
 echo "Commands:"
 echo
 echo "echo \"[user $account-$user_user]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $user_user_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $user_user_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
 echo
 echo "euca-describe-availability-zones verbose --region $account-$user_user@$AWS_DEFAULT_REGION"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$user_user_secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -1037,17 +1038,17 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# echo \"[user $account-$user_user]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $user_user_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $user_user_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "[user $account-$user_user]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $user_user_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $user_user_secret_key" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
         echo >> ~/.euca/euca2ools.ini
         # Invisibly create the ssl variant
         echo "[user $account-$user_user]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $user_user_access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $user_user_secret_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
         pause
 
@@ -1065,8 +1066,8 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-user_user_access_key=$(sed -n -e "s/AWSAccessKeyId='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
-user_user_secret_key=$(sed -n -e "s/AWSSecretKey='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
 
 clear
 echo
@@ -1087,8 +1088,8 @@ echo
 echo "more ~/.aws/config"
 echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $user_user_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $user_user_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo
 echo "more ~/.aws/credentials"
@@ -1125,12 +1126,12 @@ else
         pause
 
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $user_user_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $user_user_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "[$AWS_DEFAULT_REGION-$account-$user_user]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $user_user_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $user_user_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         pause
 

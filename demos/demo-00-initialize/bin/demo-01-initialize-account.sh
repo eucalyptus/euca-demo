@@ -331,8 +331,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
-demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
 
 clear
 echo
@@ -346,15 +346,15 @@ echo
 echo "Commands:"
 echo
 echo "echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $demo_admin_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $demo_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
 echo
 echo "euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$demo_admin_secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -370,17 +370,17 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $demo_admin_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $demo_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "[user $account-admin]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $demo_admin_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $demo_admin_secret_key" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
         echo >> ~/.euca/euca2ools.ini
         # Invisibly create the ssl variant
         echo "[user $account-admin]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $demo_admin_access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $demo_admin_secret_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
 
         pause
@@ -399,8 +399,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-demo_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
-demo_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
 
 clear
 echo
@@ -421,8 +421,8 @@ echo
 echo "more ~/.aws/config"
 echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $demo_admin_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $demo_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo
 echo "more ~/.aws/credentials"
@@ -459,12 +459,12 @@ else
         pause
 
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $demo_admin_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $demo_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "[$AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $demo_admin_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $demo_admin_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         pause
 
@@ -589,4 +589,4 @@ end=$(date +%s)
 echo
 echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = demo ] || a=" -a $account"
-echo "Please run \"demo-01-initialize-account-dependencies.sh$a\" to complete demo initialization"
+echo "Please run \"demo-02-initialize-account-dependencies.sh$a\" to complete demo initialization"

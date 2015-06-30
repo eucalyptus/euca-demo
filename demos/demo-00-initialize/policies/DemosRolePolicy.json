@@ -27,7 +27,7 @@
         "s3:ListBucket",
         "s3:GetBucketLocation"
       ],
-      "Resource": "arn:aws:s3:::demo-demo"
+      "Resource": "arn:aws:s3:::demo-eucalyptus"
     },
     {
       "Effect": "Allow",
@@ -38,7 +38,7 @@
         "s3:PutObjectAcl",
         "s3:PutObjectVersionAcl"
       ],
-      "Resource": "arn:aws:s3:::demo-demo/*"
+      "Resource": "arn:aws:s3:::demo-eucalyptus/*"
     }
   ]
 }

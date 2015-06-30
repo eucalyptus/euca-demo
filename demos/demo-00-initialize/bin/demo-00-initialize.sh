@@ -229,8 +229,8 @@ cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFo
 cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 
 ec2_ssl_url=${ec2_url/http:/https:} && ec2_ssl_url=${ec2_ssl_url/:8773/}
 s3_ssl_url=${s3_url/http:/https:} && s3_ssl_url=${s3_ssl_url/:8773/}
@@ -272,15 +272,15 @@ echo "echo \"user = admin\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
 echo
 echo "more ~/.euca/euca2ools.ini"
 echo
 echo "euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$eucalyptus_admin_secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -350,17 +350,17 @@ else
         pause
 
         echo "# echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $eucalyptus_admin_access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $eucalyptus_admin_secret_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
+        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
         echo "# echo >> ~/.euca/euca2ools.ini"
         echo "[user admin]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $eucalyptus_admin_access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $eucalyptus_admin_secret_key" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
         echo >> ~/.euca/euca2ools.ini
         # Invisibly create the ssl variant
         echo "[user admin]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $eucalyptus_admin_access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $eucalyptus_admin_secret_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
         pause
 
@@ -378,8 +378,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-eucalyptus_admin_access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-eucalyptus_admin_secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 
 clear
 echo
@@ -414,12 +414,12 @@ echo "echo \"# AWS Credentials file\" >> ~/.aws/credentials"
 echo "echo \"#\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo "echo \"[default]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo "echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
 echo
 echo "more ~/.aws/credentials"
@@ -477,24 +477,24 @@ else
         echo "# echo \"#\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "# echo \"[default]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "# echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $eucalyptus_admin_access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $eucalyptus_admin_secret_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
+        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
         echo "# echo >> ~/.aws/credentials"
         echo "#" > ~/.aws/credentials
         echo "# AWS Credentials file" >> ~/.aws/credentials
         echo "#" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         echo "[default]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $eucalyptus_admin_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $eucalyptus_admin_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         echo "[$AWS_DEFAULT_REGION-admin]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $eucalyptus_admin_access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $eucalyptus_admin_secret_key" >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         chmod 0600 ~/.aws/credentials
         pause
@@ -534,7 +534,7 @@ echo "EOF"
 echo
 echo "euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo"
 
-if euca-describe-keypairs | grep -s -q "KEYPAIR demo " && [ -r ~/.ssh/demo_id_rsa ]; then
+if euca-describe-keypairs | cut -f2 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
     echo
     tput rev
     echo "Already Imported!"
@@ -545,6 +545,7 @@ if euca-describe-keypairs | grep -s -q "KEYPAIR demo " && [ -r ~/.ssh/demo_id_rs
 else
     euca-delete-keypair demo &> /dev/null
     rm -f ~/.ssh/demo_id_rsa
+    rm -f ~/.ssh/demo_id_rsa.pub
 
     run 50
 
