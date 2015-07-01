@@ -1,35 +1,37 @@
 #!/bin/bash
 #
 # This script initializes a Demo Account within Eucalyptus with dependencies used in demos, including:
-# - Confirms the Demo Image is available to the Demo Account
+# - Confirms the Demo Images are available to the Demo Account
 # - Imports the Demo Keypair into the Demo Account
+# - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
+# - Creates the Demos Role Policy, which allows read-only access to Demo Resources, 
+#   and write access to an S3 bucket used in Demos.
+# - Creates the Demos Group (named "Demos"), used for Users which create, own and manage Resources
+# - Creates the Demos Group Policy, which allows full access to all Resources, except Users and Groups
+# - Creates the Developers Group (named "Developers"), used for Users which have developer-level control of Resources
+# - Creates the Developers Group Policy, which allows full access to all Resources, except Users and Groups
+# - Creates the Users Group (named "Users"), used for Users which have read-only visibility to Resources
+# - Creates the Users Group Policy, which allows read-only access to all Resources
 # - Creates a demo User (named "demo"), as an example User within the Demos Group
+# - Adds the demo User to the Demos Group
 # - Creates the demo User Login Profile, allowing the use of the console
 # - Creates the demo User Access Key, allowing use of the API
 # - Configures Euca2ools for the demo User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the demo User, allowing use of the AWSCLI
 # - Creates a developer User (named "developer"), an an example User within the Developers Group
+# - Adds the developer User to the Developers Group
 # - Creates the developer User Login Profile, allowing the use of the console
 # - Creates the developer User Access Key, allowing use of the API
 # - Configures Euca2ools for the developer User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the developer User, allowing use of the AWSCLI
 # - Creates a user User (named "user"), as an example User within the Users Group
+# - Adds the user User to the Users Group
 # - Creates the user User Login Profile, allowing the use of the console
 # - Creates the user User Access Key, allowing use of the API
 # - Configures Euca2ools for the user User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the user User, allowing use of the AWSCLI
-# - Creates the Demos Group (named "Demos"), used for Users which create, own and manage Resources
-# - Creates the Demos Group Policy, which allows full access to all Resources, except Users and Groups
-# - Adds the demo User to the Demos Group
-# - Creates the Developers Group (named "Developers"), used for Users which have developer-level control of Resources
-# - Creates the Developers Group Policy, which allows full access to all Resources, except Users and Groups
-# - Adds the developer User to the Developers Group
-# - Creates the Users Group (named "Users"), used for Users which have read-only visibility to Resources
-# - Creates the Users Group Policy, which allows read-only access to all Resources
-# - Adds the user User to the Users Group
-# - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
-# - Creates the Demos Role Policy, which allows read-only access to Demo Resources, and write access to an S3 bucket used in Demos.
 # - Lists Demo Resources
+# - Displays Eucalyptus CLI Configuration
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
@@ -320,6 +322,360 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role and associated InstanceProfile"
+echo "    - This Role is intended for Demos which need Administrator access to Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+cat $policiesdir/DemosRoleTrustPolicy.json
+echo "EOF"
+echo
+echo "euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+echo
+echo "euare-instanceprofilecreate -s $instance_profile_demos"
+echo
+echo "euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
+
+if euare-rolelistbypath | grep -s -q ":role/$role_demos$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+        cat $policiesdir/DemosRoleTrustPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        pause
+
+        echo "# euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+        euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        pause
+
+        echo "# euare-instanceprofilecreate -s $instance_profile_demos"
+        euare-instanceprofilecreate -s $instance_profile_demos
+        pause
+
+        echo "# euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
+        euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
+cat $policiesdir/DemosRolePolicy.json
+echo "EOF"
+echo
+echo "euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
+echo "                       -f $tmpdir/$account/${role_demos}RolePolicy.json"
+
+if euare-rolelistpolicies -r $role_demos | grep -s -q "${role_demos}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${role_demos}RolePolicy.json"
+        cat $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosRolePolicy.json $tmpdir/$account/${role_demos}RolePolicy.json
+        pause
+
+        echo "# euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
+        echo ">                        -f $tmpdir/$account/${role_demos}RolePolicy.json"
+        euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \
+                               -f $tmpdir/$account/${role_demos}RolePolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group"
+echo "    - This Group is intended for Demos which have Administrator access to Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupcreate -g $group_demos"
+
+if euare-grouplistbypath | grep -s -q ":group/$group_demos$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupcreate -g $group_demos"
+        euare-groupcreate -g $group_demos
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
+cat $policiesdir/DemosGroupPolicy.json
+echo "EOF"
+echo
+echo "euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
+echo "                        -f $tmpdir/$account/${group_demos}GroupPolicy.json"
+
+if euare-grouplistpolicies -g $group_demos | grep -s -q "${group_demos}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_demos}GroupPolicy.json"
+        cat $policiesdir/DemosGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosGroupPolicy.json $tmpdir/$account/${group_demos}GroupPolicy.json
+        pause
+
+        echo "# euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
+        echo ">                         -f $tmpdir/$account/${group_demos}GroupPolicy.json"
+        euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \
+                                -f $tmpdir/$account/${group_demos}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group"
+echo "    - This Group is intended for Developers who can modify Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupcreate -g $group_developers"
+
+if euare-grouplistbypath | grep -s -q ":group/$group_developers$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupcreate -g $group_developers"
+        euare-groupcreate -g $group_developers
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
+cat $policiesdir/DevelopersGroupPolicy.json
+echo "EOF"
+echo
+echo "euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
+echo "                        -f $tmpdir/$account/${group_developers}GroupPolicy.json"
+
+if euare-grouplistpolicies -g $group_developers | grep -s -q "${group_developers}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_developers}GroupPolicy.json"
+        cat $policiesdir/DevelopersGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DevelopersGroupPolicy.json $tmpdir/$account/${group_developers}GroupPolicy.json
+        pause
+
+        echo "# euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
+        echo ">                         -f $tmpdir/$account/${group_developers}GroupPolicy.json"
+        euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \
+                                -f $tmpdir/$account/${group_developers}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group"
+echo "    - This Group is intended for Users who can view but not modify Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupcreate -g $group_users"
+
+if euare-grouplistbypath | grep -s -q ":group/$group_users$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupcreate -g $group_users"
+        euare-groupcreate -g $group_users
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group Policy"
+echo "    - This Policy provides ReadOnly access to all resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
+cat $policiesdir/UsersGroupPolicy.json
+echo "EOF"
+echo
+echo "euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
+echo "                        -f $tmpdir/$account/${group_users}GroupPolicy.json"
+
+if euare-grouplistpolicies -g $group_users | grep -s -q "${group_users}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_users}GroupPolicy.json"
+        cat $policiesdir/UsersGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/UsersGroupPolicy.json $tmpdir/$account/${group_users}GroupPolicy.json
+        pause
+
+        echo "# euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
+        echo ">                         -f $tmpdir/$account/${group_users}GroupPolicy.json"
+        euare-groupuploadpolicy -g $group_demos -p ${group_users}Policy \
+                                -f $tmpdir/$account/${group_users}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User"
 echo
 echo "============================================================"
@@ -343,6 +699,40 @@ else
         echo
         echo "# euare-usercreate -u $user_demo"
         euare-usercreate -u $user_demo
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account Demo ($user_demo) User to Demos ($group_demos) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupadduser -g $group_demos -u $user_demo"
+
+if euare-grouplistusers -g $group_demos | grep -s -q ":user/$user_demo$"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupadduser -g $group_demos -u $user_demo"
+        euare-groupadduser -g $group_demos -u $user_demo
 
         next
     fi
@@ -433,7 +823,6 @@ else
         next
     fi
 fi
-
 
 
 ((++step))
@@ -595,6 +984,40 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account Developer ($user_developer) User to Developers ($group_developers) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupadduser -g $group_developers -u $user_developer"
+
+if euare-grouplistusers -g $group_developers | grep -s -q ":user/$user_developer$"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupadduser -g $group_developers -u $user_developer"
+        euare-groupadduser -g $group_developers -u $user_developer
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User Login Profile"
 echo "    - This allows the Demo Account Developer User to login to the console"
 echo
@@ -674,7 +1097,6 @@ else
         next
     fi
 fi
-
 
 
 ((++step))
@@ -796,6 +1218,7 @@ else
     fi
 fi
 
+
 ((++step))
 clear
 echo
@@ -824,6 +1247,40 @@ else
         echo
         echo "# euare-usercreate -u $user_user"
         euare-usercreate -u $user_user
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account User ($user_user) User to Users ($group_users) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euare-groupadduser -g $group_users -u $user_user"
+
+if euare-grouplistusers -g $group_users | grep -s -q ":user/$user_user$"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euare-groupadduser -g $group_users -u $user_user"
+        euare-groupadduser -g $group_users -u $user_user
 
         next
     fi
@@ -914,7 +1371,6 @@ else
         next
     fi
 fi
-
 
 
 ((++step))
@@ -1042,462 +1498,6 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group"
-echo "    - This Group is intended for Demos which have Administrator access to Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupcreate -g $group_demos"
-
-if euare-grouplistbypath | grep -s -q ":group/$group_demos$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupcreate -g $group_demos"
-        euare-groupcreate -g $group_demos
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
-cat $policiesdir/DemosGroupPolicy.json
-echo "EOF"
-echo
-echo "euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
-echo "                        -f $tmpdir/$account/${group_demos}GroupPolicy.json"
-
-
-if euare-grouplistpolicies -g $group_demos | grep -s -q "${group_demos}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_demos}GroupPolicy.json"
-        cat $policiesdir/DemosGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosGroupPolicy.json $tmpdir/$account/${group_demos}GroupPolicy.json
-        pause
-
-        echo "# euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_demos}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \
-                                -f $tmpdir/$account/${group_demos}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Demos ($group_demos) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupadduser -g $group_demos -u $user_demo"
-
-if euare-grouplistusers -g $group_demos | grep -s -q ":user/$user_demo$"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupadduser -g $group_demos -u $user_demo"
-        euare-groupadduser -g $group_demos -u $user_demo
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group"
-echo "    - This Group is intended for Developers who can modify Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupcreate -g $group_developers"
-
-if euare-grouplistbypath | grep -s -q ":group/$group_developers$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupcreate -g $group_developers"
-        euare-groupcreate -g $group_developers
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
-cat $policiesdir/DevelopersGroupPolicy.json
-echo "EOF"
-echo
-echo "euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
-echo "                        -f $tmpdir/$account/${group_developers}GroupPolicy.json"
-
-
-if euare-grouplistpolicies -g $group_developers | grep -s -q "${group_developers}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_developers}GroupPolicy.json"
-        cat $policiesdir/DevelopersGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DevelopersGroupPolicy.json $tmpdir/$account/${group_developers}GroupPolicy.json
-        pause
-
-        echo "# euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_developers}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \
-                                -f $tmpdir/$account/${group_developers}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Developers ($group_developers) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupadduser -g $group_developers -u $user_developer"
-
-if euare-grouplistusers -g $group_developers | grep -s -q ":user/$user_developer$"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupadduser -g $group_developers -u $user_developer"
-        euare-groupadduser -g $group_developers -u $user_developer
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group"
-echo "    - This Group is intended for Users who can view but not modify Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupcreate -g $group_users"
-
-if euare-grouplistbypath | grep -s -q ":group/$group_users$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupcreate -g $group_users"
-        euare-groupcreate -g $group_users
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group Policy"
-echo "    - This Policy provides ReadOnly access to all resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
-cat $policiesdir/UsersGroupPolicy.json
-echo "EOF"
-echo
-echo "euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
-echo "                        -f $tmpdir/$account/${group_users}GroupPolicy.json"
-
-
-if euare-grouplistpolicies -g $group_users | grep -s -q "${group_users}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_users}GroupPolicy.json"
-        cat $policiesdir/UsersGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/UsersGroupPolicy.json $tmpdir/$account/${group_users}GroupPolicy.json
-        pause
-
-        echo "# euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_users}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_demos -p ${group_users}Policy \
-                                -f $tmpdir/$account/${group_users}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Users ($group_users) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euare-groupadduser -g $group_users -u $user_user"
-
-if euare-grouplistusers -g $group_users | grep -s -q ":user/$user_user$"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euare-groupadduser -g $group_users -u $user_user"
-        euare-groupadduser -g $group_users -u $user_user
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Role and associated InstanceProfile"
-echo "    - This Role is intended for Demos which need Administrator access to Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-cat $policiesdir/DemosRoleTrustPolicy.json
-echo "EOF"
-echo
-echo "euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-echo
-echo "euare-instanceprofilecreate -s instance_profile_demos"
-echo
-echo "euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
-
-if euare-rolelistbypath | grep -s -q ":role/$role_demos$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-        cat $policiesdir/DemosRoleTrustPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
-        pause
-
-        echo "# euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-        euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json
-        pause
-
-        echo "# euare-instanceprofilecreate -s instance_profile_demos"
-        euare-instanceprofilecreate -s instance_profile_demos
-        pause
-
-        echo "# euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
-        euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
-cat $policiesdir/DemosRolePolicy.json
-echo "EOF"
-echo
-echo "euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
-echo "                       -f $tmpdir/$account/${role_demos}RolePolicy.json"
-
-
-if euare-rolelistpolicies -r $role_demos | grep -s -q "${role_demos}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${role_demos}RolePolicy.json"
-        cat $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosRolePolicy.json $tmpdir/$account/${role_demos}RolePolicy.json
-        pause
-
-        echo "# euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
-        echo ">                        -f $tmpdir/$account/${role_demos}RolePolicy.json"
-        euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \
-                               -f $tmpdir/$account/${role_demos}RolePolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
 echo "$(printf '%2d' $step). List Demo Resources"
 echo
 echo "============================================================"
@@ -1508,16 +1508,17 @@ echo "euca-describe-images"
 echo
 echo "euca-describe-keypairs"
 echo
-echo "euare-userlistbypath"
-echo
-echo "euare-grouplistbypath"
-echo "euare-grouplistusers -g $group_demos"
-echo "euare-grouplistusers -g $group_developers"
-echo "euare-grouplistusers -g $group_users"
-echo
 echo "euare-rolelistbypath"
 echo "euare-instanceprofilelistbypath"
 echo "euare-instanceprofilelistforrole -r $role_demos"
+echo
+echo "euare-grouplistbypath"
+echo
+echo "euare-userlistbypath"
+echo
+echo "euare-grouplistusers -g $group_demos"
+echo "euare-grouplistusers -g $group_developers"
+echo "euare-grouplistusers -g $group_users"
 
 run 50
 
@@ -1531,23 +1532,6 @@ if [ $choice = y ]; then
     euca-describe-keypairs
     pause
 
-    echo "# euare-userlistbypath"
-    euare-userlistbypath
-    pause
-
-    echo "# euare-grouplistbypath"
-    euare-grouplistbypath
-    echo "#"
-    echo "# euare-grouplistusers -g $group_demos"
-    euare-grouplistusers -g $group_demos
-    echo "#"
-    echo "# euare-grouplistusers -g $group_developers"
-    euare-grouplistusers -g $group_developers
-    echo "#"
-    echo "# euare-grouplistusers -g $group_users"
-    euare-grouplistusers -g $group_users
-    pause
-
     echo "# euare-rolelistbypath"
     euare-rolelistbypath
     echo "#"
@@ -1556,6 +1540,24 @@ if [ $choice = y ]; then
     echo "#"
     echo "# euare-instanceprofilelistforrole -r $role_demos"
     euare-instanceprofilelistforrole -r $role_demos
+    pause
+
+    echo "# euare-grouplistbypath"
+    euare-grouplistbypath
+    pause
+
+    echo "# euare-userlistbypath"
+    euare-userlistbypath
+    pause
+
+    echo "# euare-grouplistusers -g $group_demos"
+    euare-grouplistusers -g $group_demos
+    echo "#"
+    echo "# euare-grouplistusers -g $group_developers"
+    euare-grouplistusers -g $group_developers
+    echo "#"
+    echo "# euare-grouplistusers -g $group_users"
+    euare-grouplistusers -g $group_users
 
     next 200
 fi

@@ -3,33 +3,35 @@
 # This script initializes a Demo Account within Eucalyptus with dependencies used in demos, including:
 # - Confirms the Demo Image is available to the Demo Account
 # - Imports the Demo Keypair into the Demo Account
+# - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
+# - Creates the Demos Role Policy, which allows read-only access to Demo Resources,
+#   and write access to an S3 bucket used in Demos.
+# - Creates the Demos Group (named "Demos"), used for Users which create, own and manage Resources
+# - Creates the Demos Group Policy, which allows full access to all Resources, except Users and Groups
+# - Creates the Developers Group (named "Developers"), used for Users which have developer-level control of Resources
+# - Creates the Developers Group Policy, which allows full access to all Resources, except Users and Groups
+# - Creates the Users Group (named "Users"), used for Users which have read-only visibility to Resources
+# - Creates the Users Group Policy, which allows read-only access to all Resources
 # - Creates a demo User (named "demo"), as an example User within the Demos Group
+# - Adds the demo User to the Demos Group
 # - Creates the demo User Login Profile, allowing the use of the console
 # - Creates the demo User Access Key, allowing use of the API
 # - Configures Euca2ools for the demo User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the demo User, allowing use of the AWSCLI
 # - Creates a developer User (named "developer"), an an example User within the Developers Group
+# - Adds the developer User to the Developers Group
 # - Creates the developer User Login Profile, allowing the use of the console
 # - Creates the developer User Access Key, allowing use of the API
 # - Configures Euca2ools for the developer User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the developer User, allowing use of the AWSCLI
 # - Creates a user User (named "user"), as an example User within the Users Group
+# - Adds the user User to the Users Group
 # - Creates the user User Login Profile, allowing the use of the console
 # - Creates the user User Access Key, allowing use of the API
 # - Configures Euca2ools for the user User, allowing use of the API via Euca2ools
 # - Configures AWSCLI for the user User, allowing use of the AWSCLI
-# - Creates the Demos Group (named "Demos"), used for Users which create, own and manage Resources
-# - Creates the Demos Group Policy, which allows full access to all Resources, except Users and Groups
-# - Adds the demo User to the Demos Group
-# - Creates the Developers Group (named "Developers"), used for Users which have developer-level control of Resources
-# - Creates the Developers Group Policy, which allows full access to all Resources, except Users and Groups
-# - Adds the developer User to the Developers Group
-# - Creates the Users Group (named "Users"), used for Users which have read-only visibility to Resources
-# - Creates the Users Group Policy, which allows read-only access to all Resources
-# - Adds the user User to the Users Group
-# - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
-# - Creates the Demos Role Policy, which allows read-only access to Demo Resources, and write access to an S3 bucket used in Demos.
 # - Lists Demo Resources
+# - Displays Eucalyptus CLI Configuration
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
@@ -187,11 +189,11 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-#if ! grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
-#    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION-$account-admin profile!"
-#    echo "   Expected to find: [profile $AWS_DEFAULT_REGION-$account-admin] in ~/.aws/config"
-#    exit 21
-#fi
+if ! grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
+    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION-$account-admin profile!"
+    echo "   Expected to find: [profile $AWS_DEFAULT_REGION-$account-admin] in ~/.aws/config"
+    exit 21
+fi
 
 mkdir -p $tmpdir/$account
 
@@ -211,16 +213,20 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \$AWS_DEFAULT_REGION"
+echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-$account-admin"
 echo
+echo "echo \$AWS_DEFAULT_REGION"
 echo "echo \$AWS_DEFAULT_PROFILE"
 
 next
 
 echo
+echo "# export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-$account-admin"
+export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-$account-admin
+pause
+
 echo "# echo \$AWS_DEFAULT_REGION"
 echo $AWS_DEFAULT_REGION
-echo "#"
 echo "# echo \$AWS_DEFAULT_PROFILE"
 echo $AWS_DEFAULT_PROFILE
 
@@ -322,6 +328,363 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Role and associated InstanceProfile"
+echo "    - This Role is intended for Demos which need Administrator access to Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+cat $policiesdir/DemosRoleTrustPolicy.json
+echo "EOF"
+echo
+echo "aws iam create-role --role-name $role_demos \\"
+echo "                    --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+echo
+echo "aws iam create-instance-profile --instance-profile-name $instance_profile_demos"
+echo
+echo "aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos"
+
+if aws iam list-roles | grep -s -q ":role/$role_demos"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+        cat $policiesdir/DemosRoleTrustPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        pause
+
+        echo "# aws iam create-role --role-name $role_demos \\"
+        echo ">                     --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+        aws iam create-role --role-name $role_demos \
+                            --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        pause
+
+        echo "# aws iam create-instance-profile --instance-profile-name $instance_profile_demos"
+        aws iam create-instance-profile --instance-profile-name $instance_profile_demos
+        pause
+
+        echo "# aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos"
+        aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
+cat $policiesdir/DemosRolePolicy.json
+echo "EOF"
+echo
+echo "aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \\"
+echo "                        --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json"
+
+if aws iam list-role-policies --role-name $role_demos | grep -s -q "${role_demos}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${role_demos}RolePolicy.json"
+        cat $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosRolePolicy.json $tmpdir/$account/${role_demos}RolePolicy.json
+        pause
+
+        echo "# aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \\"
+        echo ">                         --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json"
+        aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \
+                                --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group"
+echo "    - This Group is intended for Demos which have Administrator access to Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam create-group --group-name $group_demos"
+
+if aws iam list-groups | grep -s -q ":group/$group_demos"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam create-group --group-name $group_demos"
+        aws iam create-group --group-name $group_demos
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
+cat $policiesdir/DemosGroupPolicy.json
+echo "EOF"
+echo
+echo "aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \\"
+echo "                         --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json"
+
+if aws iam list-group-policies --group-name $group_demos | grep -s -q "${group_demos}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_demos}GroupPolicy.json"
+        cat $policiesdir/DemosGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DemosGroupPolicy.json $tmpdir/$account/${group_demos}GroupPolicy.json
+        pause
+
+        echo "# aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \\"
+        echo ">                          --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json"
+        aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \
+                                 --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group"
+echo "    - This Group is intended for Developers who can modify Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam create-group --group-name $group_developers"
+
+if aws iam list-groups | grep -s -q ":group/$group_developers"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam create-group --group-name $group_developers"
+        aws iam create-group --group-name $group_developers
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group Policy"
+echo "    - This Policy provides full access to all resources, except users and groups"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
+cat $policiesdir/DevelopersGroupPolicy.json
+echo "EOF"
+echo
+echo "aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \\"
+echo "                         --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json"
+
+if aws iam list-group-policies --group-name $group_developers | grep -s -q "${group_developers}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_developers}GroupPolicy.json"
+        cat $policiesdir/DevelopersGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/DevelopersGroupPolicy.json $tmpdir/$account/${group_developers}GroupPolicy.json
+        pause
+
+        echo "# aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \\"
+        echo ">                          --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json"
+        aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \
+                                 --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group"
+echo "    - This Group is intended for Users who can view but not modify Resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam create-group --group-name $group_users"
+
+if aws iam list-groups | grep -s -q ":group/$group_users"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam create-group --group-name $group_users"
+        aws iam create-group --group-name $group_users
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group Policy"
+echo "    - This Policy provides ReadOnly access to all resources"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
+cat $policiesdir/UsersGroupPolicy.json
+echo "EOF"
+echo
+echo "aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
+echo "                         --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
+
+if aws iam list-group-policies --group-name $group_users | grep -s -q "${group_users}Policy$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > $tmpdir/$account/${group_users}GroupPolicy.json"
+        cat $policiesdir/UsersGroupPolicy.json | sed -e 's/^/> /'
+        echo "> EOF"
+        cp $policiesdir/UsersGroupPolicy.json $tmpdir/$account/${group_users}GroupPolicy.json
+        pause
+
+        echo "# aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
+        echo ">                          --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
+        aws iam put-group-policy --group-name $group_demos --policy-name ${group_users}Policy \
+                                 --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User"
 echo
 echo "============================================================"
@@ -345,6 +708,40 @@ else
         echo
         echo "# aws iam create-user --user-name $user_demo"
         aws iam create-user --user-name $user_demo
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account Demo ($user_demo) User to Demos ($group_demos) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam add-user-to-group --group-name $group_demos --user-name $user_demo"
+
+if aws iam get-group --group-name $group_demos | grep -s -q ":user/$user_demo"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam add-user-to-group --group-name $group_demos --user-name $user_demo"
+        aws iam add-user-to-group --group-name $group_demos --user-name $user_demo
 
         next
     fi
@@ -597,6 +994,40 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account Developer ($user_developer) User to Developers ($group_developers) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam add-user-to-group --group-name $group_developers --user-name $user_developer"
+
+if aws iam get-group --group-name $group_developers | grep -s -q ":user/$user_developer"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam add-user-to-group --group-name $group_developers --user-name $user_developer"
+        aws iam add-user-to-group --group-name $group_developers --user-name $user_developer
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User Login Profile"
 echo "    - This allows the Demo Account Developer User to login to the console"
 echo
@@ -676,7 +1107,6 @@ else
         next
     fi
 fi
-
 
 
 ((++step))
@@ -798,6 +1228,7 @@ else
     fi
 fi
 
+
 ((++step))
 clear
 echo
@@ -826,6 +1257,40 @@ else
         echo
         echo "# aws iam create-user --user-name $user_user"
         aws iam create-user --user-name $user_user
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Add Demo ($account) Account User ($user_user) User to Users ($group_users) Group"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws iam add-user-to-group --group-name $group_users --user-name $user_user"
+
+if aws iam get-group --group-name $group_users | grep -s -q ":user/$user_user"; then
+    echo
+    tput rev
+    echo "Already Added!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws iam add-user-to-group --group-name $group_users --user-name $user_user"
+        aws iam add-user-to-group --group-name $group_users --user-name $user_user
 
         next
     fi
@@ -916,7 +1381,6 @@ else
         next
     fi
 fi
-
 
 
 ((++step))
@@ -1044,465 +1508,6 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group"
-echo "    - This Group is intended for Demos which have Administrator access to Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam create-group --group-name $group_demos"
-
-if aws iam list-groups | grep -s -q ":group/$group_demos"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam create-group --group-name $group_demos"
-        aws iam create-group --group-name $group_demos
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
-cat $policiesdir/DemosGroupPolicy.json
-echo "EOF"
-echo
-echo "aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \\"
-echo "                         --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json"
-
-
-if aws iam list-group-policies --group-name $group_demos | grep -s -q "${group_demos}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_demos}GroupPolicy.json"
-        cat $policiesdir/DemosGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosGroupPolicy.json $tmpdir/$account/${group_demos}GroupPolicy.json
-        pause
-
-        echo "# aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \\"
-        echo ">                          --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json"
-        aws iam put-group-policy --group-name $group_demos --policy-name ${group_demos}Policy \
-                                 --policy-document file://$tmpdir/$account/${group_demos}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Demos ($group_demos) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam add-user-to-group --group-name $group_demos --user-name $user_demo"
-
-if aws iam get-group --group-name $group_demos | grep -s -q ":user/$user_demo"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam add-user-to-group --group-name $group_demos --user-name $user_demo"
-        aws iam add-user-to-group --group-name $group_demos --user-name $user_demo
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group"
-echo "    - This Group is intended for Developers who can modify Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam create-group --group-name $group_developers"
-
-if aws iam list-groups | grep -s -q ":group/$group_developers"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam create-group --group-name $group_developers"
-        aws iam create-group --group-name $group_developers
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
-cat $policiesdir/DevelopersGroupPolicy.json
-echo "EOF"
-echo
-echo "aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \\"
-echo "                         --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json"
-
-
-if aws iam list-group-policies --group-name $group_developers | grep -s -q "${group_developers}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_developers}GroupPolicy.json"
-        cat $policiesdir/DevelopersGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DevelopersGroupPolicy.json $tmpdir/$account/${group_developers}GroupPolicy.json
-        pause
-
-        echo "# aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \\"
-        echo ">                          --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json"
-        aws iam put-group-policy --group-name $group_developers --policy-name ${group_developers}Policy \
-                                 --policy-document file://$tmpdir/$account/${group_developers}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Developers ($group_developers) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam add-user-to-group --group-name $group_developers --user-name $user_developer"
-
-if aws iam get-group --group-name $group_developers | grep -s -q ":user/$user_developer"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam add-user-to-group --group-name $group_developers --user-name $user_developer"
-        aws iam add-user-to-group --group-name $group_developers --user-name $user_developer
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group"
-echo "    - This Group is intended for Users who can view but not modify Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam create-group --group-name $group_users"
-
-if aws iam list-groups | grep -s -q ":group/$group_users"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam create-group --group-name $group_users"
-        aws iam create-group --group-name $group_users
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group Policy"
-echo "    - This Policy provides ReadOnly access to all resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
-cat $policiesdir/UsersGroupPolicy.json
-echo "EOF"
-echo
-echo "aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
-echo "                         --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
-
-
-if aws iam list-group-policies --group-name $group_users | grep -s -q "${group_users}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${group_users}GroupPolicy.json"
-        cat $policiesdir/UsersGroupPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/UsersGroupPolicy.json $tmpdir/$account/${group_users}GroupPolicy.json
-        pause
-
-        echo "# aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
-        echo ">                          --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
-        aws iam put-group-policy --group-name $group_demos --policy-name ${group_users}Policy \
-                                 --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Users ($group_users) Group members"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws iam add-user-to-group --group-name $group_users --user-name $user_user"
-
-if aws iam get-group --group-name $group_users | grep -s -q ":user/$user_user"; then
-    echo
-    tput rev
-    echo "Already Added!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws iam add-user-to-group --group-name $group_users --user-name $user_user"
-        aws iam add-user-to-group --group-name $group_users --user-name $user_user
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Role and associated InstanceProfile"
-echo "    - This Role is intended for Demos which need Administrator access to Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-cat $policiesdir/DemosRoleTrustPolicy.json
-echo "EOF"
-echo
-echo "aws iam create-role --role-name $role_demos \\"
-echo "                    --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-echo
-echo "aws iam create-instance-profile --instance-profile-name instance_profile_demos"
-echo
-echo "aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos"
-
-if aws iam list-roles | grep -s -q ":role/$role_demos"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-        cat $policiesdir/DemosRoleTrustPolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
-        pause
-
-        echo "# aws iam create-role --role-name $role_demos \\"
-        echo ">                     --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-        aws iam create-role --role-name $role_demos \
-                            --assume-role-policy-document file://$tmpdir/$account/${role_demos}RoleTrustPolicy.json
-        pause
-
-        echo "# aws iam create-instance-profile --instance-profile-name instance_profile_demos"
-        aws iam create-instance-profile --instance-profile-name instance_profile_demos
-        pause
-
-        echo "# aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos"
-        aws iam add-role-to-instance-profile --instance-profile-name $instance_profile_demos --role-name $role_demos
-
-        next
-    fi
-fi
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role Policy"
-echo "    - This Policy provides full access to all resources, except users and groups"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
-cat $policiesdir/DemosRolePolicy.json
-echo "EOF"
-echo
-echo "aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \\"
-echo "                        --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json"
-
-
-if aws iam list-role-policies --role-name $role_demos | grep -s -q "${role_demos}Policy$"; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat << EOF > $tmpdir/$account/${role_demos}RolePolicy.json"
-        cat $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
-        echo "> EOF"
-        cp $policiesdir/DemosRolePolicy.json $tmpdir/$account/${role_demos}RolePolicy.json
-        pause
-
-        echo "# aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \\"
-        echo ">                         --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json"
-        aws iam put-role-policy --role-name $role_demos --policy-name ${role_demos}Policy \
-                                --policy-document file://$tmpdir/$account/${role_demos}RolePolicy.json
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
 echo "$(printf '%2d' $step). List Demo Resources"
 echo
 echo "============================================================"
@@ -1513,16 +1518,17 @@ echo "aws ec2 describe-images"
 echo
 echo "aws ec2 describe-key-pairs"
 echo
-echo "aws iam list-users"
-echo
-echo "aws iam list-groups"
-echo "aws iam get-group --group-name $group_demos"
-echo "aws iam get-group --group-name $group_developers"
-echo "aws iam get-group --group-name $group_users"
-echo
 echo "aws iam list-roles"
 echo "aws iam list-instance-profiles"
 echo "aws iam get-instance-profile --instance-profile-name $role_demos"
+echo
+echo "aws iam list-groups"
+echo
+echo "aws iam list-users"
+echo
+echo "aws iam get-group --group-name $group_demos"
+echo "aws iam get-group --group-name $group_developers"
+echo "aws iam get-group --group-name $group_users"
 
 run 50
 
@@ -1536,23 +1542,6 @@ if [ $choice = y ]; then
     aws ec2 describe-key-pairs
     pause
 
-    echo "# aws iam list-users"
-    aws iam list-users
-    pause
-
-    echo "# aws iam list-groups"
-    aws iam list-groups
-    echo "#"
-    echo "# aws iam get-group --group-name $group_demos"
-    aws iam get-group --group-name $group_demos
-    echo "#"
-    echo "# aws iam get-group --group-name $group_developers"
-    aws iam get-group --group-name $group_developers
-    echo "#"
-    echo "# aws iam get-group --group-name $group_users"
-    aws iam get-group --group-name $group_users
-    pause
-
     echo "# aws iam list-roles"
     aws iam list-roles
     echo "#"
@@ -1561,6 +1550,24 @@ if [ $choice = y ]; then
     echo "#"
     echo "# aws iam get-instance-profile --instance-profile-name $role_demos"
     aws iam get-instance-profile --instance-profile-name $role_demos
+    pause
+
+    echo "# aws iam list-groups"
+    aws iam list-groups
+    pause
+
+    echo "# aws iam list-users"
+    aws iam list-users
+    pause
+
+    echo "# aws iam get-group --group-name $group_demos"
+    aws iam get-group --group-name $group_demos
+    echo "#"
+    echo "# aws iam get-group --group-name $group_developers"
+    aws iam get-group --group-name $group_developers
+    echo "#"
+    echo "# aws iam get-group --group-name $group_users"
+    aws iam get-group --group-name $group_users
 
     next 200
 fi
