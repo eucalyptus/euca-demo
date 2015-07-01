@@ -228,21 +228,5 @@ fi
 sleep 1
 
 
-((++step))
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Add euca-demo scripts to PATH"
-echo
-echo "============================================================"
-echo
-if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" /root/.bash_profile; then
-    echo "# sed -i -e '/^PATH=/s/$/:\\\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile"
-    sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' /root/.bash_profile
-fi
-echo
-echo "Please logout, then login to pick up profile changes"
-sleep 1
-
 echo
 echo "Root PRC modifications complete"
