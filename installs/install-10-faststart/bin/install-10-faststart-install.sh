@@ -11,19 +11,8 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 external_faststart_url=eucalyptus.com/install
@@ -37,16 +26,18 @@ next_default=5
 
 interactive=1
 speed=100
-[ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
+environment=$(hostname -s)
+local=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-l]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-e environment] [-l]"
     echo "  -I  non-interactive"
     echo "  -s  slower: increase pauses by 25%"
     echo "  -f  faster: reduce pauses by 25%"
+    echo "  -e  environment  environment configuration (default: $environment)"
     echo "  -l  Use local mirror for Faststart script (uses local yum repos)"
 }
 
@@ -130,11 +121,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfl? arg; do
+while getopts Isfe:l? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    e)  environment="$OPTARG";;
     l)  local=1;;
     ?)  usage
         exit 1;;
@@ -146,10 +138,19 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_clc = n ]; then
-    echo "This script should only be run on the Cloud Controller host"
-    exit 10
+if [[ $environment =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    envfile=$confdir/$environment.txt
+
+    if [ ! -r $envfile ]; then
+        echo "-e $environment invalid: can't find conf file: $envfile"
+        exit 5
+    fi
+else
+    echo "-e $environment illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
 fi
+
+source $envfile
 
 if [ $local = 1 ]; then
     faststart_url=$internal_faststart_url
@@ -177,8 +178,8 @@ echo "      What's the IP address of this host?                      <enter>"
 echo "      What's the gateway for this host?                        <enter>"
 echo "      What's the netmask for this host?                        <enter>"
 echo "      What's the subnet for this host?                         <enter>"
-echo "      What's the first address of your available IP range?     ${EUCA_VNET_PUBLICIPS%-*}"
-echo "      What's the last address of your available IP range?      ${EUCA_VNET_PUBLICIPS#*-}"
+echo "      What's the first address of your available IP range?     ${EUCA_PUBLIC_IP_RANGE%-*}"
+echo "      What's the last address of your available IP range?      ${EUCA_PUBLIC_IP_RANGE#*-}"
 echo "      Install additional services? [Y/n]                       <enter>"
 echo
 echo "================================================================================"

@@ -1,0 +1,17 @@
+#
+# This file is for the MCrawford FastStart 2 Environment
+#
+# This environment consists of the following hosts:
+# - odc-f-33: CLC, UFS, MC, CC, SC, OSP, NC1
+#
+## Change these environment variables to match your host ####################
+
+export AWS_DEFAULT_REGION=hp-gol01-f2
+export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
+
+export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
+export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+export EUCA_DNS_PARENT_HOST=ns1.$AWS_DEFAULT_DOMAIN
+export EUCA_DNS_PARENT_IP=10.104.10.80
+
+export EUCA_PUBLIC_IP_RANGE=10.104.45.129-10.104.45.254

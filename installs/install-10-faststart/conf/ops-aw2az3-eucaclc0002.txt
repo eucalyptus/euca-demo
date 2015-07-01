@@ -1,0 +1,17 @@
+#
+# This file is for the AW2 HP Discover Demo FastStart 2 Environment
+#
+# This environment consists of the following hosts:
+# - ops-aw2az3-eucaclc0002: CLC, UFS, MC, CC, SC, OSP, NC1
+#
+## Change these environment variables to match your host ####################
+
+export AWS_DEFAULT_REGION=hp-aw2-2
+export AWS_DEFAULT_DOMAIN=hpcloudsvc.com
+
+export EUCA_DNS_INSTANCE_SUBDOMAIN=.eucalyptus
+export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+export EUCA_DNS_PARENT_HOST=ops-aw2-dns-vip.uswest.hpcloud.net
+export EUCA_DNS_PARENT_IP=15.185.9.24
+
+export EUCA_PUBLIC_IP_RANGE=15.185.206.128-15.185.206.191

@@ -1,13 +1,20 @@
-# Setup PRC Host
+# Setup PRC Host for User
 
 Quick instructions to setup a PRC host to easily run these demos.
 
-### Initialize New Host
+These instructions have been slightly modified to run an additional script specific
+to each user, which contains user-specific configuration including ssh keys and
+per-user configuration files which allow code changes to this project to be pushed
+back to GitHub.com. The instructions below assume each user has created a script
+outside of this repository located on an internal mirror due to the sensitive
+nature of this additional information.
+
+### Initialize New Host with User-Specific Configuration
 
 Within this project, the script ./installs/install-00-initialize/bin/install-00-initialize-host-root.sh
 has been created to setup a new host, but a "chicken-and-egg problem" exists, where
-we need to use another method of getting this script onto the host in question
-before it can be run.
+we need to use another method of getting this script onto the host in question 
+before it can be run. 
 
 Here is one way, after logging in as root on a PRC host which has just been
 kickstarted with the qa-centos6-x86_64-striped-drives profile:
@@ -16,8 +23,10 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
 mkdir ~/bin
 cd ~/bin
 wget https://github.com/eucalyptus/euca-demo/blob/master/installs/install-00-initialize/bin/install-00-initialize-host-root.sh
+curl -k https://mirror.mjc.prc.eucalyptus-systems.com/software/mjchp/euca-demo/installs/install-00-initialize/bin/install-01-initialize-host-$USER.sh > install-00-initialize/bin/install-01-initialize-host-$USER.sh
 chmod -R 0700 ~/bin
 ./install-00-initialize-host-root.sh
+./install-01-initialize-host-$USER.sh
 exit
 ```
     
