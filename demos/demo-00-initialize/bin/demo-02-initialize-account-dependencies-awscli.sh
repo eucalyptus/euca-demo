@@ -45,7 +45,7 @@
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-policiesdir=${bindir%/*}
+policiesdir=${bindir%/*}/policies
 topdir=${bindir%/*/*/*}
 keysdir=$topdir/keys
 tmpdir=/var/tmp

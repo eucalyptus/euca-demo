@@ -45,7 +45,7 @@
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-policiesdir=${bindir%/*}
+policiesdir=${bindir%/*}/policies
 topdir=${bindir%/*/*/*}
 keysdir=$topdir/keys
 tmpdir=/var/tmp
@@ -550,7 +550,6 @@ else
         echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
-        pause
 
         next
     fi
