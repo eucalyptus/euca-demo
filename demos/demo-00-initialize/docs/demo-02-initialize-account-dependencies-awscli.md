@@ -105,339 +105,7 @@ before you can run this procedure.
                             --public-key-material file://~/.ssh/demo_id_rsa.pub
     ```
 
-4. Create Demo (demo) Account Demo (demo) User
-
-    ```bash
-    aws iam create-user --user-name demo
-    ```
-
-5. Create Demo (demo) Account Demo (demo) User Login Profile
-
-    This allows the Demo Account Demo User to login to the console
-
-    ```bash
-    aws iam create-login-profile --user-name demo --password demo123-demo
-    ```
-
-6. Create Demo (demo) Account Demo (demo) User Access Key
-
-    This allows the Demo Account Demo User to run API commands
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/demo
-
-    result=$(aws iam create-access-key --user-name demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
-    read access_key secret_key <<< $result
-
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-    ```
-
-7. Create Demo (demo) Account Demo (demo) User Tools Profile
-
-    This allows the Demo Account Demo User to run API commands via Euca2ools
-
-    ```bash
-    echo "[user demo-demo]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
-
-    ```bash
-    echo "[user demo-demo]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
-    ```
-
-8. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
-
-    This allows the Demo Account Demo User to run AWSCLI commands
-
-    ```bash
-    region=$AWS_DEFAULT_REGION
-
-    echo "[profile $region-demo-demo]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
-
-    echo "[$region-demo-demo]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
-    ```
-
-9. Create Demo (demo) Account Developer (developer) User
-
-    ```bash
-    aws iam create-user --user-name developer
-    ```
-
-10. Create Demo (demo) Account Developer (developer) User Login Profile
-
-    This allows the Demo Account Developer User to login to the console
-
-    ```bash
-    aws iam create-login-profile --user-name developer --password demo123-developer
-    ```
-
-11. Create Demo (demo) Account Developer (developer) User Access Key
-
-    This allows the Demo Account Developer User to run API commands
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/developer
-
-    result=$(aws iam create-access-key --user-name developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
-    read access_key secret_key <<< "$result"
-
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-    ```
-
-12. Create Demo (demo) Account Developer (developer) User Tools Profile
-
-    This allows the Demo Account Developer User to run API commands via Euca2ools
-
-    ```bash
-    echo "[user demo-developer]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
-
-    ```bash
-    echo "[user demo-developer]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
-    ```
-
-13. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
-
-    This allows the Demo Account Developer User to run AWSCLI commands
-
-    ```bash
-    region=$AWS_DEFAULT_REGION
-
-    echo "[profile $region-demo-developer]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
-
-    echo "[$region-demo-developer]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
-    ```
-
-14. Create Demo (demo) Account User (user) User
-
-    ```bash
-    aws iam create-user --user-name user
-    ```
-
-15. Create Demo (demo) Account User (user) User Login Profile
-
-    This allows the Demo Account User User to login to the console
-
-    ```bash
-    aws iam create-login-profile --user-name user --password demo123-user
-    ```
-
-16. Create Demo (demo) Account User (user) User Access Key
-
-    This allows the Demo Account User User to run API commands
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/user
-
-    result=$(aws iam create-access-key --user-name user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
-    read access_key secret_key <<< "$result"
-
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-    ```
-
-17. Create Demo (demo) Account User (user) User Tools Profile
-
-    This allows the Demo Account User User to run API commands via Euca2ools
-
-    ```bash
-    echo "[user demo-user]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
-
-    ```bash
-    echo "[user demo-user]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
-    ```
-
-18. Create Demo (demo) Account User (user) User AWSCLI Profile
-
-    This allows the Demo Account Demo User to run AWSCLI commands
-
-    ```bash
-    region=$AWS_DEFAULT_REGION
-
-    echo "[profile $region-demo-user]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
-
-    echo "[$region-demo-user]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
-    ```
-
-19. Create Demo (demo) Account Demos (Demos) Group
-
-    This Group is intended for Demos which have Administrator access to Resources.
-
-    ```bash
-    aws iam create-group --group-name Demos
-    ```
-
-20. Create Demo (demo) Account Demos (Demos) Group Policy
-
-    This Policy provides full access to all resources, except users and groups.
-
-    ```bash
-    mkdir -p /var/tmp/demo
-
-    cat << EOF >> /var/tmp/demo/DemosGroupPolicy.json
-    {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "NotAction": "iam:*",
-          "Resource": "*",
-          "Effect": "Allow"
-        }
-      ]
-    }
-    EOF
-
-    aws iam put-group-policy --group-name Demos --policy-name DemosPolicy \
-                             --policy-document file:///var/tmp/demo/DemosGroupPolicy.json
-    ```
-
-21. Add Demo (demo) Account Demos (Demos) Group members
-
-    ```bash
-    aws iam add-user-to-group --group-name Demos --user-name demo
-    ```
-
-22. Create Demo (demo) Account Developers (Developers) Group
-
-    This Group is intended for Developers who can modify Resources.
-
-    ```bash
-    aws iam create-group --group-name Developers
-    ```
-
-23. Create Demo (demo) Account Developers (Developers) Group Policy
-
-    This Policy provides full access to all resources, except users and groups.
-
-    ```bash
-    cat << EOF >> /var/tmp/demo/DevelopersGroupPolicy.json
-    {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "NotAction": "iam:*",
-          "Resource": "*",
-          "Effect": "Allow"
-        }
-      ]
-    }
-    EOF
-
-    aws iam put-group-policy --group-name Developers --policy-name DevelopersPolicy \
-                             --policy-document file:///var/tmp/demo/DevelopersGroupPolicy.json
-    ```
-
-24. Add Demo (demo) Account Developers (Developers) Group members
-
-    ```bash
-    aws iam add-user-to-group --group-name Developers --user-name developer
-    ```
-
-25. Create Demo (demo) Account Users (Users) Group
-
-    This Group is intended for Users who can view but not modify Resources.
-
-    ```bash
-    aws iam create-group --group-name Users
-    ```
-
-26. Create Demo (demo) Account Users (Users) Group Policy
-
-    This Policy provides ReadOnly access to all resources
-
-    ```bash
-    cat << EOF >> /var/tmp/demo/UsersGroupPolicy.json
-    {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "Action": [
-            "autoscaling:Describe*",
-            "cloudformation:DescribeStackEvents",
-            "cloudformation:DescribeStackResource",
-            "cloudformation:DescribeStackResources",
-            "cloudformation:DescribeStacks",
-            "cloudformation:GetTemplate",
-            "cloudformation:List*",
-            "cloudwatch:Describe*",
-            "cloudwatch:Get*",
-            "cloudwatch:List*",
-            "ec2:Describe*",
-            "ec2:GetConsoleOutput",
-            "elasticloadbalancing:Describe*",
-            "iam:GenerateCredentialReport",
-            "iam:Get*",
-            "iam:List*",
-            "s3:Get*",
-            "s3:List*",
-            "swf:Count*",
-            "swf:Describe*",
-            "swf:Get*",
-            "swf:List*",
-            "tag:Get*"
-          ],
-          "Effect": "Allow",
-          "Resource": "*"
-        }
-      ]
-    }
-    EOF
-
-    aws iam put-group-policy --group-name Users --policy-name UsersPolicy \
-                             --policy-document file:///var/tmp/demo/UsersGroupPolicy.json
-    ```
-
-27. Add Demo (demo) Account Users (Users) Group members
-
-    ```bash
-    aws iam add-user-to-group --group-name Users --user-name user
-    ```
-
-28. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
+4. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
 
     This Role is intended for Demos which need Administrator access to Resources.
 
@@ -463,7 +131,7 @@ before you can run this procedure.
     aws iam add-role-to-instance-profile --instance-profile-name Demos --role-name Demos
     ```
 
-29. Create Demo (demo) Account Demos (Demos) Role Policy
+5. Create Demo (demo) Account Demos (Demos) Role Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -519,6 +187,338 @@ before you can run this procedure.
                             --policy-document file:///var/tmp/demo/DemosRolePolicy.json
     ```
 
+6. Create Demo (demo) Account Demos (Demos) Group
+
+    This Group is intended for Demos which have Administrator access to Resources.
+
+    ```bash
+    aws iam create-group --group-name Demos
+    ```
+
+7. Create Demo (demo) Account Demos (Demos) Group Policy
+
+    This Policy provides full access to all resources, except users and groups.
+
+    ```bash
+    mkdir -p /var/tmp/demo
+
+    cat << EOF >> /var/tmp/demo/DemosGroupPolicy.json
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "NotAction": "iam:*",
+          "Resource": "*",
+          "Effect": "Allow"
+        }
+      ]
+    }
+    EOF
+
+    aws iam put-group-policy --group-name Demos --policy-name DemosPolicy \
+                             --policy-document file:///var/tmp/demo/DemosGroupPolicy.json
+    ```
+
+8. Create Demo (demo) Account Developers (Developers) Group
+
+    This Group is intended for Developers who can modify Resources.
+
+    ```bash
+    aws iam create-group --group-name Developers
+    ```
+
+9. Create Demo (demo) Account Developers (Developers) Group Policy
+
+    This Policy provides full access to all resources, except users and groups.
+
+    ```bash
+    cat << EOF >> /var/tmp/demo/DevelopersGroupPolicy.json
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "NotAction": "iam:*",
+          "Resource": "*",
+          "Effect": "Allow"
+        }
+      ]
+    }
+    EOF
+
+    aws iam put-group-policy --group-name Developers --policy-name DevelopersPolicy \
+                             --policy-document file:///var/tmp/demo/DevelopersGroupPolicy.json
+    ```
+
+10. Create Demo (demo) Account Users (Users) Group
+
+    This Group is intended for Users who can view but not modify Resources.
+
+    ```bash
+    aws iam create-group --group-name Users
+    ```
+
+11. Create Demo (demo) Account Users (Users) Group Policy
+
+    This Policy provides ReadOnly access to all resources
+
+    ```bash
+    cat << EOF >> /var/tmp/demo/UsersGroupPolicy.json
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "autoscaling:Describe*",
+            "cloudformation:DescribeStackEvents",
+            "cloudformation:DescribeStackResource",
+            "cloudformation:DescribeStackResources",
+            "cloudformation:DescribeStacks",
+            "cloudformation:GetTemplate",
+            "cloudformation:List*",
+            "cloudwatch:Describe*",
+            "cloudwatch:Get*",
+            "cloudwatch:List*",
+            "ec2:Describe*",
+            "ec2:GetConsoleOutput",
+            "elasticloadbalancing:Describe*",
+            "iam:GenerateCredentialReport",
+            "iam:Get*",
+            "iam:List*",
+            "s3:Get*",
+            "s3:List*",
+            "swf:Count*",
+            "swf:Describe*",
+            "swf:Get*",
+            "swf:List*",
+            "tag:Get*"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+        }
+      ]
+    }
+    EOF
+
+    aws iam put-group-policy --group-name Users --policy-name UsersPolicy \
+                             --policy-document file:///var/tmp/demo/UsersGroupPolicy.json
+    ```
+
+12. Create Demo (demo) Account Demo (demo) User
+
+    ```bash
+    aws iam create-user --user-name demo
+    ```
+
+13. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
+
+    ```bash
+    aws iam add-user-to-group --group-name Demos --user-name demo
+    ```
+
+14. Create Demo (demo) Account Demo (demo) User Login Profile
+
+    This allows the Demo Account Demo User to login to the console
+
+    ```bash
+    aws iam create-login-profile --user-name demo --password demo123-demo
+    ```
+
+15. Create Demo (demo) Account Demo (demo) User Access Key
+
+    This allows the Demo Account Demo User to run API commands
+
+    ```bash
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/demo
+
+    result=$(aws iam create-access-key --user-name demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< $result
+
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    ```
+
+16. Create Demo (demo) Account Demo (demo) User Tools Profile
+
+    This allows the Demo Account Demo User to run API commands via Euca2ools
+
+    ```bash
+    echo "[user demo-demo]" >> ~/.euca/euca2ools.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
+    echo >> ~/.euca/euca2ools.ini
+    ```
+
+    ```bash
+    echo "[user demo-demo]" >> ~/.euca/euca2ools-ssl.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
+    echo >> ~/.euca/euca2ools-ssl.ini
+    ```
+
+17. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
+
+    This allows the Demo Account Demo User to run AWSCLI commands
+
+    ```bash
+    region=$AWS_DEFAULT_REGION
+
+    echo "[profile $region-demo-demo]" >> ~/.aws/config
+    echo "region = $region" >> ~/.aws/config
+    echo "output = text" >> ~/.aws/config
+    echo >> ~/.aws/config
+
+    echo "[$region-demo-demo]" >> ~/.aws/credentials
+    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+    echo >> ~/.aws/credentials
+    ```
+
+18. Create Demo (demo) Account Developer (developer) User
+
+    ```bash
+    aws iam create-user --user-name developer
+    ```
+
+19. Add Demo (demo) Account Developer (developer) User to Developers (Developers) Group
+
+    ```bash
+    aws iam add-user-to-group --group-name Developers --user-name developer
+    ```
+
+20. Create Demo (demo) Account Developer (developer) User Login Profile
+
+    This allows the Demo Account Developer User to login to the console
+
+    ```bash
+    aws iam create-login-profile --user-name developer --password demo123-developer
+    ```
+
+21. Create Demo (demo) Account Developer (developer) User Access Key
+
+    This allows the Demo Account Developer User to run API commands
+
+    ```bash
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/developer
+
+    result=$(aws iam create-access-key --user-name developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< "$result"
+
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    ```
+
+22. Create Demo (demo) Account Developer (developer) User Tools Profile
+
+    This allows the Demo Account Developer User to run API commands via Euca2ools
+
+    ```bash
+    echo "[user demo-developer]" >> ~/.euca/euca2ools.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
+    echo >> ~/.euca/euca2ools.ini
+    ```
+
+    ```bash
+    echo "[user demo-developer]" >> ~/.euca/euca2ools-ssl.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
+    echo >> ~/.euca/euca2ools-ssl.ini
+    ```
+
+23. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
+
+    This allows the Demo Account Developer User to run AWSCLI commands
+
+    ```bash
+    region=$AWS_DEFAULT_REGION
+
+    echo "[profile $region-demo-developer]" >> ~/.aws/config
+    echo "region = $region" >> ~/.aws/config
+    echo "output = text" >> ~/.aws/config
+    echo >> ~/.aws/config
+
+    echo "[$region-demo-developer]" >> ~/.aws/credentials
+    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+    echo >> ~/.aws/credentials
+    ```
+
+24. Create Demo (demo) Account User (user) User
+
+    ```bash
+    aws iam create-user --user-name user
+    ```
+
+25. Add Demo (demo) Account User (user) User to Users (Users) Group
+
+    ```bash
+    aws iam add-user-to-group --group-name Users --user-name user
+    ```
+
+26. Create Demo (demo) Account User (user) User Login Profile
+
+    This allows the Demo Account User User to login to the console
+
+    ```bash
+    aws iam create-login-profile --user-name user --password demo123-user
+    ```
+
+27. Create Demo (demo) Account User (user) User Access Key
+
+    This allows the Demo Account User User to run API commands
+
+    ```bash
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/user
+
+    result=$(aws iam create-access-key --user-name user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
+    read access_key secret_key <<< "$result"
+
+    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    ```
+
+28. Create Demo (demo) Account User (user) User Tools Profile
+
+    This allows the Demo Account User User to run API commands via Euca2ools
+
+    ```bash
+    echo "[user demo-user]" >> ~/.euca/euca2ools.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
+    echo >> ~/.euca/euca2ools.ini
+    ```
+
+    ```bash
+    echo "[user demo-user]" >> ~/.euca/euca2ools-ssl.ini
+    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
+    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
+    echo >> ~/.euca/euca2ools-ssl.ini
+    ```
+
+29. Create Demo (demo) Account User (user) User AWSCLI Profile
+
+    This allows the Demo Account Demo User to run AWSCLI commands
+
+    ```bash
+    region=$AWS_DEFAULT_REGION
+
+    echo "[profile $region-demo-user]" >> ~/.aws/config
+    echo "region = $region" >> ~/.aws/config
+    echo "output = text" >> ~/.aws/config
+    echo >> ~/.aws/config
+
+    echo "[$region-demo-user]" >> ~/.aws/credentials
+    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+    echo >> ~/.aws/credentials
+    ```
+
 30. List Demo Resources
 
     ```bash
@@ -526,19 +526,32 @@ before you can run this procedure.
 
     aws ec2 describe-key-pairs
 
-    aws iam list-users
-
-    aws iam list-groups
-    aws iam get-group --group-name Demos
-    aws iam get-group --group-name Developers
-    aws iam get-group --group-name Users
-
     aws iam list-roles
     aws iam list-instance-profiles
     aws iam get-instance-profile --instance-profile-name Demos
+
+    aws iam list-groups
+
+    aws iam list-users
+
+    aws iam get-group --group-name Demos
+    aws iam get-group --group-name Developers
+    aws iam get-group --group-name Users
     ```
 
-31. List Tools Configuration
+31. Display Eucalyptus CLI Configuration
+
+    ```bash
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc"
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc"
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc"
+
+    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc"
+    ```
+
+32. Display Euca2ools Configuration
 
     ```bash
     cat ~/.euca/euca2ools.ini
@@ -546,7 +559,7 @@ before you can run this procedure.
     cat ~/.euca/euca2ools-ssl.ini
     ```
 
-32. List Tools Configuration
+33. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config
