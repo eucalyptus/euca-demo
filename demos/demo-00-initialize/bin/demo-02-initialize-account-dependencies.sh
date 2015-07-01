@@ -400,10 +400,8 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo"
 echo
 echo "euare-useraddkey -u $user_demo"
 echo
-echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
-echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc ]; then
     echo
@@ -431,10 +429,6 @@ else
         echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
-        pause
-
-        echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
-        cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
 
         next
     fi
@@ -462,10 +456,6 @@ echo "echo \"[user $account-$user_demo]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
 echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
-echo
-echo "more ~/.euca/euca2ools.ini"
-echo
-echo "euca-describe-availability-zones verbose --region $account-$user_demo@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -495,14 +485,6 @@ else
         echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
         echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
-        pause
-
-        echo "# more ~/.euca/euca2ools.ini"
-        more ~/.euca/euca2ools.ini
-        pause
-
-        echo "# euca-describe-availability-zones verbose --region $account-$user_demo@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones verbose --region $account-$user_demo@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -530,16 +512,10 @@ echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
 echo "echo \"output = text\" >> ~/.aws/config"
 echo "echo >> ~/.aws/config"
 echo
-echo "more ~/.aws/config"
-echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
 echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
 echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
-echo
-echo "more ~/.aws/credentials"
-echo
-echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_demo"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_demo]" ~/.aws/config; then
     echo
@@ -566,10 +542,6 @@ else
         echo >> ~/.aws/config
         pause
 
-        echo "# more ~/.aws/config"
-        more ~/.aws/config
-        pause
-
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
         echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
         echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
@@ -579,13 +551,6 @@ else
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
         pause
-
-        echo "more ~/.aws/credentials"
-        more ~/.aws/credentials
-        pause
-
-        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_demo"
-        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_demo
 
         next
     fi
@@ -677,10 +642,8 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer"
 echo
 echo "euare-useraddkey -u $user_developer"
 echo
-echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
-echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc ]; then
     echo
@@ -708,10 +671,6 @@ else
         echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
-        pause
-
-        echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
-        cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
 
         next
     fi
@@ -739,10 +698,6 @@ echo "echo \"[user $account-$user_developer]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
 echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
-echo
-echo "more ~/.euca/euca2ools.ini"
-echo
-echo "euca-describe-availability-zones verbose --region $account-$user_developer@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -772,14 +727,6 @@ else
         echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
         echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
-        pause
-
-        echo "# more ~/.euca/euca2ools.ini"
-        more ~/.euca/euca2ools.ini
-        pause
-
-        echo "# euca-describe-availability-zones verbose --region $account-$user_developer@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones verbose --region $account-$user_developer@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -807,16 +754,10 @@ echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
 echo "echo \"output = text\" >> ~/.aws/config"
 echo "echo >> ~/.aws/config"
 echo
-echo "more ~/.aws/config"
-echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
 echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
 echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
-echo
-echo "more ~/.aws/credentials"
-echo
-echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_developer"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_developer]" ~/.aws/config; then
     echo
@@ -843,10 +784,6 @@ else
         echo >> ~/.aws/config
         pause
 
-        echo "# more ~/.aws/config"
-        more ~/.aws/config
-        pause
-
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
         echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
         echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
@@ -855,14 +792,6 @@ else
         echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
-        pause
-
-        echo "more ~/.aws/credentials"
-        more ~/.aws/credentials
-        pause
-
-        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_developer"
-        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_developer
 
         next
     fi
@@ -953,10 +882,8 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user"
 echo
 echo "euare-useraddkey -u $user_user"
 echo
-echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
-echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc ]; then
     echo
@@ -984,10 +911,6 @@ else
         echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
-        pause
-
-        echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
-        cat ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
 
         next
     fi
@@ -1015,10 +938,6 @@ echo "echo \"[user $account-$user_user]\" >> ~/.euca/euca2ools.ini"
 echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
 echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
 echo "echo >> ~/.euca/euca2ools.ini"
-echo
-echo "more ~/.euca/euca2ools.ini"
-echo
-echo "euca-describe-availability-zones verbose --region $account-$user_user@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1048,14 +967,6 @@ else
         echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
         echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
         echo >> ~/.euca/euca2ools-ssl.ini
-        pause
-
-        echo "# more ~/.euca/euca2ools.ini"
-        more ~/.euca/euca2ools.ini
-        pause
-
-        echo "# euca-describe-availability-zones verbose --region $account-$user_user@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones verbose --region $account-$user_user@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -1083,16 +994,10 @@ echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
 echo "echo \"output = text\" >> ~/.aws/config"
 echo "echo >> ~/.aws/config"
 echo
-echo "more ~/.aws/config"
-echo
 echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
 echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
 echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
 echo "echo >> ~/.aws/credentials"
-echo
-echo "more ~/.aws/credentials"
-echo
-echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_user"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_user]" ~/.aws/config; then
     echo
@@ -1119,10 +1024,6 @@ else
         echo >> ~/.aws/config
         pause
 
-        echo "# more ~/.aws/config"
-        more ~/.aws/config
-        pause
-
         echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
         echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
         echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
@@ -1131,14 +1032,6 @@ else
         echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo >> ~/.aws/credentials
-        pause
-
-        echo "more ~/.aws/credentials"
-        more ~/.aws/credentials
-        pause
-
-        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_user"
-        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-$user_user
 
         next
     fi
@@ -1664,6 +1557,48 @@ if [ $choice = y ]; then
     echo "#"
     echo "# euare-instanceprofilelistforrole -r $role_demos"
     euare-instanceprofilelistforrole -r $role_demos
+
+    next 200
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display Eucalyptus CLI Configuration"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+echo
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc"
+echo
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc"
+echo
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+    cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+    pause
+
+    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc"
+    cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc
+    pause
+
+    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc"
+    cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc
+    pause
+
+    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc"
+    cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc
 
     next 200
 fi
