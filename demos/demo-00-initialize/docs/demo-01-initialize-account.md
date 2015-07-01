@@ -112,6 +112,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
     echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
     echo >> ~/.aws/credentials
+    ```
 
 7. Authorize Demo (demo) Account use of Demo Generic Image
 
