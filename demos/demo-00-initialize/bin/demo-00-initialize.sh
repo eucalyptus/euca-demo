@@ -22,8 +22,7 @@
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-topdir=${bindir%/*/*/*}
-keysdir=$topdir/keys
+keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 external_mirror=cloud.centos.org

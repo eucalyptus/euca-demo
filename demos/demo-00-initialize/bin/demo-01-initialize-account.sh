@@ -21,8 +21,7 @@
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-topdir=${bindir%/*/*/*}
-keysdir=$topdir/keys
+keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 generic_image=CentOS-6-x86_64-GenericCloud

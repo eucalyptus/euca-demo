@@ -230,7 +230,6 @@ if [ $choice = y ]; then
 
     next 50
 fi
-fi
 
 
 ((++step))
@@ -339,6 +338,32 @@ if [ $choice = y ]; then
     echo "#"
     echo "# euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
     euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure CloudFormation Region"
+echo "    - Technically, this is not purely related to DNS and doesn't belong here"
+echo "    - But, we need to make sure this is run, and this is somewhat related to DNS"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION"
+    euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION
 
     next 50
 fi

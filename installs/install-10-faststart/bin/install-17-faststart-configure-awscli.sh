@@ -762,6 +762,10 @@ echo
 echo "[default]"
 echo "region = $AWS_DEFAULT_REGION"
 echo "output = text"
+echo
+echo "[profile $AWS_DEFAULT_REGION-admin]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo "EOF"
 echo
 echo "cat << EOF > ~/.aws/credentials"
@@ -770,6 +774,10 @@ echo "# AWS Credentials file"
 echo "#"
 echo
 echo "[default]"
+echo "aws_access_key_id = $AWS_ACCESS_KEY"
+echo "aws_secret_access_key = $AWS_SECRET_KEY"
+echo
+echo "[$AWS_DEFAULT_REGION-admin]"
 echo "aws_access_key_id = $AWS_ACCESS_KEY"
 echo "aws_secret_access_key = $AWS_SECRET_KEY"
 echo "EOF"
@@ -792,15 +800,24 @@ if [ $choice = y ]; then
     echo "> [default]"
     echo "> region = $AWS_DEFAULT_REGION"
     echo "> output = text"
+    echo ">"
+    echo "> [profile-$AWS_DEFAULT_REGION-admin]"
+    echo "> region = $AWS_DEFAULT_REGION"
+    echo "> output = text"
     echo "> EOF"
     # Use echo instead of cat << EOF to better show indentation
-    echo "#"                             > ~/.aws/config
-    echo "# AWS Config file"            >> ~/.aws/config
-    echo "#"                            >> ~/.aws/config
-    echo                                >> ~/.aws/config
-    echo "[default]"                    >> ~/.aws/config
-    echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-    echo "output = text"                >> ~/.aws/config
+    echo "#"                                    > ~/.aws/config
+    echo "# AWS Config file"                   >> ~/.aws/config
+    echo "#"                                   >> ~/.aws/config
+    echo                                       >> ~/.aws/config
+    echo "[default]"                           >> ~/.aws/config
+    echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
+    echo "output = text"                       >> ~/.aws/config
+    echo                                       >> ~/.aws/config
+    echo "[profile $AWS_DEFAULT_REGION-admin]" >> ~/.aws/config
+    echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
+    echo "output = text"                       >> ~/.aws/config
+    echo                                       >> ~/.aws/config
     pause
 
     echo "# cat << EOF > ~/.aws/credentials"
@@ -809,6 +826,10 @@ if [ $choice = y ]; then
     echo "> #"
     echo ">"
     echo "> [default]"
+    echo "> aws_access_key_id = $AWS_ACCESS_KEY"
+    echo "> aws_secret_access_key = $AWS_SECRET_KEY"
+    echo ">"
+    echo "> [$AWS_DEFAULT_REGION-admin]"
     echo "> aws_access_key_id = $AWS_ACCESS_KEY"
     echo "> aws_secret_access_key = $AWS_SECRET_KEY"
     echo "> EOF"
@@ -820,6 +841,11 @@ if [ $choice = y ]; then
     echo "[default]"                               >> ~/.aws/credentials
     echo "aws_access_key_id = $AWS_ACCESS_KEY"     >> ~/.aws/credentials
     echo "aws_secret_access_key = $AWS_SECRET_KEY" >> ~/.aws/credentials
+    echo                                           >> ~/.aws/credentials
+    echo "[$AWS_DEFAULT_REGION-admin]"             >> ~/.aws/credentials
+    echo "aws_access_key_id = $AWS_ACCESS_KEY"     >> ~/.aws/credentials
+    echo "aws_secret_access_key = $AWS_SECRET_KEY" >> ~/.aws/credentials
+    echo                                           >> ~/.aws/credentials
     pause
 
     echo "# chmod -R og-rwx ~/.aws"

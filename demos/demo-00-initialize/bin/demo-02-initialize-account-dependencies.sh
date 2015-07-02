@@ -48,8 +48,7 @@
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 policiesdir=${bindir%/*}/policies
-topdir=${bindir%/*/*/*}
-keysdir=$topdir/keys
+keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 user_demo=demo

@@ -10,8 +10,7 @@
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-topdir=${bindir%/*/*/*}
-certsdir=$topdir/certs
+certsdir=${bindir%/*/*/*}/certs
 tmpdir=/var/tmp
 
 date=$(date +%Y%m%d-%H%M)

@@ -9,6 +9,7 @@
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
+keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 step=0
@@ -216,7 +217,7 @@ echo "Commands:"
 echo
 if [ "$unique" = 1 ]; then
     echo "euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
-    echo "ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub
+    echo "ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub"
     echo
     echo "chmod 0600 ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
     echo
@@ -256,7 +257,7 @@ else
         if [ "$unique" = 1 ]; then
             echo "# euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
             euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa
-            echo "# ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub
+            echo "# ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub"
             ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub
             echo "#"
             echo "# chmod 0600 ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
