@@ -15,9 +15,13 @@ kickstarted with the qa-centos6-x86_64-striped-drives profile:
 ```bash
 mkdir ~/bin
 cd ~/bin
+
 wget https://github.com/eucalyptus/euca-demo/blob/master/installs/install-00-initialize/bin/install-00-initialize-host-root.sh
+
 chmod -R 0700 ~/bin
+
 ./install-00-initialize-host-root.sh
+
 exit
 ```
     

@@ -20,13 +20,19 @@ Here is one way, after logging in as root on a PRC host which has just been
 kickstarted with the qa-centos6-x86_64-striped-drives profile:
 
 ```bash
+user="<set to your username>"
+
 mkdir ~/bin
 cd ~/bin
+
 wget https://github.com/eucalyptus/euca-demo/blob/master/installs/install-00-initialize/bin/install-00-initialize-host-root.sh
-curl -k https://mirror.mjc.prc.eucalyptus-systems.com/software/mjchp/euca-demo/installs/install-00-initialize/bin/install-01-initialize-host-$USER.sh > install-00-initialize/bin/install-01-initialize-host-$USER.sh
+curl -k https://mirror.mjc.prc.eucalyptus-systems.com/software/mjchp/euca-demo/installs/install-00-initialize/bin/install-01-initialize-host-$user.sh > install-00-initialize/bin/install-01-initialize-host-$user.sh
+
 chmod -R 0700 ~/bin
+
 ./install-00-initialize-host-root.sh
-./install-01-initialize-host-$USER.sh
+./install-01-initialize-host-$user.sh
+
 exit
 ```
     
