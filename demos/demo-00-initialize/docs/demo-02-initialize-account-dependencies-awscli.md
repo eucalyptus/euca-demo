@@ -351,7 +351,7 @@ before you can run this procedure.
 
     EOF
 
-    euca-describe-availablity-zones --region=demo-demo@$AWS_DEFAULT_REGION
+    euca-describe-availability-zones --region=demo-demo@$AWS_DEFAULT_REGION
     ```
 
 17. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
@@ -424,7 +424,7 @@ before you can run this procedure.
 
     EOF
 
-    euca-describe-availablity-zones --region=demo-developer@$AWS_DEFAULT_REGION
+    euca-describe-availability-zones --region=demo-developer@$AWS_DEFAULT_REGION
     ```
 
 23. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
@@ -446,7 +446,7 @@ before you can run this procedure.
 
     EOF
 
-    aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-demo-developer
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-demo-developer
     ```
 
 24. Create Demo (demo) Account User (user) User
@@ -497,7 +497,7 @@ before you can run this procedure.
 
     EOF
 
-    euca-describe-availablity-zones --region=demo-user@$AWS_DEFAULT_REGION
+    euca-describe-availability-zones --region=demo-user@$AWS_DEFAULT_REGION
     ```
 
 29. Create Demo (demo) Account User (user) User AWSCLI Profile
@@ -519,7 +519,7 @@ before you can run this procedure.
 
     EOF
 
-    aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-demo-user
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-demo-user
     ```
 
 30. List Demo Resources

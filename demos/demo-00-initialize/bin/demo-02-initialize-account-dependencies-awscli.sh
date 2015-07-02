@@ -862,7 +862,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -892,8 +892,8 @@ else
         echo                              >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
-        euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
+        euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -930,7 +930,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
+echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_demo]" ~/.aws/config; then
     echo
@@ -973,8 +973,8 @@ else
         echo                                             >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
-        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo
+        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
+        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo
 
         next
     fi
@@ -1163,7 +1163,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1193,8 +1193,8 @@ else
         echo                                   >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
-        euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
+        euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -1231,7 +1231,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
+echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_developer]" ~/.aws/config; then
     echo
@@ -1274,8 +1274,8 @@ else
         echo                                                  >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
-        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer
+        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
+        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer
 
         next
     fi
@@ -1464,7 +1464,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1494,8 +1494,8 @@ else
         echo                              >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
-        euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
+        euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -1532,7 +1532,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
+echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_user]" ~/.aws/config; then
     echo
@@ -1575,8 +1575,8 @@ else
         echo                                             >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
-        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user
+        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
+        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user
 
         next
     fi
