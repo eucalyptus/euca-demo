@@ -10,26 +10,8 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-if nc -z $(hostname) 443 &> /dev/null; then
-    echo "A server program is running on port 443, which most often means the proxy script may have been run"
-    echo "This script is incompatible with the proxy on the same host - exiting"
-    exit 5
-fi
-
-[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y || is_mc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-certsdir=${bindir%/*}/certs
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 date=$(date +%Y%m%d-%H%M)
@@ -42,6 +24,7 @@ next_default=5
 
 interactive=1
 speed=100
+config=$(hostname -s)
 password=N0t5ecret
 cacerts_password=changeit
 export_password=N0t5ecret2
@@ -49,11 +32,12 @@ export_password=N0t5ecret2
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
-    echo "  -p  password password for PKCS#12 archive (default: $password)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-p password]"
+    echo "  -I           non-interactive"
+    echo "  -s           slower: increase pauses by 25%"
+    echo "  -f           faster: reduce pauses by 25%"
+    echo "  -c config    configuration (default: $config)"
+    echo "  -p password  password for PKCS#12 archive (default: $password)"
 }
 
 run() {
@@ -136,11 +120,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfp:? arg; do
+while getopts Isfc:p:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    c)  config="$OPTARG";;
     p)  password="$OPTARG";;
     ?)  usage
         exit 1;;
@@ -152,9 +137,42 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_mc = n ]; then
-    echo "This script should only be run on a Management Console host"
-    exit 20
+if nc -z $(hostname) 443 &> /dev/null; then
+    echo "A server program is running on port 443, which most often means the proxy script may have been run"
+    echo "This script is incompatible with the proxy on the same host - exiting"
+    exit 5
+fi
+
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
+
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
+        exit 5
+    fi
+else
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
+fi
+
+source $conffile
+
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
+    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+    sleep 2
+
+    if [ -r /root/admin.zip ]; then
+        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
+        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+        sleep 2
+    else
+        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
+        echo "Expected to find: /root/admin.zip"
+        exit 29
+    fi
 fi
 
 
@@ -176,8 +194,8 @@ echo
 echo "Commands:"
 echo
 echo "openssl pkcs12 -export -name ufs \\"
-echo "               -inkey /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key \\"
-echo "               -in /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt \\"
+echo "               -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \\"
+echo "               -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \\"
 echo "               -out /var/tmp/ufs.p12 \\"
 echo "               -password pass:$password"
 echo
@@ -197,13 +215,13 @@ else
     if [ $choice = y ]; then
         echo
         echo "# openssl pkcs12 -export -name ufs \\"
-        echo ">              -inkey /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key \\"
-        echo ">              -in /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt \\"
+        echo ">              -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \\"
+        echo ">              -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \\"
         echo ">              -out /var/tmp/ufs.p12 \\"
         echo ">              -password pass:$password"
         openssl pkcs12 -export -name ufs \
-                       -inkey /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key \
-                       -in /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt \
+                       -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
+                       -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \
                        -out /var/tmp/ufs.p12 \
                        -password pass:$password
         echo "#"

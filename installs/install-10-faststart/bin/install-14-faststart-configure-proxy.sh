@@ -7,20 +7,8 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y || is_mc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-certsdir=${bindir%/*}/certs
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
@@ -31,14 +19,17 @@ next_default=5
 
 interactive=1
 speed=100
+config=$(hostname -s)
+
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config]"
+    echo "  -I         non-interactive"
+    echo "  -s         slower: increase pauses by 25%"
+    echo "  -f         faster: reduce pauses by 25%"
+    echo "  -c config  configuration (default: $config)"
 }
 
 run() {
@@ -121,11 +112,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isf? arg; do
+while getopts Isfc:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    c)  config="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -136,9 +128,36 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_mc = n ]; then
-    echo "This script should only be run on a Management Console host"
-    exit 20
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
+
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
+        exit 5
+    fi
+else
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
+fi
+
+source $conffile
+
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
+    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+    sleep 2
+
+    if [ -r /root/admin.zip ]; then
+        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
+        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+        sleep 2
+    else
+        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
+        echo "Expected to find: /root/admin.zip"
+        exit 29
+    fi
 fi
 
 
@@ -162,7 +181,7 @@ if [ ! -f /etc/eucaconsole/console.ini.faststart ]; then
     echo "\cp /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.faststart"
     echo
 fi
-echo "sed -i -e \"/^clchost = localhost\$/s/localhost/$EUCA_UFS_PUBLIC_IP/\" \\"
+echo "sed -i -e \"/^clchost = localhost\$/s/localhost/$(hostname -i)/\" \\"
 echo "       -e \"/# since eucalyptus allows for different services to be located on different/d\" \\"
 echo "       -e \"/# physical hosts, you may override the above host and port for each service./d\" \\"
 echo "       -e \"/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d\" \\"
@@ -184,7 +203,7 @@ if [ $choice = y ]; then
         \cp /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.faststart
         echo "#"
     fi
-    echo "# sed -i -e \"/^clchost = localhost\$/s/localhost/$EUCA_UFS_PUBLIC_IP/\" \\"
+    echo "# sed -i -e \"/^clchost = localhost\$/s/localhost/$(hostname -i)/\" \\"
     echo "         -e \"/# since eucalyptus allows for different services to be located on different/d\" \\"
     echo "         -e \"/# physical hosts, you may override the above host and port for each service./d\" \\"
     echo "         -e \"/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d\" \\"
@@ -194,7 +213,7 @@ if [ $choice = y ]; then
     echo "         -e \"/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d\" \\"
     echo "         -e \"/# that won't work from client's browsers./d\" \\"
     echo "         -e \"/#s3.host=<your host IP or name>/d\" /etc/eucaconsole/console.ini"
-    sed -i -e "/^clchost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" \
+    sed -i -e "/^clchost = localhost$/s/localhost/$(hostname -i)/" \
            -e "/# since eucalyptus allows for different services to be located on different/d" \
            -e "/# physical hosts, you may override the above host and port for each service./d" \
            -e "/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d" \
@@ -220,7 +239,7 @@ echo "==========================================================================
 echo
 echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
 echo "    - When this step is complete, use browser to verify:"
-echo "      http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN:8888"
+echo "      http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8888"
 echo
 echo "================================================================================"
 echo
@@ -278,12 +297,13 @@ if [ $choice = y ]; then
     echo "> gpgcheck=0"
     echo "> enabled=1"
     echo "> EOF"
-    echo "[nginx]" > /etc/yum.repos.d/nginx.repo
-    echo "name=nginx repo" >> /etc/yum.repos.d/nginx.repo
+    # Use echo instead of cat << EOF to better show indentation
+    echo "[nginx]"                                                            > /etc/yum.repos.d/nginx.repo
+    echo "name=nginx repo"                                                   >> /etc/yum.repos.d/nginx.repo
     echo "baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/" >> /etc/yum.repos.d/nginx.repo
-    echo "priority=1" >> /etc/yum.repos.d/nginx.repo
-    echo "gpgcheck=0" >> /etc/yum.repos.d/nginx.repo
-    echo "enabled=1" >> /etc/yum.repos.d/nginx.repo
+    echo "priority=1"                                                        >> /etc/yum.repos.d/nginx.repo
+    echo "gpgcheck=0"                                                        >> /etc/yum.repos.d/nginx.repo
+    echo "enabled=1"                                                         >> /etc/yum.repos.d/nginx.repo
 
     next 50
 fi
@@ -491,6 +511,7 @@ if [ $choice = y ]; then
     echo "    server localhost:8888 max_fails=3 fail_timeout=30s;"
     echo "}"
     echo "EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "#"                                                        > /etc/nginx/conf.d/upstream.conf
     echo "# Upstream servers"                                      >> /etc/nginx/conf.d/upstream.conf
     echo "#"                                                       >> /etc/nginx/conf.d/upstream.conf
@@ -623,6 +644,7 @@ if [ $choice = y ]; then
     echo ">     }"
     echo "> }"
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "#"                                             > /etc/nginx/conf.d/default.conf
     echo "# Default server: http://$(hostname)"         >> /etc/nginx/conf.d/default.conf
     echo "#"                                            >> /etc/nginx/conf.d/default.conf
@@ -663,6 +685,7 @@ if [ $choice = y ]; then
     echo "# cat << EOF > /usr/share/nginx/html/index.html"
     echo "      ... too long to display ..."
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"  > /usr/share/nginx/html/index.html
     echo                                                                                                         >> /usr/share/nginx/html/index.html
     echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">"                                         >> /usr/share/nginx/html/index.html
@@ -771,6 +794,7 @@ if [ $choice = y ]; then
     echo "# cat << EOF > /usr/share/nginx/html/404.html"
     echo "      ... too long to display ..."
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"  > /usr/share/nginx/html/404.html
     echo                                                                                                         >> /usr/share/nginx/html/404.html
     echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">"                                         >> /usr/share/nginx/html/404.html
@@ -882,6 +906,7 @@ if [ $choice = y ]; then
     echo "# cat << EOF > /usr/share/nginx/html/50x.html"
     echo "      ... too long to display ..."
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"  > /usr/share/nginx/html/50x.html
     echo                                                                                                         >> /usr/share/nginx/html/50x.html
     echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">"                                         >> /usr/share/nginx/html/50x.html
@@ -1031,7 +1056,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+echo "cat << EOF > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
 echo "#"
 echo "# Eucalyptus User-Facing Services"
 echo "#"
@@ -1039,24 +1064,24 @@ echo
 echo "server {"
 echo "    listen       80  default_server;"
 echo "    listen       443 default_server ssl;"
-echo "    server_name  ec2.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  s3.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  iam.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  sts.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  monitoring.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  elasticloadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-echo "    server_name  swf.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN simpleworkflow.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+echo "    server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+echo "    server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
 echo
-echo "    access_log  /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"
-echo "    error_log   /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"
+echo "    access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"
+echo "    error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"
 echo
 echo "    charset  utf-8;"
 echo
 echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"
-echo "    ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"
-echo "    ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;"
+echo "    ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"
+echo "    ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"
 echo
 echo "    keepalive_timeout  70;"
 echo "    client_max_body_size 100M;"
@@ -1086,13 +1111,13 @@ echo "    }"
 echo "}"
 echo "EOF"
 echo 
-echo "chmod 644 /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+echo "chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat << EOF > /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+    echo "# cat << EOF > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
     echo "> #"
     echo "> # Eucalyptus User-Facing Services"
     echo "> #"
@@ -1100,24 +1125,24 @@ if [ $choice = y ]; then
     echo "> server {"
     echo ">     listen       80  default_server;"
     echo ">     listen       443 default_server ssl;"
-    echo ">     server_name  ec2.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  s3.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  iam.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  sts.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  monitoring.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  elasticloadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
-    echo ">     server_name  swf.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN simpleworkflow.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+    echo ">     server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
+    echo ">     server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
     echo ">"
-    echo ">     access_log  /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"
-    echo ">     error_log   /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"
+    echo ">     access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"
+    echo ">     error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"
     echo ">"
     echo ">     charset  utf-8;"
     echo ">"
     echo ">     ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"
-    echo ">     ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"
-    echo ">     ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;"
+    echo ">     ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"
+    echo ">     ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"
     echo ">"
     echo ">     keepalive_timeout  70;"
     echo ">     client_max_body_size 100M;"
@@ -1146,61 +1171,62 @@ if [ $choice = y ]; then
     echo ">     }"
     echo "> }"
     echo "> EOF"
-    echo "#"                                                                                                                                       > /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "# Eucalyptus User-Facing Services"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "#"                                                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "server {"                                                                                                                               >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    listen       80  default_server;"                                                                                                   >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    listen       443 default_server ssl;"                                                                                               >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  ec2.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                        >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  s3.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                   >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  iam.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  sts.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                         >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                                                                 >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                                                              >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  monitoring.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"              >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  elasticloadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;" >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  swf.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN simpleworkflow.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                 >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    access_log  /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"                                                >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    error_log   /var/log/nginx/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"                                                 >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    charset  utf-8;"                                                                                                                    >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                                                                                        >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"                                         >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;"                                       >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    keepalive_timeout  70;"                                                                                                             >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    client_max_body_size 100M;"                                                                                                         >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    client_body_buffer_size 128K;"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    location / {"                                                                                                                       >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_pass            http://ufs;"                                                                                              >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_redirect        default;"                                                                                                 >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_next_upstream   error timeout invalid_header http_500;"                                                                   >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_connect_timeout 30;"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_send_timeout    90;"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_read_timeout    90;"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_http_version    1.1;"                                                                                                     >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffering       on;"                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffer_size     128K;"                                                                                                    >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffers         4 256K;"                                                                                                  >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_busy_buffers_size 256K;"                                                                                                  >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_temp_file_write_size 512K;"                                                                                               >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      Host \$host;"                                                                                             >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                                                                                >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;"                                                             >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                                                                              >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    }"                                                                                                                                  >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "}"                                                                                                                                      >> /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    # Use echo instead of cat << EOF to better show indentation
+    echo "#"                                                                                                                                       > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "# Eucalyptus User-Facing Services"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "#"                                                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "server {"                                                                                                                               >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    listen       80  default_server;"                                                                                                   >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    listen       443 default_server ssl;"                                                                                               >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                     >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                            >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                           >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                                                               >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"   >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                   >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"                                                 >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    charset  utf-8;"                                                                                                                    >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                                                                                        >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"                                        >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    keepalive_timeout  70;"                                                                                                             >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    client_max_body_size 100M;"                                                                                                         >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    client_body_buffer_size 128K;"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    location / {"                                                                                                                       >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_pass            http://ufs;"                                                                                              >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_redirect        default;"                                                                                                 >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_next_upstream   error timeout invalid_header http_500;"                                                                   >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_connect_timeout 30;"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_send_timeout    90;"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_read_timeout    90;"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_http_version    1.1;"                                                                                                     >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffering       on;"                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffer_size     128K;"                                                                                                    >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffers         4 256K;"                                                                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_busy_buffers_size 256K;"                                                                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_temp_file_write_size 512K;"                                                                                               >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                                                          >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      Host \$host;"                                                                                             >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                                                                                >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;"                                                             >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                                                                              >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    }"                                                                                                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "}"                                                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "#"
-    echo "# chmod 644 /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
-    chmod 644 /etc/nginx/server.d/ufs.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    echo "# chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
+    chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     
     next
 fi
@@ -1213,8 +1239,8 @@ echo "==========================================================================
 echo
 echo "$(printf '%2d' $step). Restart Nginx service"
 echo "    - Confirm Eucalyptus User-Facing Services are running via a browser:"
-echo "      http://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "      https://compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "      http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "      https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo "    - These should respond with a 403 (Forbidden) error, indicating the"
 echo "      AWSAccessKeyId is missing, if working correctly"
 echo
@@ -1249,29 +1275,29 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+echo "cat << EOF > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
 echo "#"
 echo "# Eucalyptus Console"
 echo "#"
 echo
 echo "server {"
 echo "    listen       80;"
-echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+echo "    server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
 echo "    return       301 https://\$server_name\$request_uri;"
 echo "}"
 echo
 echo "server {"
 echo "    listen       443 ssl;"
-echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+echo "    server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
 echo
-echo "    access_log  /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"
-echo "    error_log   /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"
+echo "    access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"
+echo "    error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"
 echo
 echo "    charset  utf-8;"
 echo
 echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"
-echo "    ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"
-echo "    ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;"
+echo "    ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"
+echo "    ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"
 echo
 echo "    keepalive_timeout  70;"
 echo "    client_max_body_size 100M;"
@@ -1300,41 +1326,41 @@ echo "    }"
 echo "}"
 echo "EOF"
 echo
-echo "chmod 644 /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+echo "chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
 echo
 echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
 echo "       -e \"/^session.secure/a\\"
-echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\\\"
-echo "sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key\" /etc/eucaconsole/console.ini"
+echo "sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\\\"
+echo "sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key\" /etc/eucaconsole/console.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat << EOF > /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
+    echo "# cat << EOF > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
     echo "> #"
     echo "> # Eucalyptus Console"
     echo "> #"
     echo ">"
     echo "> server {"
     echo ">     listen       80;"
-    echo ">     server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+    echo ">     server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
     echo ">     return       301 https://\$server_name\$request_uri;"
     echo "> }"
     echo ">"
     echo "> server {"
     echo ">     listen       80;"
     echo ">     listen       443 ssl;"
-    echo ">     server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"
+    echo ">     server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"
     echo ">"
-    echo ">     access_log  /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"
-    echo ">     error_log   /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"
+    echo ">     access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"
+    echo ">     error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"
     echo ">"
     echo ">     charset  utf-8;"
     echo ">"
     echo ">     ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"
-    echo ">     ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"
-    echo ">     ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;"
+    echo ">     ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"
+    echo ">     ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"
     echo ">"
     echo ">     keepalive_timeout  70;"
     echo ">     client_max_body_size 100M;"
@@ -1362,67 +1388,68 @@ if [ $choice = y ]; then
     echo ">     }"
     echo "> }"
     echo "> EOF"
-    echo "#"                                                                                                 > /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "# Eucalyptus Console"                                                                             >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "#"                                                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "server {"                                                                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    listen       80;"                                                                             >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                               >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    return       301 https://\$server_name\$request_uri;"                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "}"                                                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "server {"                                                                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    listen       443 ssl;"                                                                        >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    server_name  console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN;"                               >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    access_log  /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-access.log;"      >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    error_log   /var/log/nginx/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN-error.log;"       >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    charset  utf-8;"                                                                              >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                                                  >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_certificate      /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt;"   >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    ssl_certificate_key  /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key;" >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    keepalive_timeout  70;"                                                                       >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    client_max_body_size 100M;"                                                                   >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    client_body_buffer_size 128K;"                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    location / {"                                                                                 >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_pass            http://console;"                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_redirect        default;"                                                           >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_next_upstream   error timeout invalid_header http_500;"                             >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_connect_timeout 30;"                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_send_timeout    90;"                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_read_timeout    90;"                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffering       on;"                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffer_size     128K;"                                                              >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_buffers         4 256K;"                                                            >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_busy_buffers_size 256K;"                                                            >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_temp_file_write_size 512K;"                                                         >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo                                                                                                    >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      Host \$host;"                                                       >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                                          >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;"                       >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                                        >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "    }"                                                                                            >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
-    echo "}"                                                                                                >> /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    # Use echo instead of cat << EOF to better show indentation
+    echo "#"                                                                                                 > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "# Eucalyptus Console"                                                                             >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "#"                                                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "server {"                                                                                         >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    listen       80;"                                                                             >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    return       301 https://\$server_name\$request_uri;"                                         >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "}"                                                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "server {"                                                                                         >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    listen       443 ssl;"                                                                        >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;"                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;"       >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;"        >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    charset  utf-8;"                                                                              >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                                                  >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;"    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;"  >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    keepalive_timeout  70;"                                                                       >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    client_max_body_size 100M;"                                                                   >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    client_body_buffer_size 128K;"                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    location / {"                                                                                 >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_pass            http://console;"                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_redirect        default;"                                                           >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_next_upstream   error timeout invalid_header http_500;"                             >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_connect_timeout 30;"                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_send_timeout    90;"                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_read_timeout    90;"                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffering       on;"                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffer_size     128K;"                                                              >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_buffers         4 256K;"                                                            >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_busy_buffers_size 256K;"                                                            >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_temp_file_write_size 512K;"                                                         >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo                                                                                                    >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      Host \$host;"                                                       >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                                          >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;"                       >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                                        >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "    }"                                                                                            >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "}"                                                                                                >> /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "#"
-    echo "# chmod 644 /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf"
-    chmod 644 /etc/nginx/server.d/console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.conf
+    echo "# chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf"
+    chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     pause
 
     echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
     echo "       -e \"/^session.secure/a\\"
-    echo "sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\\\"
-    echo "sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key\" /etc/eucaconsole/console.ini"
+    echo "sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\\\"
+    echo "sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key\" /etc/eucaconsole/console.ini"
     sed -i -e "/^session.secure =/s/= .*$/= true/" \
            -e "/^session.secure/a\
-sslcert=/etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt\\
-sslkey=/etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key" /etc/eucaconsole/console.ini
+sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
+sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
 
     next
 fi
@@ -1435,8 +1462,8 @@ echo "==========================================================================
 echo
 echo "$(printf '%2d' $step). Restart Nginx and Eucalyptus Console services"
 echo "    - Confirm Eucalyptus Console is running via a browser:"
-echo "      http://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-echo "      https://console.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "      http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "      https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
 echo "================================================================================"
 echo

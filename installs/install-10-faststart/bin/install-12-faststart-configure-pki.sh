@@ -8,20 +8,10 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_MC_HOST_NAME" ] && is_mc=y || is_mc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-certsdir=${bindir%/*}/certs
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
+topdir=${bindir%/*/*/*}
+certsdir=$topdir/certs
 tmpdir=/var/tmp
 
 date=$(date +%Y%m%d-%H%M)
@@ -34,16 +24,19 @@ next_default=5
 
 interactive=1
 speed=100
+config=$(hostname -s)
 password=
 cacerts_password=changeit
+
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-p password]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
+    echo "  -c config    configuration (default: $config)"
     echo "  -p password  password for key if encrypted"
 }
 
@@ -127,11 +120,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfp:? arg; do
+while getopts Isfc:p:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    c)  config="$OPTARG";;
     p)  password="$OPTARG";;
     ?)  usage
         exit 1;;
@@ -143,9 +137,36 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_mc = n ]; then
-    echo "This script should only be run on a Management Console host"
-    exit 20
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
+
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
+        exit 5
+    fi
+else
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
+fi
+
+source $conffile
+
+if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
+    echo "Could not find Eucalyptus Administrator credentials!"
+    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+    sleep 2
+
+    if [ -r /root/admin.zip ]; then
+        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
+        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+        sleep 2
+    else
+        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
+        echo "Expected to find: /root/admin.zip"
+        exit 29
+    fi
 fi
 
 
@@ -254,7 +275,7 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install SSL Key"
-if [ -r $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key ]; then
+if [ -r $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key ]; then
     echo "    - This key is insecure, websites using it should not be exposed to the"
     echo "      Internet"
 fi
@@ -263,22 +284,22 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-if [ -r $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key.secure ]; then
-    echo "cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
-    openssl rsa -in $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key.secure \
-                -out /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key \
+if [ -r $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure ]; then
+    echo "cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
+    openssl rsa -in $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure \
+                -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
                 -passin pass:$password
-    cat /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
-    rm -f /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+    rm -f /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
 else
-    echo "cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
-    cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+    echo "cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
+    cat $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
     echo "EOF"
 fi
 echo
-echo "chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
+echo "chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
 
-if [ -e /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key ]; then
+if [ -e /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key ]; then
     echo
     tput rev
     echo "Already Installed!"
@@ -291,25 +312,25 @@ else
 
     if [ $choice = y ]; then
         echo
-        if [ -r $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key.secure ]; then
-            echo "# cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
-            openssl rsa -in $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key.secure \
-                        -out /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key \
+        if [ -r $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure ]; then
+            echo "# cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
+            openssl rsa -in $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure \
+                        -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
                         -passin pass:$password
-            cat /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
-            cp /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key /etc/pki/tls/private
-            chown root:root /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
-            rm -f /tmp/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+            cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+            cp /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key /etc/pki/tls/private
+            chown root:root /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+            rm -f /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
         else
-            echo "# cat << EOF > /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
-            cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key | sed -e 's/^/> /'
+            echo "# cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
+            cat $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key | sed -e 's/^/> /'
             echo "> EOF"
-            cp $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key /etc/pki/tls/private
-            chown root:root /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+            cp $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key /etc/pki/tls/private
+            chown root:root /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
         fi
         echo "#"
-        echo "# chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key"
-        chmod 400 /etc/pki/tls/private/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.key
+        echo "# chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
+        chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
 
         next 50
     fi
@@ -329,13 +350,13 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
-cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+echo "cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt"
+cat $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
 echo "EOF"
 echo
-echo "chmod 444 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
+echo "chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt"
 
-if [ -e /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt ]; then
+if [ -e /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt ]; then
     echo
     tput rev
     echo "Already Installed!"
@@ -348,14 +369,14 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# cat << EOF > /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
-        cat $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt | sed -e 's/^/> /'
+        echo "# cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt"
+        cat $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt | sed -e 's/^/> /'
         echo "> EOF"
-        cp $certsdir/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt /etc/pki/tls/certs
-        chown root:root /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+        cp $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt /etc/pki/tls/certs
+        chown root:root /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
         echo "#"
-        echo "# chmod 440 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt"
-        chmod 440 /etc/pki/tls/certs/star.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN.crt
+        echo "# chmod 440 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt"
+        chmod 440 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
 
         next 50
     fi

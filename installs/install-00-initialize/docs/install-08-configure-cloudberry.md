@@ -2,6 +2,8 @@
 
 ### Overview
 Some quick and dirty instructions to setup CloudBerry so that Eucalyptus regions are supported.
+These instructions assume the SSL reverse-proxy instrucitons were used to expose Eucalyptus via
+SSL on the standard port.
 
 The latest version of cloudBerry supports Walrus, so we only have to add new Walrus Accounts!
 
@@ -34,10 +36,10 @@ Dialog: Account Registration
 ```
 Dialog: Add New Walrus Account
   Enter Display name: **hp-gol01-f1**
-  Enter Service point: **objectstorage.hp-gol01-f1.mjc.prc.eucalyptus-systems.com:8773/services/objectstorage**
+  Enter Service point: **objectstorage.hp-gol01-f1.mjc.prc.eucalyptus-systems.com/services/objectstorage**
   Enter Query ID: **AKIO1BU6J3NCXKVHYY2I**
   Enter Secret key: **ZI3ilTW9bfIMV0RuuKJ7JBPtJYFVHJGIlEAdYT0F**
-  Uncheck: Use SSL
+  Check: Use SSL
   Press: Test Connection Button
   Press: OK Button
 ```

@@ -11,20 +11,8 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-certsdir=${bindir%/*}/certs
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
@@ -35,14 +23,17 @@ next_default=5
 
 interactive=1
 speed=100
+config=$(hostname -s)
+
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config]"
+    echo "  -I         non-interactive"
+    echo "  -s         slower: increase pauses by 25%"
+    echo "  -f         faster: reduce pauses by 25%"
+    echo "  -c config  configuration (default: $config)"
 }
 
 run() {
@@ -125,11 +116,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isf? arg; do
+while getopts Isfc:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    c)  config="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -140,10 +132,19 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_clc = n ]; then
-    echo "This script should only be run on the Cloud Controller host"
-    exit 10
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
+
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
+        exit 5
+    fi
+else
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
 fi
+
+source $conffile
 
 if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Administrator credentials!"
@@ -329,6 +330,7 @@ if [ $choice = y ]; then
     echo "> sEtTkVwohlqtn77wSYTvYAZB+UzqypbX9Q=="
     echo "> -----END CERTIFICATE-----"
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo                                                                    >> cacert.pem
     echo "# Issuer: CN=cloudca.hpcloud.ms"                                  >> cacert.pem
     echo "# Subject: CN=cloudca.hpcloud.ms"                                 >> cacert.pem
@@ -457,6 +459,7 @@ if [ $choice = y ]; then
     echo "> HkIF3OYSeA=="
     echo "> -----END CERTIFICATE-----"
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo                                                                    >> cacert.pem
     echo "# Issuer: CN=cloudca.hpcloud.ms"                                  >> cacert.pem
     echo "# Subject: DC=ms, DC=hpcloud, CN=cloudpca"                        >> cacert.pem
@@ -593,6 +596,7 @@ if [ $choice = y ]; then
     echo "> GThJnh8rguyv071bpFUxGDpmwKGviegK"
     echo "> -----END CERTIFICATE-----"
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo                                                                    >> cacert.pem
     echo "# Issuer: DC=ms, DC=hpcloud, CN=cloudpca"                         >> cacert.pem
     echo "# Subject: DC=ms, DC=hpcloud, CN=aw2cloudica03"                   >> cacert.pem
@@ -672,13 +676,14 @@ if [ $choice = y ]; then
     echo "#"
     echo "# cat << EOF > _endpoints.json.local.ssl"
     echo ">     ... too long to list ..."
+    # Use echo instead of cat << EOF to better show indentation
     echo "> EOF"
     echo "{"                                                                                    > _endpoints.json.local.ssl
     echo "  \"_default\":["                                                                    >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"{scheme}://{service}.{region}.$EUCA_DNS_REGION_DOMAIN\","            >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN\","                >> _endpoints.json.local.ssl
     echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-    echo "        [\"region\", \"startsWith\", \"${EUCA_DNS_REGION%-*}-\"]"                    >> _endpoints.json.local.ssl
+    echo "        [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]"                 >> _endpoints.json.local.ssl
     echo "      ]"                                                                             >> _endpoints.json.local.ssl
     echo "    },"                                                                              >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
@@ -699,41 +704,41 @@ if [ $choice = y ]; then
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"ec2\": ["                                                                        >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"{scheme}://compute.{region}.$EUCA_DNS_REGION_DOMAIN\","              >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN\","                  >> _endpoints.json.local.ssl
     echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-    echo "        [\"region\",\"startsWith\",\"${EUCA_DNS_REGION%-*}-\"]"                      >> _endpoints.json.local.ssl
+    echo "        [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]"                   >> _endpoints.json.local.ssl
     echo "      ]"                                                                             >> _endpoints.json.local.ssl
     echo "    }"                                                                               >> _endpoints.json.local.ssl
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"elasticloadbalancing\": ["                                                       >> _endpoints.json.local.ssl
     echo "   {"                                                                                >> _endpoints.json.local.ssl
-    echo "    \"uri\":\"{scheme}://loadbalancing.{region}.$EUCA_DNS_REGION_DOMAIN\","          >> _endpoints.json.local.ssl
+    echo "    \"uri\":\"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN\","              >> _endpoints.json.local.ssl
     echo "    \"constraints\": ["                                                              >> _endpoints.json.local.ssl
-    echo "      [\"region\",\"startsWith\",\"${EUCA_DNS_REGION%-*}-\"]"                        >> _endpoints.json.local.ssl
+    echo "      [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]"                     >> _endpoints.json.local.ssl
     echo "    ]"                                                                               >> _endpoints.json.local.ssl
     echo "   }"                                                                                >> _endpoints.json.local.ssl
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"monitoring\":["                                                                  >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"{scheme}://cloudwatch.{region}.$EUCA_DNS_REGION_DOMAIN\","           >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN\","               >> _endpoints.json.local.ssl
     echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-    echo "       [\"region\",\"startsWith\",\"${EUCA_DNS_REGION%-*}-\"]"                       >> _endpoints.json.local.ssl
+    echo "       [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]"                    >> _endpoints.json.local.ssl
     echo "      ]"                                                                             >> _endpoints.json.local.ssl
     echo "    }"                                                                               >> _endpoints.json.local.ssl
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"swf\":["                                                                         >> _endpoints.json.local.ssl
     echo "   {"                                                                                >> _endpoints.json.local.ssl
-    echo "    \"uri\":\"{scheme}://simpleworkflow.{region}.$EUCA_DNS_REGION_DOMAIN\","         >> _endpoints.json.local.ssl
+    echo "    \"uri\":\"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN\","             >> _endpoints.json.local.ssl
     echo "    \"constraints\": ["                                                              >> _endpoints.json.local.ssl
-    echo "     [\"region\",\"startsWith\",\"${EUCA_DNS_REGION%-*}-\"]"                         >> _endpoints.json.local.ssl
+    echo "     [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]"                      >> _endpoints.json.local.ssl
     echo "    ]"                                                                               >> _endpoints.json.local.ssl
     echo "   }"                                                                                >> _endpoints.json.local.ssl
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"iam\":["                                                                         >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"https://euare.{region}.$EUCA_DNS_REGION_DOMAIN\","                   >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"https://euare.{region}.$AWS_DEFAULT_DOMAIN\","                       >> _endpoints.json.local.ssl
     echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-    echo "        [\"region\", \"startsWith\", \"${EUCA_DNS_REGION%-*}-\"]"                    >> _endpoints.json.local.ssl
+    echo "        [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]"                 >> _endpoints.json.local.ssl
     echo "      ]"                                                                             >> _endpoints.json.local.ssl
     echo "    },"                                                                              >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
@@ -767,9 +772,9 @@ if [ $choice = y ]; then
     echo "  ],"                                                                                >> _endpoints.json.local.ssl
     echo "  \"sts\":["                                                                         >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"https://tokens.{region}.$EUCA_DNS_REGION_DOMAIN\","                  >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"https://tokens.{region}.$AWS_DEFAULT_DOMAIN\","                      >> _endpoints.json.local.ssl
     echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-    echo "        [\"region\", \"startsWith\", \"${EUCA_DNS_REGION%-*}-\"]"                    >> _endpoints.json.local.ssl
+    echo "        [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]"                 >> _endpoints.json.local.ssl
     echo "      ]"                                                                             >> _endpoints.json.local.ssl
     echo "    },"                                                                              >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
@@ -806,9 +811,9 @@ if [ $choice = y ]; then
     echo "      }"                                                                             >> _endpoints.json.local.ssl
     echo "    },"                                                                              >> _endpoints.json.local.ssl
     echo "    {"                                                                               >> _endpoints.json.local.ssl
-    echo "      \"uri\":\"{scheme}://objectstorage.{region}.$EUCA_DNS_REGION_DOMAIN//\","      >> _endpoints.json.local.ssl
+    echo "      \"uri\":\"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//\","          >> _endpoints.json.local.ssl
     echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-    echo "        [\"region\", \"startsWith\", \"${EUCA_DNS_REGION%-*}-\"]"                    >> _endpoints.json.local.ssl
+    echo "        [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]"                 >> _endpoints.json.local.ssl
     echo "      ],"                                                                            >> _endpoints.json.local.ssl
     echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
     echo "        \"signatureVersion\": \"s3\""                                                >> _endpoints.json.local.ssl
@@ -940,7 +945,8 @@ if [ $choice = y ]; then
     echo "    }"                                                                               >> _endpoints.json.local.ssl
     echo "  ]"                                                                                 >> _endpoints.json.local.ssl
     echo "}"                                                                                   >> _endpoints.json.local.ssl
-    echo "#"
+    pause
+
     echo "# mv _endpoints.json _endpoints.json.orig"
     mv _endpoints.json _endpoints.json.orig
     echo "#" 
@@ -973,7 +979,7 @@ echo "# AWS Config file"
 echo "#"
 echo
 echo "[default]"
-echo "region = $EUCA_DNS_REGION"
+echo "region = $AWS_DEFAULT_REGION"
 echo "output = text"
 echo "EOF"
 echo
@@ -1003,16 +1009,17 @@ if [ $choice = y ]; then
     echo "> #"
     echo ">"
     echo "> [default]"
-    echo "> region = $EUCA_DNS_REGION"
+    echo "> region = $AWS_DEFAULT_REGION"
     echo "> output = text"
     echo "> EOF"
-    echo "#"                          > ~/.aws/config
-    echo "# AWS Config file"         >> ~/.aws/config
-    echo "#"                         >> ~/.aws/config
-    echo                             >> ~/.aws/config
-    echo "[default]"                 >> ~/.aws/config
-    echo "region = $EUCA_DNS_REGION" >> ~/.aws/config
-    echo "output = text"             >> ~/.aws/config
+    # Use echo instead of cat << EOF to better show indentation
+    echo "#"                             > ~/.aws/config
+    echo "# AWS Config file"            >> ~/.aws/config
+    echo "#"                            >> ~/.aws/config
+    echo                                >> ~/.aws/config
+    echo "[default]"                    >> ~/.aws/config
+    echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+    echo "output = text"                >> ~/.aws/config
     pause
 
     echo "# cat << EOF > ~/.aws/credentials"
@@ -1024,6 +1031,7 @@ if [ $choice = y ]; then
     echo "> aws_access_key_id = $AWS_ACCESS_KEY"
     echo "> aws_secret_access_key = $AWS_SECRET_KEY"
     echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
     echo "#"                                        > ~/.aws/credentials
     echo "# AWS Credentials file"                  >> ~/.aws/credentials
     echo "#"                                       >> ~/.aws/credentials

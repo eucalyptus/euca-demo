@@ -7,19 +7,8 @@
 
 #  1. Initalize Environment
 
-if [ -z $EUCA_VNET_MODE ]; then
-    echo "Please set environment variables first"
-    exit 3
-fi
-
-[ "$(hostname -s)" = "$EUCA_CLC_HOST_NAME" ] && is_clc=y || is_clc=n
-
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
-scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 step=0
@@ -31,18 +20,23 @@ next_default=5
 interactive=1
 speed=100
 showdnsconfig=0
+config=$(hostname -s)
 extended=0
+
+dns_timeout=30
+dns_loadbalancer_ttl=15
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-e]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
-    echo "  -d  display parent DNS server sample configuration"
-    echo "  -e  extended confirmation of API calls"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-c config] [-e]"
+    echo "  -I         non-interactive"
+    echo "  -s         slower: increase pauses by 25%"
+    echo "  -f         faster: reduce pauses by 25%"
+    echo "  -d         display parent DNS server sample configuration"
+    echo "  -c config  configuration (default: $config)"
+    echo "  -e         extended confirmation of API calls"
 }
 
 run() {
@@ -125,12 +119,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfde? arg; do
+while getopts Isfdc:e? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     d)  showdnsconfig=1;;
+    c)  config="$OPTARG";;
     e)  extended=1;;
     ?)  usage
         exit 1;;
@@ -142,10 +137,19 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ $is_clc = n ]; then
-    echo "This script should only be run on the Cloud Controller host"
-    exit 10
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
+
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
+        exit 5
+    fi
+else
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    exit 2
 fi
+
+source $conffile
 
 if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
     echo "Could not find Eucalyptus Administrator credentials!"
@@ -199,63 +203,33 @@ next
 
 
 ((++step))
-if [ $EUCA_DNS_MODE = "PARENT" ]; then
-    clear
-    echo
-    echo "================================================================================"
-    echo
-    echo "$(printf '%2d' $step). Configure Eucalyptus DNS Server"
-    echo "    - Instances will use the parent DNS Server, which will delegate"
-    echo "      Eucalyptus zones to the Cloud Controller DNS Server"
-    echo
-    echo "================================================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME"
-    echo
-    echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure Eucalyptus DNS Server"
+echo "    - Instances will use the Cloud Controller's DNS Server directly"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo
+echo "euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)"
 
-    run 50
+run 50
 
-    if [ $choice = y ]; then
-        echo
-        echo "# euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME"
-        euca-modify-property -p system.dns.nameserver=$EUCA_DNS_HOST_NAME.$EUCA_DNS_DOMAIN_NAME
-        echo "#"
-        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP"
-        euca-modify-property -p system.dns.nameserveraddress=$EUCA_DNS_PUBLIC_IP
+if [ $choice = y ]; then
+    echo
+    echo "# euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "#"
+    echo "# euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)"
+    euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)
 
-        next 50
-    fi
-else
-    clear
-    echo
-    echo "================================================================================"
-    echo
-    echo "$(printf '%2d' $step). Configure Eucalyptus DNS Server"
-    echo "    - Instances will use the Cloud Controller's DNS Server directly"
-    echo
-    echo "================================================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    echo
-    echo "euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
-    
-    run 50
-    
-    if [ $choice = y ]; then
-        echo
-        echo "# euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-        euca-modify-property -p system.dns.nameserver=ns1.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
-        echo "#"
-        echo "# euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP"
-        euca-modify-property -p system.dns.nameserveraddress=$EUCA_CLC_PUBLIC_IP
-    
-        next 50
-    fi
+    next 50
+fi
 fi
 
 
@@ -270,19 +244,19 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT"
+echo "euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout"
 echo
-echo "euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
+echo "euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT"
-    euca-modify-property -p dns.tcp.timeout_seconds=$EUCA_DNS_TIMEOUT
+    echo "# euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout"
+    euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout
     echo "#"
-    echo "# euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL"
-    euca-modify-property -p services.loadbalancing.dns_ttl=$EUCA_DNS_LOADBALANCER_TTL
+    echo "# euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl"
+    euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl
 
     next 50
 fi
@@ -299,14 +273,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    euca-modify-property -p system.dns.dnsdomain=$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
 
     next 50
 fi
@@ -439,122 +413,75 @@ fi
 
 ((++step))
 if [ $showdnsconfig = 1 ]; then
-    if [ $EUCA_DNS_MODE = "PARENT" ]; then
-        clear
-        echo
-        echo "================================================================================"
-        echo
-        echo "$(printf '%2d' $step). Display Parent DNS Server Configuration"
-        echo "    - This is an example of what changes need to be made on the"
-        echo "      parent DNS server which will delgate DNS to Eucalyptus"
-        echo "      for Eucalyptus DNS names used for instances, ELBs and"
-        echo "      services"
-        echo "    - You should make these changes to the parent DNS server"
-        echo "      manually, once, outside of creating and running demos"
-        echo "    - Instances will use the parent DNS Server, which will delegate"
-        echo "      Eucalyptus zones to the Cloud Controller DNS Server"
-        echo "    - This configuration is based on the BIND configuration"
-        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
-        echo
-        echo "================================================================================"
-        echo
-        echo "Commands:"
-        echo
-        echo "# Add these lines to /etc/named.conf on the parent DNS server"
-        echo "         zone \"$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN\" IN"
-        echo "         {"
-        echo "                 type master;"
-        echo "                 file \"/etc/named/db.$EUCA_DNS_REGION\";"
-        echo "         };"
-        echo "#"
-        echo "# Create the zone file on the parent DNS server"
-        echo "# cat << EOF > /etc/named/db.$EUCA_DNS_REGION"
-        echo "> ;"
-        echo "> ; DNS zone for $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-        echo "> ; - Eucalyptus configured to use Parent DNS server"
-        echo "> ;"
-        echo "> $TTL 1M"
-        echo "> $ORIGIN $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-        echo "> @                       SOA     ns1.$EUCA_DNS_REGION_DOMAIN. root.$EUCA_DNS_REGION_DOMAIN. ("
-        echo ">                                 $(date +%Y%m%d)01      ; Serial"
-        echo ">                                 1H              ; Refresh"
-        echo ">                                 10M             ; Retry"
-        echo ">                                 1D              ; Expire"
-        echo ">                                 1H )            ; Negative Cache TTL"
-        echo ">"
-        echo ">                         NS      ns1.$EUCA_DNS_REGION_DOMAIN."
-        echo ">"
-        echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
-        echo ">"
-        echo "> clc                     A       $EUCA_CLC_PUBLIC_IP"
-        echo "> ufs                     A       $EUCA_UFS_PUBLIC_IP"
-        echo ">"
-        echo "> autoscaling             A       $EUCA_UFS_PUBLIC_IP"
-        echo "> cloudformation          A       $EUCA_UFS_PUBLIC_IP"
-        echo "> cloudwatch              A       $EUCA_UFS_PUBLIC_IP"
-        echo "> compute                 A       $EUCA_UFS_PUBLIC_IP"
-        echo "> euare                   A       $EUCA_UFS_PUBLIC_IP"
-        echo "> loadbalancing           A       $EUCA_UFS_PUBLIC_IP"
-        echo "> objectstorage           A       $EUCA_UFS_PUBLIC_IP"
-        echo "> tokens                  A       $EUCA_UFS_PUBLIC_IP"
-        echo ">"
-        echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
-        echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
-        echo "> EOF"
+    clear
+    echo
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Parent DNS Server Configuration"
+    echo "    - This is an example of what changes need to be made on the"
+    echo "      parent DNS server which will delgate DNS to Eucalyptus"
+    echo "      for Eucalyptus DNS names used for instances, ELBs and"
+    echo "      services"
+    echo "    - You should make these changes to the parent DNS server"
+    echo "      manually, once, outside of creating and running demos"
+    echo "    - Instances will use the Cloud Controller's DNS Server directly"
+    echo "    - This configuration is based on the BIND configuration"
+    echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "# Add these lines to /etc/named.conf on the parent DNS server"
+    echo "         zone \"$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN\" IN"
+    echo "         {"
+    echo "                 type master;"
+    echo "                 file \"/etc/named/db.$AWS_DEFAULT_REGION\";"
+    echo "         };"
+    echo "#"
+    echo "# Create the zone file on the parent DNS server"
+    echo "> ;"
+    echo "> ; DNS zone for $AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    echo "> ; - Eucalyptus configured to use CLC as DNS server"
+    echo ">"
+    echo "# cat << EOF > /etc/named/db.$AWS_DEFAULT_REGION"
+    echo "> $TTL 1M"
+    echo "> $ORIGIN $AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    echo "> @                       SOA     ns1 root ("
+    echo ">                                 $(date +%Y%m%d)01      ; Serial"
+    echo ">                                 1H              ; Refresh"
+    echo ">                                 10M             ; Retry"
+    echo ">                                 1D              ; Expire"
+    echo ">                                 1H )            ; Negative Cache TTL"
+    echo ">"
+    echo ">                         NS      ns1"
+    echo ">"
+    echo "> ns1                     A       $(hostname -i)"
+    echo ">"
+    echo "> clc                     A       $(hostname -i)"
+    echo "> ufs                     A       $(hostname -i)"
+    echo "> mc                      A       $(hostname -i)"
+    echo "> osp                     A       $(hostname -i)"
+    echo "> walrus                  A       $(hostname -i)"
+    echo "> cc                      A       $(hostname -i)"
+    echo "> sc                      A       $(hostname -i)"
+    echo "> ns1                     A       $(hostname -i)"
+    echo ">"
+    echo "> console                 A       $(hostname -i)"
+    echo "> autoscaling             A       $(hostname -i)"
+    echo "> cloudformation          A       $(hostname -i)"
+    echo "> cloudwatch              A       $(hostname -i)"
+    echo "> compute                 A       $(hostname -i)"
+    echo "> euare                   A       $(hostname -i)"
+    echo "> loadbalancing           A       $(hostname -i)"
+    echo "> objectstorage           A       $(hostname -i)"
+    echo "> tokens                  A       $(hostname -i)"
+    echo ">"
+    echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
+    echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
+    echo "> EOF"
 
-        next 200
-else
-        clear
-        echo
-        echo "================================================================================"
-        echo
-        echo "$(printf '%2d' $step). Display Parent DNS Server Configuration"
-        echo "    - This is an example of what changes need to be made on the"
-        echo "      parent DNS server which will delgate DNS to Eucalyptus"
-        echo "      for Eucalyptus DNS names used for instances, ELBs and"
-        echo "      services"
-        echo "    - You should make these changes to the parent DNS server"
-        echo "      manually, once, outside of creating and running demos"
-        echo "    - Instances will use the Cloud Controller's DNS Server directly"
-        echo "    - This configuration is based on the BIND configuration"
-        echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
-        echo
-        echo "================================================================================"
-        echo
-        echo "Commands:"
-        echo
-        echo "# Add these lines to /etc/named.conf on the parent DNS server"
-        echo "         zone \"$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN\" IN"
-        echo "         {"
-        echo "                 type master;"
-        echo "                 file \"/etc/named/db.$EUCA_DNS_REGION\";"
-        echo "         };"
-        echo "#"
-        echo "# Create the zone file on the parent DNS server"
-        echo "> ;"
-        echo "> ; DNS zone for $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-        echo "> ; - Eucalyptus configured to use CLC as DNS server"
-        echo ">"
-        echo "# cat << EOF > /etc/named/db.$EUCA_DNS_REGION"
-        echo "> $TTL 1M"
-        echo "> $ORIGIN $EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-        echo "> @                       SOA     ns1 root ("
-        echo ">                                 $(date +%Y%m%d)01      ; Serial"
-        echo ">                                 1H              ; Refresh"
-        echo ">                                 10M             ; Retry"
-        echo ">                                 1D              ; Expire"
-        echo ">                                 1H )            ; Negative Cache TTL"
-        echo ">"
-        echo ">                         NS      ns1"
-        echo ">"
-        echo "> ns1                     A       $EUCA_CLC_PUBLIC_IP"
-        echo ">"
-        echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
-        echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
-        echo "> EOF"
-    
-        next 200
-    fi
+    next 200
 fi
 
     
@@ -570,56 +497,56 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 echo
-echo "dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
+echo "dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short compute.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short objectstorage.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short euare.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short tokens.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short autoscaling.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short cloudformation.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short cloudwatch.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     pause
 
-    echo "# dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN"
-    dig +short loadbalancing.$EUCA_DNS_REGION.$EUCA_DNS_REGION_DOMAIN
+    echo "# dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
 
     next
 fi

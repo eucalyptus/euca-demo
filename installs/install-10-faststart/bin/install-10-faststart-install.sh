@@ -26,19 +26,19 @@ next_default=5
 
 interactive=1
 speed=100
-environment=$(hostname -s)
+config=$(hostname -s)
 local=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-e environment] [-l]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
-    echo "  -e  environment  environment configuration (default: $environment)"
-    echo "  -l  Use local mirror for Faststart script (uses local yum repos)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-l]"
+    echo "  -I         non-interactive"
+    echo "  -s         slower: increase pauses by 25%"
+    echo "  -f         faster: reduce pauses by 25%"
+    echo "  -c config  configuration (default: $config)"
+    echo "  -l         Use local mirror for Faststart script (uses local yum repos)"
 }
 
 run() {
@@ -121,12 +121,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfe:l? arg; do
+while getopts Isfc:l? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    e)  environment="$OPTARG";;
+    c)  config="$OPTARG";;
     l)  local=1;;
     ?)  usage
         exit 1;;
@@ -138,19 +138,19 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [[ $environment =~ ^([a-zA-Z0-9_-]*)$ ]]; then
-    envfile=$confdir/$environment.txt
+if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
+    conffile=$confdir/$config.txt
 
-    if [ ! -r $envfile ]; then
-        echo "-e $environment invalid: can't find conf file: $envfile"
+    if [ ! -r $conffile ]; then
+        echo "-c $config invalid: can't find configuration file: $conffile"
         exit 5
     fi
 else
-    echo "-e $environment illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
+    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
     exit 2
 fi
 
-source $envfile
+source $conffile
 
 if [ $local = 1 ]; then
     faststart_url=$internal_faststart_url
