@@ -72,25 +72,18 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 
     Use Demo (demo) Account Administrator eucarc file for values
 
-    The default version is configured for direct access using the Eucalyptus standard port.
-
     ```bash
     access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
     secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
 
-    echo "[user demo-admin]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
+    cat << EOF >> ~/.euca/euca2ools.ini
+    [user demo-admin]
+    key-id = $access_key
+    secret-key = $secret_key
 
-    The ssl version is configured for indirect access via an Nginx proxy which terminates SSL on the SSL standard port.
+    EOF
 
-    ```bash
-    echo "[user demo-admin]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    euca-describe-availability-zones verbose --region demo-admin@$AWS_DEFAULT_REGION
     ```
 
 6. Create Demo (demo) Account Administrator AWSCLI Profile
@@ -103,15 +96,21 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
     secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
 
-    echo "[profile $AWS_DEFAULT_REGION-demo-admin]" >> ~/.aws/config
-    echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    cat << EOF >> ~/.aws/config
+    [profile $AWS_DEFAULT_REGION-demo-admin]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "[$AWS_DEFAULT_REGION-demo-admin]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    EOF
+
+    cat << EOF >> ~/.aws/credentials
+    [$AWS_DEFAULT_REGION-demo-admin]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    EOF
+
+    aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-demo-admin
     ```
 
 7. Authorize Demo (demo) Account use of Demo Generic Image
@@ -146,8 +145,6 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 
     ```bash
     cat ~/.euca/euca2ools.ini
-
-    cat ~/.euca/euca2ools-ssl.ini
     ```
 
 11. List AWSCLI Configuration

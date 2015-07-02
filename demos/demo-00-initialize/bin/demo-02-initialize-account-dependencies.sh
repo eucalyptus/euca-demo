@@ -789,8 +789,10 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo"
 echo
 echo "euare-useraddkey -u $user_demo"
 echo
-echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
-echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
+echo "EOF"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc ]; then
     echo
@@ -814,8 +816,11 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
-        echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+        echo "> AWSAccessKeyId=$access_key"
+        echo "> AWSSecretKey=$secret_key"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
 
@@ -840,10 +845,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[user $account-$user_demo]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "[user $account-$user_demo]"
+echo "key-id = $access_key"
+echo "secret-key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -860,19 +869,21 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# echo \"[user $account-$user_demo]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "> [user $account-$user_demo]"
+        echo "> key-id = $access_key"
+        echo "> secret-key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[user $account-$user_demo]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "[user $account-$user_demo]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key"       >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"   >> ~/.euca/euca2ools.ini
+        echo                              >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
+        euca-describe-availablity-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -895,15 +906,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[profile $AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
+echo "cat << EOF >> ~/.aws/config"
+echo "[profile $AWS_DEFAULT_REGION-$account-$user_demo]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
+echo "EOF"
+echo
+echo "cat << EOF >> ~/.aws/credentials"
+echo "[$AWS_DEFAULT_REGION-$account-$user_demo]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_demo]" ~/.aws/config; then
     echo
@@ -920,24 +937,34 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
-        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
+        echo "# cat << EOF >> ~/.aws/config"
+        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_demo]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[profile $AWS_DEFAULT_REGION-$account-$user_demo]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"                      >> ~/.aws/config
+        echo "output = text"                                     >> ~/.aws/config
+        echo                                                     >> ~/.aws/config
         pause
 
-        echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_demo]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
+        echo "# cat << EOF >> ~/.aws/credentials"
+        echo "> [$AWS_DEFAULT_REGION-$account-$user_demo]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[$AWS_DEFAULT_REGION-$account-$user_demo]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"           >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key"       >> ~/.aws/credentials
+        echo                                             >> ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
+        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo
 
         next
     fi
@@ -1063,8 +1090,10 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer"
 echo
 echo "euare-useraddkey -u $user_developer"
 echo
-echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
-echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
+echo "EOF"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc ]; then
     echo
@@ -1088,8 +1117,11 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
-        echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+        echo "> AWSAccessKeyId=$access_key"
+        echo "> AWSSecretKey=$secret_key"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
 
@@ -1114,10 +1146,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[user $account-$user_developer]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "[user $account-$user_developer]"
+echo "key-id = $access_key"
+echo "secret-key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1134,19 +1170,21 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# echo \"[user $account-$user_developer]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "> [user $account-$user_developer]"
+        echo "> key-id = $access_key"
+        echo "> secret-key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[user $account-$user_developer]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "[user $account-$user_developer]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key"            >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"        >> ~/.euca/euca2ools.ini
+        echo                                   >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
+        euca-describe-availablity-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -1169,15 +1207,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[profile $AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
+echo "cat << EOF >> ~/.aws/config"
+echo "[profile $AWS_DEFAULT_REGION-$account-$user_developer]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
+echo "EOF"
+echo
+echo "cat << EOF >> ~/.aws/credentials"
+echo "[$AWS_DEFAULT_REGION-$account-$user_developer]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_developer]" ~/.aws/config; then
     echo
@@ -1194,24 +1238,34 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
-        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
+        echo "# cat << EOF >> ~/.aws/config"
+        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_developer]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[profile $AWS_DEFAULT_REGION-$account-$user_developer]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"                           >> ~/.aws/config
+        echo "output = text"                                          >> ~/.aws/config
+        echo                                                          >> ~/.aws/config
         pause
 
-        echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_developer]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
+        echo "# cat << EOF >> ~/.aws/credentials"
+        echo "> [$AWS_DEFAULT_REGION-$account-$user_developer]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[$AWS_DEFAULT_REGION-$account-$user_developer]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"                >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key"            >> ~/.aws/credentials
+        echo                                                  >> ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
+        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer
 
         next
     fi
@@ -1337,8 +1391,10 @@ echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user"
 echo
 echo "euare-useraddkey -u $user_user"
 echo
-echo "echo \"AWSAccessKeyId=<generated_access_key>\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
-echo "echo \"AWSSecretKey=<generated_secret_key>\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
+echo "EOF"
 
 if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc ]; then
     echo
@@ -1362,8 +1418,11 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "echo \"AWSAccessKeyId=$access_key\"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
-        echo "echo \"AWSSecretKey=$secret_key\"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+        echo "> AWSAccessKeyId=$access_key"
+        echo "> AWSSecretKey=$secret_key"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
 
@@ -1388,10 +1447,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[user $account-$user_user]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "[user $account-$user_user]"
+echo "key-id = $access_key"
+echo "secret-key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1408,19 +1471,21 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# echo \"[user $account-$user_user]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
+        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "> [user $account-$user_user]"
+        echo "> key-id = $access_key"
+        echo "> secret-key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[user $account-$user_user]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "[user $account-$user_user]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
+        echo "key-id = $access_key"       >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"   >> ~/.euca/euca2ools.ini
+        echo                              >> ~/.euca/euca2ools.ini
+        pause
+
+        echo "# euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
+        euca-describe-availablity-zones --region=$account-$user_user@$AWS_DEFAULT_REGION
 
         next
     fi
@@ -1443,15 +1508,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[profile $AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
+echo "cat << EOF >> ~/.aws/config"
+echo "[profile $AWS_DEFAULT_REGION-$account-$user_user]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
+echo "EOF"
+echo
+echo "cat << EOF >> ~/.aws/credentials"
+echo "[$AWS_DEFAULT_REGION-$account-$user_user]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_user]" ~/.aws/config; then
     echo
@@ -1468,24 +1539,34 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
-        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
+        echo "# cat << EOF >> ~/.aws/config"
+        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_user]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[profile $AWS_DEFAULT_REGION-$account-$user_user]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"                      >> ~/.aws/config
+        echo "output = text"                                     >> ~/.aws/config
+        echo                                                     >> ~/.aws/config
         pause
 
-        echo "# echo \"[$AWS_DEFAULT_REGION-$account-$user_user]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
+        echo "# cat << EOF >> ~/.aws/credentials"
+        echo "> [$AWS_DEFAULT_REGION-$account-$user_user]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[$AWS_DEFAULT_REGION-$account-$user_user]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"           >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key"       >> ~/.aws/credentials
+        echo                                             >> ~/.aws/credentials
+        pause
+
+        echo "# aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
+        aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user
 
         next
     fi

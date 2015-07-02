@@ -11,10 +11,11 @@ Help is available when running this script, via the -? flag.
 
 ```bash
 demo-00-initialize.sh -?
-Usage: demo-00-initialize.sh [-I [-s | -f]] [-l]
+Usage: demo-00-initialize.sh [-I [-s | -f]] [-d] [-l]
   -I  non-interactive
   -s  slower: increase pauses by 25%
   -f  faster: reduce pauses by 25%
+  -d  use direct service endpoints in euca2ools.ini
   -l  Use local mirror for Demo CentOS image
 ```
 
@@ -38,7 +39,7 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
 
     Use Eucalyptus Account Administrator eucarc file for values
 
-    The default version is configured for direct access using the Eucalyptus standard port.
+    Since we have an SSL reverse proxy in place, we will convert the default service endpoints to their proxy equivalents.
 
     ```bash
     ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
@@ -51,38 +52,6 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
     swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 
-    access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-    secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-
-    echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    echo "[global]" > ~/.euca/euca2ools.ini
-    echo "region = $AWS_DEFAULT_REGION" > ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    echo "[region $AWS_DEFAULT_REGION]" >> ~/.euca/euca2ools.ini
-    echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
-    echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
-    echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
-    echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
-    echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
-    echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
-    echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
-    echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
-    echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
-    echo "user = admin" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-
-    echo "[user admin]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-
-    chmod -R og-rwx ~/.euca
-    ```
-
-    The ssl version is configured for indirect access via an Nginx proxy which terminates SSL on the SSL standard port.
-
-    ```bash
     ec2_ssl_url=${ec2_url/http:/https:} && ec2_ssl_url=${ec2_ssl_url/:8773/}
     s3_ssl_url=${s3_url/http:/https:} && s3_ssl_url=${s3_ssl_url/:8773/}
     iam_ssl_url=${iam_url/http:/https:} && iam_ssl_url=${iam_ssl_url/:8773/}
@@ -93,30 +62,39 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     elb_ssl_url=${elb_url/http:/https:} && elb_ssl_url=${elb_ssl_url/:8773/}
     swf_ssl_url=${swf_url/http:/https:} && swf_ssl_url=${swf_ssl_url/:8773/}
 
-    echo "# Euca2ools Configuration file" > ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
-    echo "[global]" > ~/.euca/euca2ools-ssl.ini
-    echo "region = $AWS_DEFAULT_REGION" > ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
-    echo "[region $AWS_DEFAULT_REGION]" >> ~/.euca/euca2ools-ssl.ini
-    echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "iam-url = $iam_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "monitoring-url $cw_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "s3-url = $s3_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "sts-url = $sts_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "swf-url = $swf_url" >> ~/.euca/euca2ools-ssl.ini
-    echo "user = admin" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+    secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
 
-    echo "[user admin]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    mkdir -p ~/.euca
+    chmod 0700 ~/.euca
 
-    chmod -R og-rwx ~/.euca
+    cat << EOF > ~/.euca/euca2ools.ini
+    # Euca2ools Configuration file (via SSL proxy)
+    
+    [global]
+    region = $AWS_DEFAULT_REGION
+    
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = $as_ssl_url
+    cloudformation-url = $cfn_ssl_url
+    ec2-url = $ec2_ssl_url
+    elasticloadbalancing-url = $elb_ssl_url
+    iam-url = $iam_ssl_url
+    monitoring-url $cw_ssl_url
+    s3-url = $s3_ssl_url
+    sts-url = $sts_ssl_url
+    swf-url = $swf_ssl_url
+    user = admin
+
+    [user admin]
+    key-id = $access_key
+    secret-key = $secret_key
+
+    EOF
+
+    euca-describe-availability-zones verbose
+
+    euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION
     ```
 
 3. Initialize AWSCLI Configuration
@@ -127,37 +105,42 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
     secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
 
-    echo "#" > ~/.aws/config
-    echo "# AWS Config file" >> ~/.aws/config
-    echo "#" >> ~/.aws/config
-    echo >> ~/.aws/config
+    mkdir -p ~/.aws
+    chmod 0700 ~/.aws
 
-    echo "[default]" >> ~/.aws/config
-    echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    cat << EOF > ~/.aws/config
+    #
+    # AWS Config file
+    #
 
-    echo "[profile $AWS_DEFAULT_REGION-admin]" >> ~/.aws/config
-    echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    [default]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "#" > ~/.aws/credentials
-    echo "# AWS Credentials file" >> ~/.aws/credentials
-    echo "#" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    [profile $AWS_DEFAULT_REGION-admin]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "[default]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    EOF
 
-    echo "[$AWS_DEFAULT_REGION-admin]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    cat << EOF > ~/.aws/credentials
+    #
+    # AWS Credentials file
+    #
 
-    chmod -R og-rwx ~/.aws
+    [default]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    [$AWS_DEFAULT_REGION-admin]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    EOF
+
+    aws ec2 describe-availability-zones --profile=default
+
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin
     ```
 
 4. Import Eucalyptus Administrator Demo Keypair
@@ -264,5 +247,19 @@ Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to r
     euca-describe-images
 
     euca-describe-instance-types
+    ```
+
+11. List Euca2ools Configuration
+
+    ```bash
+    cat ~/.euca/euca2ools.ini
+    ```
+
+12. List AWSCLI Configuration
+
+    ```bash
+    cat ~/.aws/config
+
+    cat ~/.aws/credentials
     ```
 

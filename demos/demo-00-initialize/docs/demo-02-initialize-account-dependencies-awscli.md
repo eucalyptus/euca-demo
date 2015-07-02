@@ -333,28 +333,25 @@ before you can run this procedure.
     result=$(aws iam create-access-key --user-name demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
     read access_key secret_key <<< $result
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/demo/demo/iamrc
+    AWSAccessKeyId=$access_key
+    AWSSecretKey=$secret_key
+    EOF
     ```
 
-16. Create Demo (demo) Account Demo (demo) User Tools Profile
+16. Create Demo (demo) Account Demo (demo) User Euca2ools Profile
 
     This allows the Demo Account Demo User to run API commands via Euca2ools
 
     ```bash
-    echo "[user demo-demo]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
+    cat << EOF >> ~/.euca/euca2ools.ini
+    [user demo-demo]
+    key-id = $access_key
+    secret-key = $secret_key
 
-    ```bash
-    echo "[user demo-demo]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    EOF
+
+    euca-describe-availablity-zones --region=demo-demo@$AWS_DEFAULT_REGION
     ```
 
 17. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
@@ -362,17 +359,21 @@ before you can run this procedure.
     This allows the Demo Account Demo User to run AWSCLI commands
 
     ```bash
-    region=$AWS_DEFAULT_REGION
+    cat << EOF >> ~/.aws/config
+    [profile $AWS_DEFAULT_REGION-demo-demo]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "[profile $region-demo-demo]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    EOF
 
-    echo "[$region-demo-demo]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    cat << EOF >> ~/.aws/credentials
+    [$AWS_DEFAULT_REGION-demo-demo]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    EOF
+
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-demo-demo
     ```
 
 18. Create Demo (demo) Account Developer (developer) User
@@ -403,30 +404,27 @@ before you can run this procedure.
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/demo/developer
 
     result=$(aws iam create-access-key --user-name developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
-    read access_key secret_key <<< "$result"
+    read access_key secret_key <<< $result
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/demo/developer/iamrc
+    AWSAccessKeyId=$access_key
+    AWSSecretKey=$secret_key
+    EOF
     ```
 
-22. Create Demo (demo) Account Developer (developer) User Tools Profile
+22. Create Demo (demo) Account Developer (developer) User Euca2ools Profile
 
     This allows the Demo Account Developer User to run API commands via Euca2ools
 
     ```bash
-    echo "[user demo-developer]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
+    cat << EOF >> ~/.euca/euca2ools.ini
+    [user demo-developer]
+    key-id = $access_key
+    secret-key = $secret_key
 
-    ```bash
-    echo "[user demo-developer]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    EOF
+
+    euca-describe-availablity-zones --region=demo-developer@$AWS_DEFAULT_REGION
     ```
 
 23. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
@@ -434,17 +432,21 @@ before you can run this procedure.
     This allows the Demo Account Developer User to run AWSCLI commands
 
     ```bash
-    region=$AWS_DEFAULT_REGION
+    cat << EOF >> ~/.aws/config
+    [profile $AWS_DEFAULT_REGION-demo-developer]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "[profile $region-demo-developer]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    EOF
 
-    echo "[$region-demo-developer]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    cat << EOF >> ~/.aws/credentials
+    [$AWS_DEFAULT_REGION-demo-developer]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    EOF
+
+    aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-demo-developer
     ```
 
 24. Create Demo (demo) Account User (user) User
@@ -477,28 +479,25 @@ before you can run this procedure.
     result=$(aws iam create-access-key --user-name user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}')
     read access_key secret_key <<< "$result"
 
-    echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-    echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/demo/user/iamrc
+    AWSAccessKeyId=$access_key
+    AWSSecretKey=$secret_key
+    EOF
     ```
 
-28. Create Demo (demo) Account User (user) User Tools Profile
+28. Create Demo (demo) Account User (user) User Euca2ools Profile
 
     This allows the Demo Account User User to run API commands via Euca2ools
 
     ```bash
-    echo "[user demo-user]" >> ~/.euca/euca2ools.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-    echo >> ~/.euca/euca2ools.ini
-    ```
+    cat << EOF >> ~/.euca/euca2ools.ini
+    [user demo-user]
+    key-id = $access_key
+    secret-key = $secret_key
 
-    ```bash
-    echo "[user demo-user]" >> ~/.euca/euca2ools-ssl.ini
-    echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-    echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-    echo >> ~/.euca/euca2ools-ssl.ini
+    EOF
+
+    euca-describe-availablity-zones --region=demo-user@$AWS_DEFAULT_REGION
     ```
 
 29. Create Demo (demo) Account User (user) User AWSCLI Profile
@@ -506,17 +505,21 @@ before you can run this procedure.
     This allows the Demo Account Demo User to run AWSCLI commands
 
     ```bash
-    region=$AWS_DEFAULT_REGION
+    cat << EOF >> ~/.aws/config
+    [profile $AWS_DEFAULT_REGION-demo-user]
+    region = $AWS_DEFAULT_REGION
+    output = text
 
-    echo "[profile $region-demo-user]" >> ~/.aws/config
-    echo "region = $region" >> ~/.aws/config
-    echo "output = text" >> ~/.aws/config
-    echo >> ~/.aws/config
+    EOF
 
-    echo "[$region-demo-user]" >> ~/.aws/credentials
-    echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-    echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-    echo >> ~/.aws/credentials
+    cat << EOF >> ~/.aws/credentials
+    [$AWS_DEFAULT_REGION-demo-user]
+    aws_access_key_id = $access_key
+    aws_secret_access_key = $secret_key
+
+    EOF
+
+    aws ec2 describe-availablity-zones --profile=$AWS_DEFAULT_REGION-demo-user
     ```
 
 30. List Demo Resources

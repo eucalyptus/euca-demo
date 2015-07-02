@@ -273,7 +273,6 @@ if [ $direct = 1 ]; then
     echo "sts-url = $sts_url"
     echo "swf-url = $swf_url"
 else
-    echo "[region $AWS_DEFAULT_REGION]"
     echo "autoscaling-url = $as_ssl_url"
     echo "cloudformation-url = $cfn_ssl_url"
     echo "ec2-url = $ec2_ssl_url"
@@ -292,7 +291,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones verbose
+echo "euca-describe-availability-zones verbose"
 echo
 echo "euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
 
