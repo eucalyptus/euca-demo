@@ -1567,48 +1567,6 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Display Eucalyptus CLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/$account/demo/iamrc
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/$account/developer/iamrc
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/$account/user/iamrc
-
-    next 200
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
 echo "$(printf '%2d' $step). Display Euca2ools Configuration"
 echo
 echo "============================================================"
@@ -1616,8 +1574,6 @@ echo
 echo "Commands:"
 echo
 echo "cat ~/.euca/euca2ools.ini"
-echo
-echo "cat ~/.euca/euca2ools-ssl.ini"
 
 run 50
 
@@ -1625,10 +1581,6 @@ if [ $choice = y ]; then
     echo
     echo "# cat ~/.euca/euca2ools.ini"
     cat ~/.euca/euca2ools.ini
-    pause
-
-    echo "# cat ~/.euca/euca2ools-ssl.ini"
-    cat ~/.euca/euca2ools-ssl.ini
 
     next 200
 fi

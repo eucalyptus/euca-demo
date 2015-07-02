@@ -766,6 +766,7 @@ echo
 echo "[profile $AWS_DEFAULT_REGION-admin]"
 echo "region = $AWS_DEFAULT_REGION"
 echo "output = text"
+echo
 echo "EOF"
 echo
 echo "cat << EOF > ~/.aws/credentials"
@@ -780,6 +781,7 @@ echo
 echo "[$AWS_DEFAULT_REGION-admin]"
 echo "aws_access_key_id = $AWS_ACCESS_KEY"
 echo "aws_secret_access_key = $AWS_SECRET_KEY"
+echo
 echo "EOF"
 echo
 echo "chmod -R og-rwx ~/.aws"
@@ -804,6 +806,7 @@ if [ $choice = y ]; then
     echo "> [profile-$AWS_DEFAULT_REGION-admin]"
     echo "> region = $AWS_DEFAULT_REGION"
     echo "> output = text"
+    echo ">"
     echo "> EOF"
     # Use echo instead of cat << EOF to better show indentation
     echo "#"                                    > ~/.aws/config
@@ -832,6 +835,7 @@ if [ $choice = y ]; then
     echo "> [$AWS_DEFAULT_REGION-admin]"
     echo "> aws_access_key_id = $AWS_ACCESS_KEY"
     echo "> aws_secret_access_key = $AWS_SECRET_KEY"
+    echo ">"
     echo "> EOF"
     # Use echo instead of cat << EOF to better show indentation
     echo "#"                                        > ~/.aws/credentials
@@ -867,6 +871,10 @@ echo
 echo "Commands:"
 echo
 echo "aws ec2 describe-key-pairs"
+echo
+echo "aws ec2 describe-key-pairs --profile=default"
+echo
+echo "aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin"
 
 run 50
 
@@ -874,6 +882,12 @@ if [ $choice = y ]; then
     echo
     echo "# aws ec2 describe-key-pairs"
     aws ec2 describe-key-pairs
+    echo "#"
+    echo "# aws ec2 describe-key-pairs --profile=default"
+    aws ec2 describe-key-pair --profile=defaults
+    echo "#"
+    echo "# aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin"
+    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
 
     next 50
 fi

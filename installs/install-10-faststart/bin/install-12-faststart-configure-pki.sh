@@ -316,7 +316,7 @@ else
             openssl rsa -in $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure \
                         -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
                         -passin pass:$password
-            cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+            cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key | sed -e 's/^/> /'
             cp /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key /etc/pki/tls/private
             chown root:root /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
             rm -f /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key

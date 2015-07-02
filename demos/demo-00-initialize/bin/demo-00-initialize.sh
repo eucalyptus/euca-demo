@@ -44,17 +44,19 @@ next_default=5
 
 interactive=1
 speed=100
-[ "$EUCA_INSTALL_MODE" = "local" ] && local=1 || local=0
+direct=0
+local=0
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-l]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-l]"
     echo "  -I  non-interactive"
     echo "  -s  slower: increase pauses by 25%"
     echo "  -f  faster: reduce pauses by 25%"
-    echo "  -l  Use local mirror for Demo CentOS image"
+    echo "  -d  use direct service endpoints in euca2ools.ini"
+    echo "  -l  use local mirror for Demo CentOS image"
 }
 
 run() {
@@ -137,11 +139,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfl? arg; do
+while getopts Isfdl? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    d)  direct=1;;
     l)  local=1;;
     ?)  usage
         exit 1;;
@@ -252,30 +255,44 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
-echo "echo \"[global]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"region = \$AWS_DEFAULT_REGION\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
-echo "echo \"[region $AWS_DEFAULT_REGION]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
-echo "echo \"user = admin\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "cat << EOF > ~/.euca/euca2ools.ini"
+echo "# Euca2ools Configuration file"
 echo
-echo "echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "[global]"
+echo "region = $AWS_DEFAULT_REGION"
 echo
-echo "more ~/.euca/euca2ools.ini"
+echo "[region $AWS_DEFAULT_REGION]"
+if [ $direct = 1 ]; then
+    echo "autoscaling-url = $as_url"
+    echo "cloudformation-url = $cfn_url"
+    echo "ec2-url = $ec2_url"
+    echo "elasticloadbalancing-url = $elb_url"
+    echo "iam-url = $iam_url"
+    echo "monitoring-url $cw_url"
+    echo "s3-url = $s3_url"
+    echo "sts-url = $sts_url"
+    echo "swf-url = $swf_url"
+else
+    echo "[region $AWS_DEFAULT_REGION]"
+    echo "autoscaling-url = $as_ssl_url"
+    echo "cloudformation-url = $cfn_ssl_url"
+    echo "ec2-url = $ec2_ssl_url"
+    echo "elasticloadbalancing-url = $elb_ssl_url"
+    echo "iam-url = $iam_ssl_url"
+    echo "monitoring-url $cw_ssl_url"
+    echo "s3-url = $s3_ssl_url"
+    echo "sts-url = $sts_ssl_url"
+    echo "swf-url = $swf_ssl_url"
+fi
+echo "user = admin"
+echo
+echo "[user admin]"
+echo "key-id = $access_key"
+echo "secret-key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "euca-describe-availability-zones verbose
 echo
 echo "euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
 
@@ -294,79 +311,81 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# echo \"# Euca2ools Configuration file\" > ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "# echo \"[global]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"region = \$AWS_DEFAULT_REGION\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "# echo \"[region $AWS_DEFAULT_REGION]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"autoscaling-url = $as_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"cloudformation-url = $cfn_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"ec2-url = $ec2_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"elasticloadbalancing-url = $elb_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"iam-url = $iam_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"monitoring-url $cw_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"s3-url = $s3_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"sts-url = $sts_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"swf-url = $swf_url\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"user = admin\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "# Euca2ools Configuration file" > ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        echo "[global]" >> ~/.euca/euca2ools.ini
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        echo "[region $AWS_DEFAULT_REGION]" >> ~/.euca/euca2ools.ini
-        echo "autoscaling-url = $as_url" >> ~/.euca/euca2ools.ini
-        echo "cloudformation-url = $cfn_url" >> ~/.euca/euca2ools.ini
-        echo "ec2-url = $ec2_url" >> ~/.euca/euca2ools.ini
-        echo "elasticloadbalancing-url = $elb_url" >> ~/.euca/euca2ools.ini
-        echo "iam-url = $iam_url" >> ~/.euca/euca2ools.ini
-        echo "monitoring-url $cw_url" >> ~/.euca/euca2ools.ini
-        echo "s3-url = $s3_url" >> ~/.euca/euca2ools.ini
-        echo "sts-url = $sts_url" >> ~/.euca/euca2ools.ini
-        echo "swf-url = $swf_url" >> ~/.euca/euca2ools.ini
-        echo "user = demo-admin" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "# Euca2ools Configuration file (via SSL proxy)" > ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
-        echo "[global]" >> ~/.euca/euca2ools-ssl.ini
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
-        echo "[region $AWS_DEFAULT_REGION]" >> ~/.euca/euca2ools-ssl.ini
-        echo "autoscaling-url = $as_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "cloudformation-url = $cfn_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "ec2-url = $ec2_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "elasticloadbalancing-url = $elb_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "iam-url = $iam_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "monitoring-url $cw_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "s3-url = $s3_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "sts-url = $sts_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "swf-url = $swf_ssl_url" >> ~/.euca/euca2ools-ssl.ini
-        echo "user = admin" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
+        echo "# cat << EOF > ~/.euca/euca2ools.ini"
+        echo "> # Euca2ools Configuration file"
+        echo ">"
+        echo "> [global]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo ">"
+        echo "> [region $AWS_DEFAULT_REGION]"
+        if [ $direct = 1 ]; then
+            echo "> autoscaling-url = $as_url"
+            echo "> cloudformation-url = $cfn_url"
+            echo "> ec2-url = $ec2_url"
+            echo "> elasticloadbalancing-url = $elb_url"
+            echo "> iam-url = $iam_url"
+            echo "> monitoring-url $cw_url"
+            echo "> s3-url = $s3_url"
+            echo "> sts-url = $sts_url"
+            echo "> swf-url = $swf_url"
+            echo "> user = admin"
+        else
+            echo "> autoscaling-url = $as_ssl_url"
+            echo "> cloudformation-url = $cfn_ssl_url"
+            echo "> ec2-url = $ec2_ssl_url"
+            echo "> elasticloadbalancing-url = $elb_ssl_url"
+            echo "> iam-url = $iam_ssl_url"
+            echo "> monitoring-url $cw_ssl_url"
+            echo "> s3-url = $s3_ssl_url"
+            echo "> sts-url = $sts_ssl_url"
+            echo "> swf-url = $swf_ssl_url"
+        fi
+        echo "> user = admin"
+        echo ">"
+        echo "> [user admin]"
+        echo "> key-id = $access_key"
+        echo "> secret-key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "# Euca2ools Configuration file"               > ~/.euca/euca2ools.ini
+        echo                                               >> ~/.euca/euca2ools.ini
+        echo "[global]"                                    >> ~/.euca/euca2ools.ini
+        echo "region = $AWS_DEFAULT_REGION"                >> ~/.euca/euca2ools.ini
+        echo                                               >> ~/.euca/euca2ools.ini
+        echo "[region $AWS_DEFAULT_REGION]"                >> ~/.euca/euca2ools.ini
+        if [ $direct = 1 ]; then
+            echo "autoscaling-url = $as_url"               >> ~/.euca/euca2ools.ini
+            echo "cloudformation-url = $cfn_url"           >> ~/.euca/euca2ools.ini
+            echo "ec2-url = $ec2_url"                      >> ~/.euca/euca2ools.ini
+            echo "elasticloadbalancing-url = $elb_url"     >> ~/.euca/euca2ools.ini
+            echo "iam-url = $iam_url"                      >> ~/.euca/euca2ools.ini
+            echo "monitoring-url $cw_url"                  >> ~/.euca/euca2ools.ini
+            echo "s3-url = $s3_url"                        >> ~/.euca/euca2ools.ini
+            echo "sts-url = $sts_url"                      >> ~/.euca/euca2ools.ini
+            echo "swf-url = $swf_url"                      >> ~/.euca/euca2ools.ini
+        else
+            echo "autoscaling-url = $as_ssl_url"           >> ~/.euca/euca2ools.ini
+            echo "cloudformation-url = $cfn_ssl_url"       >> ~/.euca/euca2ools.ini
+            echo "ec2-url = $ec2_ssl_url"                  >> ~/.euca/euca2ools.ini
+            echo "elasticloadbalancing-url = $elb_ssl_url" >> ~/.euca/euca2ools.ini
+            echo "iam-url = $iam_ssl_url"                  >> ~/.euca/euca2ools.ini
+            echo "monitoring-url $cw_ssl_url"              >> ~/.euca/euca2ools.ini
+            echo "s3-url = $s3_ssl_url"                    >> ~/.euca/euca2ools.ini
+            echo "sts-url = $sts_ssl_url"                  >> ~/.euca/euca2ools.ini
+            echo "swf-url = $swf_ssl_url"                  >> ~/.euca/euca2ools.ini
+        fi
+        echo "user = admin"                                >> ~/.euca/euca2ools.ini
+        echo                                               >> ~/.euca/euca2ools.ini
+        echo "[user admin]"                                >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key"                        >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"                    >> ~/.euca/euca2ools.ini
+        echo                                               >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# echo \"[user admin]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "[user admin]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "[user admin]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
-        pause
-
-        echo "# more ~/.euca/euca2ools.ini"
-        more ~/.euca/euca2ools.ini
-        pause
-
+        echo "# euca-describe-availability-zones verbose"
+        euca-describe-availability-zones verbose
+        echo "#"
         echo "# euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
         euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION
 
@@ -393,37 +412,39 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"#\" > ~/.aws/config"
-echo "echo \"# AWS Config file\" >> ~/.aws/config"
-echo "echo \"#\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
-echo "echo \"[default]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
-echo "echo \"[profile $AWS_DEFAULT_REGION-admin]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
+echo "cat << EOF > ~/.aws/config"
+echo "#"
+echo "# AWS Config file"
+echo "#"
 echo
-echo "more ~/.aws/config"
+echo "[default]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "echo \"#\" > ~/.aws/credentials"
-echo "echo \"# AWS Credentials file\" >> ~/.aws/credentials"
-echo "echo \"#\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
-echo "echo \"[default]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
-echo "echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
+echo "[profile $AWS_DEFAULT_REGION-admin]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "more ~/.aws/credentials"
+echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones"
+echo "cat << EOF > ~/.aws/credentials"
+echo "#"
+echo "# AWS Credentials file"
+echo "#"
+echo
+echo "[default]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "[$AWS_DEFAULT_REGION-admin]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "EOF"
+echo
+echo "aws ec2 describe-availability-zones --profile=default"
+echo
+echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-admin]" ~/.aws/config; then
     echo
@@ -440,70 +461,69 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
-        echo "# echo \"#\" > ~/.aws/config"
-        echo "# echo \"# AWS Config file\" >> ~/.aws/config"
-        echo "# echo \"#\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
-        echo "# echo \"[default]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
-        echo "# echo \"[profile $AWS_DEFAULT_REGION-admin]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
-        echo "#" > ~/.aws/config
-        echo "# AWS Config file" >> ~/.aws/config
-        echo "#" >> ~/.aws/config
-        echo >> ~/.aws/config
-        echo "[default]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
+        echo "# cat << EOF > ~/.aws/config"
+        echo "> #"
+        echo "> # AWS Config file"
+        echo "> #"
+        echo ">"
+        echo "> [default]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "> [profile $AWS_DEFAULT_REGION-admin]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "#"                                    > ~/.aws/config
+        echo "# AWS Config file"                   >> ~/.aws/config
+        echo "#"                                   >> ~/.aws/config
+        echo                                       >> ~/.aws/config
+        echo "[default]"                           >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
+        echo "output = text"                       >> ~/.aws/config
+        echo                                       >> ~/.aws/config
         echo "[profile $AWS_DEFAULT_REGION-admin]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
-        chmod 0600 ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
+        echo "output = text"                       >> ~/.aws/config
+        echo                                       >> ~/.aws/config
         pause
 
-        echo "# more ~/.aws/config"
-        more ~/.aws/config
-        pause
-
-        echo "# echo \"#\" > ~/.aws/credentials"
-        echo "# echo \"# AWS Credentials file\" >> ~/.aws/credentials"
-        echo "# echo \"#\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
-        echo "# echo \"[default]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
-        echo "# echo \"[$AWS_DEFAULT_REGION-admin]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
-        echo "#" > ~/.aws/credentials
-        echo "# AWS Credentials file" >> ~/.aws/credentials
-        echo "#" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
-        echo "[default]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo "# cat << EOF > ~/.aws/credentials"
+        echo "> #"
+        echo "> # AWS Credentials file"
+        echo "> #"
+        echo ">"
+        echo "> [default]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "> [$AWS_DEFAULT_REGION-admin]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "#"                                    > ~/.aws/credentials
+        echo "# AWS Credentials file"              >> ~/.aws/credentials
+        echo "#"                                   >> ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
+        echo "[default]"                           >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
-        echo "[$AWS_DEFAULT_REGION-admin]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
+        echo "[$AWS_DEFAULT_REGION-admin]"         >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
-        chmod 0600 ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# more ~/.aws/credentials"
-        more ~/.aws/credentials
-        pause
-
-        echo "# aws ec2 describe-availability-zones"
-        aws ec2 describe-availability-zones
+        echo "# aws ec2 describe-availability-zones --profile=default"
+        aws ec2 describe-availability-zones--profile=default
+        echo "#"
+        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin"
+        aws ec2 describe-availability-zones--profile=$AWS_DEFAULT_REGION-admin
 
         next
     fi
@@ -805,6 +825,60 @@ if [ $choice = y ]; then
     echo "# euca-describe-instance-types"
     euca-describe-instance-types
 
+    next 200
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat ~/.euca/euca2ools.ini"
+ 
+run 50
+ 
+if [ $choice = y ]; then
+    echo
+    echo "# cat ~/.euca/euca2ools.ini"
+    cat ~/.euca/euca2ools.ini
+ 
+    next 200
+fi
+ 
+ 
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat ~/.aws/config"
+echo
+echo "cat ~/.aws/credentials"
+ 
+run 50
+ 
+if [ $choice = y ]; then
+    echo
+    echo "# cat ~/.aws/config"
+    cat ~/.aws/config
+    pause
+ 
+    echo "# cat ~/.aws/credentials"
+    cat ~/.aws/credentials
+ 
     next 200
 fi
 

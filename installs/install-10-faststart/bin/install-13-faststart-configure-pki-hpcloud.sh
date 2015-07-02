@@ -478,6 +478,7 @@ if [ -r $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure ]; the
                 -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
                 -passin pass:$password
     cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+    echo "EOF"
     rm -f /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
 else
     echo "cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key"
@@ -505,7 +506,8 @@ else
             openssl rsa -in $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure \
                         -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
                         -passin pass:$password
-            cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+            cat /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key | sed -e 's/^/> /'
+            echo "> EOF"
             cp /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key /etc/pki/tls/private
             chown root:root /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
             rm -f /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key

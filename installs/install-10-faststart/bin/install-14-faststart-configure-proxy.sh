@@ -496,21 +496,21 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "cat << EOF > /etc/nginx/conf.d/upstream.conf"
-    echo "#"
-    echo "# Upstream servers"
-    echo "#"
-    echo
-    echo "# Eucalytus User-Facing Services"
-    echo "upstream ufs {"
-    echo "    server localhost:8773 max_fails=3 fail_timeout=30s;"
-    echo "}"
-    echo
-    echo "# Eucalyptus Console"
-    echo "upstream console {"
-    echo "    server localhost:8888 max_fails=3 fail_timeout=30s;"
-    echo "}"
-    echo "EOF"
+    echo "# cat << EOF > /etc/nginx/conf.d/upstream.conf"
+    echo "> #"
+    echo "> # Upstream servers"
+    echo "> #"
+    echo ">"
+    echo "> # Eucalytus User-Facing Services"
+    echo "> upstream ufs {"
+    echo ">     server localhost:8773 max_fails=3 fail_timeout=30s;"
+    echo "> }"
+    echo ">"
+    echo "> # Eucalyptus Console"
+    echo "> upstream console {"
+    echo ">     server localhost:8888 max_fails=3 fail_timeout=30s;"
+    echo "> }"
+    echo "> EOF"
     # Use echo instead of cat << EOF to better show indentation
     echo "#"                                                        > /etc/nginx/conf.d/upstream.conf
     echo "# Upstream servers"                                      >> /etc/nginx/conf.d/upstream.conf

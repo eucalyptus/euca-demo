@@ -27,7 +27,6 @@ tmpdir=/var/tmp
 generic_image=CentOS-6-x86_64-GenericCloud
 cfn_awscli_image=Centos-6-x86_64-CFN-AWSCLI
 
-
 step=0
 speed_max=400
 run_default=10
@@ -344,10 +343,12 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
-echo "echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-echo "echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-echo "echo >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "[user $account-admin]"
+echo "key-id = $access_key"
+echo "secret-key = $secret_key"
+echo
+echo "EOF"
 echo
 echo "euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION"
 
@@ -366,19 +367,17 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# echo \"[user $account-admin]\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"key-id = $access_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo \"secret-key = $secret_key\" >> ~/.euca/euca2ools.ini"
-        echo "# echo >> ~/.euca/euca2ools.ini"
-        echo "[user $account-admin]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools.ini
+        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "> [user $account-admin]"
+        echo "> key-id = $access_key"
+        echo "> secret-key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "[user $account-admin]"    >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key    " >> ~/.euca/euca2ools.ini
         echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo >> ~/.euca/euca2ools.ini
-        # Invisibly create the ssl variant
-        echo "[user $account-admin]" >> ~/.euca/euca2ools-ssl.ini
-        echo "key-id = $access_key" >> ~/.euca/euca2ools-ssl.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools-ssl.ini
-        echo >> ~/.euca/euca2ools-ssl.ini
+        echo                            >> ~/.euca/euca2ools.ini
         pause
 
         echo "# euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION"
@@ -405,15 +404,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "echo \"[profile $AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/config"
-echo "echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-echo "echo \"output = text\" >> ~/.aws/config"
-echo "echo >> ~/.aws/config"
+echo "cat << EOF >> ~/.aws/config"
+echo "[profile $AWS_DEFAULT_REGION-$account-admin]"
+echo "region = $AWS_DEFAULT_REGION"
+echo "output = text"
 echo
-echo "echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
-echo "echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-echo "echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-echo "echo >> ~/.aws/credentials"
+echo "EOF"
+echo
+echo "cat << EOF >> ~/.aws/credentials"
+echo "[$AWS_DEFAULT_REGION-$account-admin]"
+echo "aws_access_key_id = $access_key"
+echo "aws_secret_access_key = $secret_key"
+echo
+echo "EOF"
 echo
 echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
 
@@ -432,24 +435,30 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
-        echo "# echo \"[profile $AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/config"
-        echo "# echo \"region = $AWS_DEFAULT_REGION\" >> ~/.aws/config"
-        echo "# echo \"output = text\" >> ~/.aws/config"
-        echo "# echo >> ~/.aws/config"
+        echo "# cat << EOF >> ~/.aws/config"
+        echo "> [profile $AWS_DEFAULT_REGION-$account-admin]"
+        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> output = text"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[profile $AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
-        echo "output = text" >> ~/.aws/config
-        echo >> ~/.aws/config
+        echo "region = $AWS_DEFAULT_REGION"                 >> ~/.aws/config
+        echo "output = text"                                >> ~/.aws/config
+        echo                                                >> ~/.aws/config
         pause
 
-        echo "# echo \"[$AWS_DEFAULT_REGION-$account-admin]\" >> ~/.aws/credentials"
-        echo "# echo \"aws_access_key_id = $access_key\" >> ~/.aws/credentials"
-        echo "# echo \"aws_secret_access_key = $secret_key\" >> ~/.aws/credentials"
-        echo "# echo >> ~/.aws/credentials"
+        echo "# cat << EOF >> ~/.aws/credentials"
+        echo "> [$AWS_DEFAULT_REGION-$account-admin]"
+        echo "> aws_access_key_id = $access_key"
+        echo "> aws_secret_access_key = $secret_key"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
         echo "[$AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key" >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"      >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key"  >> ~/.aws/credentials
+        echo                                        >> ~/.aws/credentials
         pause
 
         echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
@@ -559,6 +568,60 @@ if [ $choice = y ]; then
 
     echo "# euare-accountlist"
     euare-accountlist
+
+    next 200
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat ~/.euca/euca2ools.ini"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat ~/.euca/euca2ools.ini"
+    cat ~/.euca/euca2ools.ini
+
+    next 200
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat ~/.aws/config"
+echo
+echo "cat ~/.aws/credentials"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat ~/.aws/config"
+    cat ~/.aws/config
+    pause
+
+    echo "# cat ~/.aws/credentials"
+    cat ~/.aws/credentials
 
     next 200
 fi
