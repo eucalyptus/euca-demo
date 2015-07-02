@@ -204,15 +204,15 @@ if [ $choice = y ]; then
         echo "#"
     fi
     echo "# sed -i -e \"/^clchost = localhost\$/s/localhost/$(hostname -i)/\" \\"
-    echo "         -e \"/# since eucalyptus allows for different services to be located on different/d\" \\"
-    echo "         -e \"/# physical hosts, you may override the above host and port for each service./d\" \\"
-    echo "         -e \"/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d\" \\"
-    echo "         -e \"/For each service, you can specify a different host and\/or port, for example;/d\" \\"
-    echo "         -e \"/#elb.host=10.20.30.40/d\" \\"
-    echo "         -e \"/#elb.port=443/d\" \\"
-    echo "         -e \"/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d\" \\"
-    echo "         -e \"/# that won't work from client's browsers./d\" \\"
-    echo "         -e \"/#s3.host=<your host IP or name>/d\" /etc/eucaconsole/console.ini"
+    echo ">        -e \"/# since eucalyptus allows for different services to be located on different/d\" \\"
+    echo ">        -e \"/# physical hosts, you may override the above host and port for each service./d\" \\"
+    echo ">        -e \"/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d\" \\"
+    echo ">        -e \"/For each service, you can specify a different host and\/or port, for example;/d\" \\"
+    echo ">        -e \"/#elb.host=10.20.30.40/d\" \\"
+    echo ">        -e \"/#elb.port=443/d\" \\"
+    echo ">        -e \"/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d\" \\"
+    echo ">        -e \"/# that won't work from client's browsers./d\" \\"
+    echo ">        -e \"/#s3.host=<your host IP or name>/d\" /etc/eucaconsole/console.ini"
     sed -i -e "/^clchost = localhost$/s/localhost/$(hostname -i)/" \
            -e "/# since eucalyptus allows for different services to be located on different/d" \
            -e "/# physical hosts, you may override the above host and port for each service./d" \
