@@ -884,7 +884,7 @@ if [ $choice = y ]; then
     aws ec2 describe-key-pairs
     echo "#"
     echo "# aws ec2 describe-key-pairs --profile=default"
-    aws ec2 describe-key-pair --profile=defaults
+    aws ec2 describe-key-pairs --profile=defaults
     echo "#"
     echo "# aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin"
     aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
