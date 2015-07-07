@@ -14,7 +14,6 @@ AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta net
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
   - Public: 10.104.10.74/16
-  - Private: 10.105.10.74/16 (Unused with FastStart)
 
 ### Define Parameters
 
