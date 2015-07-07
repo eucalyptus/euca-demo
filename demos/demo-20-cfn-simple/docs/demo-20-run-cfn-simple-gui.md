@@ -19,18 +19,21 @@ required.
 1. Login to the Eucalyptus Console as the Demo Account Administrator
 
     Using your browser, open: https://console.hp-aw2-1.hpcloudsvc.com.
-    [Login as Demo Account Administrator](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
+
+    ![Login as Demo Account Administrator](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
 
 2. Confirm existence of Demo depencencies
 
     From the Dashboard, use the top left Navigation icon to display the left Navigation Panel,
     then Select Images to View Images which the Demo Account can use.
-    [View Images](../images/demo-20-run-cfn-simple-02-images.png?raw=true)
+
+    ![View Images](../images/demo-20-run-cfn-simple-02-images.png?raw=true)
 
     The "centos66" image should exist.
 
     Return to the Dashboard, then select the Key Pairs Tile to View Key Pairs in the Demo Account.
-    [View Key Pairs](../images/demo-20-run-cfn-simple-02-key-pairs.png?raw=true)
+
+    ![View Key Pairs](../images/demo-20-run-cfn-simple-02-key-pairs.png?raw=true)
 
     The "demo" Key Pair should exist.
     ```
