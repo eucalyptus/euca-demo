@@ -1,6 +1,6 @@
 #/bin/bash
 #
-# This script runs a Eucalyptus CloudFormation demo which uses the
+# This script initializes a Eucalyptus CloudFormation demo which uses the
 # Simple.template to create a security group and an instance.
 #
 # This script was originally designed to run on a combined CLC+UFS+MC host,
@@ -163,7 +163,7 @@ if ! rpm -q --quiet w3m; then
 fi
 
 
-#  5. Run Demo
+#  5. Initialize Demo
 
 start=$(date +%s)
 
@@ -238,7 +238,6 @@ fi
 next
 
 
-((++step))
 clear
 echo
 echo "============================================================"
@@ -286,7 +285,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). List CloudFormation Stacks"
+echo "$(printf '%2d' $step). List initial CloudFormation Stacks"
 echo "    - So we can compare with what this demo creates"
 echo
 echo "============================================================"
@@ -306,222 +305,7 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Simple CloudFormation template"
-echo "    - The Simple.template creates a security group and an instance,"
-echo "      which references a keypair and an image created externally"
-echo "      and passed in as parameters"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "more $templatesdir/Simple.template"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# more $templatesdir/Simple.template"
-    if [ $interactive = 1 ]; then
-        more $templatesdir/Simple.template
-    else
-        # This will iterate over the file in a manner similar to more, but non-interactive
-        ((rows=$(tput lines)-2))
-        lineno=0
-        while IFS= read line; do
-            echo "$line"
-            if [ $((++lineno % rows)) = 0 ]; then
-                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
-                sleep 10
-                echo -e -n "\r                                \r"
-            fi
-        done < $templatesdir/Simple.template
-    fi
-
-    next 200
-fi
-
-
-((++step))
-image_id=$(euca-describe-images | grep $image_name.raw.manifest.xml | cut -f2)
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create the Stack"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
-    euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack
-    
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Monitor Stack creation"
-echo "    - NOTE: This can take about 60 - 80 seconds"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-describe-stacks"
-echo
-echo "euform-describe-stack-events SimpleDemoStack | head -10"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
-    pause
-
-    attempt=0
-    ((seconds=$create_default * $speed / 100))
-    while ((attempt++ <= create_attempts)); do
-        echo
-        echo "# euform-describe-stack-events SimpleDemoStack | head -10"
-        euform-describe-stack-events SimpleDemoStack | head -10
-
-        status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
-        if [ "$status" = "CREATE_COMPLETE" ]; then
-            break
-        else
-            echo
-            echo -n "Not finished ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List updated Resources"
-echo "    - Note addition of new group and instance"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-groups"
-echo
-echo "euca-describe-instances"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
-    pause
-
-    echo "# euca-describe-instances"
-    euca-describe-instances
-
-    next
-fi
-
-
-((++step))
-# This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
-instance_id=${result%%:*}
-temp=${result%:*} && public_name=${temp#*:}
-public_ip=${result##*:}
-user=centos
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm ability to login to Instance"
-echo "    - If unable to login, view instance console output with:"
-echo "      # euca-get-console-output $instance_id"
-echo "    - If able to login, first show the private IP with:"
-echo "      # ifconfig"
-echo "    - Then view meta-data about the public IP with:"
-echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
-echo "    - Logout of instance once login ability confirmed"
-echo "    - NOTE: This can take about 00 - 40 seconds"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-
-run 50
-
-if [ $choice = y ]; then
-    attempt=0
-    ((seconds=$login_default * $speed / 100))
-    while ((attempt++ <= login_attempts)); do
-        sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-        sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-        ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-        ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
-        echo
-        echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-        if [ $interactive = 1 ]; then
-            ssh -i ~/.ssh/demo_id_rsa $user@$public_name
-            RC=$?
-        else
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
-echo "# ifconfig"
-ifconfig
-sleep 5
-echo
-echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
-cat /tmp/public-ip4
-sleep 5
-EOF
-            RC=$?
-        fi
-        if [ $RC = 0 -o $RC = 1 ]; then
-            break
-        else
-            echo
-            echo -n "Not available ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
-
-    next
-fi
-
-
 end=$(date +%s)
 
 echo
-echo "Eucalyptus CloudFormation Simple.template demo execution complete (time: $(date -u -d @$((end-start)) +"%T"))"
+echo "Eucalyptus CloudFormation Simple.template demo initialization complete (time: $(date -u -d @$((end-start)) +"%T"))"
