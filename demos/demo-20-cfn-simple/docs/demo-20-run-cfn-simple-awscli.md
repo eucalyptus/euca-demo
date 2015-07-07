@@ -144,15 +144,27 @@ required.
 
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
-    If able to login, first show the private IP with:
-    $ ifconfig
-
-    Then view meta-data about the public IP with:
-    $ curl http://169.254.169.254/latest/meta-data/public-ipv4
-
     ```bash
     public_name=$(aws ec2 describe-instances | grep "^INSTANCE" | cut -f8,11 | sort -k1 | tail -1 | cut -f2)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```
+
+    Once you have successfully logged into the new instance. Confirm the private IP, then
+    the public IP via the meta-data service, with the following commands:
+
+    ```bash
+    ifconfig
+
+    curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
+    ```
+
+### CloudFormation Simple Demo Key Points
+    
+The following are key points illustrated in this demo:
+    
+* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
+  introduction to this feature in Eucalyptus.
+* It is possible to view, run and monitor activities and resources created by CloudFormation
+  via the Command line, or now within the Eucalyptus Console.
 
