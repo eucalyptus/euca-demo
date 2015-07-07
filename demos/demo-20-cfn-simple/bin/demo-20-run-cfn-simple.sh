@@ -213,7 +213,7 @@ echo "Commands:"
 echo
 echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
 echo
-echo "euca-describe-keypairs | -P \"^KEYPAIR\\tdemo\\t\""
+echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
 
 next
 
@@ -222,8 +222,8 @@ echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.
 euca-describe-images | grep -P "^IMAGE\temi-.*\timages/$image_name.raw.manifest.xml\t" || demo_initialized=n
 pause
 
-echo "euca-describe-keypairs | -P \"^KEYPAIR\\tdemo\\t\""
-euca-describe-keypairs | -P "^KEYPAIR\tdemo\t" || demo_initialized=n
+echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
+euca-describe-keypairs | grep -P "^KEYPAIR\tdemo\t" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
