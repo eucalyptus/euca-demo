@@ -145,10 +145,10 @@ required.
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
     If able to login, first show the private IP with:
-    # ifconfig
+    $ ifconfig
 
     Then view meta-data about the public IP with:
-    # curl http://169.254.169.254/latest/meta-data/public-ipv4
+    $ curl http://169.254.169.254/latest/meta-data/public-ipv4
 
     ```bash
     public_name=$(aws ec2 describe-instances | grep "^INSTANCE" | cut -f8,11 | sort -k1 | tail -1 | cut -f2)
