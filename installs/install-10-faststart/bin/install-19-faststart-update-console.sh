@@ -12,7 +12,7 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 tmpdir=/var/tmp
 
-eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.6723.435.20150702git397e9ed.el6.noarch.rpm
+eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.6851.457.20150713git5ecf6d2.el6.noarch.rpm
 
 step=0
 speed_max=400
