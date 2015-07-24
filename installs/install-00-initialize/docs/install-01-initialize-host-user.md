@@ -26,7 +26,7 @@ mkdir ~/bin
 cd ~/bin
 
 wget https://raw.githubusercontent.com/eucalyptus/euca-demo/feature/restructure/installs/install-00-initialize/bin/install-00-initialize-host-root.sh
-curl -k https://mirror.mjc.prc.eucalyptus-systems.com/software/mjchp/euca-demo/installs/install-00-initialize/bin/install-01-initialize-host-$user.sh > install-00-initialize/bin/install-01-initialize-host-$user.sh
+curl -k https://mirror.mjc.prc.eucalyptus-systems.com/software/mjchp/euca-demo/installs/install-00-initialize/bin/install-01-initialize-host-$user.sh > install-01-initialize-host-$user.sh
 
 chmod -R 0700 ~/bin
 
