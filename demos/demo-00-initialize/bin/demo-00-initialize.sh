@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# This script initializes Eucalyptus for Demos, including:
-# - Initialize Euca2ools for the Eucalyptus Account Administrator, allowing use of the API via euca2ools
-# - Initialize AWSCLI for the Eucalyptus Account Administrator, allowing use of the AWSCLI
+# This script initializes a Management Workstation and its associated Eucalyptus Region for Demos,
+# including:
+# - Initializes Euca2ools with the Region Endpoints
+# - Initializes Euca2ools for the Eucalyptus Account Administrator
+# - Initialize AWSCLI for the Eucalyptus Account Administrator
 # - Imports the Demo Keypair into the Eucalyptus Account
 # - Downloads a CentOS 6.6 Generic image
 # - Installs the CentOS 6.6 Generic image
@@ -10,13 +12,19 @@
 # - Installs the CentOS 6.6 with cfn-init and awscli image
 #
 # This script should be run by the Eucalyptus Administrator once after installation.
-# Then the demo-01-initialize-account.sh script should be run by the Eucalyptus Administrator as
-# many times as needed to create one or more demo accounts.
-# Then, for each demo account, the demo-02-initialize-account-dependencies.sh script should be run
-# by the Demo Account Administrator to create additional groups, users roles and instance profiles
-# in the account.
 #
-# All three initialization scripts are pre-requisites of running any demos!
+# Then the demo-01-initialize-account.sh script should be run by the Eucalyptus Administrator as
+# many times as needed to create one or more Demo Accounts.
+#
+# Then the demo-02-initialize-account-administrator.sh script should be run by the Eucalyptus
+# Administrator as many times as needed to create one or more IAM Users in the Demo Account
+# Administrators Group.
+#
+# Then the demo-03-initialize-account-dependencies.sh script should be run by the Demo Account
+# Administrator or an IAM User in the Administrators Group to create additional groups, users,
+# roles and instance profiles in the Demo Account.
+#
+# All four initialization scripts are pre-requisites of running any demos!
 #
 
 #  1. Initalize Environment
@@ -44,19 +52,23 @@ next_default=5
 
 interactive=1
 speed=100
-direct=0
+native=0
 local=0
+region=${AWS_DEFAULT_REGION#*@}
+domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-l]"
-    echo "  -I  non-interactive"
-    echo "  -s  slower: increase pauses by 25%"
-    echo "  -f  faster: reduce pauses by 25%"
-    echo "  -d  use direct service endpoints in euca2ools.ini"
-    echo "  -l  use local mirror for Demo CentOS image"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l] [-r region ] [ -d domain]"
+    echo "  -I         non-interactive"
+    echo "  -s         slower: increase pauses by 25%"
+    echo "  -f         faster: reduce pauses by 25%"
+    echo "  -n         use native service endpoints in euca2ools.ini"
+    echo "  -l         use local mirror for Demo CentOS image"
+    echo "  -r region  Eucalyptus Region (default: $region)"
+    echo "  -d domain  Eucalyptus Domain (default: $domain)"
 }
 
 run() {
@@ -144,8 +156,10 @@ while getopts Isfdl? arg; do
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    d)  direct=1;;
+    n)  native=1;;
     l)  local=1;;
+    r)  region="$OPTARG";;
+    d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -156,9 +170,30 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
-    echo "Could not find $AWS_DEFAULT_REGION Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
+else
+    case $region in
+      us-east-1|us-west-1|us-west-2|
+      sa-east-1|
+      eu-west-1|eu-central-1|
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
+fi
+
+if [ -z $domain ]; then
+    echo "-d domain missing!"
+    echo "Could not automatically determine domain, and it was not specified as a parameter"
+    exit 12
+fi
+
+if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
+    echo "Could not find $region Eucalyptus Account Administrator credentials!"
+    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"
     exit 20
 fi
 
@@ -203,46 +238,160 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "cat ~/.creds/$region/eucalyptus/admin/eucarc"
 echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$region/eucalyptus/admin/eucarc"
 
 next
 
 echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+echo "# cat ~/.creds/$region/eucalyptus/admin/eucarc"
+cat ~/.creds/$region/eucalyptus/admin/eucarc
 pause
 
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+echo "# source ~/.creds/$region/eucalyptus/admin/eucarc"
+source ~/.creds/$region/eucalyptus/admin/eucarc
 
 next
 
 
 ((++step))
-# Obtain all values we need from eucarc
-ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-as_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-cfn_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-cw_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-elb_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+# Construct Eucalyptus Endpoints (assumes AWS-style URLs)
+if [ $native = 0 ]; then
+    autoscaling_url=https://autoscaling.$region.$domain/services/AutoScaling
+    cloudformation_url=https://cloudformation.$region.$domain/services/CloudFormation
+    ec2_url=https://compute.$region.$domain/services/compute
+    elasticloadbalancing_url=https://loadbalancing.$region.$domain/services/LoadBalancing
+    iam_url=https://euare.$region.$domain/services/Euare
+    monitoring_url=https://cloudwatch.$region.$domain/services/CloudWatch
+    s3_url=https://objectstorage.$region.$domain/services/objectstorage
+    sts_url=https://tokens.$region.$domain/services/Tokens
+    swf_url=https://simpleworkflow.$region.$domain/services/SimpleWorkflow
+else
+    autoscaling_url=http://autoscaling.$region.$domain:8773/services/AutoScaling
+    cloudformation_url=http://cloudformation.$region.$domain:8773/services/CloudFormation
+    ec2_url=http://compute.$region.$domain:8773/services/compute
+    elasticloadbalancing_url=http://loadbalancing.$region.$domain:8773/services/LoadBalancing
+    iam_url=http://euare.$region.$domain:8773/services/Euare
+    monitoring_url=http://cloudwatch.$region.$domain:8773/services/CloudWatch
+    s3_url=http://objectstorage.$region.$domain:8773/services/objectstorage
+    sts_url=http://tokens.$region.$domain:8773/services/Tokens
+    swf_url=http://simpleworkflow.$region.$domain:8773/services/SimpleWorkflow
+fi
+# Or, alternatively, obtain all values we need from eucarc
+#autoscaling_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#cloudformation_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#elasticloadbalancing_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#monitoring_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+#if [ $native = 0 ]; then
+#    autoscaling_url=${autoscaling_url/http:/https:} && autoscaling_url=${autoscaling_url/:8773/}
+#    cloudformation_url=${cloudformation_url/http:/https:} && cloudformation_url=${cloudformation_url/:8773/}
+#    ec2_url=${ec2_url/http:/https:} && ec2_url=${ec2_url/:8773/}
+#    elasticloadbalancing_url=${elasticloadbalancing_url/http:/https:} && elasticloadbalancing_url=${elasticloadbalancing_url/:8773/}
+#    iam_url=${iam_url/http:/https:} && iam_url=${iam_url/:8773/}
+#    monitoring_url=${monitoring_url/http:/https:} && monitoring_url=${monitoring_url/:8773/}
+#    s3_url=${s3_url/http:/https:} && s3_url=${s3_url/:8773/}
+#    sts_url=${sts_url/http:/https:} && sts_url=${sts_url/:8773/}
+#    swf_url=${swf_url/http:/https:} && swf_url=${swf_url/:8773/}
+#fi
 
-ec2_ssl_url=${ec2_url/http:/https:} && ec2_ssl_url=${ec2_ssl_url/:8773/}
-s3_ssl_url=${s3_url/http:/https:} && s3_ssl_url=${s3_ssl_url/:8773/}
-iam_ssl_url=${iam_url/http:/https:} && iam_ssl_url=${iam_ssl_url/:8773/}
-sts_ssl_url=${sts_url/http:/https:} && sts_ssl_url=${sts_ssl_url/:8773/}
-as_ssl_url=${as_url/http:/https:} && as_ssl_url=${as_ssl_url/:8773/}
-cfn_ssl_url=${cfn_url/http:/https:} && cfn_ssl_url=${cfn_ssl_url/:8773/}
-cw_ssl_url=${cw_url/http:/https:} && cw_ssl_url=${cw_ssl_url/:8773/}
-elb_ssl_url=${elb_url/http:/https:} && elb_ssl_url=${elb_ssl_url/:8773/}
-swf_ssl_url=${swf_url/http:/https:} && swf_ssl_url=${swf_ssl_url/:8773/}
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Initialize Euca2ools with Eucalyptus Region Endpoints"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF > ~/.euca/euca2ools.ini"
+echo "# Euca2ools Configuration file"
+echo
+echo "[global]"
+echo "region = $region"
+echo
+echo "[region $region]"
+echo "autoscaling-url = $autoscaling_url"
+echo "cloudformation-url = $cloudformation_url"
+echo "ec2-url = $ec2_url"
+echo "elasticloadbalancing-url = $elasticloadbalancing_url"
+echo "iam-url = $iam_url"
+echo "monitoring-url $monitoring_url"
+echo "s3-url = $s3_url"
+echo "sts-url = $sts_url"
+echo "swf-url = $swf_url"
+echo "user = admin"
+echo
+echo "EOF"
+
+if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "\[region $region]" ~/.euca/euca2ools.ini; then
+    echo
+    tput rev
+    echo "Already Initialized!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        mkdir -p ~/.euca
+        chmod 0700 ~/.euca
+        echo
+        echo "# cat << EOF > ~/.euca/euca2ools.ini"
+        echo "> # Euca2ools Configuration file"
+        echo ">"
+        echo "> [global]"
+        echo "> region = $region"
+        echo ">"
+        echo "> [region $region]"
+        echo "> autoscaling-url = $autoscaling_url"
+        echo "> cloudformation-url = $cloudformation_url"
+        echo "> ec2-url = $ec2_url"
+        echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
+        echo "> iam-url = $iam_url"
+        echo "> monitoring-url $monitoring_url"
+        echo "> s3-url = $s3_url"
+        echo "> sts-url = $sts_url"
+        echo "> swf-url = $swf_url"
+        echo "> user = admin"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "# Euca2ools Configuration file"                        > ~/.euca/euca2ools.ini
+        echo                                                        >> ~/.euca/euca2ools.ini
+        echo "[global]"                                             >> ~/.euca/euca2ools.ini
+        echo "region = $region"                                     >> ~/.euca/euca2ools.ini
+        echo                                                        >> ~/.euca/euca2ools.ini
+        echo "[region $region]"                                     >> ~/.euca/euca2ools.ini
+        echo "autoscaling-url = $autoscaling_url"                   >> ~/.euca/euca2ools.ini
+        echo "cloudformation-url = $cloudformation_url"             >> ~/.euca/euca2ools.ini
+        echo "ec2-url = $ec2_url"                                   >> ~/.euca/euca2ools.ini
+        echo "elasticloadbalancing-url = $elasticloadbalancing_url" >> ~/.euca/euca2ools.ini
+        echo "iam-url = $iam_url"                                   >> ~/.euca/euca2ools.ini
+        echo "monitoring-url $monitoring_url"                       >> ~/.euca/euca2ools.ini
+        echo "s3-url = $s3_url"                                     >> ~/.euca/euca2ools.ini
+        echo "sts-url = $sts_url"                                   >> ~/.euca/euca2ools.ini
+        echo "swf-url = $swf_url"                                   >> ~/.euca/euca2ools.ini
+        echo "user = admin"                                         >> ~/.euca/euca2ools.ini
+        echo                                                        >> ~/.euca/euca2ools.ini
+
+        next
+    fi
+fi
+
+
+((++step))
+# Obtain all values we need from eucarc
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 
 clear
 echo
@@ -255,36 +404,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > ~/.euca/euca2ools.ini"
-echo "# Euca2ools Configuration file"
-echo
-echo "[global]"
-echo "region = $AWS_DEFAULT_REGION"
-echo
-echo "[region $AWS_DEFAULT_REGION]"
-if [ $direct = 1 ]; then
-    echo "autoscaling-url = $as_url"
-    echo "cloudformation-url = $cfn_url"
-    echo "ec2-url = $ec2_url"
-    echo "elasticloadbalancing-url = $elb_url"
-    echo "iam-url = $iam_url"
-    echo "monitoring-url $cw_url"
-    echo "s3-url = $s3_url"
-    echo "sts-url = $sts_url"
-    echo "swf-url = $swf_url"
-else
-    echo "autoscaling-url = $as_ssl_url"
-    echo "cloudformation-url = $cfn_ssl_url"
-    echo "ec2-url = $ec2_ssl_url"
-    echo "elasticloadbalancing-url = $elb_ssl_url"
-    echo "iam-url = $iam_ssl_url"
-    echo "monitoring-url $cw_ssl_url"
-    echo "s3-url = $s3_ssl_url"
-    echo "sts-url = $sts_ssl_url"
-    echo "swf-url = $swf_ssl_url"
-fi
-echo "user = admin"
-echo
+echo "cat << EOF >> ~/.euca/euca2ools.ini"
 echo "[user admin]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
@@ -293,7 +413,7 @@ echo "EOF"
 echo
 echo "euca-describe-availability-zones verbose"
 echo
-echo "euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones verbose --region admin@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -311,71 +431,12 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# cat << EOF > ~/.euca/euca2ools.ini"
-        echo "> # Euca2ools Configuration file"
-        echo ">"
-        echo "> [global]"
-        echo "> region = $AWS_DEFAULT_REGION"
-        echo ">"
-        echo "> [region $AWS_DEFAULT_REGION]"
-        if [ $direct = 1 ]; then
-            echo "> autoscaling-url = $as_url"
-            echo "> cloudformation-url = $cfn_url"
-            echo "> ec2-url = $ec2_url"
-            echo "> elasticloadbalancing-url = $elb_url"
-            echo "> iam-url = $iam_url"
-            echo "> monitoring-url $cw_url"
-            echo "> s3-url = $s3_url"
-            echo "> sts-url = $sts_url"
-            echo "> swf-url = $swf_url"
-            echo "> user = admin"
-        else
-            echo "> autoscaling-url = $as_ssl_url"
-            echo "> cloudformation-url = $cfn_ssl_url"
-            echo "> ec2-url = $ec2_ssl_url"
-            echo "> elasticloadbalancing-url = $elb_ssl_url"
-            echo "> iam-url = $iam_ssl_url"
-            echo "> monitoring-url $cw_ssl_url"
-            echo "> s3-url = $s3_ssl_url"
-            echo "> sts-url = $sts_ssl_url"
-            echo "> swf-url = $swf_ssl_url"
-        fi
-        echo "> user = admin"
-        echo ">"
         echo "> [user admin]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "# Euca2ools Configuration file"               > ~/.euca/euca2ools.ini
-        echo                                               >> ~/.euca/euca2ools.ini
-        echo "[global]"                                    >> ~/.euca/euca2ools.ini
-        echo "region = $AWS_DEFAULT_REGION"                >> ~/.euca/euca2ools.ini
-        echo                                               >> ~/.euca/euca2ools.ini
-        echo "[region $AWS_DEFAULT_REGION]"                >> ~/.euca/euca2ools.ini
-        if [ $direct = 1 ]; then
-            echo "autoscaling-url = $as_url"               >> ~/.euca/euca2ools.ini
-            echo "cloudformation-url = $cfn_url"           >> ~/.euca/euca2ools.ini
-            echo "ec2-url = $ec2_url"                      >> ~/.euca/euca2ools.ini
-            echo "elasticloadbalancing-url = $elb_url"     >> ~/.euca/euca2ools.ini
-            echo "iam-url = $iam_url"                      >> ~/.euca/euca2ools.ini
-            echo "monitoring-url $cw_url"                  >> ~/.euca/euca2ools.ini
-            echo "s3-url = $s3_url"                        >> ~/.euca/euca2ools.ini
-            echo "sts-url = $sts_url"                      >> ~/.euca/euca2ools.ini
-            echo "swf-url = $swf_url"                      >> ~/.euca/euca2ools.ini
-        else
-            echo "autoscaling-url = $as_ssl_url"           >> ~/.euca/euca2ools.ini
-            echo "cloudformation-url = $cfn_ssl_url"       >> ~/.euca/euca2ools.ini
-            echo "ec2-url = $ec2_ssl_url"                  >> ~/.euca/euca2ools.ini
-            echo "elasticloadbalancing-url = $elb_ssl_url" >> ~/.euca/euca2ools.ini
-            echo "iam-url = $iam_ssl_url"                  >> ~/.euca/euca2ools.ini
-            echo "monitoring-url $cw_ssl_url"              >> ~/.euca/euca2ools.ini
-            echo "s3-url = $s3_ssl_url"                    >> ~/.euca/euca2ools.ini
-            echo "sts-url = $sts_ssl_url"                  >> ~/.euca/euca2ools.ini
-            echo "swf-url = $swf_ssl_url"                  >> ~/.euca/euca2ools.ini
-        fi
-        echo "user = admin"                                >> ~/.euca/euca2ools.ini
-        echo                                               >> ~/.euca/euca2ools.ini
         echo "[user admin]"                                >> ~/.euca/euca2ools.ini
         echo "key-id = $access_key"                        >> ~/.euca/euca2ools.ini
         echo "secret-key = $secret_key"                    >> ~/.euca/euca2ools.ini
@@ -385,8 +446,8 @@ else
         echo "# euca-describe-availability-zones verbose"
         euca-describe-availability-zones verbose
         echo "#"
-        echo "# euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones verbose --region admin@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones verbose --region admin@$region"
+        euca-describe-availability-zones verbose --region admin@$region
 
         next
     fi
@@ -395,8 +456,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 
 clear
 echo
@@ -417,11 +478,11 @@ echo "# AWS Config file"
 echo "#"
 echo
 echo "[default]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "region = $region"
 echo "output = text"
 echo
-echo "[profile $AWS_DEFAULT_REGION-admin]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "[profile $region-admin]"
+echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
@@ -435,7 +496,7 @@ echo "[default]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
-echo "[$AWS_DEFAULT_REGION-admin]"
+echo "[$region-admin]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
@@ -443,9 +504,9 @@ echo "EOF"
 echo
 echo "aws ec2 describe-availability-zones --profile=default"
 echo
-echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin"
+echo "aws ec2 describe-availability-zones --profile=$region-admin"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-admin]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-admin]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -466,27 +527,27 @@ else
         echo "> #"
         echo ">"
         echo "> [default]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
-        echo "> [profile $AWS_DEFAULT_REGION-admin]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> [profile $region-admin]"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "#"                                    > ~/.aws/config
-        echo "# AWS Config file"                   >> ~/.aws/config
-        echo "#"                                   >> ~/.aws/config
-        echo                                       >> ~/.aws/config
-        echo "[default]"                           >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
-        echo "output = text"                       >> ~/.aws/config
-        echo                                       >> ~/.aws/config
-        echo "[profile $AWS_DEFAULT_REGION-admin]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"        >> ~/.aws/config
-        echo "output = text"                       >> ~/.aws/config
-        echo                                       >> ~/.aws/config
+        echo "#"                        > ~/.aws/config
+        echo "# AWS Config file"       >> ~/.aws/config
+        echo "#"                       >> ~/.aws/config
+        echo                           >> ~/.aws/config
+        echo "[default]"               >> ~/.aws/config
+        echo "region = $region"        >> ~/.aws/config
+        echo "output = text"           >> ~/.aws/config
+        echo                           >> ~/.aws/config
+        echo "[profile $region-admin]" >> ~/.aws/config
+        echo "region = $region"        >> ~/.aws/config
+        echo "output = text"           >> ~/.aws/config
+        echo                           >> ~/.aws/config
         pause
 
         echo "# cat << EOF > ~/.aws/credentials"
@@ -498,7 +559,7 @@ else
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
-        echo "> [$AWS_DEFAULT_REGION-admin]"
+        echo "> [$region-admin]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
@@ -512,7 +573,7 @@ else
         echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo                                       >> ~/.aws/credentials
-        echo "[$AWS_DEFAULT_REGION-admin]"         >> ~/.aws/credentials
+        echo "[$region-admin]"                     >> ~/.aws/credentials
         echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo                                       >> ~/.aws/credentials
@@ -521,8 +582,8 @@ else
         echo "# aws ec2 describe-availability-zones --profile=default"
         aws ec2 describe-availability-zones--profile=default
         echo "#"
-        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin"
-        aws ec2 describe-availability-zones--profile=$AWS_DEFAULT_REGION-admin
+        echo "# aws ec2 describe-availability-zones --profile=$region-admin"
+        aws ec2 describe-availability-zones--profile=$region-admin
 
         next
     fi
@@ -759,7 +820,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Modify an Instance Type"
+echo "$(printf '%2d' $step). Modify Instance Types"
 echo "    - Change the m1.small instance type:"
 echo "      - to use 1 GB memory instead of the 256 MB default"
 echo "      - to use 10 GB disk instead of the 5 GB default"
@@ -886,4 +947,4 @@ end=$(date +%s)
 
 echo
 echo "Eucalyptus Account initialized for demos (time: $(date -u -d @$((end-start)) +"%T"))"
-echo "Please run \"demo-01-initialize-account.sh$a\" to continue with demo initialization"
+echo "Please run \"demo-01-initialize-account.sh\" to continue with demo initialization"

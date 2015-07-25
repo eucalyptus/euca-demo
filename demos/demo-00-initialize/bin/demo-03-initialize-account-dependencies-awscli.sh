@@ -1,43 +1,43 @@
 #!/bin/bash
 #
-# This script initializes a Demo Account within Eucalyptus with dependencies used in demos, including:
-# - Confirms the Demo Image is available to the Demo Account
+# This script initializes a Demo Account within either Eucalyptus or AWS with dependencies used
+# in demos, including:
 # - Imports the Demo Keypair into the Demo Account
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
-# - Creates the Demos Role Policy, which allows read-only access to Demo Resources,
-#   and write access to an S3 bucket used in Demos.
-# - Creates the Demos Group (named "Demos"), used for Users which create, own and manage Resources
-# - Creates the Demos Group Policy, which allows full access to all Resources, except Users and Groups
-# - Creates the Developers Group (named "Developers"), used for Users which have developer-level control of Resources
-# - Creates the Developers Group Policy, which allows full access to all Resources, except Users and Groups
-# - Creates the Users Group (named "Users"), used for Users which have read-only visibility to Resources
-# - Creates the Users Group Policy, which allows read-only access to all Resources
+# - Creates the Demos Role Policy
+# - Creates the Demos Group (named "Demos")
+# - Creates the Demos Group Policy
+# - Creates the Developers Group (named "Developers")
+# - Creates the Developers Group Policy
+# - Creates the Users Group (named "Users")
+# - Creates the Users Group Policy
 # - Creates a demo User (named "demo"), as an example User within the Demos Group
 # - Adds the demo User to the Demos Group
-# - Creates the demo User Login Profile, allowing the use of the console
-# - Creates the demo User Access Key, allowing use of the API
-# - Configures Euca2ools for the demo User, allowing use of the API via Euca2ools
-# - Configures AWSCLI for the demo User, allowing use of the AWSCLI
+# - Creates the demo User Login Profile
+# - Creates the demo User Access Key
+# - Configures Euca2ools for the demo User
+# - Configures AWSCLI for the demo User
 # - Creates a developer User (named "developer"), an an example User within the Developers Group
 # - Adds the developer User to the Developers Group
-# - Creates the developer User Login Profile, allowing the use of the console
-# - Creates the developer User Access Key, allowing use of the API
-# - Configures Euca2ools for the developer User, allowing use of the API via Euca2ools
-# - Configures AWSCLI for the developer User, allowing use of the AWSCLI
+# - Creates the developer User Login Profile
+# - Creates the developer User Access Key
+# - Configures Euca2ools for the developer User
+# - Configures AWSCLI for the developer User
 # - Creates a user User (named "user"), as an example User within the Users Group
 # - Adds the user User to the Users Group
-# - Creates the user User Login Profile, allowing the use of the console
-# - Creates the user User Access Key, allowing use of the API
-# - Configures Euca2ools for the user User, allowing use of the API via Euca2ools
-# - Configures AWSCLI for the user User, allowing use of the AWSCLI
-# - Lists Demo Resources
+# - Creates the user User Login Profile
+# - Creates the user User Access Key
+# - Configures Euca2ools for the user User
+# - Configures AWSCLI for the user User
+# - Lists Demo Account Resources
 # - Displays Eucalyptus CLI Configuration
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
 # The demo-00-initialize.sh and demo-01-initialize-account.sh scripts should both be run by the
-# Eucalyptus Administrator prior to running this script, as those scripts create images and
-# the account referenced in this script.
+# Eucalyptus Administrator prior to running this script against Eucalyptus, as those scripts create
+# images and the account referenced in this script.
+#
 # This script should be run by the Demo Account Administrator last, so all operations are done
 # within the context of the Demo Account.
 #
@@ -70,7 +70,9 @@ next_default=5
 
 interactive=1
 speed=100
+region=${AWS_DEFAULT_REGION#*@}
 account=demo
+user=admin
 password=${account}123
 user_demo_password=${password}-${user_demo}
 user_developer_password=${password}-${user_developer}
@@ -80,12 +82,14 @@ user_user_password=${password}-${user_user}
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-p password]"
-    echo "  -I          non-interactive"
-    echo "  -s          slower: increase pauses by 25%"
-    echo "  -f          faster: reduce pauses by 25%"
-    echo "  -a account  account to create for use in demos (default: $account)"
-    echo "  -p password password prefix for demo account users (default: $password)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user] [-p password]"
+    echo "  -I           non-interactive"
+    echo "  -s           slower: increase pauses by 25%"
+    echo "  -f           faster: reduce pauses by 25%"
+    echo "  -r region    Eucalyptus Region (default: $region)"
+    echo "  -a account   Eucalyptus Account (default: $account)"
+    echo "  -u user      Eucalyptus User in Administrators Group, used to create Resources (default: $user)"
+    echo "  -p password  password prefix to use for new User passwords (default: $password)"
 }
 
 run() {
@@ -168,12 +172,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:p:? arg; do
+while getopts Isfr:a:u:p:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    r)  region="$OPTARG";;
     a)  account="$OPTARG";;
+    u)  user="$OPTARG";;
     p)  password="$OPTARG"
         user_demo_password=${password}-${user_demo}
         user_developer_password=${password}-${user_developer}
@@ -188,9 +194,29 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if ! grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
-    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION-$account-admin profile!"
-    echo "   Expected to find: [profile $AWS_DEFAULT_REGION-$account-admin] in ~/.aws/config"
+case $region in
+  aws) federation=aws;;
+  us-east-1) federation=aws;;
+  us-west-1) federation=aws;;
+  us-west-2) federation=aws;;
+  sa-east-1) federation=aws;;
+  eu-west-1) federation=aws;;
+  eu-central-1) federation=aws;;
+  ap-northeast-1) federation=aws;;
+  ap-southeast-1) federation=aws;;
+  ap-southeast-2) federation=aws;;
+  *) federation=$region;;
+esac
+
+if [ $federation = aws ]; then
+    profile=$account-$user
+else
+    profile=$federation-$account-$user
+fi
+
+if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+    echo "-r $region, -a $account and/or -u $user invalid: Could not find $profile profile!"
+    echo "   Expected to find: [profile $profile] in ~/.aws/config"
     exit 21
 fi
 
@@ -212,22 +238,22 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-$account-admin"
+echo "export AWS_DEFAULT_PROFILE=$profile"
 echo
-echo "echo \$AWS_DEFAULT_REGION"
 echo "echo \$AWS_DEFAULT_PROFILE"
+echo "echo \$AWS_DEFAULT_REGION"
 
 next
 
 echo
-echo "# export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-$account-admin"
-export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-$account-admin
+echo "# export AWS_DEFAULT_PROFILE=$profile"
+export AWS_DEFAULT_PROFILE=$profile
 pause
 
-echo "# echo \$AWS_DEFAULT_REGION"
-echo $AWS_DEFAULT_REGION
 echo "# echo \$AWS_DEFAULT_PROFILE"
 echo $AWS_DEFAULT_PROFILE
+echo "# echo \$AWS_DEFAULT_REGION"
+echo $AWS_DEFAULT_REGION
 
 next
 

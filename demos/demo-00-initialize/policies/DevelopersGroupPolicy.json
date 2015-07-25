@@ -3,8 +3,8 @@
   "Statement": [
     {
       "NotAction": "iam:*",
-      "Resource": "*",
-      "Effect": "Allow"
+      "Effect": "Allow",
+      "Resource": "*"
     }
   ]
 }

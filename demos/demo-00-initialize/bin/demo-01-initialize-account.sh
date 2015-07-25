@@ -1,21 +1,30 @@
 #!/bin/bash
 #
-# This script initializes Eucalyptus with a Demo Account, including:
-# - Creates a Demo Account (default name is "demo", but this can be overridden)
-# - Creates the Demo Account Administrator Login Profile, allowing the use of the console
-# - Downloads the Demo Account Administrator Credentials, allowing use of the API
-# - Configures Euca2ools for the Demo Account Administrator, allowing use of the API via euca2ools
-# - Configures AWSCLI for the Demo Account Administrator, allowing use of the AWSCLI
+# This script initializes a Management Workstation and its associated Eucalyptus Region with a 
+# Demo Account, including:
+# - Creates a Demo Account (named "demo" by default)
+# - Creates the Demo Account Administrator Login Profile
+# - Downloads the Demo Account Administrator Credentials
+# - Configures Euca2ools for the Demo Account Administrator
+# - Configures AWSCLI for the Demo Account Administrator
 # - Authorizes use of the CentOS 6.6 Generic image by the Demo Account
 # - Authorizes use of the CentOS 6.6 CFN + AWSCLI image by the Demo Account
 #
-# The demo-00-initialize.sh script should be run by the Eucalyptus Administrator
-# prior to running this script, as this script references images it installs.
-# This script should be run by the Eucalyptus Administrator next, then the
-# demo-02-initialize-account-dependencies.sh script should be run by the
-# Demo Account Administrator to create additional objects in the account.
+# The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
+# running this script, as this script references images it installs.
 #
-# All three initialization scripts are pre-requisites of running any demos!
+# This script should be run by the Eucalyptus Administrator next, as many times as needed to
+# create one or more Demo Accounts.
+#
+# Then the demo-02-initialize-account-administrator.sh script should be run by the Eucalyptus
+# Administrator as many times as needed to create one or more IAM Users in the Demo Account
+# Administrators Group.
+#
+# Then the demo-03-initialize-account-dependencies.sh script should be run by the Demo Account
+# Administrator or an IAM User in the Administrators Group to create additional groups, users,
+# roles and instance profiles in the Demo Account.
+#
+# All four initialization scripts are pre-requisites of running any demos!
 #
 
 #  1. Initalize Environment
@@ -35,19 +44,21 @@ next_default=5
 
 interactive=1
 speed=100
+region=${AWS_DEFAULT_REGION#*@}
 account=demo
-demo_admin_password=${account}123
+password=${account}123
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-p password]"
-    echo "  -I          non-interactive"
-    echo "  -s          slower: increase pauses by 25%"
-    echo "  -f          faster: reduce pauses by 25%"
-    echo "  -a account  account to create for use in demos (default: $account)"
-    echo "  -p password password for demo account administrator (default: $demo_admin_password)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-p password]"
+    echo "  -I           non-interactive"
+    echo "  -s           slower: increase pauses by 25%"
+    echo "  -f           faster: reduce pauses by 25%"
+    echo "  -r region    Eucalyptus Region (default: $region)"
+    echo "  -a account   Eucalyptus Account to create for use in demos (default: $account)"
+    echo "  -p password  password for Demo Account Administrator (default: $password)"
 }
 
 run() {
@@ -130,13 +141,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:p:? arg; do
+while getopts Isfr:a:p:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    r)  region="$OPTARG";;
     a)  account="$OPTARG";;
-    p)  demo_admin_password="$OPTARG";;
+    p)  password="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -147,9 +159,36 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
-    echo "Could not find $AWS_DEFAULT_REGION Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
+else
+    case $region in
+      us-east-1|us-west-1|us-west-2|
+      sa-east-1|
+      eu-west-1|eu-central-1|
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
+fi
+
+if [ -z $account ]; then
+    echo "-a account missing!"
+    echo "Could not automatically determine account, and it was not specified as a parameter"
+    exit 12
+fi
+
+if [ -z $password ]; then
+    echo "-p password missing!"
+    echo "Password must be specified as a parameter"
+    exit 16
+fi
+
+if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
+    echo "Could not find $region Eucalyptus Account Administrator credentials!"
+    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"
     exit 20
 fi
 
@@ -169,19 +208,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "cat ~/.creds/$region/eucalyptus/admin/eucarc"
 echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "source ~/.creds/$region/eucalyptus/admin/eucarc"
 
 next
 
 echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+echo "# cat ~/.creds/$region/eucalyptus/admin/eucarc"
+cat ~/.creds/$region/eucalyptus/admin/eucarc
 pause
 
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+echo "# source ~/.creds/$region/eucalyptus/admin/eucarc"
+source ~/.creds/$region/eucalyptus/admin/eucarc
 
 next
 
@@ -232,7 +271,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usermodloginprofile –u admin –p $demo_admin_password -as-account $account"
+echo "euare-usermodloginprofile –u admin –p $password -as-account $account"
 
 if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
     echo
@@ -248,8 +287,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $account"
-        euare-usermodloginprofile -u admin -p $demo_admin_password --as-account $account
+        echo "# euare-usermodloginprofile -u admin -p $password --as-account $account"
+        euare-usermodloginprofile -u admin -p $password --as-account $account
 
         next
     fi
@@ -268,19 +307,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin"
+echo "mkdir -p ~/.creds/$region/$account/admin"
 echo
-echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
+echo "rm -f ~/.creds/$region/$account/admin.zip"
 echo
 echo "sudo euca-get-credentials -u admin -a $account \\"
-echo "                          ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
+echo "                          ~/.creds/$region/$account/admin.zip"
 echo
-echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \\"
-echo "       -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/"
+echo "unzip -uo ~/.creds/$region/$account/admin.zip \\"
+echo "       -d ~/.creds/$region/$account/admin/"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+echo "cat ~/.creds/$region/$account/admin/eucarc"
 
-if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc ]; then
+if [ -r ~/.creds/$region/$account/admin/eucarc ]; then
     echo
     tput rev
     echo "Already Downloaded!"
@@ -293,34 +332,34 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/admin
+        echo "# mkdir -p ~/.creds/$region/$account/admin"
+        mkdir -p ~/.creds/$region/$account/admin
         pause
 
-        echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
-        rm -f ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip
+        echo "# rm -f ~/.creds/$region/$account/admin.zip"
+        rm -f ~/.creds/$region/$account/admin.zip
         pause
 
         echo "# sudo euca-get-credentials -u admin -a $account \\"
-        echo ">                           ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip"
+        echo ">                           ~/.creds/$region/$account/admin.zip"
         sudo euca-get-credentials -u admin -a $account \
-                                  ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip
+                                  ~/.creds/$region/$account/admin.zip
         pause
 
-        echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \\"
-        echo ">        -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/"
-        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/$account/admin.zip \
-               -d ~/.creds/$AWS_DEFAULT_REGION/$account/admin/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc; then
+        echo "# unzip -uo ~/.creds/$region/$account/admin.zip \\"
+        echo ">        -d ~/.creds/$region/$account/admin/"
+        unzip -uo ~/.creds/$region/$account/admin.zip \
+               -d ~/.creds/$region/$account/admin/
+        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$region/$account/admin/eucarc; then
             # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/$account/admin/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/$account/admin/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+            pk_pem=$(ls -1 ~/.creds/$region/$account/admin/euca2-admin-*-pk.pem | tail -1)
+            cert_pem=$(ls -1 ~/.creds/$region/$account/admin/euca2-admin-*-cert.pem | tail -1)
+            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$region/$account/admin/eucarc
         fi
         pause
 
-        echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-        cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+        echo "# cat ~/.creds/$region/$account/admin/eucarc"
+        cat ~/.creds/$region/$account/admin/eucarc
 
         next
     fi
@@ -329,8 +368,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
 
 clear
 echo
@@ -350,7 +389,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones verbose --region $account-admin@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -380,8 +419,8 @@ else
         echo                            >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones verbose --region $account-admin@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones verbose --region $account-admin@$region"
+        euca-describe-availability-zones verbose --region $account-admin@$region
 
         next
     fi
@@ -390,8 +429,8 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc)
+access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
 
 clear
 echo
@@ -405,22 +444,22 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.aws/config"
-echo "[profile $AWS_DEFAULT_REGION-$account-admin]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "[profile $region-$account-admin]"
+echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
 echo
 echo "cat << EOF >> ~/.aws/credentials"
-echo "[$AWS_DEFAULT_REGION-$account-admin]"
+echo "[$region-$account-admin]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
+echo "aws ec2 describe-availability-zones --profile $region-$account-admin"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-admin]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-admin]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -436,33 +475,33 @@ else
         chmod 0700 ~/.aws
         echo
         echo "# cat << EOF >> ~/.aws/config"
-        echo "> [profile $AWS_DEFAULT_REGION-$account-admin]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> [profile $region-$account-admin]"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"                 >> ~/.aws/config
-        echo "output = text"                                >> ~/.aws/config
-        echo                                                >> ~/.aws/config
+        echo "[profile $region-$account-admin]" >> ~/.aws/config
+        echo "region = $region"                 >> ~/.aws/config
+        echo "output = text"                    >> ~/.aws/config
+        echo                                    >> ~/.aws/config
         pause
 
         echo "# cat << EOF >> ~/.aws/credentials"
-        echo "> [$AWS_DEFAULT_REGION-$account-admin]"
+        echo "> [$region-$account-admin]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$AWS_DEFAULT_REGION-$account-admin]" >> ~/.aws/credentials
+        echo "[$region-$account-admin]"             >> ~/.aws/credentials
         echo "aws_access_key_id = $access_key"      >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key"  >> ~/.aws/credentials
         echo                                        >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin"
-        aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-$account-admin
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-admin"
+        aws ec2 describe-availability-zones --profile $region-$account-admin
 
         next
     fi
@@ -632,4 +671,6 @@ end=$(date +%s)
 echo
 echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = demo ] || a=" -a $account"
-echo "Please run \"demo-02-initialize-account-dependencies.sh$a\" to complete demo initialization"
+unset p; [ $password = ${account}123 ] || p=" -p $password"
+echo "Please run \"demo-02-initialize-account-administrator$a$p\" to create at least one User-level Administrator, then"
+echo "Please run \"demo-03-initialize-account-dependencies.sh$a$p\" to complete Demo Account initialization"
