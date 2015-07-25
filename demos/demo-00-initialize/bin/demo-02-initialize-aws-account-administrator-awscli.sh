@@ -43,6 +43,7 @@ keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 federation=aws
+
 group=Administrators
 
 step=0
@@ -215,10 +216,10 @@ if [ -z $admin ]; then
     exit 18
 fi
 
-profile=$region-$account-$admin
+profile=$account-$admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "-r $region, -a $account and/or -U $admin invalid: Could not find $profile profile!"
+    echo "-a $account and/or -U $admin invalid: Could not find $profile profile!"
     echo "   Expected to find: [profile $profile] in ~/.aws/config"
     exit 21
 fi

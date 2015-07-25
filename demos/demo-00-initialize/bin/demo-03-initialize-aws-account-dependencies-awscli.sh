@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script initializes a Management Workstation and it's associated Eucalyptus Region with
+# This script initializes a Management Workstation and it's associated AWS Account with
 # dependencies used in demos, including:
 # - Imports the Demo Keypair into the Demo Account
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
@@ -33,17 +33,23 @@
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
-# This is a variant of the demo-03-initialize-account-dependencies.sh script which primarily uses
-# the AWSCLI.
+# The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
+# to running this script.
 #
-# The demo-00-initialize.sh and demo-01-initialize-account.sh scripts should both be run by the
-# Eucalyptus Administrator prior to running this script against Eucalyptus, as those scripts create
-# images and the account referenced in this script.
+# Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
+# to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
+# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
+# next script to be run.
 #
-# This script should be run by the Demo Account Administrator last, so all operations are done
-# within the context of the Demo Account.
+# Then the demo-02-initialize-aws-account-administrator.sh script should be run by the AWS Account
+# Administrator as many times as needed to create one or more AWS IAM Users in the Account
+# Administrators Group.
 #
-# All three initialization scripts are pre-requisites of running any demos!
+# Then this script should be run once by an AWS Account Administrator or an AWS User in the
+# Administrators Group to create additional groups, users, roles and instance profiles in the
+# AWS Account.
+#
+# All four initialization scripts are pre-requisites of running any demos!
 #
 
 #  1. Initalize Environment
@@ -52,6 +58,8 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 policiesdir=${bindir%/*}/policies
 keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
+
+federation=aws
 
 role_demos=Demos
 instance_profile_demos=Demos
@@ -73,7 +81,7 @@ next_default=5
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-account=demo
+account=hp
 password=${account}123
 user_demo_password=${password}-${user_demo}
 user_developer_password=${password}-${user_developer}
@@ -88,10 +96,10 @@ usage () {
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
-    echo "  -r region    Eucalyptus Region (default: $region)"
-    echo "  -a account   Eucalyptus Account (default: $account)"
+    echo "  -r region    AWS Region (default: $region)"
+    echo "  -a account   AWS Account (default: $account)"
     echo "  -p password  password prefix for new Users (default: $password)"
-    echo "  -U admin     existing Eucalyptus User with permissions to create new Groups and Users (default $admin)"
+    echo "  -U admin     existing AWS User with permissions to create new Groups and Users (default $admin)"
 }
 
 run() {
@@ -206,7 +214,9 @@ else
       sa-east-1|
       eu-west-1|eu-central-1|
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
-        echo "-r $region invalid: This script can not be run against AWS regions"
+        ;;
+      *)
+        echo "-r $region invalid: This script can not be run against Eucalyptus regions"
         exit 11;;
     esac
 fi
@@ -229,10 +239,10 @@ if [ -z $admin ]; then
     exit 18
 fi
 
-profile=$region-$account-$admin
+profile=$account-$admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "-r $region, -a $account and/or -U admin invalid: Could not find $profile profile!"
+    echo "-a $account and/or -U admin invalid: Could not find $profile profile!"
     echo "   Expected to find: [profile $profile] in ~/.aws/config"
     exit 21
 fi
@@ -240,7 +250,7 @@ fi
 mkdir -p $tmpdir/$account
 
 
-#  5. Prepare Eucalyptus Demo Account for Demo Dependencies
+#  5. Prepare AWS Account for Demo Dependencies
 
 start=$(date +%s)
 
@@ -250,9 +260,9 @@ echo
 echo "============================================================"
 echo
 if [ $admin = admin ]; then
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator profile"
+    echo "$(printf '%2d' $step). Use AWS ($account) Account Administrator profile"
 else
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator ($admin) User profile"
+    echo "$(printf '%2d' $step). Use AWS ($account) Account Administrator ($admin) User profile"
 fi
 echo
 echo "============================================================"
@@ -284,31 +294,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). List Images available to Demo ($account) Account Administrator"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws ec2 describe-images"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# aws ec2 describe-images"
-    aws ec2 describe-images
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Import Demo ($account) Account Administrator Demo Keypair"
+echo "$(printf '%2d' $step). Import AWS ($account) Account Administrator Demo Keypair"
 echo
 echo "============================================================"
 echo
@@ -374,7 +360,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Role and associated InstanceProfile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demos ($group_demos) Role and associated InstanceProfile"
 echo "    - This Role is intended for Demos which need Administrator access to Resources"
 echo
 echo "============================================================"
@@ -434,7 +420,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role Policy"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demos ($role_demos) Role Policy"
 echo "    - This Policy provides full access to all resources, except users and groups"
 echo
 echo "============================================================"
@@ -482,7 +468,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demos ($group_demos) Group"
 echo "    - This Group is intended for Demos which have Administrator access to Resources"
 echo
 echo "============================================================"
@@ -517,7 +503,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($group_demos) Group Policy"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demos ($group_demos) Group Policy"
 echo "    - This Policy provides full access to all resources, except users and groups"
 echo
 echo "============================================================"
@@ -565,7 +551,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developers ($group_developers) Group"
 echo "    - This Group is intended for Developers who can modify Resources"
 echo
 echo "============================================================"
@@ -600,7 +586,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developers ($group_developers) Group Policy"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developers ($group_developers) Group Policy"
 echo "    - This Policy provides full access to all resources, except users and groups"
 echo
 echo "============================================================"
@@ -648,7 +634,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Users ($group_users) Group"
 echo "    - This Group is intended for Users who can view but not modify Resources"
 echo
 echo "============================================================"
@@ -683,7 +669,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Users ($group_users) Group Policy"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Users ($group_users) Group Policy"
 echo "    - This Policy provides ReadOnly access to all resources"
 echo
 echo "============================================================"
@@ -731,7 +717,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demo ($user_demo) User"
 echo
 echo "============================================================"
 echo
@@ -765,7 +751,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Demo ($user_demo) User to Demos ($group_demos) Group"
+echo "$(printf '%2d' $step). Add AWS ($account) Account Demo ($user_demo) User to Demos ($group_demos) Group"
 echo
 echo "============================================================"
 echo
@@ -799,7 +785,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User Login Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demo ($user_demo) User Login Profile"
 echo "    - This allows the Demo Account Demo User to login to the console"
 echo
 echo "============================================================"
@@ -834,23 +820,23 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User Access Key"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demo ($user_demo) User Access Key"
 echo "    - This allows the Demo Account Demo User to run API commands"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo"
+echo "mkdir -p ~/.creds/$federation/$account/$user_demo"
 echo
 echo "aws iam create-access-key --user-name $user_demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
 echo
-echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+echo "cat << EOF > ~/.creds/$federation/$account/$user_demo/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 
-if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc ]; then
+if [ -r ~/.creds/$federation/$account/$user_demo/iamrc ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -863,8 +849,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo
+        echo "# mkdir -p ~/.creds/$federation/$account/$user_demo"
+        mkdir -p ~/.creds/$federation/$account/$user_demo
         pause
 
         echo "# aws iam create-access-key --user-name $user_demo --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
@@ -872,13 +858,13 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc"
+        echo "# cat << EOF > ~/.creds/$federation/$account/$user_demo/iamrc"
         echo "> AWSAccessKeyId=$access_key"
         echo "> AWSSecretKey=$secret_key"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
-        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc
+        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$user_demo/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$user_demo/iamrc
 
         next
     fi
@@ -888,14 +874,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_demo/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_demo/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User Euca2ools Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demo ($user_demo) User Euca2ools Profile"
 echo "    - This allows the Demo Account Demo User to run API commands via Euca2ools"
 echo
 echo "============================================================"
@@ -903,13 +889,13 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user $account-$user_demo]"
+echo "[user $federation-$account-$user_demo]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -927,20 +913,20 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user $account-$user_demo]"
+        echo "> [user $federation-$account-$user_demo]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $account-$user_demo]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"       >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"   >> ~/.euca/euca2ools.ini
-        echo                              >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-$user_demo]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key"                   >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"               >> ~/.euca/euca2ools.ini
+        echo                                          >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones --region=$account-$user_demo@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
+        euca-describe-availability-zones --region=$federation-$account-$user_demo@$region
 
         next
     fi
@@ -949,14 +935,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_demo/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_demo/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_demo/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User AWSCLI Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Demo ($user_demo) User AWSCLI Profile"
 echo "    - This allows the Demo Account Demo User to run AWSCLI commands"
 echo
 echo "============================================================"
@@ -964,22 +950,22 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.aws/config"
-echo "[profile $AWS_DEFAULT_REGION-$account-$user_demo]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "[profile $account-$user_demo]"
+echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
 echo
 echo "cat << EOF >> ~/.aws/credentials"
-echo "[$AWS_DEFAULT_REGION-$account-$user_demo]"
+echo "[$account-$user_demo]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
+echo "aws ec2 describe-availability-zones --profile=$account-$user_demo"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_demo]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_demo]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -995,33 +981,33 @@ else
         chmod 0700 ~/.aws
         echo
         echo "# cat << EOF >> ~/.aws/config"
-        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_demo]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> [profile $account-$user_demo]"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $AWS_DEFAULT_REGION-$account-$user_demo]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"                      >> ~/.aws/config
-        echo "output = text"                                     >> ~/.aws/config
-        echo                                                     >> ~/.aws/config
+        echo "[profile $account-$user_demo]" >> ~/.aws/config
+        echo "region = $region"              >> ~/.aws/config
+        echo "output = text"                 >> ~/.aws/config
+        echo                                 >> ~/.aws/config
         pause
 
         echo "# cat << EOF >> ~/.aws/credentials"
-        echo "> [$AWS_DEFAULT_REGION-$account-$user_demo]"
+        echo "> [$account-$user_demo]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$AWS_DEFAULT_REGION-$account-$user_demo]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key"           >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key"       >> ~/.aws/credentials
-        echo                                             >> ~/.aws/credentials
+        echo "[$account-$user_demo]"               >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo"
-        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_demo
+        echo "# aws ec2 describe-availability-zones --profile=$account-$user_demo"
+        aws ec2 describe-availability-zones --profile=$account-$user_demo
 
         next
     fi
@@ -1033,7 +1019,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developer ($user_developer) User"
 echo
 echo "============================================================"
 echo
@@ -1067,7 +1053,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account Developer ($user_developer) User to Developers ($group_developers) Group"
+echo "$(printf '%2d' $step). Add AWS ($account) Account Developer ($user_developer) User to Developers ($group_developers) Group"
 echo
 echo "============================================================"
 echo
@@ -1101,7 +1087,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User Login Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developer ($user_developer) User Login Profile"
 echo "    - This allows the Demo Account Developer User to login to the console"
 echo
 echo "============================================================"
@@ -1136,23 +1122,23 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User Access Key"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developer ($user_developer) User Access Key"
 echo "    - This allows the Demo Account Developer User to run API commands"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer"
+echo "mkdir -p ~/.creds/$federation/$account/$user_developer"
 echo
 echo "aws iam create-access-key --user-name $user_developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
 echo
-echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+echo "cat << EOF > ~/.creds/$federation/$account/$user_developer/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 
-if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc ]; then
+if [ -r ~/.creds/$federation/$account/$user_developer/iamrc ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -1165,8 +1151,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer
+        echo "# mkdir -p ~/.creds/$federation/$account/$user_developer"
+        mkdir -p ~/.creds/$federation/$account/$user_developer
         pause
 
         echo "# aws iam create-access-key --user-name $user_developer --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
@@ -1174,13 +1160,13 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc"
+        echo "# cat << EOF > ~/.creds/$federation/$account/$user_developer/iamrc"
         echo "> AWSAccessKeyId=$access_key"
         echo "> AWSSecretKey=$secret_key"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
-        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc
+        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$user_developer/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$user_developer/iamrc
 
         next
     fi
@@ -1189,14 +1175,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_developer/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_developer/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User Euca2ools Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developer ($user_developer) User Euca2ools Profile"
 echo "    - This allows the Demo Account Developer User to run API commands via Euca2ools"
 echo
 echo "============================================================"
@@ -1204,13 +1190,13 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user $account-$user_developer]"
+echo "[user $federation-$account-$user_developer]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1228,20 +1214,20 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user $account-$user_developer]"
+        echo "> [user $federation-$account-$user_developer]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $account-$user_developer]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"            >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"        >> ~/.euca/euca2ools.ini
-        echo                                   >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-$user_developer]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key"                        >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"                    >> ~/.euca/euca2ools.ini
+        echo                                               >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones --region=$account-$user_developer@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
+        euca-describe-availability-zones --region=$federation-$account-$user_developer@$region
 
         next
     fi
@@ -1250,14 +1236,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_developer/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_developer/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_developer/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User AWSCLI Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Developer ($user_developer) User AWSCLI Profile"
 echo "    - This allows the Demo Account Developer User to run AWSCLI commands"
 echo
 echo "============================================================"
@@ -1265,22 +1251,22 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.aws/config"
-echo "[profile $AWS_DEFAULT_REGION-$account-$user_developer]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "[profile $account-$user_developer]"
+echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
 echo
 echo "cat << EOF >> ~/.aws/credentials"
-echo "[$AWS_DEFAULT_REGION-$account-$user_developer]"
+echo "[$account-$user_developer]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
+echo "aws ec2 describe-availability-zones --profile=$account-$user_developer"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_developer]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_developer]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -1296,33 +1282,33 @@ else
         chmod 0700 ~/.aws
         echo
         echo "# cat << EOF >> ~/.aws/config"
-        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_developer]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> [profile $account-$user_developer]"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $AWS_DEFAULT_REGION-$account-$user_developer]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"                           >> ~/.aws/config
-        echo "output = text"                                          >> ~/.aws/config
-        echo                                                          >> ~/.aws/config
+        echo "[profile $account-$user_developer]" >> ~/.aws/config
+        echo "region = $region"                   >> ~/.aws/config
+        echo "output = text"                      >> ~/.aws/config
+        echo                                      >> ~/.aws/config
         pause
 
         echo "# cat << EOF >> ~/.aws/credentials"
-        echo "> [$AWS_DEFAULT_REGION-$account-$user_developer]"
+        echo "> [$account-$user_developer]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$AWS_DEFAULT_REGION-$account-$user_developer]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key"                >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key"            >> ~/.aws/credentials
-        echo                                                  >> ~/.aws/credentials
+        echo "[$account-$user_developer]"          >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer"
-        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_developer
+        echo "# aws ec2 describe-availability-zones --profile=$account-$user_developer"
+        aws ec2 describe-availability-zones --profile=$account-$user_developer
 
         next
     fi
@@ -1334,7 +1320,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User"
+echo "$(printf '%2d' $step). Create AWS ($account) Account User ($user_user) User"
 echo
 echo "============================================================"
 echo
@@ -1368,7 +1354,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Add Demo ($account) Account User ($user_user) User to Users ($group_users) Group"
+echo "$(printf '%2d' $step). Add AWS ($account) Account User ($user_user) User to Users ($group_users) Group"
 echo
 echo "============================================================"
 echo
@@ -1402,7 +1388,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User Login Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account User ($user_user) User Login Profile"
 echo "    - This allows the Demo Account User User to login to the console"
 echo
 echo "============================================================"
@@ -1437,23 +1423,23 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User Access Key"
+echo "$(printf '%2d' $step). Create AWS ($account) Account User ($user_user) User Access Key"
 echo "    - This allows the Demo Account User User to run API commands"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user"
+echo "mkdir -p ~/.creds/$federation/$account/$user_user"
 echo
 echo "aws iam create-access-key --user-name $user_user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
 echo
-echo "cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+echo "cat << EOF > ~/.creds/$federation/$account/$user_user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 
-if [ -r ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc ]; then
+if [ -r ~/.creds/$federation/$account/$user_user/iamrc ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -1466,8 +1452,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user
+        echo "# mkdir -p ~/.creds/$federation/$account/$user_user"
+        mkdir -p ~/.creds/$federation/$account/$user_user
         pause
 
         echo "# aws iam create-access-key --user-name $user_user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}'"
@@ -1475,13 +1461,13 @@ else
         read access_key secret_key <<< $result
         pause
 
-        echo "# cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc"
+        echo "# cat << EOF > ~/.creds/$federation/$account/$user_user/iamrc"
         echo "> AWSAccessKeyId=$access_key"
         echo "> AWSSecretKey=$secret_key"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
-        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc
+        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$user_user/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$user_user/iamrc
 
         next
     fi
@@ -1490,14 +1476,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_user/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User Euca2ools Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account User ($user_user) User Euca2ools Profile"
 echo "    - This allows the Demo Account User User to run API commands via Euca2ools"
 echo
 echo "============================================================"
@@ -1505,13 +1491,13 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user $account-$user_user]"
+echo "[user $federation-$account-$user_user]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
+echo "euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
 
 if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
     echo
@@ -1529,20 +1515,20 @@ else
         chmod 0700 ~/.euca
         echo
         echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user $account-$user_user]"
+        echo "> [user $federation-$account-$user_user]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $account-$user_user]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"       >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"   >> ~/.euca/euca2ools.ini
-        echo                              >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-$user_user]" >> ~/.euca/euca2ools.ini
+        echo "key-id = $access_key"                   >> ~/.euca/euca2ools.ini
+        echo "secret-key = $secret_key"               >> ~/.euca/euca2ools.ini
+        echo                                          >> ~/.euca/euca2ools.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION"
-        euca-describe-availability-zones --region=$account-$user_user@$AWS_DEFAULT_REGION
+        echo "# euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
+        euca-describe-availability-zones --region=$federation-$account-$user_user@$region
 
         next
     fi
@@ -1551,14 +1537,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/$account/$user_user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user_user/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User AWSCLI Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account User ($user_user) User AWSCLI Profile"
 echo "    - This allows the Demo Account User User to run AWSCLI commands"
 echo
 echo "============================================================"
@@ -1566,22 +1552,22 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> ~/.aws/config"
-echo "[profile $AWS_DEFAULT_REGION-$account-$user_user]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "[profile $account-$user_user]"
+echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
 echo
 echo "cat << EOF >> ~/.aws/credentials"
-echo "[$AWS_DEFAULT_REGION-$account-$user_user]"
+echo "[$account-$user_user]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
+echo "aws ec2 describe-availability-zones --profile=$account-$user_user"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $AWS_DEFAULT_REGION-$account-$user_user]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_user]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -1597,33 +1583,33 @@ else
         chmod 0700 ~/.aws
         echo
         echo "# cat << EOF >> ~/.aws/config"
-        echo "> [profile $AWS_DEFAULT_REGION-$account-$user_user]"
-        echo "> region = $AWS_DEFAULT_REGION"
+        echo "> [profile $account-$user_user]"
+        echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $AWS_DEFAULT_REGION-$account-$user_user]" >> ~/.aws/config
-        echo "region = $AWS_DEFAULT_REGION"                      >> ~/.aws/config
-        echo "output = text"                                     >> ~/.aws/config
-        echo                                                     >> ~/.aws/config
+        echo "[profile $account-$user_user]" >> ~/.aws/config
+        echo "region = $region"              >> ~/.aws/config
+        echo "output = text"                 >> ~/.aws/config
+        echo                                 >> ~/.aws/config
         pause
 
         echo "# cat << EOF >> ~/.aws/credentials"
-        echo "> [$AWS_DEFAULT_REGION-$account-$user_user]"
+        echo "> [$account-$user_user]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$AWS_DEFAULT_REGION-$account-$user_user]" >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key"           >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key"       >> ~/.aws/credentials
-        echo                                             >> ~/.aws/credentials
+        echo "[$account-$user_user]"               >> ~/.aws/credentials
+        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
+        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+        echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user"
-        aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-$account-$user_user
+        echo "# aws ec2 describe-availability-zones --profile=$account-$user_user"
+        aws ec2 describe-availability-zones --profile=$account-$user_user
 
         next
     fi

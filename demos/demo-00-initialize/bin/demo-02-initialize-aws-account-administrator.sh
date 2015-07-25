@@ -40,6 +40,7 @@ keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 federation=aws
+
 group=Administrators
 
 step=0
@@ -212,10 +213,10 @@ if [ -z $admin ]; then
     exit 18
 fi
 
-user_region=$account-admin@region
+user_region=$federation-$account-admin@region
 
 if [ ! -r ~/.creds/$federation/$account/$admin/eucarc ]; then
-    echo "-r $region, -a $account and/or -U $admin invalid: Could not find AWS Account Administrator credentials!"
+    echo "-a $account and/or -U $admin invalid: Could not find AWS Account Administrator credentials!"
     echo "   Expected to find: ~/.creds/$federation/$account/$admin/eucarc"
     exit 21
 fi
