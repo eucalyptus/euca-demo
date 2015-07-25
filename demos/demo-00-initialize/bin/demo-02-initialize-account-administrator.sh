@@ -11,16 +11,16 @@
 # - Configures Euca2ools for the administrator User
 # - Configures AWSCLI for the administrator User
 # - Lists Demo Account Resources
-# - Displays Eucalyptus CLI Configuration
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
 # running this script, as this script references images it installs.
 #
-# Then the demo-02-initialize-account-administrator.sh script should be run by the Eucalyptus
-# Administrator as many times as needed to create one or more IAM Users in the Demo Account
-# Administrators Group.
+# Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
+# to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
+# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
+# next script to be run.
 #
 # Then this script should be run by the Eucalyptus Administrator as many times as needed to
 # create one or more IAM Users in the Demo Account Administrators Group.

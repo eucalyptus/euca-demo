@@ -14,6 +14,9 @@
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
+# This is a variant of the demo-02-initialize-aws-account-administrator.sh script which primarily
+# uses the AWSCLI.
+#
 # The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
 # to running this script.
 #
@@ -208,7 +211,7 @@ fi
 
 if [ -z $admin ]; then
     echo "-U admin missing!"
-    echo "Alternate Administrator must be specified as a parameter"
+    echo "Existing Administrator must be specified as a parameter"
     exit 18
 fi
 

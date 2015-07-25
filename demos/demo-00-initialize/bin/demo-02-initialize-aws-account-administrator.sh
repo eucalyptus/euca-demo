@@ -208,7 +208,7 @@ fi
 
 if [ -z $admin ]; then
     echo "-U admin missing!"
-    echo "Alternate Administrator must be specified as a parameter"
+    echo "Existing Administrator must be specified as a parameter"
     exit 18
 fi
 

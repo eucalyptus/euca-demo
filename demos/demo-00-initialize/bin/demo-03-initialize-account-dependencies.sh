@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# This script initializes a Demo Account within either Eucalyptus or AWS with dependencies used
-# in demos, including:
+# This script initializes a Management Workstation and it's associated Eucalyptus Region with
+# dependencies used in demos, including:
+# - Confirms the Demo Images are available to the Demo Account
 # - Imports the Demo Keypair into the Demo Account
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
 # - Creates the Demos Role Policy
@@ -30,18 +31,26 @@
 # - Configures Euca2ools for the user User
 # - Configures AWSCLI for the user User
 # - Lists Demo Account Resources
-# - Displays Eucalyptus CLI Configuration
 # - Displays Euca2ools Configuration
 # - Displays AWSCLI Configuration
 #
-# The demo-00-initialize.sh and demo-01-initialize-account.sh scripts should both be run by the
-# Eucalyptus Administrator prior to running this script against Eucalyptus, as those scripts create
-# images and the account referenced in this script.
+# The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
+# running this script, as this script references images it installs.
 #
-# This script should be run by the Demo Account Administrator last, so all operations are done
-# within the context of the Demo Account.
+# Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
+# to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
+# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
+# next script to be run.
 #
-# All three initialization scripts are pre-requisites of running any demos!
+# Then the demo-02-initialize-account-administrator.sh script should be run by the Eucalyptus
+# Administrator as many times as needed to create one or more IAM Users in the Demo Account
+# Administrators Group.
+#
+# Then this script should be run by the Demo Account Administrator or an IAM User in the 
+# Administrators Group to create additional groups, users, roles and instance profiles in the 
+# Demo Account.
+#
+# All four initialization scripts are pre-requisites of running any demos!
 #
 
 #  1. Initalize Environment
@@ -51,16 +60,16 @@ policiesdir=${bindir%/*}/policies
 keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
-user_demo=demo
-user_developer=developer
-user_user=user
+role_demos=Demos
+instance_profile_demos=Demos
 
 group_demos=Demos
 group_developers=Developers
 group_users=Users
 
-role_demos=Demos
-instance_profile_demos=Demos
+user_demo=demo
+user_developer=developer
+user_user=user
 
 step=0
 speed_max=400
@@ -72,24 +81,23 @@ interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
 account=demo
-user=admin
 password=${account}123
 user_demo_password=${password}-${user_demo}
 user_developer_password=${password}-${user_developer}
 user_user_password=${password}-${user_user}
-
+admin=admin
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-p password] [-U admin]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
     echo "  -r region    Eucalyptus Region (default: $region)"
     echo "  -a account   Eucalyptus Account (default: $account)"
-    echo "  -u user      Eucalyptus User in Administrators Group, used to create Resources (default: $user)"
-    echo "  -p password  password prefix to use for new User passwords (default: $password)"
+    echo "  -p password  password prefix to use for new Users (default: $password)"
+    echo "  -U admin     existing Eucalyptus User with permissions to create new Groups and Users (default $admin)"
 }
 
 run() {
@@ -172,18 +180,18 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:p:? arg; do
+while getopts Isfr:a:p:U:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
-    u)  user="$OPTARG";;
     p)  password="$OPTARG"
         user_demo_password=${password}-${user_demo}
         user_developer_password=${password}-${user_developer}
         user_user_password=${password}-${user_user};;
+    U)  admin="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -194,36 +202,51 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-case $region in
-  aws) federation=aws;;
-  us-east-1) federation=aws;;
-  us-west-1) federation=aws;;
-  us-west-2) federation=aws;;
-  sa-east-1) federation=aws;;
-  eu-west-1) federation=aws;;
-  eu-central-1) federation=aws;;
-  ap-northeast-1) federation=aws;;
-  ap-southeast-1) federation=aws;;
-  ap-southeast-2) federation=aws;;
-  *) federation=$region;;
-esac
-
-if [ $federation = aws ]; then
-    echo "-r aws (or explicit AWS region codes) unsupported: This script does not support AWS regions at this time!"
-    echo "  "Please the awscli version of this script when working with AWS"
-    exit 25
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
+else
+    case $region in
+      us-east-1|us-west-1|us-west-2|
+      sa-east-1|
+      eu-west-1|eu-central-1|
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
 fi
 
-if [ ! -r ~/.creds/$federation/$account/$user/eucarc ]; then
-    echo "-r $region, -a $account and/or -u $user invalid: Could not find $federation Demo Account Administrator credentials!"
-    echo "   Expected to find: ~/.creds/$federation/$account/$user/eucarc"
+if [ -z $account ]; then
+    echo "-a account missing!"
+    echo "Could not automatically determine account, and it was not specified as a parameter"
+    exit 12
+fi
+
+if [ -z $password ]; then
+    echo "-p password missing!"
+    echo "Password must be specified as a parameter"
+    exit 16
+fi
+
+if [ -z $admin ]; then
+    echo "-U admin missing!"
+    echo "Existing Administrator must be specified as a parameter"
+    exit 18
+fi
+
+user_region=$account-$admin@region
+
+if [ ! -r ~/.creds/$region/$account/$admin/eucarc ]; then
+    echo "-r $region, -a $account and/or -U admin invalid: Could not find $region Demo Account Administrator credentials!"
+    echo "   Expected to find: ~/.creds/$region/$account/$admin/eucarc"
     exit 21
 fi
 
 mkdir -p $tmpdir/$account
 
 
-#  5. Prepare Eucalyptus Demo Account for Demos
+#  5. Prepare Eucalyptus Demo Account for Demo Dependencies
 
 start=$(date +%s)
 
@@ -232,25 +255,29 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
+if [ $admin = admin ]; then
+    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
+else
+    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator ($admin) User credentials"
+fi
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc"
 echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+echo "source ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc"
 
 next
 
 echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc"
+cat ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc
 pause
 
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+echo "# source ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc"
+source ~/.creds/$AWS_DEFAULT_REGION/$account/$admin/eucarc
 
 next
 
