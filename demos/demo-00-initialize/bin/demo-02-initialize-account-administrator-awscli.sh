@@ -210,9 +210,9 @@ fi
 profile=$region-$account-admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "-r $region and/or -a $account invalid: Could not find $profile profile!"
-    echo "   Expected to find: [profile $profile] in ~/.aws/config"
-    exit 21
+    echo "Could not find $region Demo ($account) Account Administrator AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
+    exit 20
 fi
 
 mkdir -p $tmpdir/$account
@@ -234,6 +234,7 @@ echo
 echo "Commands:"
 echo
 echo "export AWS_DEFAULT_PROFILE=$profile"
+echo "export AWS_DEFAULT_REGION=$region"
 echo
 echo "echo \$AWS_DEFAULT_PROFILE"
 echo "echo \$AWS_DEFAULT_REGION"
@@ -243,6 +244,8 @@ next
 echo
 echo "# export AWS_DEFAULT_PROFILE=$profile"
 export AWS_DEFAULT_PROFILE=$profile
+echo "# export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
 pause
 
 echo "# echo \$AWS_DEFAULT_PROFILE"
@@ -511,16 +514,16 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user $account-$user]"
+echo "cat << EOF >> ~/.euca/$region.ini"
+echo "[user $region-$account-$user]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$account-$user@$region"
+echo "euca-describe-availability-zones --region=$region-$account-$user@$region"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/$region.ini ] && grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -535,21 +538,21 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user $account-$user]"
+        echo "# cat << EOF >> ~/.euca/$region.ini"
+        echo "> [user $region-$account-$user]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $account-$user]"    >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"     >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo                            >> ~/.euca/euca2ools.ini
+        echo "[user $region-$account-$user]" >> ~/.euca/$region.ini
+        echo "key-id = $access_key"          >> ~/.euca/$region.ini
+        echo "secret-key = $secret_key"      >> ~/.euca/$region.ini
+        echo                                 >> ~/.euca/$region.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$account-$user@$region"
-        euca-describe-availability-zones --region=$account-$user@$region
+        echo "# euca-describe-availability-zones --region=$region-$account-$user@$region"
+        euca-describe-availability-zones --region=$region-$account-$user@$region
 
         next
     fi
@@ -696,14 +699,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.euca/euca2ools.ini"
+echo "cat /etc/euca2ools/conf.d/$region.ini"
+echo
+echo "cat ~/.euca/global.ini"
+echo
+echo "cat ~/.euca/$region.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat ~/.euca/euca2ools.ini"
-    cat ~/.euca/euca2ools.ini
+    echo "# cat /etc/euca2ools/conf.d/$region.ini"
+    cat /etc/euca2ools/conf.d/$region.ini
+    pause
+
+    echo "# cat ~/.euca/global.ini"
+    cat ~/.euca/global.ini
+    pause
+
+    echo "# cat ~/.euca/$region.ini"
+    cat ~/.euca/$region.ini
 
     next 200
 fi

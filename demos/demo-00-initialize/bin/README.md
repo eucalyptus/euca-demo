@@ -33,7 +33,6 @@ This also initializes the root account to act as a Management Workstation.
 The configuration can then be moved to other Management Workstations, even combined with
 other Eucalyptus Region configuration for centralized management.
 
-* demo-00-initialize-aws.sh
 * demo-01-initialize-aws-account.sh
 * demo-02-initialize-aws-account-administrator.sh
 * demo-02-initialize-aws-account-administrator-awscli.sh

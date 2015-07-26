@@ -219,9 +219,9 @@ fi
 profile=$account-$admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "-a $account and/or -U $admin invalid: Could not find $profile profile!"
-    echo "   Expected to find: [profile $profile] in ~/.aws/config"
-    exit 21
+    echo "Could not find AWS ($account) Account Administrator ($admin) User AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
+    exit 20
 fi
 
 mkdir -p $tmpdir/$account
@@ -247,6 +247,7 @@ echo
 echo "Commands:"
 echo
 echo "export AWS_DEFAULT_PROFILE=$profile"
+echo "export AWS_DEFAULT_REGION=$region"
 echo
 echo "echo \$AWS_DEFAULT_PROFILE"
 echo "echo \$AWS_DEFAULT_REGION"
@@ -256,6 +257,8 @@ next
 echo
 echo "# export AWS_DEFAULT_PROFILE=$profile"
 export AWS_DEFAULT_PROFILE=$profile
+echo "# export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
 pause
 
 echo "# echo \$AWS_DEFAULT_PROFILE"
@@ -514,7 +517,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/$federation.ini"
 echo "[user $federation-$account-$user]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
@@ -523,7 +526,7 @@ echo "EOF"
 echo
 echo "euca-describe-availability-zones --region=$federation-$account-$user@$region"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user]" ~/.euca/$federation.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -538,17 +541,17 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "# cat << EOF >> ~/.euca/$federation.ini"
         echo "> [user $federation-$account-$user]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $federation-$account-$user]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"              >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"          >> ~/.euca/euca2ools.ini
-        echo                                     >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-$user]" >> ~/.euca/$federation.ini
+        echo "key-id = $access_key"              >> ~/.euca/$federation.ini
+        echo "secret-key = $secret_key"          >> ~/.euca/$federation.ini
+        echo                                     >> ~/.euca/$federation.ini
         pause
 
         echo "# euca-describe-availability-zones --region=$federation-$account-$user@$region"
@@ -699,14 +702,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.euca/euca2ools.ini"
+echo "cat /etc/euca2ools/conf.d/$federation.ini"
+echo
+echo "cat ~/.euca/global.ini"
+echo
+echo "cat ~/.euca/$federation.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat ~/.euca/euca2ools.ini"
-    cat ~/.euca/euca2ools.ini
+    echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+    cat /etc/euca2ools/conf.d/$federation.ini
+    pause
+
+    echo "# cat ~/.euca/global.ini"
+    cat ~/.euca/global.ini
+    pause
+
+    echo "# cat ~/.euca/$federation.ini"
+    cat ~/.euca/$federation.ini
 
     next 200
 fi

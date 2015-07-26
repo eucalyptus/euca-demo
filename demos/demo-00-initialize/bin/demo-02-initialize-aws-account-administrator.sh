@@ -213,11 +213,18 @@ if [ -z $admin ]; then
     exit 18
 fi
 
-user_region=$federation-$account-admin@region
+profile=$federation-$account-$admin
+profile_region=$profile@region
 
-if [ ! -r ~/.creds/$federation/$account/$admin/eucarc ]; then
-    echo "-a $account and/or -U $admin invalid: Could not find AWS Account Administrator credentials!"
-    echo "   Expected to find: ~/.creds/$federation/$account/$admin/eucarc"
+if ! grep -s -q "\[user $profile]" ~/.euca/$federation.ini; then
+    echo "Could not find AWS ($account) Account Administrator ($admin) User Euca2ools user!"
+    echo "Expected to find: [user $profile] in ~/.euca/$federation.ini"
+    exit 20
+fi
+
+if [ ! -r ~/.creds/$federation/$account/$admin/iamrc ]; then
+    echo "Could not find AWS ($account) Account Administrator ($admin) User IAM credentials!"
+    echo "Expected to find: ~/.creds/$federation/$account/$admin/iamrc"
     exit 21
 fi
 
@@ -243,19 +250,16 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$federation/$account/$admin/eucarc"
-echo
-echo "source ~/.creds/$federation/$account/$admin/eucarc"
+echo "export AWS_CREDENTIAL_FILE=~/.creds/$federation/$account/$admin/iamrc"
+echo "export AWS_DEFAULT_REGION=$region"
 
 next
 
 echo
-echo "# cat ~/.creds/$federation/$account/$admin/eucarc"
-cat ~/.creds/$federation/$account/$admin/eucarc
-pause
-
-echo "# source ~/.creds/$federation/$account/$admin/eucarc"
-source ~/.creds/$federation/$account/$admin/eucarc
+echo "export AWS_CREDENTIAL_FILE=~/.creds/$federation/$account/$admin/iamrc"
+export AWS_CREDENTIAL_FILE=~/.creds/$federation/$account/$admin/iamrc
+echo "export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
 
 next
 
@@ -518,7 +522,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> ~/.euca/euca2ools.ini"
+echo "cat << EOF >> ~/.euca/$federation.ini"
 echo "[user $federation-$account-$user]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
@@ -527,7 +531,7 @@ echo "EOF"
 echo
 echo "euca-describe-availability-zones --region=$federation-$account-$user@$region"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user]" ~/.euca/$federation.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -542,17 +546,17 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
+        echo "# cat << EOF >> ~/.euca/$federation.ini"
         echo "> [user $federation-$account-$user]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $federation-$account-$user]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"              >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"          >> ~/.euca/euca2ools.ini
-        echo                                     >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-$user]" >> ~/.euca/$federation.ini
+        echo "key-id = $access_key"              >> ~/.euca/$federation.ini
+        echo "secret-key = $secret_key"          >> ~/.euca/$federation.ini
+        echo                                     >> ~/.euca/$federation.ini
         pause
 
         echo "# euca-describe-availability-zones --region=$federation-$account-$user@$region"
@@ -703,14 +707,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.euca/euca2ools.ini"
+echo "cat /etc/euca2ools/conf.d/$federation.ini"
+echo
+echo "cat ~/.euca/global.ini"
+echo
+echo "cat ~/.euca/$federation.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat ~/.euca/euca2ools.ini"
-    cat ~/.euca/euca2ools.ini
+    echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+    cat /etc/euca2ools/conf.d/$federation.ini
+    pause
+
+    echo "# cat ~/.euca/global.ini"
+    cat ~/.euca/global.ini
+    pause
+
+    echo "# cat ~/.euca/$federation.ini"
+    cat ~/.euca/$federation.ini
 
     next 200
 fi

@@ -28,6 +28,8 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
+federation=aws
+
 step=0
 speed_max=400
 run_default=10
@@ -206,16 +208,16 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user aws-$account-admin]"
+echo "cat << EOF >> ~/.euca/$federation.ini"
+echo "[user $federation-$account-admin]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones verbose --region aws-$account-admin@$region"
+echo "euca-describe-availability-zones verbose --region $federation-$account-admin@$region"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-admin]" ~/.euca/$federation.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -230,21 +232,21 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user aws-$account-admin]"
+        echo "# cat << EOF >> ~/.euca/$federation.ini"
+        echo "> [user $federation-$account-admin]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user aws-$account-admin]" >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key"      >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key"  >> ~/.euca/euca2ools.ini
-        echo                             >> ~/.euca/euca2ools.ini
+        echo "[user $federation-$account-admin]" >> ~/.euca/aws-$account.ini
+        echo "key-id = $access_key"              >> ~/.euca/aws-$account.ini
+        echo "secret-key = $secret_key"          >> ~/.euca/aws-$account.ini
+        echo                                     >> ~/.euca/aws-$account.ini
         pause
 
-        echo "# euca-describe-availability-zones verbose --region aws-$account-admin@$region"
-        euca-describe-availability-zones verbose --region aws-$account-admin@$region
+        echo "# euca-describe-availability-zones verbose --region $federation-$account-admin@$region"
+        euca-describe-availability-zones verbose --region $federation-$account-admin@$region
 
         next
     fi
@@ -339,14 +341,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.euca/euca2ools.ini"
+echo "cat /etc/euca2ools/conf.d/$federation.ini"
+echo
+echo "cat ~/.euca/global.ini"
+echo
+echo "cat ~/.euca/$federation.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat ~/.euca/euca2ools.ini"
-    cat ~/.euca/euca2ools.ini
+    echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+    cat /etc/euca2ools/conf.d/$federation.ini
+    pause
+
+    echo "# cat ~/.euca/global.ini"
+    cat ~/.euca/global.ini
+    pause
+
+    echo "# cat ~/.euca/$federation.ini"
+    cat ~/.euca/$federation.ini
 
     next 200
 fi

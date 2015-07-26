@@ -186,10 +186,24 @@ if [ -z $password ]; then
     exit 16
 fi
 
+profile=$region-eucalyptus-admin
+
+if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
+    echo "Could not find $region Eucalyptus Account Administrator Euca2ools user!"
+    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
+    exit 20
+fi
+
+if [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
+    echo "Could not find $region Eucalyptus Account Administrator IAM credentials!"
+    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/iamrc"
+    exit 21
+fi
+
 if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
     echo "Could not find $region Eucalyptus Account Administrator credentials!"
     echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"
-    exit 20
+    exit 22
 fi
 
 
@@ -208,19 +222,16 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$region/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$region/eucalyptus/admin/eucarc"
+echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc"
+echo "export AWS_DEFAULT_REGION=$region"
 
 next
 
 echo
-echo "# cat ~/.creds/$region/eucalyptus/admin/eucarc"
-cat ~/.creds/$region/eucalyptus/admin/eucarc
-pause
-
-echo "# source ~/.creds/$region/eucalyptus/admin/eucarc"
-source ~/.creds/$region/eucalyptus/admin/eucarc
+echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc"
+export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc
+echo "export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
 
 next
 
@@ -370,6 +381,8 @@ fi
 # Obtain all values we need from eucarc
 access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
 secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+private_key=$HOME/.creds/$region/$account/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+certificate=$HOME/.creds/$region/$account/admin/$(sed -n -e "s/export EC2_CERT=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/$account/admin/eucarc)
 
 clear
 echo
@@ -382,16 +395,18 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF >> ~/.euca/euca2ools.ini"
-echo "[user $account-admin]"
+echo "cat << EOF >> ~/.euca/$region.ini"
+echo "[user $region-$account-admin]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
+echo "private-key = $private_key"
+echo "certificate = $certificate"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones verbose --region $account-admin@$region"
+echo "euca-describe-availability-zones verbose --region $region-$account-admin@$region"
 
-if [ -r ~/.euca/euca2ools.ini ] && grep -s -q "$secret_key" ~/.euca/euca2ools.ini; then
+if [ -r ~/.euca/$region.ini ] && grep -s -q "\[user $region-$account-admin]" ~/.euca/$region.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -406,21 +421,25 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
-        echo "# cat << EOF >> ~/.euca/euca2ools.ini"
-        echo "> [user $account-admin]"
+        echo "# cat << EOF >> ~/.euca/$region.ini"
+        echo "> [user $region-$account-admin]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
+        echo "> private-key = $private_key"
+        echo "> certificate = $certificate"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $account-admin]"    >> ~/.euca/euca2ools.ini
-        echo "key-id = $access_key    " >> ~/.euca/euca2ools.ini
-        echo "secret-key = $secret_key" >> ~/.euca/euca2ools.ini
-        echo                            >> ~/.euca/euca2ools.ini
+        echo "[user $region-$account-admin]" >> ~/.euca/$region.ini
+        echo "key-id = $access_key"          >> ~/.euca/$region.ini
+        echo "secret-key = $secret_key"      >> ~/.euca/$region.ini
+        echo "private-key = $private_key"    >> ~/.euca/$region.ini
+        echo "certificate = $certificate"    >> ~/.euca/$region.ini
+        echo                                 >> ~/.euca/$region.ini
         pause
 
-        echo "# euca-describe-availability-zones verbose --region $account-admin@$region"
-        euca-describe-availability-zones verbose --region $account-admin@$region
+        echo "# euca-describe-availability-zones verbose --region $region-$account-admin@$region"
+        euca-describe-availability-zones verbose --region $region-$account-admin@$region
 
         next
     fi
@@ -623,14 +642,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.euca/euca2ools.ini"
+echo "cat /etc/euca2ools/conf.d/$region.ini"
+echo
+echo "cat ~/.euca/global.ini"
+echo
+echo "cat ~/.euca/$region.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cat ~/.euca/euca2ools.ini"
-    cat ~/.euca/euca2ools.ini
+    echo "# cat /etc/euca2ools/conf.d/$region.ini"
+    cat /etc/euca2ools/conf.d/$region.ini
+    pause
+
+    echo "# cat ~/.euca/global.ini"
+    cat ~/.euca/global.ini
+    pause
+
+    echo "# cat ~/.euca/$region.ini"
+    cat ~/.euca/$region.ini
 
     next 200
 fi
