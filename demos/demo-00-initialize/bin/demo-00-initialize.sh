@@ -55,7 +55,7 @@ speed=100
 native=0
 local=0
 region=${AWS_DEFAULT_REGION#*@}
-domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
+domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc 2>/dev/null)
 
 
 #  2. Define functions
@@ -151,14 +151,16 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfdl? arg; do
+while getopts Isfnlr:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     n)  native=1;;
     l)  local=1;;
-    r)  region="$OPTARG";;
+    r)  region="$OPTARG"
+        [ -z $domain ] &&
+        domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc 2>/dev/null);;
     d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
@@ -176,9 +178,9 @@ if [ -z $region ]; then
     exit 10
 else
     case $region in
-      us-east-1|us-west-1|us-west-2|
-      sa-east-1|
-      eu-west-1|eu-central-1|
+      us-east-1|us-west-1|us-west-2) ;&
+      sa-east-1) ;&
+      eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
         echo "-r $region invalid: This script can not be run against AWS regions"
         exit 11;;
@@ -192,12 +194,6 @@ if [ -z $domain ]; then
 fi
 
 profile=$region-eucalyptus-admin
-
-if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-    echo "Could not find $region Eucalyptus Account Administrator Euca2ools user!"
-    echo " Expected to find: [user $profile] in ~/.euca/$region.ini"
-    exit 20
-fi
 
 if [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
     echo "Could not find $region Eucalyptus Account Administrator IAM credentials!"
