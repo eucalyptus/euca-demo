@@ -522,6 +522,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+if [ ! -r ~/.euca/$federation.ini ]; then
+    echo "cat << EOF > ~/.euca/$federation.ini"
+    echo "; AWS"
+    echo
+    echo "EOF"
+    echo
+fi
 echo "cat << EOF >> ~/.euca/$federation.ini"
 echo "[user $federation-$account-$user]"
 echo "key-id = $access_key"
@@ -546,6 +553,16 @@ else
         mkdir -p ~/.euca
         chmod 0700 ~/.euca
         echo
+        if [ ! -r ~/.euca/$federation.ini ]; then
+            echo "# cat << EOF > ~/.euca/$federation.ini"
+            echo "> ; AWS"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "; AWS"                > ~/.euca/$federation.ini
+            echo                       >> ~/.euca/$federation.ini
+            pause
+        fi
         echo "# cat << EOF >> ~/.euca/$federation.ini"
         echo "> [user $federation-$account-$user]"
         echo "> key-id = $access_key"
@@ -583,6 +600,15 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
+if [ ! -r ~/.aws/config ]; then
+    echo "cat << EOF > ~/.aws/config"
+    echo "#"
+    echo "# AWS Config file"
+    echo "#"
+    echo
+    echo "EOF"
+    echo
+fi
 echo "cat << EOF >> ~/.aws/config"
 echo "[profile $account-$user]"
 echo "region = $region"
@@ -590,6 +616,15 @@ echo "output = text"
 echo
 echo "EOF"
 echo
+if [ ! -r ~/.aws/credentials ]; then
+    echo "cat << EOF > ~/.aws/credentials"
+    echo "#"
+    echo "# AWS Credentials file"
+    echo "#"
+    echo
+    echo "EOF"
+    echo
+fi
 echo "cat << EOF >> ~/.aws/credentials"
 echo "[$account-$user]"
 echo "aws_access_key_id = $access_key"
@@ -614,6 +649,20 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
+        if [ ! -r ~/.aws/config ]; then
+            echo "# cat << EOF > ~/.aws/config"
+            echo "> #"
+            echo "> # AWS Config file"
+            echo "> #"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "#"                  > ~/.aws/config
+            echo "# AWS Config file" >> ~/.aws/config
+            echo "#"                 >> ~/.aws/config
+            echo                     >> ~/.aws/config
+            echo "#"
+        fi
         echo "# cat << EOF >> ~/.aws/config"
         echo "> [profile $account-$user]"
         echo "> region = $region"
@@ -627,6 +676,20 @@ else
         echo                            >> ~/.aws/config
         pause
 
+        if [ ! -r ~/.aws/credentials ]; then
+            echo "# cat << EOF > ~/.aws/credentials"
+            echo "> #"
+            echo "> # AWS Credentials file"
+            echo "> #"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "#"                       > ~/.aws/credentials
+            echo "# AWS Credentials file" >> ~/.aws/credentials
+            echo "#"                      >> ~/.aws/credentials
+            echo                          >> ~/.aws/credentials
+            echo "#"
+        fi
         echo "# cat << EOF >> ~/.aws/credentials"
         echo "> [$account-$user]"
         echo "> aws_access_key_id = $access_key"

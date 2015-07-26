@@ -532,30 +532,50 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > ~/.aws/config"
-echo "#"
-echo "# AWS Config file"
-echo "#"
-echo
-echo "[default]"
-echo "region = $region"
-echo "output = text"
-echo
+if [ ! -r ~/.aws/config ]; then
+    echo "cat << EOF > ~/.aws/config"
+    echo "#"
+    echo "# AWS Config file"
+    echo "#"
+    echo
+    echo "EOF"
+    echo
+fi
+if ! grep -s -q "\[default]" ~/.aws/config; then
+    echo "cat << EOF >> ~/.aws/config"
+    echo "[default]"
+    echo "region = $region"
+    echo "output = text"
+    echo
+    echo "EOF"
+    echo
+fi
+echo "cat << EOF >> ~/.aws/config"
 echo "[profile $region-admin]"
 echo "region = $region"
 echo "output = text"
 echo
 echo "EOF"
 echo
+if [ ! -r ~/.aws/credentials ]; then
+    echo "cat << EOF > ~/.aws/credentials"
+    echo "#"
+    echo "# AWS Credentials file"
+    echo "#"
+    echo
+    echo "EOF"
+    echo
+fi
+if ! grep -s -q "\[default]" ~/.aws/credentials; then
+    echo "cat << EOF > ~/.aws/credentials"
+    echo "[default]"
+    echo "aws_access_key_id = $access_key"
+    echo "aws_secret_access_key = $secret_key"
+    echo
+    echo "EOF"
+    echo
+fi
 echo "cat << EOF > ~/.aws/credentials"
-echo "#"
-echo "# AWS Credentials file"
-echo "#"
-echo
-echo "[default]"
-echo "aws_access_key_id = $access_key"
-echo "aws_secret_access_key = $secret_key"
-echo
 echo "[$region-admin]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
@@ -581,58 +601,82 @@ else
         mkdir -p ~/.aws
         chmod 0700 ~/.aws
         echo
+        if [ ! -r ~/.aws/config ]; then
+            echo "# cat << EOF > ~/.aws/config"
+            echo "> #"
+            echo "> # AWS Config file"
+            echo "> #"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "#"                  > ~/.aws/config
+            echo "# AWS Config file" >> ~/.aws/config
+            echo "#"                 >> ~/.aws/config
+            echo                     >> ~/.aws/config
+            echo "#"
+        fi
+        if ! grep -s -q "\[default]" ~/.aws/config; then
+            echo "# cat << EOF >> ~/.aws/config"
+            echo "> [default]"
+            echo "> region = $region"
+            echo "> output = text"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "[default]"               >> ~/.aws/config
+            echo "region = $region"        >> ~/.aws/config
+            echo "output = text"           >> ~/.aws/config
+            echo                           >> ~/.aws/config
+            echo "#"
+        fi
         echo "# cat << EOF > ~/.aws/config"
-        echo "> #"
-        echo "> # AWS Config file"
-        echo "> #"
-        echo ">"
-        echo "> [default]"
-        echo "> region = $region"
-        echo "> output = text"
-        echo ">"
         echo "> [profile $region-admin]"
         echo "> region = $region"
         echo "> output = text"
         echo ">"
-        echo "EOF"
+        echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "#"                        > ~/.aws/config
-        echo "# AWS Config file"       >> ~/.aws/config
-        echo "#"                       >> ~/.aws/config
-        echo                           >> ~/.aws/config
-        echo "[default]"               >> ~/.aws/config
-        echo "region = $region"        >> ~/.aws/config
-        echo "output = text"           >> ~/.aws/config
-        echo                           >> ~/.aws/config
         echo "[profile $region-admin]" >> ~/.aws/config
         echo "region = $region"        >> ~/.aws/config
         echo "output = text"           >> ~/.aws/config
         echo                           >> ~/.aws/config
         pause
 
+        if [ ! -r ~/.aws/credentials ]; then
+            echo "# cat << EOF > ~/.aws/credentials"
+            echo "> #"
+            echo "> # AWS Credentials file"
+            echo "> #"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "#"                       > ~/.aws/credentials
+            echo "# AWS Credentials file" >> ~/.aws/credentials
+            echo "#"                      >> ~/.aws/credentials
+            echo                          >> ~/.aws/credentials
+            echo "#"
+        fi
+        if ! grep -s -q "\[default]" ~/.aws/credentials; then
+            echo "# cat << EOF > ~/.aws/credentials"
+            echo "> [default]"
+            echo "> aws_access_key_id = $access_key"
+            echo "> aws_secret_access_key = $secret_key"
+            echo ">"
+            echo "> EOF"
+            # Use echo instead of cat << EOF to better show indentation
+            echo "[default]"                           >> ~/.aws/credentials
+            echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
+            echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
+            echo                                       >> ~/.aws/credentials
+            echo "#"
+        fi
         echo "# cat << EOF > ~/.aws/credentials"
-        echo "> #"
-        echo "> # AWS Credentials file"
-        echo "> #"
-        echo ">"
-        echo "> [default]"
-        echo "> aws_access_key_id = $access_key"
-        echo "> aws_secret_access_key = $secret_key"
-        echo ">"
         echo "> [$region-admin]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
-        echo "EOF"
+        echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "#"                                    > ~/.aws/credentials
-        echo "# AWS Credentials file"              >> ~/.aws/credentials
-        echo "#"                                   >> ~/.aws/credentials
-        echo                                       >> ~/.aws/credentials
-        echo "[default]"                           >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo                                       >> ~/.aws/credentials
         echo "[$region-admin]"                     >> ~/.aws/credentials
         echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
