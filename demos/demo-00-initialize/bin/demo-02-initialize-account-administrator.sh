@@ -209,12 +209,6 @@ if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
     exit 20
 fi
 
-if [ ! -r ~/.creds/$region/$account/admin/iamrc ]; then
-    echo "Could not find $region Demo ($account) Account Administrator IAM credentials!"
-    echo "Expected to find: ~/.creds/$region/$account/admin/iamrc"
-    exit 21
-fi
-
 if [ ! -r ~/.creds/$region/$account/admin/eucarc ]; then
     echo "Could not find $region Demo ($account) Account Administrator credentials!"
     echo "Expected to find: ~/.creds/$region/$account/admin/eucarc"

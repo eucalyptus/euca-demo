@@ -196,12 +196,6 @@ fi
 profile=$region-admin
 profile_region=$profile@$region
 
-if [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
-    echo "Could not find $region Eucalyptus Account Administrator IAM credentials!"
-    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/iamrc"
-    exit 21
-fi
-
 if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
     echo "Could not find $region Eucalyptus Account Administrator credentials!"
     echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"

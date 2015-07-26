@@ -222,7 +222,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones verbose --region $federation-$account-admin@$region"
+echo "euca-describe-availability-zones --region $federation-$account-admin@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-admin]" ~/.euca/$federation.ini; then
     echo
@@ -256,14 +256,14 @@ else
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $federation-$account-admin]" >> ~/.euca/aws-$account.ini
-        echo "key-id = $access_key"              >> ~/.euca/aws-$account.ini
-        echo "secret-key = $secret_key"          >> ~/.euca/aws-$account.ini
-        echo                                     >> ~/.euca/aws-$account.ini
+        echo "[user $federation-$account-admin]" >> ~/.euca/$federation.ini
+        echo "key-id = $access_key"              >> ~/.euca/$federation.ini
+        echo "secret-key = $secret_key"          >> ~/.euca/$federation.ini
+        echo                                     >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones verbose --region $federation-$account-admin@$region"
-        euca-describe-availability-zones verbose --region $federation-$account-admin@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-admin@$region"
+        euca-describe-availability-zones --region $federation-$account-admin@$region
 
         next
     fi
@@ -464,5 +464,5 @@ end=$(date +%s)
 echo
 echo "AWS Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = hp ] || a=" -a $account"
-echo "Please run \"demo-02-initialize-aws-account-administrator$a -A $access_key -S '$secret_key'\" to create at least one User-level Administrator, then"
+echo "Please run \"demo-02-initialize-aws-account-administrator$a -u <username>\" to create at least one User-level Administrator, then"
 echo "Please run \"demo-03-initialize-aws-account-dependencies.sh$a\" to complete AWS Account initialization"
