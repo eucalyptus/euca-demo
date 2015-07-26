@@ -975,7 +975,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-$account-$user_demo"
+echo "aws ec2 describe-availability-zones --profile $region-$account-$user_demo --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-$user_demo]" ~/.aws/config; then
     echo
@@ -1018,8 +1018,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$user_demo"
-        aws ec2 describe-availability-zones --profile=$region-$account-$user_demo
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-$user_demo --region $region"
+        aws ec2 describe-availability-zones --profile $region-$account-$user_demo --region $region
 
         next
     fi
@@ -1276,7 +1276,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-$account-$user_developer"
+echo "aws ec2 describe-availability-zones --profile $region-$account-$user_developer --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-$user_developer]" ~/.aws/config; then
     echo
@@ -1319,8 +1319,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$user_developer"
-        aws ec2 describe-availability-zones --profile=$region-$account-$user_developer
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-$user_developer --region $region"
+        aws ec2 describe-availability-zones --profile $region-$account-$user_developer --region $region
 
         next
     fi
@@ -1577,7 +1577,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-$account-$user_user"
+echo "aws ec2 describe-availability-zones --profile $region-$account-$user_user --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-$user_user]" ~/.aws/config; then
     echo
@@ -1620,8 +1620,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$user_user"
-        aws ec2 describe-availability-zones --profile=$region-$account-$user_user
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-$user_user --region $region"
+        aws ec2 describe-availability-zones --profile $region-$account-$user_user --region $region
 
         next
     fi

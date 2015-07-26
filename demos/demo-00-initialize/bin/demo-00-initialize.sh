@@ -587,9 +587,9 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=default"
+echo "aws ec2 describe-availability-zones --profile default --region $region"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-admin"
+echo "aws ec2 describe-availability-zones --profile $region-admin --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-admin]" ~/.aws/config; then
     echo
@@ -688,11 +688,11 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=default"
-        aws ec2 describe-availability-zones--profile=default
+        echo "# aws ec2 describe-availability-zones --profile default --region $region"
+        aws ec2 describe-availability-zones --profile default --region $region
         echo "#"
-        echo "# aws ec2 describe-availability-zones --profile=$region-admin"
-        aws ec2 describe-availability-zones--profile=$region-admin
+        echo "# aws ec2 describe-availability-zones --profile $region-admin --region $region"
+        aws ec2 describe-availability-zones --profile $region-admin --region $region
 
         next
     fi

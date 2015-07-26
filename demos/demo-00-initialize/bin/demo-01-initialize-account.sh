@@ -478,7 +478,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $region-$account-admin"
+echo "aws ec2 describe-availability-zones --profile $region-$account-admin --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-admin]" ~/.aws/config; then
     echo
@@ -521,8 +521,8 @@ else
         echo                                        >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $region-$account-admin"
-        aws ec2 describe-availability-zones --profile $region-$account-admin
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-admin --region $region"
+        aws ec2 describe-availability-zones --profile $region-$account-admin --region $region
 
         next
     fi
@@ -705,5 +705,5 @@ echo
 echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = demo ] || a=" -a $account"
 unset p; [ $password = ${account}123 ] || p=" -p $password"
-echo "Please run \"demo-02-initialize-account-administrator$a$p\" to create at least one User-level Administrator, then"
+echo "Please run \"demo-02-initialize-account-administrator.sh$a$p\" to create at least one User-level Administrator, then"
 echo "Please run \"demo-03-initialize-account-dependencies.sh$a$p\" to complete Demo Account initialization"

@@ -583,7 +583,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-$account-$user"
+echo "aws ec2 describe-availability-zones --profile $region-$account-$user --region $region"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-$user]" ~/.aws/config; then
     echo
@@ -626,8 +626,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$user"
-        aws ec2 describe-availability-zones --profile=$region-$account-$user
+        echo "# aws ec2 describe-availability-zones --profile $region-$account-$user --region $region"
+        aws ec2 describe-availability-zones --profile $region-$account-$user --region $region
 
         next
     fi
