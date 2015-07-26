@@ -237,7 +237,7 @@ if [ -z $admin ]; then
 fi
 
 profile=$region-$account-$admin
-profile_region=$profile@region
+profile_region=$profile@$region
 
 if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
     echo "Could not find $region Demo ($account) Account Administrator ($admin) User Euca2ools user!"
@@ -273,16 +273,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/$account/$admin/iamrc"
-echo "export AWS_DEFAULT_REGION=$region"
+echo "export AWS_DEFAULT_REGION=$profile_region"
 
 next
 
 echo
-echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/$account/$admin/iamrc"
-export AWS_CREDENTIAL_FILE=~/.creds/$region/$account/$admin/iamrc
-echo "export AWS_DEFAULT_REGION=$region"
-export AWS_DEFAULT_REGION=$region
+echo "export AWS_DEFAULT_REGION=$profile_region"
+export AWS_DEFAULT_REGION=$profile_region
 
 next
 

@@ -193,7 +193,8 @@ if [ -z $domain ]; then
     exit 12
 fi
 
-profile=$region-eucalyptus-admin
+profile=$region-admin
+profile_region=$profile@$region
 
 if [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
     echo "Could not find $region Eucalyptus Account Administrator IAM credentials!"
@@ -248,16 +249,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc"
-echo "export AWS_DEFAULT_REGION=$region"
+echo "export AWS_DEFAULT_REGION=$profile_region"
 
 next
 
 echo
-echo "export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc"
-export AWS_CREDENTIAL_FILE=~/.creds/$region/eucalyptus/admin/iamrc
-echo "export AWS_DEFAULT_REGION=$region"
-export AWS_DEFAULT_REGION=$region
+echo "export AWS_DEFAULT_REGION=$profile_region"
+export AWS_DEFAULT_REGION=$profile_region
 
 next
 
@@ -340,7 +338,7 @@ echo "monitoring-url $monitoring_url"
 echo "s3-url = $s3_url"
 echo "sts-url = $sts_url"
 echo "swf-url = $swf_url"
-echo "user = admin"
+echo "user = $region-admin"
 echo
 echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem"
 echo "verify-ssl = false"
@@ -394,7 +392,7 @@ else
         echo "> s3-url = $s3_url"
         echo "> sts-url = $sts_url"
         echo "> swf-url = $swf_url"
-        echo "> user = admin"
+        echo "> user = $region-admin"
         echo ">"
         echo "> certificate = /usr/share/euca2ools/certs/cert-$region.pem"
         echo "> verify-ssl = false"
@@ -432,6 +430,7 @@ fi
 
 ((++step))
 # Obtain all values we need from eucarc
+account_id=$(sed -n -e "s/export EC2_ACCOUNT_NUMBER='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
 private_key=$HOME/.creds/$region/eucalyptus/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
@@ -452,6 +451,7 @@ echo "cat << EOF > ~/.euca/$region.ini"
 echo "; Eucalyptus Region $region"
 echo
 echo "[user $region-admin]"
+echo "account-id = $account_id"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo "private-key = $private_key"
@@ -460,6 +460,8 @@ echo
 echo "EOF"
 echo
 echo "euca-describe-availability-zones verbose"
+echo
+echo "euca-describe-availability-zones verbose --region $region"
 echo
 echo "euca-describe-availability-zones verbose --region $region-admin@$region"
 
@@ -482,6 +484,7 @@ else
         echo "> ; Eucalyptus Region $region"
         echo ">"
         echo "> [user $region-admin]"
+        echo "> account-id = $account_id"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo "> private-key = $private_key"
@@ -492,6 +495,7 @@ else
         echo "; Eucalyptus Region $region"  > ~/.euca/$region.ini
         echo                               >> ~/.euca/$region.ini
         echo "[user $region-admin]"        >> ~/.euca/$region.ini
+        echo "account-id = $account_id"    >> ~/.euca/$region.ini
         echo "key-id = $access_key"        >> ~/.euca/$region.ini
         echo "secret-key = $secret_key"    >> ~/.euca/$region.ini
         echo "private-key = $private_key"  >> ~/.euca/$region.ini
@@ -501,7 +505,12 @@ else
 
         echo "# euca-describe-availability-zones verbose"
         euca-describe-availability-zones verbose
-        echo "#"
+        pause
+
+        echo "# euca-describe-availability-zones verbose --region $region"
+        euca-describe-availability-zones verbose --region $region
+        pause
+
         echo "# euca-describe-availability-zones verbose --region $region-admin@$region"
         euca-describe-availability-zones verbose --region $region-admin@$region
 
