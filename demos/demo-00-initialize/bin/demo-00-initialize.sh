@@ -244,12 +244,15 @@ echo
 echo "Commands:"
 echo
 echo "export AWS_DEFAULT_REGION=$profile_region"
+echo "unset AWS_CREDENTIAL_FILE"
 
 next
 
 echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
+echo "# export AWS_DEFAULT_REGION=$profile_region"
 export AWS_DEFAULT_REGION=$profile_region
+echo "# unset AWS_CREDENTIAL_FILE"
+unset AWS_CREDENTIAL_FILE
 
 next
 
