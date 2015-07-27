@@ -1630,8 +1630,6 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images"
-echo
 echo "euca-describe-keypairs"
 echo
 echo "euare-rolelistbypath"
@@ -1650,10 +1648,6 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
-
     echo "# euca-describe-keypairs"
     euca-describe-keypairs
     pause

@@ -722,8 +722,6 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws ec2 describe-images"
-echo
 echo "aws ec2 describe-key-pairs"
 echo
 echo "aws iam list-groups"
@@ -736,10 +734,6 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# aws ec2 describe-images"
-    aws ec2 describe-images
-    pause
-
     echo "# aws ec2 describe-key-pairs"
     aws ec2 describe-key-pairs
     pause
