@@ -201,6 +201,54 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator Credentials"
+echo "    - This allows the AWS Account Administrator to run API commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "mkdir -p ~/.creds/$federation/$account/admin"
+echo
+echo "cat << EOF >> ~/.creds/$federation/$account/admin/iamrc"
+echo "AWSAccessKeyId=$access_key"
+echo "AWSSecretKey=$secret_key"
+echo "EOF"
+
+if [ -r ~/.creds/$federation/$account/admin/iamrc ]; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# mkdir -p ~/.creds/$federation/$account/admin"
+        mkdir -p ~/.creds/$federation/$account/admin
+        echo "#"
+        echo "# cat << EOF >> ~/.creds/$federation/$account/admin/iamrc"
+        echo "> AWSAccessKeyId=$access_key"
+        echo "> AWSSecretKey=$secret_key"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "AWSAccessKeyId=$access_key" >> ~/.creds/$federation/$account/admin/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/admin/iamrc
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator Euca2ools Profile"
 echo "    - This allows the AWS Account Administrator to run API commands via Euca2ools"
 echo
