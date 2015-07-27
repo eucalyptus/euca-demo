@@ -319,7 +319,7 @@ echo
 echo "aws iam attach-group-policy --group-name Administrators \\"
 echo "                            --policy-arn arn:aws:iam::aws:policy/AdministratorAccess"
 
-if aws iam list-attached-group-policies --group-name $group | grep -s -q ":policy/AdministratorAccess$"; then
+if aws iam list-attached-group-policies --group-name $group | grep -s -q ":policy/AdministratorAccess"; then
     echo
     tput rev
     echo "Already Attached!"
