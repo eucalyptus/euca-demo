@@ -464,5 +464,5 @@ end=$(date +%s)
 echo
 echo "AWS Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
 unset a; [ $account = hp ] || a=" -a $account"
-echo "Please run \"demo-02-initialize-aws-account-administrator$a -u <username>\" to create at least one User-level Administrator, then"
+echo "Please run \"demo-02-initialize-aws-account-administrator.sh$a -u <username>\" to create at least one User-level Administrator, then"
 echo "Please run \"demo-03-initialize-aws-account-dependencies.sh$a\" to complete AWS Account initialization"
