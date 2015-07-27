@@ -845,6 +845,8 @@ echo "cat << EOF > ~/.creds/$region/$account/$user_demo/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
+echo
+echo "chmod 0600 ~/.creds/$region/$account/$user_demo/iamrc"
 
 if [ -r ~/.creds/$region/$account/$user_demo/iamrc ]; then
     echo
@@ -875,6 +877,9 @@ else
         # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$region/$account/$user_demo/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$region/$account/$user_demo/iamrc
+        echo "#"
+        echo "# chmod 0600 ~/.creds/$region/$account/$user_demo/iamrc"
+        chmod 0600 ~/.creds/$region/$account/$user_demo/iamrc
 
         next
     fi
@@ -1146,6 +1151,8 @@ echo "cat << EOF > ~/.creds/$region/$account/$user_developer/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
+echo
+echo "chmod 0600 ~/.creds/$region/$account/$user_developer/iamrc"
 
 if [ -r ~/.creds/$region/$account/$user_developer/iamrc ]; then
     echo
@@ -1176,6 +1183,9 @@ else
         # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$region/$account/$user_developer/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$region/$account/$user_developer/iamrc
+        echo "#"
+        echo "# chmod 0600 ~/.creds/$region/$account/$user_developer/iamrc"
+        chmod 0600 ~/.creds/$region/$account/$user_developer/iamrc
 
         next
     fi
@@ -1447,6 +1457,8 @@ echo "cat << EOF > ~/.creds/$region/$account/$user_user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
+echo
+echo "chmod 0600 ~/.creds/$region/$account/$user_user/iamrc"
 
 if [ -r ~/.creds/$region/$account/$user_user/iamrc ]; then
     echo
@@ -1477,6 +1489,9 @@ else
         # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$region/$account/$user_user/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$region/$account/$user_user/iamrc
+        echo "#"
+        echo "# chmod 0600 ~/.creds/$region/$account/$user_user/iamrc"
+        chmod 0600 ~/.creds/$region/$account/$user_user/iamrc
 
         next
     fi

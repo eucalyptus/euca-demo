@@ -464,6 +464,8 @@ echo "cat << EOF > ~/.creds/$federation/$account/$user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
+echo
+echo "chmod 0600 ~/.creds/$federation/$account/$user/iamrc"
 
 if [ -r ~/.creds/$federation/$account/$user/iamrc ]; then
     echo
@@ -494,6 +496,9 @@ else
         # Use echo instead of cat << EOF to better show indentation
         echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$user/iamrc
         echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$user/iamrc
+        echo "#"
+        echo "# chmod 0600 ~/.creds/$federation/$account/$user/iamrc"
+        chmod 0600 ~/.creds/$federation/$account/$user/iamrc
 
         next
     fi
