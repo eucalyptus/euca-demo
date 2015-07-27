@@ -707,7 +707,7 @@ else
 
         echo "# aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
         echo ">                          --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
-        aws iam put-group-policy --group-name $group_demos --policy-name ${group_users}Policy \
+        aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \
                                  --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json
 
         next
@@ -905,7 +905,7 @@ echo "EOF"
 echo
 echo "euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
 
-if [ -r ~/.euca/$federation.ini ] && grep -s -q "[user $federation-$account-$user_demo]" ~/.euca/$federation.ini; then
+if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_demo]" ~/.euca/$federation.ini; then
     echo
     tput rev
     echo "Already Created!"
