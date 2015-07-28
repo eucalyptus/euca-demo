@@ -277,7 +277,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usermodloginprofile –u admin –p $password -as-account $account"
+echo "euare-usermodloginprofile –u admin –p $password --as-account $account"
 
 if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
     echo
