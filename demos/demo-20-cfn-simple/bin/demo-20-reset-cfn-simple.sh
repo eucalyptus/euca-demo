@@ -305,7 +305,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "terminated_instance_ids=$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
+echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
 terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
 echo
 echo "for instance_id in \$terminated_instance_ids; do"
@@ -319,7 +319,7 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# terminated_instance_ids=$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
+    echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
     terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
     pause
 

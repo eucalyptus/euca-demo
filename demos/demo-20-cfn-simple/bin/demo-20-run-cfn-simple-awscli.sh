@@ -435,7 +435,7 @@ if [ $choice = y ]; then
         echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
         aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5
 
-        status=$(aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 | grep "^STACK" | cut -f3)
+        status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)
         if [ "$status" = "CREATE_COMPLETE" ]; then
             break
         else
@@ -482,11 +482,9 @@ fi
 
 
 ((++step))
-# This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(aws ec2 describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
-instance_id=${result%%:*}
-temp=${result%:*} && public_name=${temp#*:}
-public_ip=${result##*:}
+instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance | cut -f4)
+public_name=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f11)
+public_ip=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f12)
 user=centos
 
 clear

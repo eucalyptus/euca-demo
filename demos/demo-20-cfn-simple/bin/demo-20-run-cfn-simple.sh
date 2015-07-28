@@ -40,7 +40,7 @@ delete_default=20
 
 interactive=1
 speed=100
-on=${AWS_DEFAULT_REGION#*@}
+region=${AWS_DEFAULT_REGION#*@}
 account=demo
 user=demo
 
@@ -402,7 +402,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events SimpleDemoStack | head -10"
+echo "euform-describe-stack-events SimpleDemoStack | head -5"
 
 run 50
 
@@ -416,8 +416,8 @@ if [ $choice = y ]; then
     ((seconds=$create_default * $speed / 100))
     while ((attempt++ <= create_attempts)); do
         echo
-        echo "# euform-describe-stack-events SimpleDemoStack | head -10"
-        euform-describe-stack-events SimpleDemoStack | head -10
+        echo "# euform-describe-stack-events SimpleDemoStack | head -5"
+        euform-describe-stack-events SimpleDemoStack | head -5
 
         status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
         if [ "$status" = "CREATE_COMPLETE" ]; then
@@ -466,11 +466,9 @@ fi
 
 
 ((++step))
-# This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
-instance_id=${result%%:*}
-temp=${result%:*} && public_name=${temp#*:}
-public_ip=${result##*:}
+instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance | cut -f3)
+public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
+public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
 user=centos
 
 clear
