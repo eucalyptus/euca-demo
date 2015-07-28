@@ -42,7 +42,7 @@ delete_default=20
 
 interactive=1
 speed=100
-on=${AWS_DEFAULT_REGION#*@}
+region=${AWS_DEFAULT_REGION#*@}
 account=demo
 user=demo
 
