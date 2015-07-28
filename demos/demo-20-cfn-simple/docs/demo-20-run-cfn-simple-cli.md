@@ -147,7 +147,8 @@ required.
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
     ```bash
-    public_name=$(euca-describe-instances | grep "^INSTANCE" | cut -f4,11 | sort -k2 | tail -1 | cut -f1)
+    instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance | cut -f3)
+    public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

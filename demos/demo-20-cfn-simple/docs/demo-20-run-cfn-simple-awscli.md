@@ -111,10 +111,11 @@ required.
     as an input parameter.
 
     ```bash
-    image_id=$((aws ec2 describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f4)
+    image_id=$(aws ec2 describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f4)
 
-    aws cloudformation create-stack --template-file ~/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
-                                    -p DemoImageId=$image_id SimpleDemoStack
+    aws cloudformation create-stack --stack-name SimpleDemoStack \
+                                    --template-body file://~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
+                                    --parameters ParameterKey=DemoImageId,ParameterValue=$image_id
     ```
 
 7. Monitor Stack creation
@@ -146,7 +147,8 @@ required.
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
     ```bash
-    public_name=$(aws ec2 describe-instances | grep "^INSTANCE" | cut -f8,11 | sort -k1 | tail -1 | cut -f2)
+    instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance | cut -f4)
+    public_name=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f11)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

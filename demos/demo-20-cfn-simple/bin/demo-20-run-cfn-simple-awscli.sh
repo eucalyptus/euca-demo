@@ -385,21 +385,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws cloudformation create-stack --template-file $templatesdir/Simple.template \\"
-echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\"
-echo "                                  SimpleDemoStack"
+echo "aws cloudformation create-stack --stack-name SimpleDemoStack \\"
+echo "                                --template-body file://$templatesdir/Simple.template \\"
+echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# aws cloudformation create-stack --template-file $templatesdir/Simple.template \\"
-    echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\"
-    echo ">                                   SimpleDemoStack"
-    aws cloudformation create-stack --template-file $templatesdir/Simple.template \
-                                    --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \
-                                      SimpleDemoStack
-    
+    echo "# aws cloudformation create-stack --stack-name SimpleDemoStack \\"
+    echo ">                                 --template-body file://$templatesdir/Simple.template \\"
+    echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id"
+    aws cloudformation create-stack --stack-name SimpleDemoStack \
+                                    --template-body file://$templatesdir/Simple.template \
+                                    --parameters ParameterKey=DemoImageId,ParameterValue=$image_id
+
     next
 fi
 

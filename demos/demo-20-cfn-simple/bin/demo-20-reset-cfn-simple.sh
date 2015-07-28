@@ -258,7 +258,7 @@ echo "Commands:"
 echo
 echo "euform-describe-stacks"
 echo
-echo "euform-describe-stack-events SimpleDemoStack | head -10"
+echo "euform-describe-stack-events SimpleDemoStack | head -5"
 
 run 50
 
@@ -272,8 +272,8 @@ if [ $choice = y ]; then
     ((seconds=$delete_default * $speed / 100))
     while ((attempt++ <= delete_attempts)); do
         echo
-        echo "# euform-describe-stack-events SimpleDemoStack | head -10"
-        euform-describe-stack-events SimpleDemoStack | head -10
+        echo "# euform-describe-stack-events SimpleDemoStack | head -5"
+        euform-describe-stack-events SimpleDemoStack | head -5
 
         status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
         if [ -z "$status" ]; then
