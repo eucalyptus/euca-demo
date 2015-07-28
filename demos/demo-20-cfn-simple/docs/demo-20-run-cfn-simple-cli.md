@@ -16,10 +16,11 @@ required.
 
 ### Run CloudFormation Simple Demo via the Euca2ools Command Line
 
-1. Use Demo Account Administrator credentials
+1. Use Demo Account Demo User credentials
 
     ```bash
-    source ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc
+    export AWS_DEFAULT_REGION=hp-aw2-1-demo-demo@hp-aw2-1
+    unset AWS_CREDENTIAL_FILE
     ```
 
 2. Confirm existence of Demo depencencies

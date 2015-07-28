@@ -3,6 +3,8 @@
 # This script runs a Eucalyptus CloudFormation demo which uses the
 # Simple.template to create a security group and an instance.
 #
+# This is a variant of the demo-20-run-cfn-simple.sh script which primarily uses the AWSCLI.
+#
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
 # on an arbitrary management workstation, you will need to move the appropriate
@@ -183,11 +185,10 @@ if [ -z $user ]; then
 fi
 
 profile=$region-$account-$user
-profile_region=$profile@$region
 
-if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-    echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
-    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
+if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+    echo "Could not find $region Demo ($account) Account Demo ($user) User AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
     exit 20
 fi
 
@@ -206,22 +207,31 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User credentials"
+echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User profile"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
+echo "export AWS_DEFAULT_PROFILE=$profile"
+echo "export AWS_DEFAULT_REGION=$region"
+echo
+echo "echo \$AWS_DEFAULT_PROFILE"
+echo "echo \$AWS_DEFAULT_REGION"
 
 next
 
 echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
+echo "# export AWS_DEFAULT_PROFILE=$profile"
+export AWS_DEFAULT_PROFILE=$profile
+echo "# export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
+pause
+
+echo "# echo \$AWS_DEFAULT_PROFILE"
+echo $AWS_DEFAULT_PROFILE
+echo "# echo \$AWS_DEFAULT_REGION"
+echo $AWS_DEFAULT_REGION
 
 next
 
@@ -238,19 +248,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
+echo "aws ec2 describe-images | cut -f1,4,5 | grep -P \"^IMAGES\\temi-.*\\timages/$image_name.raw.manifest.xml\""
 echo
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
+echo "aws ec2 describe-key-pairs | grep -P \"^KEYPAIRS\\t.*\\tdemo\$\""
 
 next
 
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
-euca-describe-images | grep -P "^IMAGE\temi-.*\timages/$image_name.raw.manifest.xml\t" || demo_initialized=n
+echo "aws ec2 describe-images | cut -f1,4,5 | grep -P \"^IMAGES\\temi-.*\\timages/$image_name.raw.manifest.xml\""
+aws ec2 describe-images | cut -f1,4,5 | grep -P "^IMAGES\temi-.*\timages/$image_name.raw.manifest.xml" || demo_initialized=n
 pause
 
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
-euca-describe-keypairs | grep -P "^KEYPAIR\tdemo\t" || demo_initialized=n
+echo "aws ec2 describe-key-pairs | grep -P \"^KEYPAIRS\\t.*\\tdemo\$\""
+aws ec2 describe-key-pairs | grep -P "^KEYPAIRS\t.*demo$" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
@@ -258,7 +268,7 @@ if [ $demo_initialized = n ]; then
     echo "Please re-run the demo initialization scripts referencing this demo account:"
     echo "- demo-00-initialize.sh"
     echo "- demo-01-initialize-account.sh -a $account"
-    echo "- demo-02-initialize-account-dependencies.sh -a $account"
+    echo "- demo-03-initialize-account-dependencies.sh -a $account"
     exit 99
 fi
 
@@ -277,20 +287,20 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo 
-echo "euca-describe-groups"
+echo "aws ec2 describe-security-groups"
 echo
-echo "euca-describe-instances"
+echo "aws ec2 describe-instances"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
+    echo "# aws ec2 describe-security-groups"
+    aws ec2 describe-security-groups
     pause
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
+    echo "# aws ec2 describe-instances"
+    aws ec2 describe-instances
     
     next
 fi
@@ -308,14 +318,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks"
+echo "aws cloudformation describe-stacks"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "# aws cloudformation describe-stacks"
+    aws cloudformation describe-stacks
 
     next
 fi
@@ -363,7 +373,7 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep $image_name.raw.manifest.xml | cut -f2)
+image_id=$(aws ec2 describe-images | grep $image_name.raw.manifest.xml | cut -f4)
 
 clear
 echo
@@ -375,14 +385,20 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
+echo "aws cloudformation create-stack --template-file $templatesdir/Simple.template \\"
+echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\"
+echo "                                  SimpleDemoStack"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
-    euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack
+    echo "# aws cloudformation create-stack --template-file $templatesdir/Simple.template \\"
+    echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\"
+    echo ">                                   SimpleDemoStack"
+    aws cloudformation create-stack --template-file $templatesdir/Simple.template \
+                                    --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \
+                                      SimpleDemoStack
     
     next
 fi
@@ -400,26 +416,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks"
+echo "aws cloudformation describe-stacks"
 echo
-echo "euform-describe-stack-events SimpleDemoStack | head -10"
+echo "aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "# aws cloudformation describe-stacks"
+    aws cloudformation describe-stacks
     pause
 
     attempt=0
     ((seconds=$create_default * $speed / 100))
     while ((attempt++ <= create_attempts)); do
         echo
-        echo "# euform-describe-stack-events SimpleDemoStack | head -10"
-        euform-describe-stack-events SimpleDemoStack | head -10
+        echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
+        aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5
 
-        status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
+        status=$(aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 | grep "^STACK" | cut -f3)
         if [ "$status" = "CREATE_COMPLETE" ]; then
             break
         else
@@ -446,20 +462,20 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-groups"
+echo "aws ec2 describe-security-groups"
 echo
-echo "euca-describe-instances"
+echo "aws ec2 describe-instances"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
+    echo "# aws ec2 describe-security-groups"
+    aws ec2 describe-security-groups
     pause
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
+    echo "# aws ec2 describe-instances"
+    aws ec2 describe-instances
 
     next
 fi
@@ -467,7 +483,7 @@ fi
 
 ((++step))
 # This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
+result=$(aws ec2 describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
 instance_id=${result%%:*}
 temp=${result%:*} && public_name=${temp#*:}
 public_ip=${result##*:}

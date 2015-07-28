@@ -5,18 +5,16 @@
 #
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
-# on an arbitrary management workstation, you will need to move the demo
-# account admin user's credentials zip file to
-#   ~/.creds/<region>/<demo_account_name>/admin.zip
-# then expand it's contents into the
-#   ~/.creds/<region>/<demo_account_name>/admin/ directory
+# on an arbitrary management workstation, you will need to move the appropriate
+# credentials to your management host.
 #
 # Before running this (or any other demo script in the euca-demo project),
 # you should run the following scripts to initialize the demo environment
 # to a baseline of known resources which are assumed to exist.
 # - Run demo-00-initialize.sh on the CLC as the Eucalyptus Administrator.
 # - Run demo-01-initialize-account.sh on the CLC as the Eucalyptus Administrator.
-# - Run demo-02-initialize-account-dependencies.sh on the CLC as the Demo Account Administrator.
+# - Run demo-02-initialize-account-administrator.sh on the CLC as the Demo Account Administrator.
+# - Run demo-03-initialize-account-dependencies.sh on the CLC as the Demo Account Administrator.
 #
 
 #  1. Initalize Environment
@@ -42,17 +40,21 @@ delete_default=20
 
 interactive=1
 speed=100
+region=${AWS_DEFAULT_REGION#*@}
 account=demo
+user=demo
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user]"
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
-    echo "  -a account  account to use in demo (default: $account)"
+    echo "  -r region   Eucalyptus Region (default: $region)"
+    echo "  -a account  Eucalyptus Account (default: $account)"
+    echo "  -u user     Eucalyptus Account (default: $account)"
 }
 
 run() {
@@ -135,12 +137,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:? arg; do
+while getopts Isfr:a:u:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    r)  region="$OPTARG";;
     a)  account="$OPTARG";;
+    u)  user="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -151,10 +155,40 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc ]; then
-    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION Demo Account Administrator credentials!"
-    echo "   Expected to find: ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-    exit 21
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
+else
+    case $region in
+      us-east-1|us-west-1|us-west-2) ;&
+      sa-east-1) ;&
+      eu-west-1|eu-central-1) ;&
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
+fi
+
+if [ -z $account ]; then
+    echo "-a account missing!"
+    echo "Could not automatically determine account, and it was not specified as a parameter"
+    exit 12
+fi
+
+if [ -z $user ]; then
+    echo "-u user missing!"
+    echo "Could not automatically determine user, and it was not specified as a parameter"
+    exit 14
+fi
+
+profile=$region-$account-$user
+profile_region=$profile@$region
+
+if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
+    echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
+    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
+    exit 20
 fi
 
 if ! rpm -q --quiet w3m; then
@@ -172,29 +206,22 @@ clear
 echo
 echo "============================================================"
 echo
-if [ $account = eucalyptus ]; then
-    echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
-else
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
-fi
+echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User credentials"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
+echo "export AWS_DEFAULT_REGION=$profile_region"
+echo "unset AWS_CREDENTIAL_FILE"
 
 next
 
 echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
-pause
-
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
+echo "# export AWS_DEFAULT_REGION=$profile_region"
+export AWS_DEFAULT_REGION=$profile_region
+echo "# unset AWS_CREDENTIAL_FILE"
+unset AWS_CREDENTIAL_FILE
 
 next
 
@@ -231,7 +258,7 @@ if [ $demo_initialized = n ]; then
     echo "Please re-run the demo initialization scripts referencing this demo account:"
     echo "- demo-00-initialize.sh"
     echo "- demo-01-initialize-account.sh -a $account"
-    echo "- demo-02-initialize-account-dependencies.sh -a $account"
+    echo "- demo-03-initialize-account-dependencies.sh -a $account"
     exit 99
 fi
 
@@ -248,10 +275,6 @@ echo
 echo "============================================================"
 echo
 echo "Commands:"
-echo
-echo "euca-describe-images"
-echo
-echo "euca-describe-keypairs"
 echo 
 echo "euca-describe-groups"
 echo
@@ -261,14 +284,6 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
-
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause 
-
     echo "# euca-describe-groups"
     euca-describe-groups
     pause

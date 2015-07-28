@@ -15,10 +15,11 @@ required.
 
 ### Run CloudFormation Simple Demo via the AWS Command Line
 
-1. Use Demo Account Administrator credentials
+1. Use Demo Account Demo User credentials
 
     ```bash
-    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-demo-admin
+    export AWS_DEFAULT_REGION=hp-aw2-1
+    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-demo-demo
     ```
 
 2. Confirm existence of Demo depencencies
@@ -110,7 +111,7 @@ required.
     as an input parameter.
 
     ```bash
-    image_id=$(euca-describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f2)
+    image_id=$((aws ec2 describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f4)
 
     aws cloudformation create-stack --template-file ~/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
                                     -p DemoImageId=$image_id SimpleDemoStack

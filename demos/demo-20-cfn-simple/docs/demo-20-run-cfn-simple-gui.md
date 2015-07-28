@@ -25,7 +25,7 @@ required.
 
     Using your browser, open the appropriate [Eucalyptus Console](https://console.hp-aw2-1.hpcloudsvc.com).
 
-    ![Login as Demo Account Administrator](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
+    ![Login as Demo Account Demo User](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
 
 2. Confirm existence of Demo depencencies
 
