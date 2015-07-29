@@ -12,7 +12,7 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 tmpdir=/var/tmp
 
-eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.6851.457.20150713git5ecf6d2.el6.noarch.rpm
+eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.7007.481.20150729git963b65b.el6.noarch.rpm
 
 step=0
 speed_max=400
@@ -244,7 +244,12 @@ run 50
 if [ $choice = y ]; then
     echo
     echo "# yum install -y $eucaconsole_url"
-    yum install -y $eucaconsole_url
+    # Temporarily deal with 4.1.2 requirement to use downgrade
+    #yum install -y $eucaconsole_url
+    yum downgrade -y $eucaconsole_url
+
+    # Deal with conflict with dateutils between upgraded console and awscli
+    pip install python-dateutils==1.4.1
 
     next 50
 fi
