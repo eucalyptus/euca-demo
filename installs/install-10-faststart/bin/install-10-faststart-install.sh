@@ -215,15 +215,6 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo
-if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
-    echo "echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
-    echo
-fi
-if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
-    echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
-    echo
-fi
 echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
 echo
 echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
@@ -240,18 +231,6 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
-        echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
-        echo >> ~/.bash_profile
-        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
-        pause
-    fi
-    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
-        echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
-        echo >> ~/.bash_profile
-        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
-        pause
-    fi
     echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
     pause
@@ -285,6 +264,59 @@ if [ $choice = y ]; then
 
     echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
     source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure Bash to use Eucalyptus Administrator Credentials"
+echo "    - While it is possible to use the \"user@region\" convention when setting AWS_DEFAULT_REGION"
+echo "      to work with Euca2ools, this breaks AWSCLI which doesn't understand that change to this"
+echo "      environment variable format."
+echo "    - By setting the variables needed for Euca2ools explicitly, both Euca2ools and AWSCLI"
+echo "      can be used interchangably."
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+    echo "echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
+    echo
+fi
+if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+    echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+    echo
+fi
+if ! grep -s -q "^export AWS_CREDENTIAL_FILE=" ~/.bash_profile; then
+    echo "echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+    echo
+fi
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+        echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
+        echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
+        pause
+    fi
+    if ! grep -s -q "^export AWS_CREDENTIAL_FILE=" ~/.bash_profile; then
+        echo "# echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+        echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc" >> ~/.bash_profile
+    fi
 
     next
 fi
