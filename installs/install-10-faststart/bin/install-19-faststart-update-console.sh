@@ -249,7 +249,7 @@ if [ $choice = y ]; then
     yum downgrade -y $eucaconsole_url
 
     # Deal with conflict with dateutils between upgraded console and awscli
-    pip install python-dateutils==1.4.1
+    yum reinstall -y python-dateutil
 
     next 50
 fi
