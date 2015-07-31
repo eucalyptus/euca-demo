@@ -3,7 +3,8 @@
 # This script initializes a Management Workstation and it's associated Eucalyptus Region with
 # dependencies used in demos, including:
 # - Confirms the Demo Images are available to the Demo Account
-# - Imports the Demo Keypair into the Demo Account
+# - Imports the Demo Keypair
+# - Creates the Demo Bucket (named "demo-{account}")
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
 # - Creates the Demos Role Policy
 # - Creates the Demos Group (named "Demos")
@@ -373,6 +374,42 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demo (demo-$account) Bucket"
+echo "    - This Bucket is intended for Demos which need to store Objects in S3"
+echo "    - We must use the AWSCLI as euca2ools does not currently have S3 commands"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws s3 mb s3://demo-$account --profile $account-$admin --region=$region"
+
+if aws s3 ls --profile $account-$admin --region=$region | grep -s -q " demo-$account$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws s3 mb s3://demo-$account --profile $account-$admin --region=$region"
+        aws s3 mb s3://demo-$account --profile $account-$admin --region=$region
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Demos ($role_demos) Role and associated InstanceProfile"
 echo "    - This Role is intended for Demos which need Administrator access to Resources"
 echo
@@ -438,7 +475,7 @@ echo
 echo "Commands:"
 echo
 echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
-cat $policiesdir/DemosRolePolicy.json
+sed -e "s/\${account}/$account/g" $policiesdir/DemosRolePolicy.json
 echo "EOF"
 echo
 echo "euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
@@ -458,9 +495,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# cat << EOF > $tmpdir/$account/${role_demos}RolePolicy.json"
-        cat $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
+        sed -e "s/\${account}/$account/g" $policiesdir/DemosRolePolicy.json | sed -e 's/^/> /'
         echo "> EOF"
-        cp $policiesdir/DemosRolePolicy.json $tmpdir/$account/${role_demos}RolePolicy.json
+        sed -e "s/\${account}/$account/g" $policiesdir/DemosRolePolicy.json > $tmpdir/$account/${role_demos}RolePolicy.json
         pause
 
         echo "# euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
