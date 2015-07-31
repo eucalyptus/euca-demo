@@ -52,7 +52,7 @@ next_default=5
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-account=hp
+account=euca
 unset user
 unset password
 admin=admin

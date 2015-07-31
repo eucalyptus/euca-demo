@@ -17,20 +17,6 @@
       "Resource": "*"
     },
     {
-      "Effect": "Allow",
-      "Action": "s3:ListAllMyBuckets",
-      "Resource": "arn:aws:s3:::*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": "arn:aws:s3:::demo-eucalyptus"
-    },
-    {
-      "Effect": "Allow",
       "Action": [
         "s3:PutObject",
         "s3:GetObject",
@@ -38,7 +24,8 @@
         "s3:PutObjectAcl",
         "s3:PutObjectVersionAcl"
       ],
-      "Resource": "arn:aws:s3:::demo-eucalyptus/*"
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::demo-${account}/*"
     }
   ]
 }

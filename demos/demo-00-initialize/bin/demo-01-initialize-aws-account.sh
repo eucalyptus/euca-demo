@@ -39,7 +39,7 @@ next_default=5
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-account=hp
+account=euca
 access_key=${AWS_ACCESS_KEY}
 secret_key=${AWS_SECRET_KEY}
 
