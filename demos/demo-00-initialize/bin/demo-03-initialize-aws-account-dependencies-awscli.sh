@@ -2,7 +2,7 @@
 #
 # This script initializes a Management Workstation and it's associated AWS Account with
 # dependencies used in demos, including:
-# - Imports the Demo Keypair into the Demo Account
+# - Imports the Demo Keypair
 # - Creates the Demo Bucket (named "demo-{account}")
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
 # - Creates the Demos Role Policy
