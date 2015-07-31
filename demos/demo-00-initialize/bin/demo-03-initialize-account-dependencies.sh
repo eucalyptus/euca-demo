@@ -382,9 +382,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3 mb s3://demo-$account --profile $account-$admin --region=$region"
+echo "aws s3 mb s3://demo-$account --profile $profile --region=$region"
 
-if aws s3 ls --profile $account-$admin --region=$region | grep -s -q " demo-$account$"; then
+if aws s3 ls --profile $profile --region=$region | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -397,8 +397,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws s3 mb s3://demo-$account --profile $account-$admin --region=$region"
-        aws s3 mb s3://demo-$account --profile $account-$admin --region=$region
+        echo "# aws s3 mb s3://demo-$account --profile $profile --region=$region"
+        aws s3 mb s3://demo-$account --profile $profile --region=$region
 
         next
     fi
