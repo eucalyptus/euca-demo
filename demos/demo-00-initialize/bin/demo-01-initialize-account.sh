@@ -34,7 +34,7 @@ keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
 generic_image=CentOS-6-x86_64-GenericCloud
-cfn_awscli_image=Centos-6-x86_64-CFN-AWSCLI
+cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 
 step=0
 speed_max=400
@@ -565,7 +565,7 @@ fi
 
 ((++step))
 account_id=$(euare-accountlist | grep "^$account" | cut -f2)
-cfn_awscli_image_id=$(euca-describe-images | grep $cfn_awscli_image.raw.manifest.xml | cut -f2)
+cfn_awscli_image_id=$(euca-describe-images --filter "manifest-location=images/$cfn_awscli_image.raw.manifest.xml" | cut -f2)
 
 clear
 echo

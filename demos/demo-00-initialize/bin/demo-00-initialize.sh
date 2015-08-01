@@ -40,7 +40,7 @@ generic_image=CentOS-6-x86_64-GenericCloud
 external_generic_image_url=http://$external_mirror/centos/6.6/images/$generic_image.qcow2.xz
 internal_generic_image_url=http://$internal_mirror/centos/6.6/images/$generic_image.qcow2.xz
 
-cfn_awscli_image=Centos-6-x86_64-CFN-AWSCLI
+cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
 internal_cfn_awscli_image_url=http://$internal_mirror/centos/6.6/images/$cfn_awscli_image.raw.xz
 
