@@ -41,7 +41,7 @@ external_generic_image_url=http://$external_mirror/centos/6.6/images/$generic_im
 internal_generic_image_url=http://$internal_mirror/centos/6.6/images/$generic_image.qcow2.xz
 
 cfn_awscli_image=Centos-6-x86_64-CFN-AWSCLI
-external_cfn_awscli_image_url=https://s3.amazonaws.com/demo-eucalyptus/demo-30-cfn-wordpress/$cfn_awscli_image.raw.xz
+external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
 internal_cfn_awscli_image_url=http://$internal_mirror/centos/6.6/images/$cfn_awscli_image.raw.xz
 
 step=0
