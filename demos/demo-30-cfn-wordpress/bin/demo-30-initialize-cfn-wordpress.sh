@@ -361,11 +361,11 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Upload original WordPress CloudFormation Template"
+echo "$(printf '%2d' $step). Upload original WordPress CloudFormation Template to AWS S3 Bucket"
 echo "    - We will use an AWS ($aws_account) Account S3 Bucket (s3://demo-$aws_account)"
 echo "      to hold modified versions of the WordPress CloudFormation Template"
-echo "      which have Eucalyptus Region-specific Instance Ids added"
-echo "    - If the original Template does not exist, upload it to bootstrap"
+echo "      which have Eucalyptus Region-specific EMIs added"
+echo "    - If the original Template does not exist, upload it"
 echo
 echo "============================================================"
 echo
@@ -405,7 +405,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download WordPress CloudFormation Template"
+echo "$(printf '%2d' $step). Download WordPress CloudFormation Template from AWS S3 Bucket"
 echo "    - This Template may have been modified by other Eucalyptus Regions which use it."
 echo
 echo "============================================================"
@@ -441,50 +441,52 @@ else
 fi
 
 
-((++step))
-image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
+if [ $mode = euca ]; then
+    ((++step))
+    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
 
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Modify WordPress CloudFormation Template to add Region-specific EMI"
-echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
-echo "      to lookup the \"AMI\" of the Image to use when creating new Instances, based on the Region"
-echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
-echo "      \"EMI\" for the Image which must be used there. This step obtains the appropriate \"EMI\""
-echo "      and adds a row for the Region to this Map."
-echo "    - Delete any prior row for this Region before adding a new row based on current EMI value"
-echo "    - Apologies for the gnarly sed syntax!"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
-echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-echo
-echo "sed -i -e \"/AWSRegionArch2AMI/a\\"
-echo "\\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
-echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Modify WordPress CloudFormation Template to add Region-specific EMI"
+    echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
+    echo "      to lookup the AMI of the Image to use when creating new Instances, based on the Region"
+    echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
+    echo "      EMI for the Image which must be used there. This step obtains the appropriate EMI"
+    echo "      and adds a row for the Region to this Map."
+    echo "    - Delete any prior row for this Region before adding a new row based on current EMI value"
+    echo "    - Apologies for the gnarly sed syntax!"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
+    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
+    echo
+    echo "sed -i -e \"/AWSRegionArch2AMI/a\\"
+    echo "\\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
+    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
 
-run 50
+    run 50
 
-if [ $choice = y ]; then
-    echo "# sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
-    echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-    sed -i -e "/\"$region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
-           /var/tmp/WordPress_Single_Instance_Eucalyptus.template
-    pause
+    if [ $choice = y ]; then
+        echo "# sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
+        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
+        sed -i -e "/\"$region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
+               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
+        pause
 
-    echo "# sed -i -e \"/AWSRegionArch2AMI/a\\"
-    echo "> \\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
-    echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
-    sed -i -e "/AWSRegionArch2AMI/a\
-    \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$region"\"" $image_id $image_id)" \
-           /var/tmp/WordPress_Single_Instance_Eucalyptus.template
+        echo "# sed -i -e \"/AWSRegionArch2AMI/a\\"
+        echo "> \\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
+        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
+        sed -i -e "/AWSRegionArch2AMI/a\
+        \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$region"\"" $image_id $image_id)" \
+               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
 
-    next
+        next
+    fi
 fi
 
 
@@ -528,33 +530,35 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Upload modified WordPress CloudFormation Template to AWS S3 Bucket"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --profile $aws_profile --region=$aws_region"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $mode = euca ]; then
+    ((++step))
+    clear
     echo
-    echo "# aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo ">           --profile $aws_profile --region=$aws_region"
-    aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-              s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-              --profile $aws_profile --region=$aws_region
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Upload modified WordPress CloudFormation Template to AWS S3 Bucket"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo "          --profile $aws_profile --region=$aws_region"
 
-    next
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo ">           --profile $aws_profile --region=$aws_region"
+        aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
+                  s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+                  --profile $aws_profile --region=$aws_region
+
+        next
+    fi
 fi
 
 
