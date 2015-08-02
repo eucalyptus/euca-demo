@@ -30,9 +30,9 @@ required.
     The "demo" Key Pair should exist.
 
     ```bash
-    euca-describe-images
+    euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f1,2,3
 
-    euca-describe-keypairs
+    euca-describe-keypairs --filter "key-name=demo"
     ```
 
 3. List initial Resources
@@ -112,7 +112,7 @@ required.
     as an input parameter.
 
     ```bash
-    image_id=$(euca-describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f2)
+    image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f2)
 
     euform-create-stack --template-file ~/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
                         -p DemoImageId=$image_id SimpleDemoStack

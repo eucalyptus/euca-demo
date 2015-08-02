@@ -29,9 +29,9 @@ required.
     The "demo" Key Pair should exist.
 
     ```bash
-    aws ec2 describe-images
+    aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f1,3,4
 
-    aws ec2 describe-key-pairs
+    aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo"
     ```
 
 3. List initial Resources
@@ -111,7 +111,7 @@ required.
     as an input parameter.
 
     ```bash
-    image_id=$(aws ec2 describe-images | grep CentOS-6-x86_64-GenericCloud.raw.manifest.xml | cut -f4)
+    image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f3)
 
     aws cloudformation create-stack --stack-name SimpleDemoStack \
                                     --template-body file://~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \

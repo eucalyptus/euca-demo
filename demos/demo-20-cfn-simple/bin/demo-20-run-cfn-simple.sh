@@ -238,27 +238,27 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
+echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
 echo
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
+echo "euca-describe-keypairs --filter \"key-name=demo\""
 
 next
 
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
-euca-describe-images | grep -P "^IMAGE\temi-.*\timages/$image_name.raw.manifest.xml\t" || demo_initialized=n
+echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
+euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f1,2,3 | grep "$image_name" || demo_initialized=n
 pause
 
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
-euca-describe-keypairs | grep -P "^KEYPAIR\tdemo\t" || demo_initialized=n
+echo "# euca-describe-keypairs --filter \"key-name=demo\""
+euca-describe-keypairs --filter "key-name=demo" | grep "demo" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
     echo "At least one prerequisite for this script was not met."
     echo "Please re-run the demo initialization scripts referencing this demo account:"
-    echo "- demo-00-initialize.sh"
-    echo "- demo-01-initialize-account.sh -a $account"
-    echo "- demo-02-initialize-account-dependencies.sh -a $account"
+    echo "- demo-00-initialize.sh -r $region"
+    echo "- demo-01-initialize-account.sh -r $region -a $account"
+    echo "- demo-03-initialize-account-dependencies.sh -r $region -a $account"
     exit 99
 fi
 
@@ -363,7 +363,7 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep $image_name.raw.manifest.xml | cut -f2)
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
 
 clear
 echo

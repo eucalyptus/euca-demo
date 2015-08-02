@@ -238,27 +238,27 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
+echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
 echo
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
+echo "euca-describe-keypairs --filter \"key-name=demo\""
 
 next
 
 echo
-echo "euca-describe-images | grep -P \"^IMAGE\\temi-.*\\timages/$image_name.raw.manifest.xml\\t\""
-euca-describe-images | grep -P "^IMAGE\temi-.*\timages/$image_name.raw.manifest.xml\t" || demo_initialized=n
+echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
+euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f1,2,3 | grep "$image_name" || demo_initialized=n
 pause
 
-echo "euca-describe-keypairs | grep -P \"^KEYPAIR\\tdemo\\t\""
-euca-describe-keypairs | grep -P "^KEYPAIR\tdemo\t" || demo_initialized=n
+echo "# euca-describe-keypairs --filter \"key-name=demo\""
+euca-describe-keypairs --filter "key-name=demo" | grep "demo" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
     echo "At least one prerequisite for this script was not met."
     echo "Please re-run the demo initialization scripts referencing this demo account:"
-    echo "- demo-00-initialize.sh"
-    echo "- demo-01-initialize-account.sh -a $account"
-    echo "- demo-03-initialize-account-dependencies.sh -a $account"
+    echo "- demo-00-initialize.sh -r $region"
+    echo "- demo-01-initialize-account.sh -r $region -a $account"
+    echo "- demo-03-initialize-account-dependencies.sh -r $region -a $account"
     exit 99
 fi
 
@@ -317,6 +317,47 @@ if [ $choice = y ]; then
     euform-describe-stacks
 
     next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Display Simple CloudFormation template"
+echo "    - The Simple.template creates a security group and an instance,"
+echo "      which references a keypair and an image created externally"
+echo "      and passed in as parameters"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "more $templatesdir/Simple.template"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# more $templatesdir/Simple.template"
+    if [ $interactive = 1 ]; then
+        more $templatesdir/Simple.template
+    else
+        # This will iterate over the file in a manner similar to more, but non-interactive
+        ((rows=$(tput lines)-2))
+        lineno=0
+        while IFS= read line; do
+            echo "$line"
+            if [ $((++lineno % rows)) = 0 ]; then
+                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
+                sleep 10
+                echo -e -n "\r                                \r"
+            fi
+        done < $templatesdir/Simple.template
+    fi
+
+    next 200
 fi
 
 

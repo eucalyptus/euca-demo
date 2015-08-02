@@ -248,19 +248,19 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws ec2 describe-images | cut -f1,4,5 | grep -P \"^IMAGES\\temi-.*\\timages/$image_name.raw.manifest.xml\""
+echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
 echo
-echo "aws ec2 describe-key-pairs | grep -P \"^KEYPAIRS\\t.*\\tdemo\$\""
+echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
 
 next
 
 echo
-echo "aws ec2 describe-images | cut -f1,4,5 | grep -P \"^IMAGES\\temi-.*\\timages/$image_name.raw.manifest.xml\""
-aws ec2 describe-images | cut -f1,4,5 | grep -P "^IMAGES\temi-.*\timages/$image_name.raw.manifest.xml" || demo_initialized=n
+echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
+aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" | cut -f1,3,4  | grep  "$image_name" || demo_initialized=n
 pause
 
-echo "aws ec2 describe-key-pairs | grep -P \"^KEYPAIRS\\t.*\\tdemo\$\""
-aws ec2 describe-key-pairs | grep -P "^KEYPAIRS\t.*demo$" || demo_initialized=n
+echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
+aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" | grep "demo" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
@@ -373,7 +373,7 @@ fi
 
 
 ((++step))
-image_id=$(aws ec2 describe-images | grep $image_name.raw.manifest.xml | cut -f4)
+image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" | cut -f3)
 
 clear
 echo
