@@ -1,6 +1,6 @@
 #/bin/bash
 #
-# This script initializes a Eucalyptus CloudFormation demo which uses the
+# This script runs a Eucalyptus CloudFormation demo which uses the
 # WordPress_Single_Instance_Eucalyptus.template to create WordPress-based
 # blog. This demo then shows how this application can be migrated between
 # AWS and Eucalyptus.
@@ -18,6 +18,9 @@
 # - Run demo-02-initialize-account-administrator.sh on the CLC as the Demo Account Administrator.
 # - Run demo-03-initialize-account-dependencies.sh on the CLC as the Demo Account Administrator.
 #
+# This script assumes many conventions created by the installation DNS and demo initialization
+# scripts.
+
 
 #  1. Initalize Environment
 
@@ -26,8 +29,6 @@ templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
 
 federation=aws
-
-image_name=CentOS-6-x86_64-CFN-AWSCLI
 
 step=0
 speed_max=400
@@ -44,6 +45,7 @@ delete_default=20
 
 interactive=1
 speed=100
+mode=restore
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
 user=${AWS_USER_NAME:-demo}
@@ -55,10 +57,11 @@ aws_user=demo
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user] [-A aws_account] [-U aws_user]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c] [-r region ] [-a account] [-u user] [-A aws_account] [-U aws_user]"
     echo "  -I              non-interactive"
     echo "  -s              slower: increase pauses by 25%"
     echo "  -f              faster: reduce pauses by 25%"
+    echo "  -c              Create Mode: Create and Configure WordPress (default: $mode)"
     echo "  -r region       Region (default: $region)"
     echo "  -a account      Account (default: $account)"
     echo "  -u user         User (default: $user)"
@@ -146,11 +149,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:A:U:? arg; do
+while getopts Isfcr:a:u:A:U:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    c)  mode=create;;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
     u)  user="$OPTARG";;
@@ -177,9 +181,11 @@ else
       eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
         target="aws"
-        aws_region=$region;;
+        aws_region=$region
+        cloudformation_url=https://cloudformation.$region.amazonaws.com/";;
       *)
-        target="euca";;
+        target="euca"
+        cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation$/\1/p" /etc/euca2ools/conf.d/$region.ini);;
     esac
 fi
 
@@ -205,6 +211,12 @@ if [ -z $aws_user ]; then
     echo "-U aws_user missing!"
     echo "Could not automatically determine AWS user, and it was not specified as a parameter"
     exit 18
+fi
+
+if [ -z $cloudformation_url]; then
+    echo "Could not automatically determine CloudFormation URL"
+    echo "For Eucalyptus Regions, we attempt to lookup the value of "cloudformation-url" in /etc/euca2ools/conf.d/$region.ini"
+    echo 19
 fi
 
 if [ $target = euca ]; then
@@ -235,8 +247,13 @@ if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
     exit 29
 fi
 
+if ! rpm -q --quiet w3m; then
+    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+    exit 98
+fi
 
-#  5. Initialize Demo
+
+#  5. Run Demo
 
 start=$(date +%s)
 
@@ -311,6 +328,7 @@ fi
 next
 
 
+((++step))
 clear
 echo
 echo "============================================================"
@@ -346,7 +364,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). List initial CloudFormation Stacks"
+echo "$(printf '%2d' $step). List CloudFormation Stacks"
 echo "    - So we can compare with what this demo creates"
 echo
 echo "============================================================"
@@ -371,52 +389,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Upload original WordPress CloudFormation Template to AWS S3 Bucket"
-echo "    - We will use an AWS ($aws_account) Account S3 Bucket (s3://demo-$aws_account)"
-echo "      to hold modified versions of the WordPress CloudFormation Template"
-echo "      which have Eucalyptus Region-specific EMIs added"
-echo "    - If the original Template does not exist, upload it"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --profile $aws_profile --region=$aws_region"
-
-if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region=$aws_region | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
-    echo
-    tput rev
-    echo "Already Uploaded!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
-        aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \
-                  s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
 echo "$(printf '%2d' $step). Download WordPress CloudFormation Template from AWS S3 Bucket"
-echo "    - This Template may have been modified by other Eucalyptus Regions which use it."
 echo
 echo "============================================================"
 echo
@@ -426,77 +399,18 @@ echo "aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_In
 echo "          $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          --profile $aws_profile --region=$aws_region"
 
-if [ -r $tmpdir/WordPress_Single_Instance_Eucalyptus.template ]; then
+run 50
+
+if [ $choice = y ]; then
     echo
-    tput rev
-    echo "Already Downloaded!"
-    tput sgr0
+    echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo ">           --profile $aws_profile --region=$aws_region"
+    aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+              $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
+              --profile $aws_profile --region=$aws_region
 
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
-        aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
-
-        next
-    fi
-fi
-
-
-if [ $target = euca ]; then
-    ((++step))
-    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
-
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Modify WordPress CloudFormation Template to add Region-specific EMI"
-    echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
-    echo "      to lookup the AMI of the Image to use when creating new Instances, based on the Region"
-    echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
-    echo "      EMI for the Image which must be used there. This step obtains the appropriate EMI"
-    echo "      and adds a row for the Region to this Map."
-    echo "    - Delete any prior row for this Region before adding a new row based on current EMI value"
-    echo "    - Apologies for the gnarly sed syntax!"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
-    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-    echo
-    echo "sed -i -e \"/AWSRegionArch2AMI/a\\"
-    echo "\\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
-    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
-
-    run 50
-
-    if [ $choice = y ]; then
-        echo "# sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
-        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-        sed -i -e "/\"$region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
-               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
-        pause
-
-        echo "# sed -i -e \"/AWSRegionArch2AMI/a\\"
-        echo "> \\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
-        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
-        sed -i -e "/AWSRegionArch2AMI/a\
-        \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$region"\"" $image_id $image_id)" \
-               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
-
-        next
-    fi
+    next
 fi
 
 
@@ -505,9 +419,13 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Display modified WordPress CloudFormation template"
-echo "    - The WordPress_Single_Instance_Eucalyptus.template creates a standalone WordPress"
-echo "      installation on a single Instance"
+echo "$(printf '%2d' $step). Display WordPress CloudFormation template"
+echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
+echo "      to lookup the AMI ID of the Image to use when creating new Instances, based on the Region"
+echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
+echo "      EMI ID for the Image which must be used there."
+echo "    - This Template has been modified to add a row containing the Eucalyptus Region EMI ID to this"
+echo "      Map. It is otherwise identical to what is run in AWS."
 echo
 echo "============================================================"
 echo
@@ -540,39 +458,204 @@ if [ $choice = y ]; then
 fi
 
 
-if [ $target = euca ]; then
-    ((++step))
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Upload modified WordPress CloudFormation Template to AWS S3 Bucket"
-    echo
-    echo "============================================================"
-    echo
-    echo "Commands:"
-    echo
-    echo "aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo "          --profile $aws_profile --region=$aws_region"
+((++step))
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
 
-    run 50
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create the Stack"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+echo "                    --parameter \"KeyName=demo\" \\"
+echo "                    --parameter \"DBUser=demo\" \\"
+echo "                    --parameter \"DBPassword=password\" \\"
+echo "                    --parameter \"DBRootPassword=password\" \\"
+echo "                    --parameter \"EndPoint=$cloudformation_url" \\"
+echo "                    --capabilities CAPABILITY_IAM \\"
+echo "                    WordpressDemoStack"
 
-    if [ $choice = y ]; then
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo ">                     --parameter \"KeyName=demo\" \\"
+    echo ">                     --parameter \"DBUser=demo\" \\"
+    echo ">                     --parameter \"DBPassword=password\" \\"
+    echo ">                     --parameter \"DBRootPassword=password\" \\"
+    echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
+    echo ">                     --capabilities CAPABILITY_IAM \\"
+    echo ">                     WordpressDemoStack"
+    euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+                        --parameter "KeyName=demo" \
+                        --parameter "DBUser=demo" \
+                        --parameter "DBPassword=password" \
+                        --parameter "DBRootPassword=password" \
+                        --parameter "EndPoint=$cloudformation_url" \
+                        --capabilities CAPABILITY_IAM \
+                        WordpressDemoStack
+    
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Monitor Stack creation"
+echo "    - NOTE: This can take about 60 - 80 seconds"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euform-describe-stacks"
+echo
+echo "euform-describe-stack-events WordPressDemoStack | head -5"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euform-describe-stacks"
+    euform-describe-stacks
+    pause
+
+    attempt=0
+    ((seconds=$create_default * $speed / 100))
+    while ((attempt++ <= create_attempts)); do
         echo
-        echo "# aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
-        aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-                  s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
+        echo "# euform-describe-stack-events WordPressDemoStack | head -5"
+        euform-describe-stack-events WordPressDemoStack | head -5
 
-        next
-    fi
+        status=$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)
+        if [ "$status" = "CREATE_COMPLETE" ]; then
+            break
+        else
+            echo
+            echo -n "Not finished ($RC). Waiting $seconds seconds..."
+            sleep $seconds
+            echo " Done"
+        fi
+    done
+
+    next
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). List updated Resources"
+echo "    - Note addition of new group and instance"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-describe-groups"
+echo
+echo "euca-describe-instances"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euca-describe-groups"
+    euca-describe-groups
+    pause
+
+    echo "# euca-describe-instances"
+    euca-describe-instances
+
+    next
+fi
+
+
+((++step))
+instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l DemoInstance | cut -f3)
+public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
+public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
+if [ $target = euca ]; then
+    user=centos
+else
+    user=ec2-user
+fi
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Confirm ability to login to Instance"
+echo "    - If unable to login, view instance console output with:"
+echo "      # euca-get-console-output $instance_id"
+echo "    - If able to login, first show the private IP with:"
+echo "      # ifconfig"
+echo "    - Then view meta-data about the public IP with:"
+echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
+echo "    - Logout of instance once login ability confirmed"
+echo "    - NOTE: This can take about 00 - 40 seconds"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+
+run 50
+
+if [ $choice = y ]; then
+    attempt=0
+    ((seconds=$login_default * $speed / 100))
+    while ((attempt++ <= login_attempts)); do
+        sed -i -e "/$public_name/d" ~/.ssh/known_hosts
+        sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
+        ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
+        ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
+
+        echo
+        echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+        if [ $interactive = 1 ]; then
+            ssh -i ~/.ssh/demo_id_rsa $user@$public_name
+            RC=$?
+        else
+            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
+echo "# ifconfig"
+ifconfig
+sleep 5
+echo
+echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
+cat /tmp/public-ip4
+sleep 5
+EOF
+            RC=$?
+        fi
+        if [ $RC = 0 -o $RC = 1 ]; then
+            break
+        else
+            echo
+            echo -n "Not available ($RC). Waiting $seconds seconds..."
+            sleep $seconds
+            echo " Done"
+        fi
+    done
+
+    next
 fi
 
 
 end=$(date +%s)
 
 echo
-echo "Eucalyptus CloudFormation WordPress demo initialization complete (time: $(date -u -d @$((end-start)) +"%T"))"
+echo "Eucalyptus CloudFormation WordPress demo execution complete (time: $(date -u -d @$((end-start)) +"%T"))"
