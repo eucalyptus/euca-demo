@@ -61,7 +61,7 @@ domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l] [-r region ] [ -d domain]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l] [-r region ] [-d domain]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
