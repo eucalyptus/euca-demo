@@ -175,7 +175,8 @@ scripts exist.
 
     This includes the following tasks:
 
-    - Imports the Demo Keypair into the Demo Account
+    - Imports the Demo Keypair
+    - Creates the Demo Bucket (named "demo-{account}")
     - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
     - Creates the Demos Role Policy
     - Creates the Demos Group (named "Demos")
@@ -232,15 +233,18 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     - Confirm existance of Demo dependencies
     - List initial Resources
     - List initial CloudFormation Stacks
+    - Upload original Wordpress CloudFormation Template to AWS S3 Bucket
+      - if not present, upload original copy as source of modifications
     - Download Wordpress CloudFormation Template from AWS S3 Bucket
-    - Display Wordpress CloudFormation Template
-    - Modify Wordpress CloudFormation Template to reference local Image
+    - Modify Wordpress CloudFormation Template
+      - only for Eucalyptus regions
+      - update AWSRegionArch2AMI Map to reference local EMI
     - Display modified Wordpress CloudFormation Template
     - Upload modified Wordpress CloudFormation Template to AWS S3 Bucket
-    - Upload modified Wordpress CloudFormation Template to Eucalyptus S3 Bucket
+      - only for Eucalyptus regions
 
     ```bash
-    ./demo-30-initialize-cfn-wordpress.sh -r hp-aw2-2 -a demo -t mjchp-templates
+    ./demo-30-initialize-cfn-wordpress.sh -r hp-aw2-2 -a demo -A mjchp
     ```
 
 ### Run CloudFormation Wordpress Demo in "destination" mode
@@ -263,7 +267,7 @@ These are steps needed to initialize this demo, on top of the baseline initializ
 
     ```bash
     cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
-    ./demo-30-run-cfn-wordpress.sh -r hp-aw2-2 -a demo -R -t mjchp-templates -b mjchp-backups
+    ./demo-30-run-cfn-wordpress.sh -r hp-aw2-2 -a demo -A mjchp -R
     ```
 
 ### Reset CloudFormation Wordpress Demo
@@ -279,6 +283,6 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     - List remaining CloudFormation Stacks
 
     ```bash
-    ./demo-30-reset-cfn-wordpress.sh -r hp-aw2-2 -a demo
+    ./demo-30-reset-cfn-wordpress.sh -r hp-aw2-2 -a demo -A mjchp
     ```
 

@@ -82,7 +82,8 @@ break that script, so until the account-administrator script has been run be car
 
     This includes the following tasks:
 
-    - Imports the Demo Keypair into the Demo Account
+    - Imports the Demo Keypair
+    - Creates the Demo Bucket (named "demo-{account}")
     - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
     - Creates the Demos Role Policy
     - Creates the Demos Group (named "Demos")
@@ -140,15 +141,18 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     - Confirm existance of Demo dependencies
     - List initial Resources
     - List initial CloudFormation Stacks
+    - Upload original Wordpress CloudFormation Template to AWS S3 Bucket
+      - if not present, uploaded copy may contain modifications
     - Download Wordpress CloudFormation Template from AWS S3 Bucket
+      - this copy may have modifications for one or more associated Eucalyptus Regions
     - Display Wordpress CloudFormation Template
 
     ```bash
     cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
-    ./demo-30-initialize-aws-cfn-wordpress.sh -r us-west-2 -a mjchp -t mjchp-templates
+    ./demo-30-initialize-cfn-wordpress.sh -r us-west-2 -a mjchp
     ```
 
-### Run CloudFormation Wordpress Demo in "source" model
+### Run CloudFormation Wordpress Demo in "source" mode
 
 1. Run the CloudFormation Wordpress Demo, as source of Migration
 
@@ -169,7 +173,7 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     - Upload Wordpress Database Backup to AWS S3 Bucket
 
     ```bash
-    ./demo-30-run-aws-cfn-wordpress.sh -r us-west-2 -a mjchp -B -t mjchp-templates -b mjchp-backups
+    ./demo-30-run-aws-wordpress.sh -r us-west-2 -a mjchp -B
     ```
 
 ### Reset CloudFormation Wordpress Demo
@@ -186,6 +190,6 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     - Delete Wordpress Database Backup from AWS S3 Bucket
 
     ```bash
-    ./demo-30-reset-aws-cfn-wordpress.sh -r us-west-2 -a mjchp
+    ./demo-30-reset-cfn-wordpress.sh -r us-west-2 -a mjchp
     ```
 
