@@ -389,18 +389,28 @@ echo "aws cloudformation create-stack --stack-name SimpleDemoStack \\"
 echo "                                --template-body file://$templatesdir/Simple.template \\"
 echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# aws cloudformation create-stack --stack-name SimpleDemoStack \\"
-    echo ">                                 --template-body file://$templatesdir/Simple.template \\"
-    echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id"
-    aws cloudformation create-stack --stack-name SimpleDemoStack \
-                                    --template-body file://$templatesdir/Simple.template \
-                                    --parameters ParameterKey=DemoImageId,ParameterValue=$image_id
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    next
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws cloudformation create-stack --stack-name SimpleDemoStack \\"
+        echo ">                                 --template-body file://$templatesdir/Simple.template \\"
+        echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id"
+        aws cloudformation create-stack --stack-name SimpleDemoStack \
+                                        --template-body file://$templatesdir/Simple.template \
+                                        --parameters ParameterKey=DemoImageId,ParameterValue=$image_id
+
+        next
+    fi
 fi
 
 
@@ -420,33 +430,42 @@ echo "aws cloudformation describe-stacks"
 echo
 echo "aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# aws cloudformation describe-stacks"
-    aws cloudformation describe-stacks
-    pause
+    tput rev
+    echo "Already Complete!"
+    tput sgr0
 
-    attempt=0
-    ((seconds=$create_default * $speed / 100))
-    while ((attempt++ <= create_attempts)); do
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
         echo
-        echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
-        aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5
+        echo "# aws cloudformation describe-stacks"
+        aws cloudformation describe-stacks
+        pause
 
-        status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)
-        if [ "$status" = "CREATE_COMPLETE" ]; then
-            break
-        else
+        attempt=0
+        ((seconds=$create_default * $speed / 100))
+        while ((attempt++ <= create_attempts)); do
             echo
-            echo -n "Not finished ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+            echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
+            aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5
 
-    next
+            if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+                break
+            else
+                echo
+                echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 

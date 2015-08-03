@@ -276,7 +276,7 @@ echo
 echo "============================================================"
 echo
 echo "Commands:"
-echo 
+echo
 echo "euca-describe-groups"
 echo
 echo "euca-describe-instances"
@@ -291,7 +291,7 @@ if [ $choice = y ]; then
 
     echo "# euca-describe-instances"
     euca-describe-instances
-    
+
     next
 fi
 
@@ -377,14 +377,24 @@ echo "Commands:"
 echo
 echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
-    euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack
-    
-    next
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
+        euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack
+
+        next
+    fi
 fi
 
 
@@ -404,33 +414,42 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events SimpleDemoStack | head -5"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
-    pause
+    tput rev
+    echo "Already Complete!"
+    tput sgr0
 
-    attempt=0
-    ((seconds=$create_default * $speed / 100))
-    while ((attempt++ <= create_attempts)); do
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stack-events SimpleDemoStack | head -5"
-        euform-describe-stack-events SimpleDemoStack | head -5
+        echo "# euform-describe-stacks"
+        euform-describe-stacks
+        pause
 
-        status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
-        if [ "$status" = "CREATE_COMPLETE" ]; then
-            break
-        else
+        attempt=0
+        ((seconds=$create_default * $speed / 100))
+        while ((attempt++ <= create_attempts)); do
             echo
-            echo -n "Not finished ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+            echo "# euform-describe-stack-events SimpleDemoStack | head -5"
+            euform-describe-stack-events SimpleDemoStack | head -5
 
-    next
+            if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+                break
+            else
+                echo
+                echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 
