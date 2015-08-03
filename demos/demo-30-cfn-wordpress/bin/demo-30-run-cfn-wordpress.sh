@@ -339,7 +339,7 @@ echo
 echo "============================================================"
 echo
 echo "Commands:"
-echo 
+echo
 echo "euca-describe-groups"
 echo
 echo "euca-describe-instances"
@@ -354,7 +354,7 @@ if [ $choice = y ]; then
 
     echo "# euca-describe-instances"
     euca-describe-instances
-    
+
     next
 fi
 
@@ -480,28 +480,38 @@ echo "                    --parameter \"EndPoint=$cloudformation_url" \\"
 echo "                    --capabilities CAPABILITY_IAM \\"
 echo "                    WordpressDemoStack"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo ">                     --parameter \"KeyName=demo\" \\"
-    echo ">                     --parameter \"DBUser=demo\" \\"
-    echo ">                     --parameter \"DBPassword=password\" \\"
-    echo ">                     --parameter \"DBRootPassword=password\" \\"
-    echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
-    echo ">                     --capabilities CAPABILITY_IAM \\"
-    echo ">                     WordpressDemoStack"
-    euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                        --parameter "KeyName=demo" \
-                        --parameter "DBUser=demo" \
-                        --parameter "DBPassword=password" \
-                        --parameter "DBRootPassword=password" \
-                        --parameter "EndPoint=$cloudformation_url" \
-                        --capabilities CAPABILITY_IAM \
-                        WordpressDemoStack
-    
-    next
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo ">                     --parameter \"KeyName=demo\" \\"
+        echo ">                     --parameter \"DBUser=demo\" \\"
+        echo ">                     --parameter \"DBPassword=password\" \\"
+        echo ">                     --parameter \"DBRootPassword=password\" \\"
+        echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
+        echo ">                     --capabilities CAPABILITY_IAM \\"
+        echo ">                     WordpressDemoStack"
+        euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+                            --parameter "KeyName=demo" \
+                            --parameter "DBUser=demo" \
+                            --parameter "DBPassword=password" \
+                            --parameter "DBRootPassword=password" \
+                            --parameter "EndPoint=$cloudformation_url" \
+                            --capabilities CAPABILITY_IAM \
+                            WordpressDemoStack
+
+        next
+    fi
 fi
 
 
@@ -521,33 +531,42 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events WordPressDemoStack | head -5"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
-    pause
+    tput rev
+    echo "Already Completed!"
+    tput sgr0
 
-    attempt=0
-    ((seconds=$create_default * $speed / 100))
-    while ((attempt++ <= create_attempts)); do
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stack-events WordPressDemoStack | head -5"
-        euform-describe-stack-events WordPressDemoStack | head -5
+        echo "# euform-describe-stacks"
+        euform-describe-stacks
+        pause
 
-        status=$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)
-        if [ "$status" = "CREATE_COMPLETE" ]; then
-            break
-        else
+        attempt=0
+        ((seconds=$create_default * $speed / 100))
+        while ((attempt++ <= create_attempts)); do
             echo
-            echo -n "Not finished ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+            echo "# euform-describe-stack-events WordPressDemoStack | head -5"
+            euform-describe-stack-events WordPressDemoStack | head -5
 
-    next
+            if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+                break
+            else
+                echo
+                echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 
