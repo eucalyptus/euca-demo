@@ -479,7 +479,7 @@ echo "                    --parameter \"DBPassword=password\" \\"
 echo "                    --parameter \"DBRootPassword=password\" \\"
 echo "                    --parameter \"EndPoint=$cloudformation_url\" \\"
 echo "                    --capabilities CAPABILITY_IAM \\"
-echo "                    WordpressDemoStack"
+echo "                    WordPressDemoStack"
 
 if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
@@ -501,7 +501,7 @@ else
         echo ">                     --parameter \"DBRootPassword=password\" \\"
         echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
         echo ">                     --capabilities CAPABILITY_IAM \\"
-        echo ">                     WordpressDemoStack"
+        echo ">                     WordPressDemoStack"
         euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
                             --parameter "KeyName=demo" \
                             --parameter "DBUser=demo" \
@@ -509,7 +509,7 @@ else
                             --parameter "DBRootPassword=password" \
                             --parameter "EndPoint=$cloudformation_url" \
                             --capabilities CAPABILITY_IAM \
-                            WordpressDemoStack
+                            WordPressDemoStack
 
         next
     fi
