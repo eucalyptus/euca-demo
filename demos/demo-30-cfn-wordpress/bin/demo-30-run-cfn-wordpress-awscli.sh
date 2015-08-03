@@ -5,6 +5,8 @@
 # blog. This demo then shows how this application can be migrated between
 # AWS and Eucalyptus.
 #
+# This is a variant of the demo-30-run-cfn-wordpress.sh script which primarily uses the AWSCLI.
+#
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
 # on an arbitrary management workstation, you will need to move the appropriate
@@ -223,20 +225,18 @@ fi
 
 if [ $target = euca ]; then
     profile=$region-$account-$user
-    profile_region=$profile@$region
 
-    if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-        echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
-        echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
+    if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+        echo "Could not find $region Demo ($account) Account Demo ($user) User AWSCLI profile!"
+        echo "Expected to find: [profile $profile] in ~/.aws/config"
         exit 20
     fi
 else
-    profile=$federation-$account-$user
-    profile_region=$profile@$region
+    profile=$account-$user
 
-    if ! grep -s -q "\[user $profile]" ~/.euca/$federation.ini; then
-        echo "Could not find AWS ($account) Account Demo ($user) User Euca2ools user!"
-        echo "Expected to find: [user $profile] in ~/.euca/$federation.ini"
+    if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+        echo "Could not find AWS ($account) Account Demo ($user) User AWSCLI profile!"
+        echo "Expected to find: [profile $profile] in ~/.aws/config"
         exit 20
     fi
 fi
@@ -274,16 +274,25 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
+echo "export AWS_DEFAULT_PROFILE=$profile"
+echo "export AWS_DEFAULT_REGION=$region"
+echo
+echo "echo \$AWS_DEFAULT_PROFILE"
+echo "echo \$AWS_DEFAULT_REGION"
 
 next
 
 echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
+echo "# export AWS_DEFAULT_PROFILE=$profile"
+export AWS_DEFAULT_PROFILE=$profile
+echo "# export AWS_DEFAULT_REGION=$region"
+export AWS_DEFAULT_REGION=$region
+pause
+
+echo "# echo \$AWS_DEFAULT_PROFILE"
+echo $AWS_DEFAULT_PROFILE
+echo "# echo \$AWS_DEFAULT_REGION"
+echo $AWS_DEFAULT_REGION
 
 next
 
@@ -301,22 +310,22 @@ echo
 echo "Commands:"
 echo
 if [ $target = euca ]; then
-    echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\""
+    echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
     echo
 fi
-echo "euca-describe-keypairs --filter \"key-name=demo\""
+echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
 
 next
 
 echo
 if [ $target = euca ]; then
-    echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\""
-    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | grep "$image_name" || demo_initialized=n
+    echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
+    aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" | cut -f1,3,4  | grep  "$image_name" || demo_initialized=n
     pause
 fi
 
-echo "# euca-describe-keypairs --filter \"key-name=demo\""
-euca-describe-keypairs --filter "key-name=demo" | grep "demo" || demo_initialized=n
+echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
+aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" | grep "demo" || demo_initialized=n
 
 if [ $demo_initialized = n ]; then
     echo
@@ -342,22 +351,22 @@ echo
 echo "============================================================"
 echo
 echo "Commands:"
+echo 
+echo "aws ec2 describe-security-groups"
 echo
-echo "euca-describe-groups"
-echo
-echo "euca-describe-instances"
+echo "aws ec2 describe-instances"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
+    echo "# aws ec2 describe-security-groups"
+    aws ec2 describe-security-groups
     pause
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
-
+    echo "# aws ec2 describe-instances"
+    aws ec2 describe-instances
+    
     next
 fi
 
@@ -374,14 +383,14 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks"
+echo "aws cloudformation describe-stacks"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "# aws cloudformation describe-stacks"
+    aws cloudformation describe-stacks
 
     next
 fi
@@ -472,16 +481,17 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "                    --parameter \"KeyName=demo\" \\"
-echo "                    --parameter \"DBUser=demo\" \\"
-echo "                    --parameter \"DBPassword=password\" \\"
-echo "                    --parameter \"DBRootPassword=password\" \\"
-echo "                    --parameter \"EndPoint=$cloudformation_url" \\"
-echo "                    --capabilities CAPABILITY_IAM \\"
-echo "                    WordpressDemoStack"
+echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+echo "                                --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+echo "                                --parameters ParameterKey=KeyName,ParameterValue=demo \\"
+echo "                                             ParameterKey=DBUser,ParameterValue=demo \\"
+echo "                                             ParameterKey=DBPassword,ParameterValue=password \\"
+echo "                                             ParameterKey=DBRootPassword,ParameterValue=password \\"
+echo "                                             ParameterKey=EndPoint,ParameterValue=$cloudformation_url \\"
+echo "                                --capabilities CAPABILITY_IAM"
 
-if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+
+if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -490,26 +500,26 @@ if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = 
     next 50
 
 else
-    run
+    run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">                     --parameter \"KeyName=demo\" \\"
-        echo ">                     --parameter \"DBUser=demo\" \\"
-        echo ">                     --parameter \"DBPassword=password\" \\"
-        echo ">                     --parameter \"DBRootPassword=password\" \\"
-        echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
-        echo ">                     --capabilities CAPABILITY_IAM \\"
-        echo ">                     WordpressDemoStack"
-        euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                            --parameter "KeyName=demo" \
-                            --parameter "DBUser=demo" \
-                            --parameter "DBPassword=password" \
-                            --parameter "DBRootPassword=password" \
-                            --parameter "EndPoint=$cloudformation_url" \
-                            --capabilities CAPABILITY_IAM \
-                            WordpressDemoStack
+        echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+        echo ">                                 --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=demo \\"
+        echo ">                                              ParameterKey=DBUser,ParameterValue=demo \\"
+        echo ">                                              ParameterKey=DBPassword,ParameterValue=password \\"
+        echo ">                                              ParameterKey=DBRootPassword,ParameterValue=password \\"
+        echo ">                                              ParameterKey=EndPoint,ParameterValue=$cloudformation_url \\"
+        echo ">                                 --capabilities CAPABILITY_IAM"
+        aws cloudformation create-stack --stack-name=WordPressDemoStack \
+                                        --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+                                        --parameters ParameterKey=KeyName,ParameterValue=demo \
+                                                     ParameterKey=DBUser,ParameterValue=demo \
+                                                     ParameterKey=DBPassword,ParameterValue=password \
+                                                     ParameterKey=DBRootPassword,ParameterValue=password \
+                                                     ParameterKey=EndPoint,ParameterValue=$cloudformation_url \
+                                        --capabilities CAPABILITY_IAM
 
         next
     fi
@@ -522,17 +532,17 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack creation"
-echo "    - NOTE: This can take about 60 - 80 seconds"
+echo "    - NOTE: This can take about 100 - 140 seconds"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks"
+echo "aws cloudformation describe-stacks"
 echo
-echo "euform-describe-stack-events WordPressDemoStack | head -5"
+echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5"
 
-if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -545,18 +555,18 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks"
-        euform-describe-stacks
+        echo "# aws cloudformation describe-stacks"
+        aws cloudformation describe-stacks
         pause
 
         attempt=0
         ((seconds=$create_default * $speed / 100))
         while ((attempt++ <= create_attempts)); do
             echo
-            echo "# euform-describe-stack-events WordPressDemoStack | head -5"
-            euform-describe-stack-events WordPressDemoStack | head -5
+            echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5"
+            aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5
 
-            if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+            if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
                 break
             else
                 echo
@@ -583,34 +593,30 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-groups"
+echo "aws ec2 describe-security-groups"
 echo
-echo "euca-describe-instances"
+echo "aws ec2 describe-instances"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
+    echo "# aws ec2 describe-security-groups"
+    aws ec2 describe-security-groups
     pause
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
+    echo "# aws ec2 describe-instances"
+    aws ec2 describe-instances
 
     next
 fi
 
 
 ((++step))
-instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer | cut -f3)
-public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
-public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
-if [ $target = euca ]; then
-    user=centos
-else
-    user=ec2-user
-fi
+instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer | cut -f4)
+public_name=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f11)
+public_ip=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f12)
+user=centos
 
 clear
 echo

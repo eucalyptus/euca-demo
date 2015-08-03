@@ -230,7 +230,7 @@ fi
 aws_profile=$aws_account-$aws_user
 
 if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
-    echo "Could not find AWS ($aws_account) Bucket Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find AWS ($aws_account) Partner Account Demo ($user) User AWSCLI profile!"
     echo "Expected to find: [profile $aws_profile] in ~/.aws/config"
     exit 29
 fi

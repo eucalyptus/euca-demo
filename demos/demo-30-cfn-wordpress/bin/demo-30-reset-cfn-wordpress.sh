@@ -228,7 +228,7 @@ fi
 aws_profile=$aws_account-$aws_user
 
 if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
-    echo "Could not find AWS ($aws_account) Bucket Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find AWS ($aws_account) Partner Account Demo ($user) User AWSCLI profile!"
     echo "Expected to find: [profile $aws_profile] in ~/.aws/config"
     exit 29
 fi
@@ -280,14 +280,24 @@ echo "Commands:"
 echo
 echo "euform-delete-stack WordPressDemoStack"
 
-run 50
-
-if [ $choice = y ]; then
+if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
     echo
-    echo "# euform-delete-stack WordPressDemoStack"
-    euform-delete-stack WordPressDemoStack
-   
-    next
+    tput rev
+    echo "Already Deleted!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euform-delete-stack WordPressDemoStack"
+        euform-delete-stack WordPressDemoStack
+
+        next
+    fi
 fi
 
 
@@ -307,37 +317,48 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events WordPressDemoStack | head -5"
 
-run 50
-
-if [ $choice = y ]; then
+if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
-    pause
+    tput rev
+    echo "Already Complete!"
+    tput sgr0
 
-    attempt=0
-    ((seconds=$delete_default * $speed / 100))
-    while ((attempt++ <= delete_attempts)); do
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stack-events WordPressDemoStack | head -5"
-        euform-describe-stack-events WordPressDemoStack | head -5
+        echo "# euform-describe-stacks"
+        euform-describe-stacks
+        pause
 
-        status=$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)
-        if [ -z "$status" ]; then
-            break
-        else
+        attempt=0
+        ((seconds=$delete_default * $speed / 100))
+        while ((attempt++ <= delete_attempts)); do
             echo
-            echo -n "Not finished ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+            echo "# euform-describe-stack-events WordPressDemoStack | head -5"
+            euform-describe-stack-events WordPressDemoStack | head -5
 
-    next
+            if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
+                break
+            else
+                echo
+                echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 
 ((++step))
+terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
+
 clear
 echo
 echo "============================================================"
@@ -353,31 +374,37 @@ echo
 echo "Commands:"
 echo
 echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
-terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
 echo
 echo "for instance_id in \$terminated_instance_ids; do"
 echo "    euca-terminate-instances \$instance_id &> /dev/null"
 echo "done"
-for instance_id in $terminated_instance_ids; do
-    euca-terminate-instances $instance_id &> /dev/null
-done
 
-run 50
-
-if [ $choice = y ]; then
+if [ -z "$terminated_instance_ids" ]; then
     echo
-    echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
-    terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
-    pause
+    tput rev
+    echo "Already Cleared!"
+    tput sgr0
 
-    echo "# for instance_id in \$terminated_instance_ids; do"
-    echo ">     euca-terminate-instances \$instance_id &> /dev/null"
-    echo "> done"
-    for instance_id in $terminated_instance_ids; do
-        euca-terminate-instances $instance_id &> /dev/null
-    done
+    next 50
 
-    next
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
+        terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
+        pause
+
+        echo "# for instance_id in \$terminated_instance_ids; do"
+        echo ">     euca-terminate-instances \$instance_id &> /dev/null"
+        echo "> done"
+        for instance_id in $terminated_instance_ids; do
+            euca-terminate-instances $instance_id &> /dev/null
+        done
+
+        next
+    fi
 fi
 
 
