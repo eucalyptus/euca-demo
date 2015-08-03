@@ -426,28 +426,18 @@ echo "aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_In
 echo "          $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          --profile $aws_profile --region=$aws_region"
 
-if [ -r $tmpdir/WordPress_Single_Instance_Eucalyptus.template ]; then
+run 50
+
+if [ $choice = y ]; then
     echo
-    tput rev
-    echo "Already Downloaded!"
-    tput sgr0
+    echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo ">           --profile $aws_profile --region=$aws_region"
+    aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+              $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
+              --profile $aws_profile --region=$aws_region
 
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
-        aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
-
-        next
-    fi
+    next
 fi
 
 
