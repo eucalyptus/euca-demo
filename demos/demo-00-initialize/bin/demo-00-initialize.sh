@@ -763,6 +763,41 @@ clear
 echo
 echo "============================================================"
 echo
+echo "$(printf '%2d' $step). Create sample-templates Bucket"
+echo "    - This Bucket is intended for Sample CloudFormation Templates"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws s3 mb s3://sample-templates --profile $region-admin --region=$region"
+
+if aws s3 ls --profile $region-admin --region=$region | grep -s -q " sample-templates$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws s3 mb s3://sample-templates --profile $region-admin --region=$region"
+        aws s3 mb s3://sample-templates --profile $region-admin --region=$region
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
 echo "$(printf '%2d' $step). Download Demo Generic Image (CentOS 6.6)"
 echo "    - Decompress and convert image to raw format"
 echo
