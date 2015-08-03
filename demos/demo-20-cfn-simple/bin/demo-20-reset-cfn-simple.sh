@@ -191,6 +191,7 @@ if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
     exit 20
 fi
 
+
 #  5. Reset Demo
 
 start=$(date +%s)
@@ -251,6 +252,7 @@ else
    
         next
     fi
+fi
 
 
 ((++step))
