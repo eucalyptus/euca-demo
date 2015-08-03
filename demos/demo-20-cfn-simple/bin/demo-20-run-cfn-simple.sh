@@ -438,7 +438,8 @@ else
             echo "# euform-describe-stack-events SimpleDemoStack | head -5"
             euform-describe-stack-events SimpleDemoStack | head -5
 
-            if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+            status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
+            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" ]; then
                 break
             else
                 echo

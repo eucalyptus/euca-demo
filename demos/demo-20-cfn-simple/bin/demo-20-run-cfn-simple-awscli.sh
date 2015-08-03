@@ -454,7 +454,8 @@ else
             echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5"
             aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5
 
-            if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+            status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack | grep "^STACKS" | cut -f7)
+            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" ]; then
                 break
             else
                 echo
