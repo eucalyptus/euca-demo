@@ -465,7 +465,7 @@ if [ $target = euca ]; then
     echo "sed -i -e \"/\\\"$region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
     echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
     echo
-    echo "sed -i -e \"/AWSRegionArch2AMI/a\\"
+    echo "sed -i -e \"/^    \\\"AWSRegionArch2AMI\\\" : {\$/a\\"
     echo "\\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
     echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
 
@@ -478,10 +478,10 @@ if [ $target = euca ]; then
                /var/tmp/WordPress_Single_Instance_Eucalyptus.template
         pause
 
-        echo "# sed -i -e \"/AWSRegionArch2AMI/a\\"
+        echo "# sed -i -e \"/^    \\\"AWSRegionArch2AMI\\\" : {\$/a\\"
         echo "> \\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$region\"\\\"\" $image_id $image_id)\" \\"
         echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
-        sed -i -e "/AWSRegionArch2AMI/a\
+        sed -i -e "/^    \"AWSRegionArch2AMI\" : {$/a\
         \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$region"\"" $image_id $image_id)" \
                /var/tmp/WordPress_Single_Instance_Eucalyptus.template
 

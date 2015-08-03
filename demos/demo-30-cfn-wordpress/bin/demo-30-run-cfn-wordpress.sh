@@ -215,7 +215,7 @@ if [ -z $aws_user ]; then
     exit 18
 fi
 
-if [ -z $cloudformation_url]; then
+if [ -z $cloudformation_url ]; then
     echo "Could not automatically determine CloudFormation URL"
     echo "For Eucalyptus Regions, we attempt to lookup the value of "cloudformation-url" in /etc/euca2ools/conf.d/$region.ini"
     echo 19
@@ -477,7 +477,7 @@ echo "                    --parameter \"KeyName=demo\" \\"
 echo "                    --parameter \"DBUser=demo\" \\"
 echo "                    --parameter \"DBPassword=password\" \\"
 echo "                    --parameter \"DBRootPassword=password\" \\"
-echo "                    --parameter \"EndPoint=$cloudformation_url" \\"
+echo "                    --parameter \"EndPoint=$cloudformation_url\" \\"
 echo "                    --capabilities CAPABILITY_IAM \\"
 echo "                    WordpressDemoStack"
 
