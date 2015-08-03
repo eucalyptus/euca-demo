@@ -6,6 +6,7 @@
 # - Initializes Euca2ools for the Eucalyptus Account Administrator
 # - Initialize AWSCLI for the Eucalyptus Account Administrator
 # - Imports the Demo Keypair into the Eucalyptus Account
+# - Creates the sample-templates Bucket in the Eucalyptus Account
 # - Downloads a CentOS 6.6 Generic image
 # - Installs the CentOS 6.6 Generic image
 # - Downloads a CentOS 6.6 with cfn-init and awscli image
@@ -770,7 +771,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3 mb s3://sample-templates --profile $region-admin --region=$region"
+echo "aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region"
 
 if aws s3 ls --profile $region-admin --region=$region | grep -s -q " sample-templates$"; then
     echo
@@ -785,8 +786,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws s3 mb s3://sample-templates --profile $region-admin --region=$region"
-        aws s3 mb s3://sample-templates --profile $region-admin --region=$region
+        echo "# aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region"
+        aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region
 
         next
     fi
