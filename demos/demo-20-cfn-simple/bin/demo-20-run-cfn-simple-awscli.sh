@@ -43,8 +43,8 @@ delete_default=20
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-account=demo
-user=demo
+account=${AWS_ACCOUNT_NAME:-demo}
+user=${AWS_USER_NAME:-demo}
 
 
 #  2. Define functions
@@ -54,9 +54,9 @@ usage () {
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
-    echo "  -r region   Eucalyptus Region (default: $region)"
-    echo "  -a account  Eucalyptus Account (default: $account)"
-    echo "  -u user     Eucalyptus Account (default: $account)"
+    echo "  -r region   Region (default: $region)"
+    echo "  -a account  Account (default: $account)"
+    echo "  -u user     User (default: $user)"
 }
 
 run() {
@@ -553,4 +553,4 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus CloudFormation Simple.template demo execution complete (time: $(date -u -d @$((end-start)) +"%T"))"
+echo "Eucalyptus CloudFormation Simple demo execution complete (time: $(date -u -d @$((end-start)) +"%T"))"
