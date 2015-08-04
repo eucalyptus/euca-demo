@@ -282,7 +282,7 @@ echo
 echo "Commands:"
 echo
 if [ $target = euca ]; then
-    echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\""
+    echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
     echo
 fi
 echo "euca-describe-keypairs --filter \"key-name=demo\""
@@ -291,8 +291,8 @@ next
 
 echo
 if [ $target = euca ]; then
-    echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\""
-    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | grep "$image_name" || demo_initialized=n
+    echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
+    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f1,2,3 | grep "$image_name" || demo_initialized=n
     pause
 fi
 echo "# euca-describe-keypairs --filter \"key-name=demo\""
