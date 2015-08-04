@@ -481,7 +481,7 @@ echo "                    --parameter \"EndPoint=$cloudformation_url\" \\"
 echo "                    --capabilities CAPABILITY_IAM \\"
 echo "                    WordPressDemoStack"
 
-if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks WordPressDemoStack 2> /dev/null | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -532,7 +532,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events WordPressDemoStack | head -5"
 
-if [ "$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks WordPressDemoStack 2> /dev/null | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -557,7 +557,7 @@ else
             euform-describe-stack-events WordPressDemoStack | head -5
 
             status=$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)
-            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" ]; then
+            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
                 echo

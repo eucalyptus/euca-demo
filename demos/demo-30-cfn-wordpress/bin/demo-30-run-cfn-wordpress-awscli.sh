@@ -567,7 +567,7 @@ else
             aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5
 
             status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack | grep "^STACKS" | cut -f7)
-            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" ]; then
+            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
                 echo
