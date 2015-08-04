@@ -234,7 +234,7 @@ echo "Commands:"
 echo
 echo "euform-delete-stack SimpleDemoStack"
 
-if ! euform-describe-stacks SimpleDemoStack | grep -s -q "^STACK"; then
+if ! euform-describe-stacks SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -249,7 +249,7 @@ else
         echo
         echo "# euform-delete-stack SimpleDemoStack"
         euform-delete-stack SimpleDemoStack
-   
+
         next
     fi
 fi
@@ -271,14 +271,14 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events SimpleDemoStack | head -5"
 
-if ! euform-describe-stacks SimpleDemoStack | grep -s -q "^STACK"; then
+if ! euform-describe-stacks SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Complete!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -295,7 +295,7 @@ else
             echo "# euform-describe-stack-events SimpleDemoStack | head -5"
             euform-describe-stack-events SimpleDemoStack | head -5
 
-            if ! euform-describe-stacks SimpleDemoStack | grep -s -q "^STACK"; then
+            if ! euform-describe-stacks SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                 break
             else
                 echo

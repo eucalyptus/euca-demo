@@ -280,7 +280,7 @@ echo "Commands:"
 echo
 echo "euform-delete-stack WordPressDemoStack"
 
-if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
+if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -317,7 +317,7 @@ echo "euform-describe-stacks"
 echo
 echo "euform-describe-stack-events WordPressDemoStack | head -5"
 
-if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
+if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Complete!"
@@ -341,7 +341,7 @@ else
             echo "# euform-describe-stack-events WordPressDemoStack | head -5"
             euform-describe-stack-events WordPressDemoStack | head -5
 
-            if ! euform-describe-stacks WordPressDemoStack | grep -s -q "^STACK"; then
+            if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                 break
             else
                 echo
