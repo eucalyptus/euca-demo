@@ -604,6 +604,32 @@ fi
 
 
 ((++step))
+wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT" | cut -f3)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Configure WordPress"
+echo "    - Configure WordPress via a browser:"
+echo "      $wordpress_url"
+echo "    - Using these values:"
+if [ $target = euca ]; then
+    echo "      - Site Title: Eucalyptus Demo ($account) Account WordPress Demo"
+else
+    echo "      - Site Title: AWS ($account) Account  WordPress Demo"
+fi
+echo "      - Username: demo"
+echo "      - Password: <discover_password>"
+echo "      - Your E-mail: <use your hp email address>"
+echo
+echo "============================================================"
+echo
+
+next 200
+
+
+((++step))
 instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer | cut -f3)
 public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
 public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
