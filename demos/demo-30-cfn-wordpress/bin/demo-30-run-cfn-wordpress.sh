@@ -37,8 +37,9 @@ speed_max=400
 run_default=10
 pause_default=2
 next_default=5
+created=n
 
-create_attempts=6
+create_attempts=24
 create_default=20
 login_attempts=6
 login_default=20
@@ -511,6 +512,8 @@ else
                             --capabilities CAPABILITY_IAM \
                             WordPressDemoStack
 
+        created=y
+
         next
     fi
 fi
@@ -522,7 +525,7 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Monitor Stack creation"
-echo "    - NOTE: This can take about 60 - 80 seconds"
+echo "    - NOTE: This can take about 400 - 500 seconds"
 echo
 echo "============================================================"
 echo
@@ -556,7 +559,7 @@ else
             echo "# euform-describe-stack-events WordPressDemoStack | head -5"
             euform-describe-stack-events WordPressDemoStack | head -5
 
-            status=$(euform-describe-stacks WordPressDemoStack | grep "^STACK" | cut -f3)
+            status=$(euform-describe-stacks WordPressDemoStack 2> /dev/null | grep "^STACK" | cut -f3)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -603,79 +606,102 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT" | cut -f3)
+if [ $mode = configure -a $created = y ]; then
+    ((++step))
+    wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Configure WordPress"
-echo "    - Configure WordPress via a browser:"
-echo "      $wordpress_url"
-echo "    - Using these values:"
-if [ $target = euca ]; then
-    echo "      - Site Title: Eucalyptus Demo ($account) Account WordPress Demo"
-else
-    echo "      - Site Title: AWS ($account) Account  WordPress Demo"
-fi
-echo "      - Username: demo"
-echo "      - Password: <discover_password>"
-echo "      - Your E-mail: <use your hp email address>"
-echo
-echo "============================================================"
-echo
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Configure WordPress"
+    echo "    - Configure WordPress via a browser:"
+    echo "      $wordpress_url"
+    echo "    - Using these values:"
+    if [ $target = euca ]; then
+        echo "      - Site Title: Eucalyptus Demo ($account) Account WordPress Demo"
+    else
+        echo "      - Site Title: AWS ($account) Account  WordPress Demo"
+    fi
+    echo "      - Username: demo"
+    echo "      - Password: <discover_password>"
+    echo "      - Your E-mail: <use your hp email address>"
+    echo
+    echo "============================================================"
+    echo
 
-next 200
-
-
-((++step))
-instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer | cut -f3)
-public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
-public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
-if [ $target = euca ]; then
-    user=centos
-else
-    user=ec2-user
+    next 200
 fi
 
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm ability to login to Instance"
-echo "    - If unable to login, view instance console output with:"
-echo "      # euca-get-console-output $instance_id"
-echo "    - If able to login, first show the private IP with:"
-echo "      # ifconfig"
-echo "    - Then view meta-data about the public IP with:"
-echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
-echo "    - Logout of instance once login ability confirmed"
-echo "    - NOTE: This can take about 00 - 40 seconds"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
 
-run 50
+if [ $mode = configure ]; then
+    ((++step))
+    wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+ 
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create WordPress Blog Post"
+    echo "    - Create a Blog Post in WordPress via a browser:"
+    echo "      $wordpress_url"
+    echo "    - Using these values:"
+    echo "      - Username: demo"
+    echo "      - Password: <discover_password>"
+    echo "    - This is to show migration of the current database content"
+    echo
+    echo "============================================================"
+    echo
+ 
+    # Look into creating this automatically via wp-cli or similar
 
-if [ $choice = y ]; then
-    attempt=0
-    ((seconds=$login_default * $speed / 100))
-    while ((attempt++ <= login_attempts)); do
-        sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-        sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-        ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-        ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
+    next 200
+fi
 
-        echo
-        echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-        if [ $interactive = 1 ]; then
-            ssh -i ~/.ssh/demo_id_rsa $user@$public_name
-            RC=$?
-        else
+if [ $mode = restore ]; then
+    ((++step))
+    instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer | cut -f3)
+    public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
+    public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
+    if [ $target = euca ]; then
+        user=centos
+    else
+        user=ec2-user
+    fi
+
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm ability to login to Instance"
+    echo "    - If unable to login, view instance console output with:"
+    echo "      # euca-get-console-output $instance_id"
+    echo "    - If able to login, first show the private IP with:"
+    echo "      # ifconfig"
+    echo "    - Then view meta-data about the public IP with:"
+    echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
+    echo "    - Logout of instance once login ability confirmed"
+    echo "    - NOTE: This can take about 00 - 40 seconds"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+
+    run 50
+
+    if [ $choice = y ]; then
+        attempt=0
+        ((seconds=$login_default * $speed / 100))
+        while ((attempt++ <= login_attempts)); do
+            sed -i -e "/$public_name/d" ~/.ssh/known_hosts
+            sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
+            ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
+            ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
+
+            echo
+            echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
             ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
@@ -687,18 +713,18 @@ cat /tmp/public-ip4
 sleep 5
 EOF
             RC=$?
-        fi
-        if [ $RC = 0 -o $RC = 1 ]; then
-            break
-        else
-            echo
-            echo -n "Not available ($RC). Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+            if [ $RC = 0 -o $RC = 1 ]; then
+                break
+            else
+                echo
+                echo -n "Not available ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
 
-    next
+        next
+    fi
 fi
 
 
