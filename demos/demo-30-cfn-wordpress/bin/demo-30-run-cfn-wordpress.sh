@@ -473,7 +473,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+echo "euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "                    --parameter \"KeyName=demo\" \\"
 echo "                    --parameter \"DBUser=demo\" \\"
 echo "                    --parameter \"DBPassword=password\" \\"
@@ -495,7 +495,7 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo "# euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">                     --parameter \"KeyName=demo\" \\"
         echo ">                     --parameter \"DBUser=demo\" \\"
         echo ">                     --parameter \"DBPassword=password\" \\"
@@ -503,7 +503,7 @@ else
         echo ">                     --parameter \"EndPoint=$cloudformation_url\" \\"
         echo ">                     --capabilities CAPABILITY_IAM \\"
         echo ">                     WordPressDemoStack"
-        euform-create-stack --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+        euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                             --parameter "KeyName=demo" \
                             --parameter "DBUser=demo" \
                             --parameter "DBPassword=password" \

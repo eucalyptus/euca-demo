@@ -383,7 +383,7 @@ echo "Commands:"
 echo
 echo "aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --profile $aws_profile --region=$aws_region"
+echo "          --acl public-read --profile $aws_profile --region=$aws_region"
 
 if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region=$aws_region | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
     echo
@@ -400,10 +400,10 @@ else
         echo
         echo "# aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
+        echo ">           --acl public-read --profile $aws_profile --region=$aws_region"
         aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \
                   s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
+                  --acl public-read --profile $aws_profile --region=$aws_region
 
         next
     fi

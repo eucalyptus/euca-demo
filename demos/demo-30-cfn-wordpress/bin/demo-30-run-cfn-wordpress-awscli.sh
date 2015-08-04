@@ -483,7 +483,7 @@ echo
 echo "Commands:"
 echo
 echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
-echo "                                --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "                                --parameters ParameterKey=KeyName,ParameterValue=demo \\"
 echo "                                             ParameterKey=DBUser,ParameterValue=demo \\"
 echo "                                             ParameterKey=DBPassword,ParameterValue=password \\"
@@ -506,7 +506,7 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
-        echo ">                                 --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
+        echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=demo \\"
         echo ">                                              ParameterKey=DBUser,ParameterValue=demo \\"
         echo ">                                              ParameterKey=DBPassword,ParameterValue=password \\"
@@ -514,7 +514,7 @@ else
         echo ">                                              ParameterKey=EndPoint,ParameterValue=$cloudformation_url \\"
         echo ">                                 --capabilities CAPABILITY_IAM"
         aws cloudformation create-stack --stack-name=WordPressDemoStack \
-                                        --template-url https://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+                                        --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                         --parameters ParameterKey=KeyName,ParameterValue=demo \
                                                      ParameterKey=DBUser,ParameterValue=demo \
                                                      ParameterKey=DBPassword,ParameterValue=password \
