@@ -544,7 +544,7 @@ if [ $target = euca ]; then
     echo
     echo "aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo "          --profile $aws_profile --region=$aws_region"
+    echo "          --acl public-read --profile $aws_profile --region=$aws_region"
 
     run 50
 
@@ -552,10 +552,10 @@ if [ $target = euca ]; then
         echo
         echo "# aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --profile $aws_profile --region=$aws_region"
+        echo ">           --acl public-read --profile $aws_profile --region=$aws_region"
         aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                   s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --profile $aws_profile --region=$aws_region
+                  --acl public-read --profile $aws_profile --region=$aws_region
 
         next
     fi
