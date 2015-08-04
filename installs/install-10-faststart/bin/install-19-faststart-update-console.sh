@@ -2,6 +2,10 @@
 #
 # This script updates the Eucalyptus Console to a later unreleased version
 #
+# It also creates the sample-templates Bucket used to store CloudFormation 
+# sample Templates. This step depends on having awscli configured with at
+# least the Eucalyptus Administrator Credentials.
+#
 # This should be run last, after the system is confirmed to work with the
 # released console package.
 #
@@ -12,7 +16,9 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 tmpdir=/var/tmp
 
-eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.7007.481.20150729git963b65b.el6.noarch.rpm
+#eucaconsole_url=http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/rhel/6/x86_64/eucaconsole-4.1.1-0.0.7007.481.20150729git963b65b.el6.noarch.rpm
+# This is the last known version of eucaconsole which works with CloudFormation, only available internally
+eucaconsole_url=http://mirror.mjc.prc.eucalyptus-systems.com/software/hp/eucalyptus/eucaconsole-4.1.1-0.0.6207.19.20150526git377827e.el6.noarch.rpm
 
 step=0
 speed_max=400
@@ -332,6 +338,41 @@ if [ $choice = y ]; then
     service eucaconsole start
 
     next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create sample-templates Bucket"
+echo "    - This Bucket is intended for Sample CloudFormation Templates"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws s3api create-bucket --bucket sample-templates --acl public-read --profile $AWS_DEFAULT_REGION-admin --region=$AWS_DEFAULT_REGION"
+
+if aws s3 ls --profile $AWS_DEFAULT_REGION-admin --region=$AWS_DEFAULT_REGION | grep -s -q " sample-templates$"; then
+    echo
+    tput rev
+    echo "Already Created!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws s3api create-bucket --bucket sample-templates --acl public-read --profile $AWS_DEFAULT_REGION-admin --region=$AWS_DEFAULT_REGION"
+        aws s3api create-bucket --bucket sample-templates --acl public-read --profile $AWS_DEFAULT_REGION-admin --region=$AWS_DEFAULT_REGION
+
+        next
+    fi
 fi
 
 
