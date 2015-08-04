@@ -8,6 +8,13 @@
         },
         {
             "Action": [
+                "iam:PassRole"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        },
+        {
+            "Action": [
                 "iam:CreateInstanceProfile",
                 "iam:DeleteInstanceProfile",
                 "iam:AddRoleToInstanceProfile",
