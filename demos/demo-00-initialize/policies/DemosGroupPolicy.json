@@ -1,10 +1,20 @@
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "NotAction": "iam:*",
-      "Effect": "Allow",
-      "Resource": "*"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "NotAction": "iam:*",
+            "Effect": "Allow",
+            "Resource": "*"
+        },
+        {
+            "Action": [
+                "iam:CreateInstanceProfile",
+                "iam:DeleteInstanceProfile",
+                "iam:AddRoleToInstanceProfile",
+                "iam:RemoveRoleFromInstanceProfile"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ]
 }
