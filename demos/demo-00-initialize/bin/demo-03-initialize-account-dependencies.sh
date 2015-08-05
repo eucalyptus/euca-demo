@@ -751,7 +751,7 @@ else
 
         echo "# euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
         echo ">                         -f $tmpdir/$account/${group_users}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_demos -p ${group_users}Policy \
+        euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \
                                 -f $tmpdir/$account/${group_users}GroupPolicy.json
 
         next

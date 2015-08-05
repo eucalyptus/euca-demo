@@ -759,7 +759,7 @@ else
 
         echo "# aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \\"
         echo ">                          --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json"
-        aws iam put-group-policy --group-name $group_demos --policy-name ${group_users}Policy \
+        aws iam put-group-policy --group-name $group_users --policy-name ${group_users}Policy \
                                  --policy-document file://$tmpdir/$account/${group_users}GroupPolicy.json
 
         next
