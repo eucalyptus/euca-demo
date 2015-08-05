@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 #
 # This script migrates the WordPress database created as part of the Eucalyptus
 # CloudFormation demo which uses the WordPress_Single_Instance_Eucalyptus.template
@@ -19,8 +19,8 @@ mysql_password=password
 mysql_db=wordpressdb
 mysql_bakfile=$mysql_db.bak
 
-mysql_backup_command="mysqldump -u$mysql_user -p$mysqlpw_password $mysql_db > $mysql_bakfile"
-mysql_restore_command="mysql -u$mysql_user -p$mysql_password -D$mysql_db \< $mysql_bakfile"
+ssh_user=root
+aws_ssh_user=ec2-user
 
 federation=aws
 
@@ -202,10 +202,13 @@ if [ -z $aws_region ]; then
     exit 20
 else
     case $aws_region in
-      us-east-1|us-west-1|us-west-2) ;&
+      us-east-1)
+        s3_domain=s3.amazonaws.com;;
+      us-west-1|us-west-2) ;&
       sa-east-1) ;&
       eu-west-1|eu-central-1) ;&
-      ap-northeast-1|ap-southeast-1|ap-southeast-2) ;;
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        s3_domain=s3-$aws_region.amazonaws.com;;
     *)
         echo "-R $aws_region invalid: Please specify an AWS region"
         exit 21;;
@@ -247,15 +250,65 @@ fi
 
 start=$(date +%s)
 
-instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$profile_region | cut -f3)
-public_name=$(euca-describe-instances $instance_id --region=$profile_region | grep "^INSTANCE" | cut -f4)
-public_ip=$(euca-describe-instances $instance_id --region=$profile_region | grep "^INSTANCE" | cut -f17)
-user=root
+((++step))
+demo_initialized=y
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Obtain Instance details"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$profile_region | cut -f3)"
+echo
+echo "euca_public_name=\$(euca-describe-instances \$euca_instance_id --region=$profile_region | grep \"^INSTANCE\" | cut -f4)"
+echo
+echo "euca_public_ip=\$(euca-describe-instances \$euca_instance_id --region=$profile_region | grep \"^INSTANCE\" | cut -f17)"
+echo
+echo "aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_profile_region | cut -f3)"
+echo
+echo "aws_public_name=\$(euca-describe-instances \$aws_instance_id --region=$aws_profile_region | grep \"^INSTANCE\" | cut -f4)"
+echo
+echo "aws_public_ip=\$(euca-describe-instances \$aws_instance_id --region=$aws_profile_region | grep \"^INSTANCE\" | cut -f17)"
+echo
 
+next
+
+echo
+echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$profile_region | cut -f3)"
+euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$profile_region | cut -f3)
+echo "$euca_instance_id"
+pause
+
+echo "# euca_public_name=\$(euca-describe-instances \$euca_instance_id --region=$profile_region | grep \"^INSTANCE\" | cut -f4)"
+euca_public_name=$(euca-describe-instances $euca_instance_id --region=$profile_region | grep "^INSTANCE" | cut -f4)
+echo "$euca_public_name"
+pause
+
+echo "# euca_public_ip=\$(euca-describe-instances \$euca_instance_id --region=$profile_region | grep \"^INSTANCE\" | cut -f17)"
+euca_public_ip=$(euca-describe-instances $euca_instance_id --region=$profile_region | grep "^INSTANCE" | cut -f17)
+echo "$euca_public_ip"
+pause
+
+echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_profile_region | cut -f3)"
 aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_profile_region | cut -f3)
-aws_public_name=$(euca-describe-instances $instance_id --region=$aws_profile_region | grep "^INSTANCE" | cut -f4)
-aws_public_ip=$(euca-describe-instances $instance_id --region=$aws_profile_region | grep "^INSTANCE" | cut -f17)
-aws_user=ec2-user
+echo "$aws_instance_id"
+pause
+
+echo "# aws_public_name=\$(euca-describe-instances \$aws_instance_id --region=$aws_profile_region | grep \"^INSTANCE\" | cut -f4)"
+aws_public_name=$(euca-describe-instances $aws_instance_id --region=$aws_profile_region | grep "^INSTANCE" | cut -f4)
+echo "$aws_public_name"
+pause
+
+echo "# aws_public_ip=\$(euca-describe-instances \$aws_instance_id --region=$aws_profile_region | grep \"^INSTANCE\" | cut -f17)"
+aws_public_ip=$(euca-describe-instances $aws_instance_id --region=$aws_profile_region | grep "^INSTANCE" | cut -f17)
+echo "$aws_public_ip"
+
+next
+
 
 ((++step))
 if [ $mode = offramp ]; then
@@ -271,10 +324,9 @@ if [ $mode = offramp ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name << EOF"
+    echo "ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF"
     echo "mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
-    echo "s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
-    echo "rm -f $tmpdir/$mysql_bakfile"
+    echo "aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
     echo "EOF"
 
     run 50
@@ -289,20 +341,15 @@ if [ $mode = offramp ]; then
             ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
             echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name << EOF
-echo "# mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
-mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
-sleep 5
+            echo "# ssh -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name"
+            ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF
+echo "> mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+mysqldump --compatible=mysql4 -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
+sleep 1
 echo
-echo "# s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
-s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read
-sleep 5
-echo
-echo "# rm -f $tmpdir/$mysql_bakfile"
+echo "> aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
+aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read
 rm -f $tmpdir/$mysql_bakfile
-sleep 5
-echo
 EOF
             RC=$?
             if [ $RC = 0 -o $RC = 1 ]; then
@@ -333,10 +380,9 @@ else
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF"
+    echo "ssh -T -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name << EOF"
     echo "mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
-    echo "s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
-    echo "rm -f $tmpdir/$mysql_bakfile"
+    echo "aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
     echo "EOF"
 
     run 50
@@ -345,26 +391,21 @@ else
         attempt=0
         ((seconds=$login_default * $speed / 100))
         while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
+            sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
+            sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
             echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
-echo "# mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+            echo "# ssh -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name"
+            ssh -T -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name << EOF
+echo "> mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
 mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
-sleep 5
+sleep 1
 echo
-echo "# s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
-s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read
-sleep 5
-echo
-echo "# rm -f $tmpdir/$mysql_bakfile"
+echo "> aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
+aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read
 rm -f $tmpdir/$mysql_bakfile
-sleep 5
-echo
 EOF
             RC=$?
             if [ $RC = 0 -o $RC = 1 ]; then
@@ -396,12 +437,10 @@ if [ $mode = offramp ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF"
-    echo "wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
-    echo "echo $mysql_restore_command > $tmpdir/mysql_restore_command"
-    echo "chmod 777 $tmpdir/mysql_restore_command"
-    echo "$tmpdir/mysql_restore_command"
-    echo "EOF
+    echo "ssh -T -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name << EOF"
+    echo "wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
+    echo "mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+    echo "EOF"
 
     run 50
 
@@ -409,27 +448,20 @@ if [ $mode = offramp ]; then
         attempt=0
         ((seconds=$login_default * $speed / 100))
         while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
+            sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
+            sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
             echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
-echo "# wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
-wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
-sleep 5
+            echo "# ssh -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name"
+            ssh -T -i ~/.ssh/demo_id_rsa $ssh_user@$euca_public_name << EOF
+echo "# wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
+wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
+sleep 1
 echo
-echo "# echo $mysql_restore_command > $tmpdir/mysql_restore_command"
-echo $mysql_restore_command > $tmpdir/mysql_restore_command
-echo "# chmod 777 $tmpdir/mysql_restore_command"
-chmod 777 $tmpdir/mysql_restore_command
-sleep 5
-echo
-echo "# $tmpdir/mysql_restore_command"
-$tmpdir/mysql_restore_command
-sleep 5
+echo "# mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile
 EOF
             RC=$?
             if [ $RC = 0 -o $RC = 1 ]; then
@@ -460,12 +492,10 @@ else
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name << EOF"
+    echo "ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF"
     echo "wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
-    echo "echo $mysql_restore_command > $tmpdir/mysql_restore_command"
-    echo "chmod 777 $tmpdir/mysql_restore_command"
-    echo "$tmpdir/mysql_restore_command"
-    echo "EOF
+    echo "mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+    echo "EOF"
 
     run 50
 
@@ -479,21 +509,14 @@ else
             ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
             echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $aws_user@$aws_public_name << EOF
+            echo "# ssh -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name"
+            ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF
 echo "# wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
 wget http://s3.amazonaws.com/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
-sleep 5
+sleep 1
 echo
-echo "# echo $mysql_restore_command > $tmpdir/mysql_restore_command"
-echo $mysql_restore_command > $tmpdir/mysql_restore_command
-echo "# chmod 777 $tmpdir/mysql_restore_command"
-chmod 777 $tmpdir/mysql_restore_command
-sleep 5
-echo
-echo "# $tmpdir/mysql_restore_command"
-$tmpdir/mysql_restore_command
-sleep 5
+echo "# mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile
 EOF
             RC=$?
             if [ $RC = 0 -o $RC = 1 ]; then
