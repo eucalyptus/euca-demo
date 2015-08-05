@@ -38,6 +38,9 @@ run_default=10
 pause_default=2
 next_default=5
 created=n
+unset I
+unset s
+unset f
 
 create_attempts=24
 create_default=20
@@ -154,9 +157,12 @@ next() {
 
 while getopts Isfcr:a:u:A:U:? arg; do
     case $arg in
-    I)  interactive=0;;
-    s)  ((speed < speed_max)) && ((speed=speed+25));;
-    f)  ((speed > 0)) && ((speed=speed-25));;
+    I)  interactive=0
+        I="-I";;
+    s)  ((speed < speed_max)) && ((speed=speed+25))
+        s="$s -s";;
+    f)  ((speed > 0)) && ((speed=speed-25))
+        f="$f -f";;
     c)  mode=configure;;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
@@ -660,68 +666,24 @@ fi
 
 if [ $mode = restore ]; then
     ((++step))
-    instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer | cut -f3)
-    public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
-    public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
-    if [ $target = euca ]; then
-        user=root
-    else
-        user=ec2-user
-    fi
-
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Confirm ability to login to Instance"
-    echo "    - If unable to login, view instance console output with:"
-    echo "      # euca-get-console-output $instance_id"
-    echo "    - If able to login, first show the private IP with:"
-    echo "      # ifconfig"
-    echo "    - Then view meta-data about the public IP with:"
-    echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
-    echo "    - Logout of instance once login ability confirmed"
-    echo "    - NOTE: This can take about 00 - 40 seconds"
+    echo "$(printf '%2d' $step). Migrate WordPress"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+    echo "$bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
 
     run 50
 
     if [ $choice = y ]; then
-        attempt=0
-        ((seconds=$login_default * $speed / 100))
-        while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
-            echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
-echo "# ifconfig"
-ifconfig
-sleep 5
-echo
-echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
-cat /tmp/public-ip4
-sleep 5
-EOF
-            RC=$?
-            if [ $RC = 0 -o $RC = 1 ]; then
-                break
-            else
-                echo
-                echo -n "Not available ($RC). Waiting $seconds seconds..."
-                sleep $seconds
-                echo " Done"
-            fi
-        done
+        echo
+        echo "# $bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
+        $bindir/demo-30-migrate.sh $I $s $f -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user
 
         next
     fi
