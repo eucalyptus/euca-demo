@@ -53,7 +53,7 @@ speed=100
 mode=restore
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-demo}
+user=${AWS_USER_NAME:-admin}
 aws_region=us-east-1
 aws_account=euca
 aws_user=demo
@@ -677,7 +677,7 @@ if [ $mode = restore ]; then
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f11)
     public_ip=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f12)
     if [ $target = euca ]; then
-        user=centos
+        user=root
     else
         user=ec2-user
     fi
