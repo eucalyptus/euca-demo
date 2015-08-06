@@ -55,13 +55,16 @@ aws_user=demo
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user] [-A aws_account] [-U aws_user]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "                  [-r region ] [-a account] [-u user]"
+    echo "                  [-R aws_region] [-A aws_account] [-U aws_user]"
     echo "  -I              non-interactive"
     echo "  -s              slower: increase pauses by 25%"
     echo "  -f              faster: reduce pauses by 25%"
     echo "  -r region       Region (default: $region)"
     echo "  -a account      Account (default: $account)"
     echo "  -u user         User (default: $user)"
+    echo "  -R aws_region   Partner AWS Region (default: $aws_region)"
     echo "  -A aws_account  Partner AWS Account (default: $aws_account)"
     echo "  -U aws_user     Partner AWS User (default: $aws_user)"
 }
@@ -146,7 +149,7 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:A:U:? arg; do
+while getopts Isfr:a:u:R:A:U:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
@@ -154,6 +157,7 @@ while getopts Isfr:a:u:A:U:? arg; do
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
     u)  user="$OPTARG";;
+    R)  aws_region="$OPTARG";;
     A)  aws_account="$OPTARG";;
     U)  aws_user="$OPTARG";;
     ?)  usage
@@ -195,16 +199,35 @@ if [ -z $user ]; then
     exit 14
 fi
 
+if [ -z $aws_region ]; then
+    echo "-R aws_region missing!"
+    echo "Could not automatically determine aws_region, and it was not specified as a parameter"
+    exit 20
+else
+    case $aws_region in
+      us-east-1)
+        s3_domain=s3.amazonaws.com;;
+      us-west-1|us-west-2) ;&
+      sa-east-1) ;&
+      eu-west-1|eu-central-1) ;&
+      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        s3_domain=s3-$aws_region.amazonaws.com;;
+    *)
+        echo "-R $aws_region invalid: Please specify an AWS region"
+        exit 21;;
+    esac
+fi
+
 if [ -z $aws_account ]; then
     echo "-A aws_account missing!"
     echo "Could not automatically determine AWS account, and it was not specified as a parameter"
-    exit 16
+    exit 22
 fi
 
 if [ -z $aws_user ]; then
     echo "-U aws_user missing!"
     echo "Could not automatically determine AWS user, and it was not specified as a parameter"
-    exit 18
+    exit 24
 fi
 
 if [ $target = euca ]; then
@@ -214,7 +237,7 @@ if [ $target = euca ]; then
     if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
         echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
         echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
-        exit 20
+        exit 50
     fi
 else
     profile=$federation-$account-$user
@@ -223,7 +246,7 @@ else
     if ! grep -s -q "\[user $profile]" ~/.euca/$federation.ini; then
         echo "Could not find AWS ($account) Account Demo ($user) User Euca2ools user!"
         echo "Expected to find: [user $profile] in ~/.euca/$federation.ini"
-        exit 20
+        exit 50
     fi
 fi
 
@@ -232,7 +255,7 @@ aws_profile=$aws_account-$aws_user
 if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
     echo "Could not find AWS ($aws_account) Partner Account Demo ($user) User AWSCLI profile!"
     echo "Expected to find: [profile $aws_profile] in ~/.aws/config"
-    exit 29
+    exit 59
 fi
 
 

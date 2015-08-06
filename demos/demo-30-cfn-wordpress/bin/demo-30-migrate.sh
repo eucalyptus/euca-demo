@@ -51,7 +51,8 @@ aws_user=demo
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-N] [-r region ] [-a account] [-u user]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-N]"
+    echo "                  [-r region ] [-a account] [-u user]"
     echo "                  [-R aws_region] [-A aws_account] [-U aws_user]"
     echo "  -I              non-interactive"
     echo "  -s              slower: increase pauses by 25%"
