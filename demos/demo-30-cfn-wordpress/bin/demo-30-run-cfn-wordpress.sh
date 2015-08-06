@@ -713,6 +713,28 @@ if [ $mode = restore ]; then
 fi
 
 
+if [ $mode = restore ]; then
+    ((++step))
+    wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm WordPress Migration"
+    echo "    - View WordPress via a browser:"
+    echo "      $wordpress_url"
+    echo "    - Confirm latest content from AWS is now running in Eucalyptus"
+    echo
+    echo "============================================================"
+    echo
+
+    # Look into creating this automatically via wp-cli or similar
+
+    next 200
+fi
+
+
 end=$(date +%s)
 
 echo

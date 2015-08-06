@@ -252,7 +252,6 @@ fi
 start=$(date +%s)
 
 ((++step))
-demo_initialized=y
 clear
 echo
 echo "============================================================"
@@ -538,5 +537,5 @@ fi
 end=$(date +%s)
 
 
-echo
-echo "Eucalyptus CloudFormation WordPress migration execution complete (time: $(date -u -d @$((end-start)) +"%T"))"
+#echo
+#echo "Eucalyptus CloudFormation WordPress migration execution complete (time: $(date -u -d @$((end-start)) +"%T"))"

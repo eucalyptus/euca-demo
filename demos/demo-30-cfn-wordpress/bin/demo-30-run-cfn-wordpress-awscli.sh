@@ -699,71 +699,49 @@ fi
 
 if [ $mode = restore ]; then
     ((++step))
-    instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer | cut -f4)
-    public_name=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f11)
-    public_ip=$(aws ec2 describe-instances --instance-ids $instance_id | grep "^INSTANCES" | cut -f12)
-    if [ $target = euca ]; then
-        user=root
-    else
-        user=ec2-user
-    fi
-
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Confirm ability to login to Instance"
-    echo "    - If unable to login, view instance console output with:"
-    echo "      # euca-get-console-output $instance_id"
-    echo "    - If able to login, first show the private IP with:"
-    echo "      # ifconfig"
-    echo "    - Then view meta-data about the public IP with:"
-    echo "      # curl http://169.254.169.254/latest/meta-data/public-ipv4"
-    echo "    - Logout of instance once login ability confirmed"
-    echo "    - NOTE: This can take about 00 - 40 seconds"
+    echo "$(printf '%2d' $step). Migrate WordPress"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+    echo "$bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
 
     run 50
 
     if [ $choice = y ]; then
-        attempt=0
-        ((seconds=$login_default * $speed / 100))
-        while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
-            echo
-            echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
-echo "# ifconfig"
-ifconfig
-sleep 5
-echo
-echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
-cat /tmp/public-ip4
-sleep 5
-EOF
-            RC=$?
-            if [ $RC = 0 -o $RC = 1 ]; then
-                break
-            else
-                echo
-                echo -n "Not available ($RC). Waiting $seconds seconds..."
-                sleep $seconds
-                echo " Done"
-            fi
-        done
+        echo
+        echo "# $bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
+        $bindir/demo-30-migrate.sh $I $s $f -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user
 
         next
     fi
+fi
+
+
+if [ $mode = restore ]; then
+    ((++step))
+    wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm WordPress Migration"
+    echo "    - View WordPress via a browser:"
+    echo "      $wordpress_url"
+    echo "    - Confirm latest content from AWS is now running in Eucalyptus"
+    echo
+    echo "============================================================"
+    echo
+
+    # Look into creating this automatically via wp-cli or similar
+
+    next 200
 fi
 
 
