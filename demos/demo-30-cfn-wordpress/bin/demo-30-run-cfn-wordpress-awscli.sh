@@ -34,12 +34,20 @@ federation=aws
 
 image_name=CentOS-6-x86_64-CFN-AWSCLI
 
+mysql_root=root
+mysql_user=demo
+mysql_password=password
+mysql_db=wordpressdb
+mysql_bakfile=$mysql_db.bak
+
 step=0
 speed_max=400
 run_default=10
 pause_default=2
 next_default=5
-created=n
+
+euca_stack_created=n
+aws_stack_created=n
 
 create_attempts=24
 create_default=20
@@ -50,31 +58,35 @@ delete_default=20
 
 interactive=1
 speed=100
-mode=restore
-region=${AWS_DEFAULT_REGION#*@}
-account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-admin}
+verbose=0
+mode=e
+euca_region=${AWS_DEFAULT_REGION#*@}
+euca_account=${AWS_ACCOUNT_NAME:-demo}
+euca_user=${AWS_USER_NAME:-admin}
+euca_ssh_user=root
 aws_region=us-east-1
 aws_account=euca
 aws_user=demo
+aws_ssh_user=ec2-user
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c]"
-    echo "                  [-r region ] [-a account] [-u user]"
-    echo "                  [-R aws_region] [-A aws_account] [-U aws_user]"
-    echo "  -I              non-interactive"
-    echo "  -s              slower: increase pauses by 25%"
-    echo "  -f              faster: reduce pauses by 25%"
-    echo "  -c              configure mode: Configure WordPress (default: $mode)"
-    echo "  -r region       Region (default: $region)"
-    echo "  -a account      Account (default: $account)"
-    echo "  -u user         User (default: $user)"
-    echo "  -R aws_region   Partner AWS Region (default: $aws_region)"
-    echo "  -A aws_account  Partner AWS Account (default: $aws_account)"
-    echo "  -U aws_user     Partner AWS User (default: $aws_user)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-m mode]"
+    echo "                   [-r euca_region ] [-a euca_account] [-u euca_user]"
+    echo "                   [-R aws_region] [-A aws_account] [-U aws_user]"
+    echo "  -I               non-interactive"
+    echo "  -s               slower: increase pauses by 25%"
+    echo "  -f               faster: reduce pauses by 25%"
+    echo "  -v               verbose"
+    echo "  -m mode          mode: Configure a:AWS, e:Eucalyptus or b:Both (default: $mode)"
+    echo "  -r euca_region   Eucalyptus Region (default: $euca_region)"
+    echo "  -a euca_account  Eucalyptus Account (default: $euca_account)"
+    echo "  -u euca_user     Eucalyptus User (default: $euca_user)"
+    echo "  -R aws_region    AWS Region (default: $aws_region)"
+    echo "  -A aws_account   AWS Account (default: $aws_account)"
+    echo "  -U aws_user      AWS User (default: $aws_user)"
 }
 
 run() {
@@ -157,18 +169,16 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfcr:a:u:R:A:U:? arg; do
+while getopts Isfvm:r:a:u:R:A:U:? arg; do
     case $arg in
-    I)  interactive=0
-        I="-I";;
-    s)  ((speed < speed_max)) && ((speed=speed+25))
-        s="$s -s";;
-    f)  ((speed > 0)) && ((speed=speed-25))
-        f="$f -f";;
-    c)  mode=configure;;
-    r)  region="$OPTARG";;
-    a)  account="$OPTARG";;
-    u)  user="$OPTARG";;
+    I)  interactive=0;;
+    s)  ((speed < speed_max)) && ((speed=speed+25));;
+    f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
+    m)  mode="$OPTARG";;
+    r)  euca_region="$OPTARG";;
+    a)  euca_account="$OPTARG";;
+    u)  euca_user="$OPTARG";;
     R)  aws_region="$OPTARG";;
     A)  aws_account="$OPTARG";;
     U)  aws_user="$OPTARG";;
@@ -182,50 +192,46 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $region ]; then
-    echo "-r region missing!"
-    echo "Could not automatically determine region, and it was not specified as a parameter"
+if [ -z $euca_region ]; then
+    echo "-r euca_region missing!"
+    echo "Could not automatically determine Eucalyptus region, and it was not specified as a parameter"
     exit 10
 else
-    case $region in
+    case $euca_region in
       us-east-1|us-west-1|us-west-2) ;&
       sa-east-1) ;&
       eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
-        target="aws"
-        aws_region=$region
-        cloudformation_url=https://cloudformation.$region.amazonaws.com;;
-      *)
-        target="euca"
-        cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation$/\1/p" /etc/euca2ools/conf.d/$region.ini);;
+        echo "-r $euca_region invalid: Please specify a Eucalyptus region"
+        exit 11;;
     esac
 fi
 
-if [ -z $account ]; then
-    echo "-a account missing!"
-    echo "Could not automatically determine account, and it was not specified as a parameter"
+if [ -z $euca_account ]; then
+    echo "-a euca_account missing!"
+    echo "Could not automatically determine Eucalyptus account, and it was not specified as a parameter"
     exit 12
 fi
 
-if [ -z $user ]; then
-    echo "-u user missing!"
-    echo "Could not automatically determine user, and it was not specified as a parameter"
+if [ -z $euca_user ]; then
+    echo "-u euca_user missing!"
+    echo "Could not automatically determine Eucalyptus user, and it was not specified as a parameter"
     exit 14
 fi
 
 if [ -z $aws_region ]; then
     echo "-R aws_region missing!"
-    echo "Could not automatically determine aws_region, and it was not specified as a parameter"
+    echo "Could not automatically determine AWS region, and it was not specified as a parameter"
     exit 20
 else
     case $aws_region in
       us-east-1)
-        s3_domain=s3.amazonaws.com;;
+        aws_s3_domain=s3.amazonaws.com;;
       us-west-1|us-west-2) ;&
       sa-east-1) ;&
       eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
-        s3_domain=s3-$aws_region.amazonaws.com;;
+        aws_s3_domain=s3-$aws_region.amazonaws.com;;
     *)
         echo "-R $aws_region invalid: Please specify an AWS region"
         exit 21;;
@@ -244,36 +250,29 @@ if [ -z $aws_user ]; then
     exit 24
 fi
 
-if [ -z $cloudformation_url ]; then
-    echo "Could not automatically determine CloudFormation URL"
-    echo "For Eucalyptus Regions, we attempt to lookup the value of "cloudformation-url" in /etc/euca2ools/conf.d/$region.ini"
-    echo 30
-fi
+euca_profile=$euca_region-$euca_account-$euca_user
 
-if [ $target = euca ]; then
-    profile=$region-$account-$user
-
-    if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-        echo "Could not find $region Demo ($account) Account Demo ($user) User AWSCLI profile!"
-        echo "Expected to find: [profile $profile] in ~/.aws/config"
-        exit 50
-    fi
-else
-    profile=$account-$user
-
-    if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-        echo "Could not find AWS ($account) Account Demo ($user) User AWSCLI profile!"
-        echo "Expected to find: [profile $profile] in ~/.aws/config"
-        exit 50
-    fi
+if ! grep -s -q "\[profile $euca_profile]" ~/.aws/config; then
+    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($user) User AWSCLI profile!"
+    echo "Expected to find: [profile $euca_profile] in ~/.aws/config"
+    exit 51
 fi
 
 aws_profile=$aws_account-$aws_user
 
 if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
-    echo "Could not find AWS ($aws_account) Partner Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find AWS ($aws_account) Account Demo ($aws_user) User AWSCLI profile!"
     echo "Expected to find: [profile $aws_profile] in ~/.aws/config"
-    exit 59
+    exit 53
+fi
+
+euca_cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation$/\1/p" /etc/euca2ools/conf.d/$euca_region.ini)
+aws_cloudformation_url=https://cloudformation.$aws_region.amazonaws.com
+
+if [ -z $euca_cloudformation_url ]; then
+    echo "Could not automatically determine Eucalyptus CloudFormation URL"
+    echo "For Eucalyptus Regions, we attempt to lookup the value of "cloudformation-url" in /etc/euca2ools/conf.d/$euca_region.ini"
+    echo 60
 fi
 
 if ! rpm -q --quiet w3m; then
@@ -287,139 +286,101 @@ fi
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-if [ $target = euca ]; then
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User credentials"
-else
-    echo "$(printf '%2d' $step). Use AWS ($account) Account Demo ($user) User credentials"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_PROFILE=$profile"
-echo "export AWS_DEFAULT_REGION=$region"
-echo
-echo "echo \$AWS_DEFAULT_PROFILE"
-echo "echo \$AWS_DEFAULT_REGION"
+if [ $mode = a -o $mode = b ]; then
+    aws_demo_initialized=y
 
-next
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Confirm existence of AWS Demo depencencies"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
+        echo "                           --profile $aws_profile --region $aws_region"
 
-echo
-echo "# export AWS_DEFAULT_PROFILE=$profile"
-export AWS_DEFAULT_PROFILE=$profile
-echo "# export AWS_DEFAULT_REGION=$region"
-export AWS_DEFAULT_REGION=$region
-pause
+        next
 
-echo "# echo \$AWS_DEFAULT_PROFILE"
-echo $AWS_DEFAULT_PROFILE
-echo "# echo \$AWS_DEFAULT_REGION"
-echo $AWS_DEFAULT_REGION
+        echo
+        echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\"\\"
+        echo ">                            --profile $aws_profile --region $aws_region"
+        aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                                   --profile $aws_profile --region $aws_region | grep "demo" || aws_demo_initialized=n
 
-next
+        next
 
+    else
+        aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                                   --profile $aws_profile --region $aws_region | grep -s -q "demo" || aws_demo_initialized=n
+    fi
 
-((++step))
-demo_initialized=y
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-if [ $target = euca ]; then
-    echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
-    echo
-fi
-echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
-
-next
-
-echo
-if [ $target = euca ]; then
-    echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" | cut -f1,3,4"
-    aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" | cut -f1,3,4  | grep  "$image_name" || demo_initialized=n
-    pause
-fi
-
-echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\""
-aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" | grep "demo" || demo_initialized=n
-
-if [ $demo_initialized = n ]; then
-    echo
-    echo "At least one prerequisite for this script was not met."
-    echo "Please re-run the demo initialization scripts referencing this demo account:"
-    echo "- demo-00-initialize.sh -r $region"
-    echo "- demo-01-initialize-account.sh -r $region -a $account"
-    echo "- demo-03-initialize-account-dependencies.sh -r $region -a $account"
-    exit 99
-fi
-
-next
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List initial Resources"
-echo "    - So we can compare with what this demo creates"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo 
-echo "aws ec2 describe-security-groups"
-echo
-echo "aws ec2 describe-instances"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# aws ec2 describe-security-groups"
-    aws ec2 describe-security-groups
-    pause
-
-    echo "# aws ec2 describe-instances"
-    aws ec2 describe-instances
-    
-    next
+    if [ $aws_demo_initialized = n ]; then
+        echo
+        echo "At least one AWS prerequisite for this script was not met."
+        echo "Please re-run the AWS demo initialization scripts referencing this AWS account:"
+        echo "- demo-01-initialize-aws-account.sh -r $aws_region -a $aws_account"
+        echo "- demo-03-initialize-aws-account-dependencies-awscli.sh -r $aws_region -a $aws_account"
+        exit 99
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List CloudFormation Stacks"
-echo "    - So we can compare with what this demo creates"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws cloudformation describe-stacks"
+if [ $mode = e -o $mode = b ]; then
+    euca_demo_initialized=y
 
-run 50
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Confirm existence of Eucalyptus Demo depencencies"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
+        echo "                        --profile $euca_profile --region $euca_region | cut -f1,3,4"
+        echo
+        echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
+        echo "                           --profile $euca_profile --region $euca_region"
+ 
+        next
+ 
+        echo
+        echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
+        echo ">                         --profile $euca_profile --region $euca_region | cut -f1,3,4"
+        aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
+                                --profile $euca_profile --region $euca_region | cut -f1,3,4  | grep "$image_name" || euca_demo_initialized=n
+        pause
+ 
+        echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
+        echo ">                            --profile $euca_profile --region $euca_region"
+        aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                                   --profile $euca_profile --region $euca_region | grep "demo" || euca_demo_initialized=n
 
-if [ $choice = y ]; then
-    echo
-    echo "# aws cloudformation describe-stacks"
-    aws cloudformation describe-stacks
-
-    next
+        next
+    else
+        aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
+                                --profile $euca_profile --region $euca_region | cut -f1,3,4  | grep -s -q "$image_name" || euca_demo_initialized=n
+        aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                                   --profile $euca_profile --region $euca_region | grep -s -q "demo" || euca_demo_initialized=n
+    fi
+ 
+    if [ $euca_demo_initialized = n ]; then
+        echo
+        echo "At least one Eucalyptus prerequisite for this script was not met."
+        echo "Please re-run the Eucalyptus demo initialization scripts referencing this demo account:"
+        echo "- demo-00-initialize.sh -r $euca_region"
+        echo "- demo-01-initialize-account.sh -r $euca_region -a $euca_account"
+        echo "- demo-03-initialize-account-dependencies-awscli.sh -r $euca_region -a $euca_account"
+        exit 99
+    fi
 fi
 
 
@@ -454,153 +415,743 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display WordPress CloudFormation template"
-echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
-echo "      to lookup the AMI ID of the Image to use when creating new Instances, based on the Region"
-echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
-echo "      EMI ID for the Image which must be used there."
-echo "    - This Template has been modified to add a row containing the Eucalyptus Region EMI ID to this"
-echo "      Map. It is otherwise identical to what is run in AWS."
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "more $tmpdir/WordPress_Single_Instance_Eucalyptus.template"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# more $tmpdir/WordPress_Single_Instance_Eucalyptus.template"
-    if [ $interactive = 1 ]; then
-        more $tmpdir/WordPress_Single_Instance_Eucalyptus.template
-    else
-        # This will iterate over the file in a manner similar to more, but non-interactive
-        ((rows=$(tput lines)-2))
-        lineno=0
-        while IFS= read line; do
-            echo "$line"
-            if [ $((++lineno % rows)) = 0 ]; then
-                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
-                sleep 10
-                echo -e -n "\r                                \r"
-            fi
-        done < $tmpdir/WordPress_Single_Instance_Eucalyptus.template
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display WordPress CloudFormation template"
+    echo "    - Like most CloudFormation Templates, the WordPress Template uses the \"AWSRegionArch2AMI\" Map"
+    echo "      to lookup the AMI ID of the Image to use when creating new Instances, based on the Region"
+    echo "      in which the Template is run. Similar to AWS, each Eucalyptus Region will also have a unqiue"
+    echo "      EMI ID for the Image which must be used there."
+    echo "    - This Template has been modified to add a row containing the Eucalyptus Region EMI ID to this"
+    echo "      Map. It is otherwise identical to what is run in AWS."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "more $tmpdir/WordPress_Single_Instance_Eucalyptus.template"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# more $tmpdir/WordPress_Single_Instance_Eucalyptus.template"
+        if [ $interactive = 1 ]; then
+            more $tmpdir/WordPress_Single_Instance_Eucalyptus.template
+        else
+            # This will iterate over the file in a manner similar to more, but non-interactive
+            ((rows=$(tput lines)-2))
+            lineno=0
+            while IFS= read line; do
+                echo "$line"
+                if [ $((++lineno % rows)) = 0 ]; then
+                    tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
+                    sleep 10
+                    echo -e -n "\r                                \r"
+                fi
+            done < $tmpdir/WordPress_Single_Instance_Eucalyptus.template
+        fi
+
+        next 200
     fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List existing AWS Resources"
+        echo "    - So we can compare with what this demo creates"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo 
+        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+        echo
+        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region
+            pause
+
+            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+            aws ec2 describe-instances --profile $aws_profile --region $aws_region
+    
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List existing AWS CloudFormation Stacks"
+        echo "    - So we can compare with what this demo creates"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create the AWS Stack"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+    echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo "                                --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \\"
+    echo "                                             ParameterKey=DBUser,ParameterValue=$mysql_user \\"
+    echo "                                             ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
+    echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
+    echo "                                             ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \\"
+    echo "                                --capabilities CAPABILITY_IAM \\"
+    echo "                                --profile $aws_profile --region $aws_region"
+
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+        echo
+        tput rev
+        echo "Already Created!"
+        tput sgr0
+
+        next 50
+
+    else
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+            echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+            echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \\"
+            echo ">                                              ParameterKey=DBUser,ParameterValue=$mysql_user \\"
+            echo ">                                              ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
+            echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
+            echo ">                                              ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \\"
+            echo ">                                 --capabilities CAPABILITY_IAM \\"
+            echo ">                                 --profile $aws_profile --region $aws_region"
+            aws cloudformation create-stack --stack-name=WordPressDemoStack \
+                                            --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
+                                            --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \
+                                                         ParameterKey=DBUser,ParameterValue=$mysql_user \
+                                                         ParameterKey=DBPassword,ParameterValue=$mysql_password \
+                                                         ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
+                                                         ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \
+                                            --capabilities CAPABILITY_IAM \
+                                            --profile $aws_profile --region $aws_region
+
+            aws_stack_created=y
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Monitor AWS Stack creation"
+    echo "    - NOTE: This can take about 400 - 500 seconds"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+    echo
+    echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
+    echo "                                         --profile $aws_profile --region $aws_region"
+
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+        echo
+        tput rev
+        echo "Already Complete!"
+        tput sgr0
+
+        next 50
+
+    else
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region
+            pause
+
+            attempt=0
+            ((seconds=$create_default * $speed / 100))
+            while ((attempt++ <= create_attempts)); do
+                echo
+                echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
+                echo ">                                          --profile $aws_profile --region $aws_region"
+                aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
+                                                         --profile $aws_profile --region $aws_region
+
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)
+                if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
+                    break
+                else
+                    echo
+                    echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List updated AWS Resources"
+        echo "    - Note addition of new group and instance"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+        echo
+        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region
+            pause
+
+            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+            aws ec2 describe-instances --profile $aws_profile --region $aws_region
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                           --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                           --profile $aws_profile --region $aws_region 2> /dev/null)
+
+    if [ $aws_stack_created = y ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Configure WordPress on AWS Instance"
+        echo "    - Configure WordPress via a browser:"
+        echo "      $aws_wordpress_url"
+        echo "    - Using these values:"
+        echo "      - Site Title: Demo ($aws_account)"
+        echo "      - Username: $mysql_user"
+        echo "      - Password: <discover_password>"
+        echo "      - Your E-mail: <your email address>"
+        echo
+        echo "============================================================"
+        echo
+
+        # Look into creating this automatically via wp-cli or similar
+
+        next 200
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create WordPress Blog Post on AWS Instance"
+    echo "    - Create a Blog Post in WordPress via a browser:"
+    echo "      $aws_wordpress_url"
+    echo "    - Login using these values:"
+    echo "      - Username: $mysql_user"
+    echo "      - Password: <discover_password>"
+    echo "    - This is to show migration of the current database content"
+    echo
+    echo "============================================================"
+    echo
+
+    # Look into creating this automatically via wp-cli or similar
 
     next 200
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create the Stack"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
-echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "                                --parameters ParameterKey=KeyName,ParameterValue=demo \\"
-echo "                                             ParameterKey=DBUser,ParameterValue=demo \\"
-echo "                                             ParameterKey=DBPassword,ParameterValue=password \\"
-echo "                                             ParameterKey=DBRootPassword,ParameterValue=password \\"
-echo "                                             ParameterKey=EndPoint,ParameterValue=$cloudformation_url \\"
-echo "                                --capabilities CAPABILITY_IAM"
-
-
-if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
         echo
-        echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
-        echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=demo \\"
-        echo ">                                              ParameterKey=DBUser,ParameterValue=demo \\"
-        echo ">                                              ParameterKey=DBPassword,ParameterValue=password \\"
-        echo ">                                              ParameterKey=DBRootPassword,ParameterValue=password \\"
-        echo ">                                              ParameterKey=EndPoint,ParameterValue=$cloudformation_url \\"
-        echo ">                                 --capabilities CAPABILITY_IAM"
-        aws cloudformation create-stack --stack-name=WordPressDemoStack \
-                                        --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-                                        --parameters ParameterKey=KeyName,ParameterValue=demo \
-                                                     ParameterKey=DBUser,ParameterValue=demo \
-                                                     ParameterKey=DBPassword,ParameterValue=password \
-                                                     ParameterKey=DBRootPassword,ParameterValue=password \
-                                                     ParameterKey=EndPoint,ParameterValue=$cloudformation_url \
-                                        --capabilities CAPABILITY_IAM
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List existing Eucalyptus Resources"
+        echo "    - So we can compare with what this demo creates"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo 
+        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+        echo
+        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
+            pause
+ 
+            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+            aws ec2 describe-instances --profile $euca_profile --region $euca_region
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List existing Eucalyptus CloudFormation Stacks"
+        echo "    - So we can compare with what this demo creates"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+ 
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Create the Eucalyptus Stack"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+    echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+    echo "                                --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \\"
+    echo "                                             ParameterKey=DBUser,ParameterValue=$mysql_user \\"
+    echo "                                             ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
+    echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
+    echo "                                             ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \\"
+    echo "                                --capabilities CAPABILITY_IAM \\"
+    echo "                                --profile $euca_profile --region $euca_region"
+ 
+        echo
+        tput rev
+        echo "Already Created!"
+        tput sgr0
+ 
+        next 50
+ 
+    else
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
+            echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
+            echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \\"
+            echo ">                                              ParameterKey=DBUser,ParameterValue=$mysql_user \\"
+            echo ">                                              ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
+            echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
+            echo ">                                              ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \\"
+            echo ">                                 --capabilities CAPABILITY_IAM \\"
+            echo ">                                 --profile $euca_profile --region $euca_region"
+            aws cloudformation create-stack --stack-name=WordPressDemoStack \
+                                            --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
+                                            --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \
+                                                         ParameterKey=DBUser,ParameterValue=$mysql_user \
+                                                         ParameterKey=DBPassword,ParameterValue=$mysql_password \
+                                                         ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
+                                                         ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \
+                                            --capabilities CAPABILITY_IAM \
+                                            --profile $euca_profile --region $euca_region
+ 
+            euca_stack_created=y
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Monitor Eucalyptus Stack creation"
+    echo "    - NOTE: This can take about 400 - 500 seconds"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+    echo
+    echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
+    echo "                                         --profile $euca_profile --region $euca_region"
+ 
+        echo
+        tput rev
+        echo "Already Complete!"
+        tput sgr0
+ 
+        next 50
+ 
+    else
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
+            pause
+ 
+            attempt=0
+            ((seconds=$create_default * $speed / 100))
+            while ((attempt++ <= create_attempts)); do
+                echo
+                echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
+                echo ">                                          --profile $euca_profile --region $euca_region"
+                aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
+                                                         --profile $euca_profile --region $euca_region
+ 
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region 2> /dev/null | grep "^STACKS" | cut -f7)
+                if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
+                    break
+                else
+                    echo
+                    echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List updated Eucalyptus Resources"
+        echo "    - Note addition of new group and instance"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+        echo
+        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+ 
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
+            pause
+ 
+            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+            aws ec2 describe-instances --profile $euca_profile --region $euca_region
+ 
+            next
+        fi
+    fi
+fi
+ 
 
-        created=y
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). Obtain Instance and Blog details"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+        echo "                                                               --profile=$aws_profile --region=$aws_region | cut -f4)"
+        echo "aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+        echo "                                              --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+        echo "aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+        echo "                                            --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+        echo
+        echo "aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+        echo "                                                        --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+        echo "                                                        --profile=$aws_profile --region=$aws_region 2> /dev/null)"
+        echo
+        echo "euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+        echo "                                                                --profile=$euca_profile --region=$euca_region | cut -f4)"
+        echo "euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+        echo "                                               --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+        echo "euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+        echo "                                             --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+        echo
+        echo "euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+        echo "                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+        echo "                                                         --profile=$euca_profile --region=$euca_region 2> /dev/null)"
 
         next
+
+        echo
+        echo "# aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+        echo ">                                                                --profile=$aws_profile --region=$aws_region | cut -f4)"
+        aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                      --profile=$aws_profile --region=$aws_region | cut -f4)
+        echo "$aws_instance_id"
+        echo "#"
+        echo "# aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+        echo ">                                               --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+        aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                     --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+        echo "$aws_public_name"
+        echo "#"
+        echo "# aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+        echo ">                                             --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+        aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                   --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+        echo "$aws_public_ip"
+        pause
+
+        echo "# aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+        echo ">                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+        echo ">                                                         --profile=$aws_profile --region=$aws_region 2> /dev/null)"
+        aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                               --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                               --profile=$aws_profile --region=$aws_region 2> /dev/null)
+        echo "$aws_wordpress_url"
+        pause
+
+        echo "# euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+        echo ">                                                                 --profile=$euca_profile --region=$euca_region | cut -f4)"
+        euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                       --profile=$euca_profile --region=$euca_region | cut -f4)
+        echo "$euca_instance_id"
+        echo "#"
+        echo "# euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+        echo ">                                                --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+        euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                      --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+        echo "$euca_public_name"
+        echo "#"
+        echo "# euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+        echo ">                                              --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+        euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                    --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
+        echo "$euca_public_ip"
+        pause
+
+        echo "# euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+        echo ">                                                          --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+        echo ">                                                          --profile=$euca_profile --region=$euca_region 2> /dev/null)"
+        euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                                --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                                --profile=$euca_profile --region=$euca_region 2> /dev/null)
+        echo "$euca_wordpress_url"
+
+        next
+    else
+        aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                      --profile=$aws_profile --region=$aws_region | cut -f4)
+        aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                     --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+        aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                   --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+
+        aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                               --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                               --profile=$aws_profile --region=$aws_region 2> /dev/null)
+
+        euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                       --profile=$euca_profile --region=$euca_region | cut -f4)
+        euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                      --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+        euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                    --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
+
+        euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                                --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                                --profile=$euca_profile --region=$euca_region 2> /dev/null)
     fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Monitor Stack creation"
-echo "    - NOTE: This can take about 400 - 600 seconds"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws cloudformation describe-stacks"
-echo
-echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5"
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). View WordPress on AWS Instance"
+        echo "    - Display WordPress via text-mode browser"
+        echo "    - Observe current content from AWS"
+        echo "    - Alternatively, you can view WordPress via a graphical browser:"
+        echo "      $aws_wordpress_url"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "w3m -dump $aws_wordpress_url"
 
-if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+        run 50
+
+        if [ $choice = y ]; then
+
+            echo "# w3m -dump $aws_wordpress_url"
+            w3m -dump $aws_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+
+            next 50
+
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    clear
     echo
-    tput rev
-    echo "Already Complete!"
-    tput sgr0
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Backup WordPress on AWS Instance"
+    echo "    - Backup WordPress database"
+    echo "    - Copy database backup from Instance to AWS S3 Bucket (demo-$aws_account)"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF"
+    echo "mysqldump -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+    echo "aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
+    echo "EOF"
 
-    next 50
-
-else
     run 50
 
     if [ $choice = y ]; then
-        echo
-        echo "# aws cloudformation describe-stacks"
-        aws cloudformation describe-stacks
-        pause
-
         attempt=0
-        ((seconds=$create_default * $speed / 100))
-        while ((attempt++ <= create_attempts)); do
-            echo
-            echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5"
-            aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5
+        ((seconds=$login_default * $speed / 100))
+        while ((attempt++ <= login_attempts)); do
+            sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
+            sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
+            ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
+            ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
-            status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack 2> /dev/null | grep "^STACKS" | cut -f7)
-            if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
+            echo
+            echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name"
+            ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF
+echo "> mysqldump -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+mysqldump --compatible=mysql4 -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
+sleep 1
+echo
+echo "> aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
+aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read
+rm -f $tmpdir/$mysql_bakfile
+EOF
+            RC=$?
+            if [ $RC = 0 -o $RC = 1 ]; then
                 break
             else
                 echo
-                echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                echo -n "Not available ($RC). Waiting $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi
@@ -612,136 +1163,90 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List updated Resources"
-echo "    - Note addition of new group and instance"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "aws ec2 describe-security-groups"
-echo
-echo "aws ec2 describe-instances"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# aws ec2 describe-security-groups"
-    aws ec2 describe-security-groups
-    pause
-
-    echo "# aws ec2 describe-instances"
-    aws ec2 describe-instances
-
-    next
-fi
-
-
-if [ $mode = configure -a $created = y ]; then
-    ((++step))
-    wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                           --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' 2> /dev/null)
-
+if [ $mode = e -o $mode = b ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Configure WordPress"
-    echo "    - Configure WordPress via a browser:"
-    echo "      $wordpress_url"
-    echo "    - Using these values:"
-    if [ $target = euca ]; then
-        echo "      - Site Title: Eucalyptus Demo ($account) Account WordPress Demo"
-    else
-        echo "      - Site Title: AWS ($account) Account  WordPress Demo"
-    fi
-    echo "      - Username: demo"
-    echo "      - Password: <discover_password>"
-    echo "      - Your E-mail: <use your hp email address>"
-    echo
-    echo "============================================================"
-    echo
-
-    next 200
-fi
-
-
-if [ $mode = configure ]; then
-    ((++step))
-    wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                           --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' 2> /dev/null)
- 
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Create WordPress Blog Post"
-    echo "    - Create a Blog Post in WordPress via a browser:"
-    echo "      $wordpress_url"
-    echo "    - Using these values:"
-    echo "      - Username: demo"
-    echo "      - Password: <discover_password>"
-    echo "    - This is to show migration of the current database content"
-    echo
-    echo "============================================================"
-    echo
- 
-    # Look into creating this automatically via wp-cli or similar
-
-    next 200
-fi
-
-
-if [ $mode = restore ]; then
-    ((++step))
-    clear
-    echo
-    echo "============================================================"
-    echo
-    echo "$(printf '%2d' $step). Migrate WordPress"
+    echo "$(printf '%2d' $step). Restore WordPress on Eucalyptus Instance"
+    echo "    - Copy database backup from AWS S3 Bucket (demo-$aws_account) to Instance"
+    echo "    - Restore WordPress database"
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "$bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
+    echo "ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name << EOF"
+    echo "wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
+    echo "mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+    echo "EOF"
 
     run 50
 
     if [ $choice = y ]; then
-        echo
-        echo "# $bindir/demo-30-migrate.sh -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user"
-        $bindir/demo-30-migrate.sh $I $s $f -r $region -a $account -u $user -R $aws_region -A $aws_account -U $aws_user
+        attempt=0
+        ((seconds=$login_default * $speed / 100))
+        while ((attempt++ <= login_attempts)); do
+            sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
+            sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
+            ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
+
+            echo
+            echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name"
+            ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name << EOF
+echo "# wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
+wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
+sleep 1
+echo
+echo "# mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile
+EOF
+            RC=$?
+            if [ $RC = 0 -o $RC = 1 ]; then
+                break
+            else
+                echo
+                echo -n "Not available ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
 
         next
     fi
 fi
 
 
-if [ $mode = restore ]; then
-    ((++step))
-    wordpress_url=$(euform-describe-stacks WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
-
+((++step))
+if [ $mode = e -o $mode = b ]; then
     clear
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Confirm WordPress Migration"
-    echo "    - View WordPress via a browser:"
-    echo "      $wordpress_url"
+    echo "$(printf '%2d' $step). Confirm WordPress Migration on Eucalyptus Instance"
+    echo "    - Display WordPress via text-mode browser"
     echo "    - Confirm latest content from AWS is now running in Eucalyptus"
+    echo "    - Alternatively, you can view WordPress via a graphical browser:"
+    echo "      $euca_wordpress_url"
     echo
     echo "============================================================"
     echo
 
-    # Look into creating this automatically via wp-cli or similar
+    echo "Commands:"
+    echo
+    echo "w3m -dump $euca_wordpress_url"
 
-    next 200
+    run 50
+
+    if [ $choice = y ]; then
+
+        echo "# w3m -dump $euca_wordpress_url"
+        w3m -dump $euca_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+
+        next 50
+
+    fi
 fi
 
 

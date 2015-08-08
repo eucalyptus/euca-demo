@@ -40,6 +40,7 @@ delete_default=20
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
 user=${AWS_USER_NAME:-demo}
@@ -48,10 +49,12 @@ user=${AWS_USER_NAME:-demo}
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v]"
+    echo "              [-r region ] [-a account] [-u user]"
     echo "  -I          non-interactive"
     echo "  -s          slower: increase pauses by 25%"
     echo "  -f          faster: reduce pauses by 25%"
+    echo "  -v          verbose"
     echo "  -r region   Region (default: $region)"
     echo "  -a account  Account (default: $account)"
     echo "  -u user     User (default: $user)"
@@ -137,11 +140,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:? arg; do
+while getopts Isfvr:a:u:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
     u)  user="$OPTARG";;
@@ -182,13 +186,12 @@ if [ -z $user ]; then
     exit 14
 fi
 
-profile=$region-$account-$user
-profile_region=$profile@$region
+user_region=$region-$account-$user@$region
 
-if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-    echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
-    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
-    exit 20
+if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Demo ($user) User Euca2ools user!"
+    echo "Expected to find: [user $region-$account-$user] in ~/.euca/$region.ini"
+    exit 50
 fi
 
 if ! rpm -q --quiet w3m; then
@@ -202,55 +205,47 @@ fi
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User credentials"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
-
-((++step))
 demo_initialized=y
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
-echo
-echo "euca-describe-keypairs --filter \"key-name=demo\""
 
-next
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
+    echo "                     --region=$user_region | cut -f1,2,3"
+    echo
+    echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
+    echo "                       --region=$user_region"
 
-echo
-echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" | cut -f1,2,3"
-euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f1,2,3 | grep "$image_name" || demo_initialized=n
-pause
+    next
 
-echo "# euca-describe-keypairs --filter \"key-name=demo\""
-euca-describe-keypairs --filter "key-name=demo" | grep "demo" || demo_initialized=n
+    echo
+    echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
+    echo ">                      --region=$user_region | cut -f1,2,3"
+    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                         --region=$user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
+    pause
+
+    echo "# euca-describe-keypairs --filter \"key-name=demo\"\\"
+    echo ">                      --region=$user_region"
+    euca-describe-keypairs --filter "key-name=demo" \
+                           --region=$user_region | grep "demo" || euca_demo_initialized=n
+
+    next
+
+else
+    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                         --region=$user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
+    euca-describe-keypairs --filter "key-name=demo" \
+                           --region=$user_region | grep -s -q "demo" || euca_demo_initialized=n
+fi
 
 if [ $demo_initialized = n ]; then
     echo
@@ -262,108 +257,112 @@ if [ $demo_initialized = n ]; then
     exit 99
 fi
 
-next
-
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List initial Resources"
-echo "    - So we can compare with what this demo creates"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-groups"
-echo
-echo "euca-describe-instances"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
-    pause
-
-    echo "# euca-describe-instances"
-    euca-describe-instances
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List CloudFormation Stacks"
-echo "    - So we can compare with what this demo creates"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-describe-stacks"
-
-run 50
-
-if [ $choice = y ]; then
+    echo "============================================================"
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Simple CloudFormation template"
-echo "    - The Simple.template creates a security group and an instance,"
-echo "      which references a keypair and an image created externally"
-echo "      and passed in as parameters"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "more $templatesdir/Simple.template"
-
-run 50
-
-if [ $choice = y ]; then
+    echo "$(printf '%2d' $step). Display Simple CloudFormation template"
+    echo "    - The Simple.template creates a security group and an instance,"
+    echo "      which references a keypair and an image created externally"
+    echo "      and passed in as parameters"
     echo
-    echo "# more $templatesdir/Simple.template"
-    if [ $interactive = 1 ]; then
-        more $templatesdir/Simple.template
-    else
-        # This will iterate over the file in a manner similar to more, but non-interactive
-        ((rows=$(tput lines)-2))
-        lineno=0
-        while IFS= read line; do
-            echo "$line"
-            if [ $((++lineno % rows)) = 0 ]; then
-                tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
-                sleep 10
-                echo -e -n "\r                                \r"
-            fi
-        done < $templatesdir/Simple.template
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "more $templatesdir/Simple.template"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# more $templatesdir/Simple.template"
+        if [ $interactive = 1 ]; then
+            more $templatesdir/Simple.template
+        else
+            # This will iterate over the file in a manner similar to more, but non-interactive
+            ((rows=$(tput lines)-2))
+            lineno=0
+            while IFS= read line; do
+                echo "$line"
+                if [ $((++lineno % rows)) = 0 ]; then
+                    tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
+                    sleep 10
+                    echo -e -n "\r                                \r"
+                fi
+            done < $templatesdir/Simple.template
+        fi
+
+        next 200
     fi
-
-    next 200
 fi
 
 
 ((++step))
-image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" | cut -f2)
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List existing Resources"
+    echo "    - So we can compare with what this demo creates"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo 
+    echo "euca-describe-groups --region=$user_region"
+    echo
+    echo "euca-describe-instances --region=$user_region"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-groups --region=$user_region"
+        euca-describe-groups --region=$user_region
+        pause
+
+        echo "# euca-describe-instances --region=$user_region"
+        euca-describe-instances --region=$user_region
+
+        next
+    fi
+fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List existing CloudFormation Stacks"
+    echo "    - So we can compare with what this demo creates"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euform-describe-stacks --region=$user_region"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euform-describe-stacks --region=$user_region"
+        euform-describe-stacks --region=$user_region
+
+        next
+    fi
+fi
+
+
+((++step))
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region=$user_region | cut -f2)
 
 clear
 echo
@@ -375,9 +374,10 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
+echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \\"
+echo "                    --region=$user_region"
 
-if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks --region=$user_region SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -390,8 +390,10 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack"
-        euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack
+        echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \\"
+        echo ">                     --region=$user_region"
+        euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \
+                            --region=$user_region
 
         next
     fi
@@ -410,11 +412,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks"
+echo "euform-describe-stacks --region=$user_region"
 echo
-echo "euform-describe-stack-events SimpleDemoStack | head -5"
+echo "euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5"
 
-if [ "$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks --region=$user_region SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -427,18 +429,18 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks"
-        euform-describe-stacks
+        echo "# euform-describe-stacks --region=$user_region"
+        euform-describe-stacks --region=$user_region
         pause
 
         attempt=0
         ((seconds=$create_default * $speed / 100))
         while ((attempt++ <= create_attempts)); do
             echo
-            echo "# euform-describe-stack-events SimpleDemoStack | head -5"
-            euform-describe-stack-events SimpleDemoStack | head -5
+            echo "# euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5"
+            euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5
 
-            status=$(euform-describe-stacks SimpleDemoStack | grep "^STACK" | cut -f3)
+            status=$(euform-describe-stacks --region=$user_region SimpleDemoStack | grep "^STACK" | cut -f3)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -455,40 +457,42 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List updated Resources"
-echo "    - Note addition of new group and instance"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-groups"
-echo
-echo "euca-describe-instances"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List updated Resources"
+    echo "    - Note addition of new group and instance"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-groups --region=$user_region"
+    echo
+    echo "euca-describe-instances --region=$user_region"
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
+    run 50
 
-    next
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-groups --region=$user_region"
+        euca-describe-groups --region=$user_region
+        pause
+
+        echo "# euca-describe-instances --region=$user_region"
+        euca-describe-instances --region=$user_region
+
+        next
+    fi
 fi
 
 
 ((++step))
-instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance | cut -f3)
-public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
-public_ip=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f17)
+instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance --region=$user_region | cut -f3)
+public_name=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f4)
+public_ip=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f17)
 user=centos
 
 clear

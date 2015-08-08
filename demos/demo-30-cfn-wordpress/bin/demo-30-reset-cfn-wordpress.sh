@@ -42,9 +42,11 @@ delete_default=20
 
 interactive=1
 speed=100
-region=${AWS_DEFAULT_REGION#*@}
-account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-admin}
+verbose=0
+mode=e
+euca_region=${AWS_DEFAULT_REGION#*@}
+euca_account=${AWS_ACCOUNT_NAME:-demo}
+euca_user=${AWS_USER_NAME:-admin}
 aws_region=us-east-1
 aws_account=euca
 aws_user=demo
@@ -53,18 +55,20 @@ aws_user=demo
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
-    echo "                  [-r region ] [-a account] [-u user]"
-    echo "                  [-R aws_region] [-A aws_account] [-U aws_user]"
-    echo "  -I              non-interactive"
-    echo "  -s              slower: increase pauses by 25%"
-    echo "  -f              faster: reduce pauses by 25%"
-    echo "  -r region       Region (default: $region)"
-    echo "  -a account      Account (default: $account)"
-    echo "  -u user         User (default: $user)"
-    echo "  -R aws_region   Partner AWS Region (default: $aws_region)"
-    echo "  -A aws_account  Partner AWS Account (default: $aws_account)"
-    echo "  -U aws_user     Partner AWS Account (default: $aws_user)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-m mode]"
+    echo "                   [-r euca_region ] [-a euca_account] [-u euca_user]"
+    echo "                   [-R aws_region] [-A aws_account] [-U aws_user]"
+    echo "  -I               non-interactive"
+    echo "  -s               slower: increase pauses by 25%"
+    echo "  -f               faster: reduce pauses by 25%"
+    echo "  -v               verbose"
+    echo "  -m mode          mode: Configure a:AWS, e:Eucalyptus or b:Both (default: $mode)"
+    echo "  -r euca_region   Eucalyptus Region (default: $euca_region)"
+    echo "  -a euca_account  Eucalyptus Account (default: $euca_account)"
+    echo "  -u euca_user     Eucalyptus User (default: $euca_user)"
+    echo "  -R aws_region    AWS Region (default: $aws_region)"
+    echo "  -A aws_account   AWS Account (default: $aws_account)"
+    echo "  -U aws_user      AWS Account (default: $aws_user)"
 }
 
 run() {
@@ -147,14 +151,16 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:R:A:U:? arg; do
+while getopts Isfvm:r:a:u:R:A:U:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    r)  region="$OPTARG";;
-    a)  account="$OPTARG";;
-    u)  user="$OPTARG";;
+    v)  verbose=1;;
+    m)  mode="$OPTARG";;
+    r)  euca_region="$OPTARG";;
+    a)  euca_account="$OPTARG";;
+    u)  euca_user="$OPTARG";;
     R)  aws_region="$OPTARG";;
     A)  aws_account="$OPTARG";;
     U)  aws_user="$OPTARG";;
@@ -168,48 +174,46 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ -z $region ]; then
-    echo "-r region missing!"
-    echo "Could not automatically determine region, and it was not specified as a parameter"
+if [ -z $euca_region ]; then
+    echo "-r euca_region missing!"
+    echo "Could not automatically determine Eucalyptus region, and it was not specified as a parameter"
     exit 10
 else
-    case $region in
+    case $euca_region in
       us-east-1|us-west-1|us-west-2) ;&
       sa-east-1) ;&
       eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
-        target="aws"
-        aws_region=$region;;
-      *)
-        target="euca";;
+        echo "-r $euca_region invalid: Please specify a Eucalyptus region"
+        exit 11;;
     esac
 fi
 
-if [ -z $account ]; then
-    echo "-a account missing!"
-    echo "Could not automatically determine account, and it was not specified as a parameter"
+if [ -z $euca_account ]; then
+    echo "-a euca_account missing!"
+    echo "Could not automatically determine Eucalyptus account, and it was not specified as a parameter"
     exit 12
 fi
 
-if [ -z $user ]; then
-    echo "-u user missing!"
-    echo "Could not automatically determine user, and it was not specified as a parameter"
+if [ -z $euca_user ]; then
+    echo "-u euca_user missing!"
+    echo "Could not automatically determine Eucalyptus user, and it was not specified as a parameter"
     exit 14
 fi
 
 if [ -z $aws_region ]; then
     echo "-R aws_region missing!"
-    echo "Could not automatically determine aws_region, and it was not specified as a parameter"
+    echo "Could not automatically determine AWS region, and it was not specified as a parameter"
     exit 20
 else
     case $aws_region in
       us-east-1)
-        s3_domain=s3.amazonaws.com;;
+        aws_s3_domain=s3.amazonaws.com;;
       us-west-1|us-west-2) ;&
       sa-east-1) ;&
       eu-west-1|eu-central-1) ;&
       ap-northeast-1|ap-southeast-1|ap-southeast-2)
-        s3_domain=s3-$aws_region.amazonaws.com;;
+        aws_s3_domain=s3-$aws_region.amazonaws.com;;
     *)
         echo "-R $aws_region invalid: Please specify an AWS region"
         exit 21;;
@@ -228,32 +232,36 @@ if [ -z $aws_user ]; then
     exit 24
 fi
 
-if [ $target = euca ]; then
-    profile=$region-$account-$user
-    profile_region=$profile@$region
+euca_user_region=$euca_region-$euca_account-$euca_user@$euca_region
 
-    if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-        echo "Could not find $region Demo ($account) Account Demo ($user) User Euca2ools user!"
-        echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
-        exit 50
-    fi
-else
-    profile=$federation-$account-$user
-    profile_region=$profile@$region
+if ! grep -s -q "\[user $euca_region-$euca_account-$euca_user]" ~/.euca/$euca_region.ini; then
+    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($euca_user) User Euca2ools user!"
+    echo "Expected to find: [user $euca_region-$euca_account-$euca_user] in ~/.euca/$euca_region.ini"
+    exit 50
+fi
 
-    if ! grep -s -q "\[user $profile]" ~/.euca/$federation.ini; then
-        echo "Could not find AWS ($account) Account Demo ($user) User Euca2ools user!"
-        echo "Expected to find: [user $profile] in ~/.euca/$federation.ini"
-        exit 50
-    fi
+euca_profile=$euca_region-$euca_account-$euca_user
+
+if ! grep -s -q "\[profile $euca_profile]" ~/.aws/config; then
+    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($user) User AWSCLI profile!"
+    echo "Expected to find: [profile $euca_profile] in ~/.aws/config"
+    exit 51
+fi
+
+aws_user_region=$federation-$aws_account-$aws_user@$aws_region
+
+if ! grep -s -q "\[user $federation-$aws_account-$aws_user]" ~/.euca/$federation.ini; then
+    echo "Could not find AWS ($aws_account) Account Demo ($aws_user) User Euca2ools user!"
+    echo "Expected to find: [user $federation-$aws_account-$aws_user] in ~/.euca/$federation.ini"
+    exit 52
 fi
 
 aws_profile=$aws_account-$aws_user
 
 if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
-    echo "Could not find AWS ($aws_account) Partner Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find AWS ($aws_account) Account Demo ($aws_user) User AWSCLI profile!"
     echo "Expected to find: [profile $aws_profile] in ~/.aws/config"
-    exit 59
+    exit 53
 fi
 
 
@@ -262,228 +270,358 @@ fi
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-if [ $target = euca ]; then
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Demo ($user) User credentials"
-else
-    echo "$(printf '%2d' $step). Use AWS ($account) Account Demo ($user) User credentials"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the Stack"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-delete-stack WordPressDemoStack"
-
-if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+if [ $mode = a -o $mode = b ]; then
+    clear
     echo
-    tput rev
-    echo "Already Deleted!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# euform-delete-stack WordPressDemoStack"
-        euform-delete-stack WordPressDemoStack
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Monitor Stack deletion"
-echo "    - NOTE: This can take about 60 - 80 seconds"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-describe-stacks"
-echo
-echo "euform-describe-stack-events WordPressDemoStack | head -5"
-
-if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+    echo "============================================================"
     echo
-    tput rev
-    echo "Already Complete!"
-    tput sgr0
+    echo "$(printf '%2d' $step). Delete the AWS Stack"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euform-delete-stack --region $aws_user_region WordPressDemoStack"
 
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
+    if ! euform-describe-stacks --region $aws_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
         echo
-        echo "# euform-describe-stacks"
-        euform-describe-stacks
-        pause
+        tput rev
+        echo "Already Deleted!"
+        tput sgr0
 
-        attempt=0
-        ((seconds=$delete_default * $speed / 100))
-        while ((attempt++ <= delete_attempts)); do
+        next 50
+
+    else
+        run 50
+
+        if [ $choice = y ]; then
             echo
-            echo "# euform-describe-stack-events WordPressDemoStack | head -5"
-            euform-describe-stack-events WordPressDemoStack | head -5
+            echo "# euform-delete-stack WordPressDemoStack --region $aws_user_region"
+            euform-delete-stack WordPressDemoStack --region $aws_user_region
 
-            if ! euform-describe-stacks WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
-                break
-            else
-                echo
-                echo -n "Not finished ($RC). Waiting $seconds seconds..."
-                sleep $seconds
-                echo " Done"
-            fi
-        done
-
-        next
+            next
+        fi
     fi
 fi
 
 
 ((++step))
-terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Clear terminated Instances"
-echo "    - By default, Instances which have been terminated will remain in describe statement results"
-echo "      in a terminated state for an indeterminate period of time."
-echo "    - We want to re-terminate such instances, causing them to immediately disappear from results,"
-echo "      prior to re-running any demos"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
-echo
-echo "for instance_id in \$terminated_instance_ids; do"
-echo "    euca-terminate-instances \$instance_id &> /dev/null"
-echo "done"
-
-if [ -z "$terminated_instance_ids" ]; then
+if [ $mode = a -o $mode = b ]; then
+    clear
     echo
-    tput rev
-    echo "Already Cleared!"
-    tput sgr0
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Monitor AWS Stack deletion"
+    echo "    - NOTE: This can take about 300 - 400 seconds"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euform-describe-stacks --region $aws_user_region"
+    echo
+    echo "euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5"
 
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
+    if ! euform-describe-stacks --region $aws_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
         echo
-        echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" | grep \"^INSTANCE\" | cut -f2)"
-        terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
-        pause
+        tput rev
+        echo "Already Complete!"
+        tput sgr0
 
-        echo "# for instance_id in \$terminated_instance_ids; do"
-        echo ">     euca-terminate-instances \$instance_id &> /dev/null"
-        echo "> done"
-        for instance_id in $terminated_instance_ids; do
-            euca-terminate-instances $instance_id &> /dev/null
-        done
+        next 50
 
-        next
+    else
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# euform-describe-stacks --region $aws_user_region"
+            euform-describe-stacks --region $aws_user_region
+            pause
+
+            attempt=0
+            ((seconds=$delete_default * $speed / 100))
+            while ((attempt++ <= delete_attempts)); do
+                echo
+                echo "# euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5"
+                euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5
+
+                if ! euform-describe-stacks --region $aws_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+                    break
+                else
+                    echo
+                    echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+
+            next
+        fi
     fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List remaining Resources"
-echo "    - Confirm we are back to our initial set"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-groups"
-echo
-echo "euca-describe-instances"
+if [ $mode = a -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List remaining AWS Resources"
+        echo "    - Confirm we are back to our initial set"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euca-describe-groups --region $aws_user_region"
+        echo
+        echo "euca-describe-instances --region $aws_user_region"
 
-run 50
+        run 50
 
-if [ $choice = y ]; then
-    echo
-    echo "# euca-describe-groups"
-    euca-describe-groups
-    pause
+        if [ $choice = y ]; then
+            echo
+            echo "# euca-describe-groups --region $aws_user_region"
+            euca-describe-groups --region $aws_user_region
+            pause
 
-    echo "# euca-describe-instances"
-    euca-describe-instances
+            echo "# euca-describe-instances --region $aws_user_region"
+            euca-describe-instances --region $aws_user_region
 
-    next
+            next
+        fi
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List remaining CloudFormation Stacks"
-echo "    - Confirm we are back to our initial set"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euform-describe-stacks"
+if [ $mode = a -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List remaining AWS CloudFormation Stacks"
+        echo "    - Confirm we are back to our initial set"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euform-describe-stacks --region $aws_user_region"
 
-run 50
+        run 50
 
-if [ $choice = y ]; then
+        if [ $choice = y ]; then
+            echo
+            echo "# euform-describe-stacks --region $aws_user_region"
+            euform-describe-stacks --region $aws_user_region
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    clear
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Delete the Eucalyptus Stack"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euform-delete-stack --region $euca_user_region WordPressDemoStack"
+ 
+    if ! euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+        echo
+        tput rev
+        echo "Already Deleted!"
+        tput sgr0
+ 
+        next 50
+ 
+    else
+        run 50
+ 
+        if [ $choice = y ]; then
+            euform-delete-stack WordPressDemoStack --region $euca_user_region
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Monitor Eucalyptus Stack deletion"
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euform-describe-stacks --region $euca_user_region"
+    echo
+    echo "euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5"
+ 
+    if ! euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+        echo
+        tput rev
+        echo "Already Complete!"
+        tput sgr0
+ 
+        next 50
+ 
+    else
+        run 50
+            euform-describe-stacks --region $euca_user_region
+            pause
+ 
+            attempt=0
+            ((seconds=$delete_default * $speed / 100))
+            while ((attempt++ <= delete_attempts)); do
+                echo
+                echo "# euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5"
+                euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5
+ 
+                if ! euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+                    break
+                else
+                    echo
+                    echo -n "Not finished ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e ]; then
+ 
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Clear terminated Eucalyptus Instances"
+    echo "    - By default, Instances which have been terminated will remain in describe statement results"
+    echo "      in a terminated state for an indeterminate period of time."
+    echo "    - We want to re-terminate such instances, causing them to immediately disappear from results,"
+    echo "      prior to re-running any demos"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo
+    echo "for instance_id in \$terminated_instance_ids; do"
+    echo "    euca-terminate-instances --region $euca_user_region \$instance_id &> /dev/null"
+    echo "done"
+ 
+    if [ -z "$terminated_instance_ids" ]; then
+        echo
+        tput rev
+        echo "Already Cleared!"
+        tput sgr0
+ 
+        next 50
+ 
+    else
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            pause
+ 
+            echo "# for instance_id in \$terminated_instance_ids; do"
+            echo ">     euca-terminate-instances --region $euca_user_region \$instance_id &> /dev/null"
+            echo "> done"
+            for instance_id in $terminated_instance_ids; do
+                euca-terminate-instances --region $euca_user_region $instance_id &> /dev/null
+            done
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List remaining Eucalyptus Resources"
+        echo "    - Confirm we are back to our initial set"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euca-describe-groups --region $euca_user_region"
+        echo
+        echo "euca-describe-instances --region $euca_user_region"
+ 
+        run 50
+ 
+        if [ $choice = y ]; then
+            echo
+            echo "# euca-describe-groups --region $euca_user_region"
+            euca-describe-groups --region $euca_user_region
+            pause
+ 
+            echo "# euca-describe-instances --region $euca_user_region"
+            euca-describe-instances --region $euca_user_region
+ 
+            next
+        fi
+    fi
+fi
+ 
+ 
+((++step))
+if [ $mode = e -o $mode = b ]; then
+    if [ $verbose = 1 ]; then
+        clear
+        echo
+        echo "============================================================"
+        echo
+        echo "$(printf '%2d' $step). List remaining Eucalyptus CloudFormation Stacks"
+        echo "    - Confirm we are back to our initial set"
+        echo
+        echo "============================================================"
+        echo
+        echo "Commands:"
+        echo
+        echo "euform-describe-stacks --region $euca_user_region"
 
-    next
+        run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# euform-describe-stacks --region $euca_user_region"
+            euform-describe-stacks --region $euca_user_region
+
+            next
+        fi
+    fi
 fi
 
 
