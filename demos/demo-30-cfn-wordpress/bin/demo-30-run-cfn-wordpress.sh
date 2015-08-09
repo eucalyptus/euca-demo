@@ -904,7 +904,7 @@ if [ $mode = a -o $mode = b ]; then
     echo "Commands:"
     echo
     echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
-    echo "    \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date +%Y-%m-%d %H:%M)\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
+    echo "    \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date '+%Y-%m-%d %H:%M')\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
 
     run
 
@@ -914,10 +914,10 @@ if [ $mode = a -o $mode = b ]; then
         while ((attempt++ <= login_attempts)); do
             echo
             echo "# ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
-            echo ">     \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date +%Y-%m-%d %H:%M)\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
+            echo ">     \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date '+%Y-%m-%d %H:%M')\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
 
             ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \
-                "sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\"post\" --post_status=\"publish\" --post_title=\"Post on $(date +%Y-%m-%d %H:%M)\" --post_content=\"Post created with wp on $(hostname)\""
+                "sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\"post\" --post_status=\"publish\" --post_title=\"Post on $(date '+%Y-%m-%d %H:%M')\" --post_content=\"Post created with wp on $(hostname)\""
             RC=$?
             if [ $RC = 0 -o $RC = 1 ]; then
                 break
