@@ -1252,7 +1252,7 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name << EOF"
+    echo "ssh -T -i ~/.ssh/${euca_ssh_key}_id_rsa $euca_ssh_user@$euca_public_name << EOF"
     echo "wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
     echo "mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
     echo "EOF"
@@ -1269,8 +1269,8 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
             ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
             echo
-            echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name"
-            ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $ssh_user@$euca_public_name << EOF
+            echo "# ssh -i ~/.ssh/${euca_ssh_key}_id_rsa $euca_ssh_user@$euca_public_name"
+            ssh -T -i ~/.ssh/${euca_ssh_key}_id_rsa $euca_ssh_user@$euca_public_name << EOF
 echo "# wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
 wget http://$aws_s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
 sleep 1
