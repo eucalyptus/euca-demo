@@ -336,7 +336,7 @@ if [ $mode = a -o $mode = b ]; then
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
         echo "                       --region=$aws_user_region"
 
-        next
+        next 50
 
         echo
         echo "# euca-describe-keypairs --filter \"key-name=demo\" \\"
@@ -383,7 +383,7 @@ if [ $mode = e -o $mode = b ]; then
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
         echo "                       --region=$euca_user_region"
 
-        next
+        next 50
 
         echo
         echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
@@ -489,7 +489,7 @@ if [ $verbose = 1 ]; then
             done < $tmpdir/WordPress_Single_Instance_Eucalyptus.template
         fi
 
-        next 200
+        next
     fi
 fi
 
@@ -734,7 +734,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "aws_wordpress_url=\$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
 
-    next
+    next 50
 
     echo
     echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)"
@@ -794,7 +794,7 @@ if [ $mode = a -o $mode = b ]; then
         next 50
 
     else
-        run
+        run 50
 
         if [ $choice = y ]; then
             attempt=0
@@ -855,7 +855,7 @@ if [ $mode = a -o $mode = b ]; then
         next 50
 
     else
-        run
+        run 50
 
         if [ $choice = y ]; then
             attempt=0
@@ -906,7 +906,7 @@ if [ $mode = a -o $mode = b ]; then
     echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
     echo "    \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date '+%Y-%m-%d %H:%M')\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         attempt=0
@@ -1175,7 +1175,7 @@ if [ $verbose = 1 ]; then
     echo "euca_wordpress_url=\$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     echo
 
-    next
+    next 50
 
     echo
     echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)"

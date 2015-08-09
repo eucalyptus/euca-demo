@@ -320,7 +320,7 @@ if [ $mode = a -o $mode = b ]; then
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
         echo "                           --profile $aws_profile --region $aws_region"
 
-        next
+        next 50
 
         echo
         echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\"\\"
@@ -367,7 +367,7 @@ if [ $mode = e -o $mode = b ]; then
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
         echo "                           --profile $euca_profile --region $euca_region"
 
-        next
+        next 50
 
         echo
         echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
@@ -472,7 +472,7 @@ if [ $verbose = 1 ]; then
             done < $tmpdir/WordPress_Single_Instance_Eucalyptus.template
         fi
 
-        next 200
+        next
     fi
 fi
 
@@ -573,7 +573,7 @@ if [ $mode = a -o $mode = b ]; then
         next 50
 
     else
-        run 50
+        run
 
         if [ $choice = y ]; then
             echo
@@ -725,7 +725,7 @@ if [ $verbose = 1 ]; then
     echo "                                                        --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
     echo "                                                        --profile=$aws_profile --region=$aws_region 2> /dev/null)"
 
-    next
+    next 50
 
     echo
     echo "# aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
@@ -800,7 +800,7 @@ if [ $mode = a -o $mode = b ]; then
         next 50
 
     else
-        run
+        run 50
 
         if [ $choice = y ]; then
             attempt=0
@@ -861,7 +861,7 @@ if [ $mode = a -o $mode = b ]; then
         next 50
 
     else
-        run
+        run 50
 
         if [ $choice = y ]; then
             attempt=0
@@ -912,7 +912,7 @@ if [ $mode = a -o $mode = b ]; then
     echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
     echo "    \"sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress --post_type=\\\"post\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date '+%Y-%m-%d %H:%M')\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
 
-    run
+    run 50
 
     if [ $choice = y ]; then
         attempt=0
@@ -957,6 +957,8 @@ if [ $mode = e -o $mode = b ]; then
         echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
         echo
         echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+
+        run 50
 
         if [ $choice = y ]; then
             echo
@@ -1032,7 +1034,7 @@ if [ $mode = e -o $mode = b ]; then
         next 50
 
     else
-        run 50
+        run
 
         if [ $choice = y ]; then
             echo
@@ -1183,7 +1185,7 @@ if [ $verbose = 1 ]; then
     echo "                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
     echo "                                                         --profile=$euca_profile --region=$euca_region 2> /dev/null)"
 
-    next
+    next 50
 
     echo
     echo "# euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
