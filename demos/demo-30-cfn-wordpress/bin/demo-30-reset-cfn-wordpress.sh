@@ -530,7 +530,7 @@ fi
  
  
 ((++step))
-if [ $mode = e ]; then
+if [ $mode = e -o $mode = b ]; then
     clear
     echo
     echo "============================================================"
