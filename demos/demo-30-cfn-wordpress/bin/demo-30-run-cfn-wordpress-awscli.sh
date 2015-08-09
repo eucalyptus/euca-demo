@@ -362,16 +362,16 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
         echo "                           --profile $euca_profile --region $euca_region"
- 
+
         next
- 
+
         echo
         echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
         echo ">                         --profile $euca_profile --region $euca_region | cut -f1,3,4"
         aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
                                 --profile $euca_profile --region $euca_region | cut -f1,3,4  | grep "$image_name" || euca_demo_initialized=n
         pause
- 
+
         echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
         echo ">                            --profile $euca_profile --region $euca_region"
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
@@ -384,7 +384,7 @@ if [ $mode = e -o $mode = b ]; then
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
                                    --profile $euca_profile --region $euca_region | grep -s -q "demo" || euca_demo_initialized=n
     fi
- 
+
     if [ $euca_demo_initialized = n ]; then
         echo
         echo "At least one Eucalyptus prerequisite for this script was not met."
@@ -486,7 +486,7 @@ if [ $mode = a -o $mode = b ]; then
         echo "============================================================"
         echo
         echo "Commands:"
-        echo 
+        echo
         echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
         echo
         echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region"
@@ -501,7 +501,7 @@ if [ $mode = a -o $mode = b ]; then
 
             echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region"
             aws ec2 describe-instances --profile $aws_profile --region $aws_region
-    
+
             next
         fi
     fi
@@ -699,11 +699,140 @@ fi
 
 
 ((++step))
-if [ $mode = a -o $mode = b ]; then
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Obtain AWS Instance and Blog details"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+    echo "                                                               --profile=$aws_profile --region=$aws_region | cut -f4)"
+    echo "aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+    echo "                                              --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+    echo "aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+    echo "                                            --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+    echo
+    echo "aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+    echo "                                                        --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo "                                                        --profile=$aws_profile --region=$aws_region 2> /dev/null)"
+
+    next
+
+    echo
+    echo "# aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+    echo ">                                                                --profile=$aws_profile --region=$aws_region | cut -f4)"
+    aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                  --profile=$aws_profile --region=$aws_region | cut -f4)
+    echo "$aws_instance_id"
+    echo "#"
+    echo "# aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+    echo ">                                               --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+    aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                 --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+    echo "$aws_public_name"
+    echo "#"
+    echo "# aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
+    echo ">                                             --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+    aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                               --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+    echo "$aws_public_ip"
+    pause
+
+    echo "# aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+    echo ">                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo ">                                                         --profile=$aws_profile --region=$aws_region 2> /dev/null)"
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                           --profile $aws_profile --region $aws_region 2> /dev/null)
+                                                           --profile=$aws_profile --region=$aws_region 2> /dev/null)
+    echo "$aws_wordpress_url"
 
+    next
+else
+    aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                  --profile=$aws_profile --region=$aws_region | cut -f4)
+    aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                                 --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+    aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
+                                               --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+
+    aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                           --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                           --profile=$aws_profile --region=$aws_region 2> /dev/null)
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Install WordPress Command-Line Tools on AWS Instance"
+    echo "    - This is used to automate WordPress initialization and posting"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF"
+    echo "curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null"
+    echo "sudo chmod +x /usr/local/bin/wp"
+    echo "EOF"
+
+    if ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name "wp --info" | grep -s -q "WP-CLI version"; then
+        echo
+        tput rev
+        echo "Already Installed!"
+        tput sgr0
+
+        next 50
+
+    else
+        run
+
+        if [ $choice = y ]; then
+            attempt=0
+            ((seconds=$login_default * $speed / 100))
+            while ((attempt++ <= login_attempts)); do
+                sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
+                sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
+                ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
+                ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
+
+                echo
+                echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name"
+                ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF
+echo "> curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null"
+curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null
+sleep 1
+echo
+echo "> sudo chmod +x /usr/local/bin/wp"
+sudo chmod +x /usr/local/bin/wp
+EOF
+                RC=$?
+                if [ $RC = 0 -o $RC = 1 ]; then
+                    break
+                else
+                    echo
+                    echo -n "Not available ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+if [ $mode = a -o $mode = b ]; then
     if [ $aws_stack_created = y ]; then
         clear
         echo
@@ -722,6 +851,8 @@ if [ $mode = a -o $mode = b ]; then
         echo
 
         # Look into creating this automatically via wp-cli or similar
+        # See this URL, which has some details on this: https://www.digitalocean.com/community/tutorials/how-to-use-wp-cli-to-manage-your-wordpress-site-from-the-command-line
+        # wp core install --url="$aws_public_name"  --title="Demo ($aws_region)" --admin_user="$mysql_user" --admin_password="$mysql_password" --admin_email="$wordpress_email"
 
         next 200
     fi
@@ -746,6 +877,7 @@ if [ $mode = a -o $mode = b ]; then
     echo
 
     # Look into creating this automatically via wp-cli or similar
+    # wp post create --post_status=publish --post_title="Post on $(date" --edit
 
     next 200
 fi
@@ -764,26 +896,26 @@ if [ $mode = e -o $mode = b ]; then
         echo "============================================================"
         echo
         echo "Commands:"
-        echo 
+        echo
         echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
         echo
         echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
- 
+
         if [ $choice = y ]; then
             echo
             echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
             aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
             pause
- 
+
             echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
             aws ec2 describe-instances --profile $euca_profile --region $euca_region
- 
+
             next
         fi
     fi
 fi
- 
- 
+
+
 ((++step))
 if [ $mode = e -o $mode = b ]; then
     if [ $verbose = 1 ]; then
@@ -799,20 +931,20 @@ if [ $mode = e -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
- 
+
         run 50
- 
+
         if [ $choice = y ]; then
             echo
             echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
             aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
- 
+
             next
         fi
     fi
 fi
- 
- 
+
+
 ((++step))
 if [ $mode = e -o $mode = b ]; then
     clear
@@ -834,17 +966,17 @@ if [ $mode = e -o $mode = b ]; then
     echo "                                             ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \\"
     echo "                                --capabilities CAPABILITY_IAM \\"
     echo "                                --profile $euca_profile --region $euca_region"
- 
+
         echo
         tput rev
         echo "Already Created!"
         tput sgr0
- 
+
         next 50
- 
+
     else
         run 50
- 
+
         if [ $choice = y ]; then
             echo
             echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
@@ -867,15 +999,15 @@ if [ $mode = e -o $mode = b ]; then
                                                          ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \
                                             --capabilities CAPABILITY_IAM \
                                             --profile $euca_profile --region $euca_region
- 
+
             euca_stack_created=y
- 
+
             next
         fi
     fi
 fi
- 
- 
+
+
 ((++step))
 if [ $mode = e -o $mode = b ]; then
     clear
@@ -893,23 +1025,23 @@ if [ $mode = e -o $mode = b ]; then
     echo
     echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
     echo "                                         --profile $euca_profile --region $euca_region"
- 
+
         echo
         tput rev
         echo "Already Complete!"
         tput sgr0
- 
+
         next 50
- 
+
     else
         run 50
- 
+
         if [ $choice = y ]; then
             echo
             echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
             aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
             pause
- 
+
             attempt=0
             ((seconds=$create_default * $speed / 100))
             while ((attempt++ <= create_attempts)); do
@@ -918,7 +1050,7 @@ if [ $mode = e -o $mode = b ]; then
                 echo ">                                          --profile $euca_profile --region $euca_region"
                 aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
                                                          --profile $euca_profile --region $euca_region
- 
+
                 status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region 2> /dev/null | grep "^STACKS" | cut -f7)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                     break
@@ -929,13 +1061,13 @@ if [ $mode = e -o $mode = b ]; then
                     echo " Done"
                 fi
             done
- 
+
             next
         fi
     fi
 fi
- 
- 
+
+
 ((++step))
 if [ $mode = e -o $mode = b ]; then
     if [ $verbose = 1 ]; then
@@ -953,141 +1085,89 @@ if [ $mode = e -o $mode = b ]; then
         echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
         echo
         echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
- 
+
         run 50
- 
+
         if [ $choice = y ]; then
             echo
             echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
             aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
             pause
- 
+
             echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
             aws ec2 describe-instances --profile $euca_profile --region $euca_region
- 
+
             next
         fi
     fi
 fi
- 
+
 
 ((++step))
-if [ $mode = e -o $mode = b -o $mode = m ]; then
-    if [ $verbose = 1 ]; then
-        clear
-        echo
-        echo "============================================================"
-        echo
-        echo "$(printf '%2d' $step). Obtain Instance and Blog details"
-        echo
-        echo "============================================================"
-        echo
-        echo "Commands:"
-        echo
-        echo "aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-        echo "                                                               --profile=$aws_profile --region=$aws_region | cut -f4)"
-        echo "aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-        echo "                                              --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
-        echo "aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-        echo "                                            --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
-        echo
-        echo "aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-        echo "                                                        --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
-        echo "                                                        --profile=$aws_profile --region=$aws_region 2> /dev/null)"
-        echo
-        echo "euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-        echo "                                                                --profile=$euca_profile --region=$euca_region | cut -f4)"
-        echo "euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-        echo "                                               --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
-        echo "euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-        echo "                                             --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
-        echo
-        echo "euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-        echo "                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
-        echo "                                                         --profile=$euca_profile --region=$euca_region 2> /dev/null)"
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Obtain Eucalyptus Instance and Blog details"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+    echo "                                                                --profile=$euca_profile --region=$euca_region | cut -f4)"
+    echo "euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+    echo "                                               --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+    echo "euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+    echo "                                             --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+    echo
+    echo "euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+    echo "                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo "                                                         --profile=$euca_profile --region=$euca_region 2> /dev/null)"
 
-        next
+    next
 
-        echo
-        echo "# aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-        echo ">                                                                --profile=$aws_profile --region=$aws_region | cut -f4)"
-        aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                      --profile=$aws_profile --region=$aws_region | cut -f4)
-        echo "$aws_instance_id"
-        echo "#"
-        echo "# aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-        echo ">                                               --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
-        aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                     --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
-        echo "$aws_public_name"
-        echo "#"
-        echo "# aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-        echo ">                                             --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
-        aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                   --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
-        echo "$aws_public_ip"
-        pause
+    echo
+    echo "# euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
+    echo ">                                                                 --profile=$euca_profile --region=$euca_region | cut -f4)"
+    euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                   --profile=$euca_profile --region=$euca_region | cut -f4)
+    echo "$euca_instance_id"
+    echo "#"
+    echo "# euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+    echo ">                                                --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+    euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                  --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+    echo "$euca_public_name"
+    echo "#"
+    echo "# euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
+    echo ">                                              --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+    euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
+    echo "$euca_public_ip"
+    pause
 
-        echo "# aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-        echo ">                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
-        echo ">                                                         --profile=$aws_profile --region=$aws_region 2> /dev/null)"
-        aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                                               --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                               --profile=$aws_profile --region=$aws_region 2> /dev/null)
-        echo "$aws_wordpress_url"
-        pause
+    echo "# euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
+    echo ">                                                          --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo ">                                                          --profile=$euca_profile --region=$euca_region 2> /dev/null)"
+    euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                            --profile=$euca_profile --region=$euca_region 2> /dev/null)
+    echo "$euca_wordpress_url"
 
-        echo "# euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-        echo ">                                                                 --profile=$euca_profile --region=$euca_region | cut -f4)"
-        euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                       --profile=$euca_profile --region=$euca_region | cut -f4)
-        echo "$euca_instance_id"
-        echo "#"
-        echo "# euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-        echo ">                                                --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
-        euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                      --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
-        echo "$euca_public_name"
-        echo "#"
-        echo "# euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-        echo ">                                              --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
-        euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                    --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
-        echo "$euca_public_ip"
-        pause
+    next
+else
+    euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                   --profile=$euca_profile --region=$euca_region | cut -f4)
+    euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                  --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+    euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
+                                                --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
 
-        echo "# euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-        echo ">                                                          --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
-        echo ">                                                          --profile=$euca_profile --region=$euca_region 2> /dev/null)"
-        euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                                                --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                                --profile=$euca_profile --region=$euca_region 2> /dev/null)
-        echo "$euca_wordpress_url"
-
-        next
-    else
-        aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                      --profile=$aws_profile --region=$aws_region | cut -f4)
-        aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                     --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
-        aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                   --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
-
-        aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                                               --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                               --profile=$aws_profile --region=$aws_region 2> /dev/null)
-
-        euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                       --profile=$euca_profile --region=$euca_region | cut -f4)
-        euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                      --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
-        euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                    --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
-
-        euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
-                                                                --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                                --profile=$euca_profile --region=$euca_region 2> /dev/null)
-    fi
+    euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
+                                                            --profile=$euca_profile --region=$euca_region 2> /dev/null)
 fi
 
 
