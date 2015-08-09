@@ -871,7 +871,7 @@ if [ $mode = a -o $mode = b ]; then
                 echo "# ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
                 echo ">     \"sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\\\"$aws_wordpress_url\\\" --title=\\\"Demo ($aws_account)\\\" --admin_user=\\\"$wordpress_admin_user\\\" --admin_password=\\\"$wordpress_admin_password\\\" --admin_email=\\\"$wordpress_admin_email\\\"\""
                 ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \
-                    "sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\"$aws_wordpress_url\" --title=\"Demo ($aws_region)\" --admin_user=\"$wordpress_admin_user\" --admin_password=\"$wordpress_admin_password\" --admin_email=\"$wordpress_admin_email\""
+                    "sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\"$aws_wordpress_url\" --title=\"Demo ($aws_account)\" --admin_user=\"$wordpress_admin_user\" --admin_password=\"$wordpress_admin_password\" --admin_email=\"$wordpress_admin_email\""
                 RC=$?
                 if [ $RC = 0 -o $RC = 1 ]; then
                     break
