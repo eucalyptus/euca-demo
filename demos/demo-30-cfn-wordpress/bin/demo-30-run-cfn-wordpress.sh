@@ -38,6 +38,10 @@ mysql_password=password
 mysql_db=wordpressdb
 mysql_bakfile=$mysql_db.bak
 
+wordpress_admin_user=demo
+wordpress_admin_password=JohannesGutenberg-1455
+wordpress_email=mcrawford@hp.com
+
 step=0
 speed_max=400
 run_default=10
@@ -47,7 +51,7 @@ next_default=5
 euca_stack_created=n
 aws_stack_created=n
 
-create_attempts=24
+create_attempts=30
 create_default=20
 login_attempts=6
 login_default=20
@@ -626,7 +630,7 @@ if [ $mode = a -o $mode = b ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Monitor AWS Stack creation"
-    echo "    - NOTE: This can take about 400 - 500 seconds"
+    echo "    - NOTE: This can take about 360 - 600 seconds"
     echo
     echo "============================================================"
     echo
@@ -754,10 +758,15 @@ if [ $verbose = 1 ]; then
 else
     aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
     aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
-    ews_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
 
     aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
+
+sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
+sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
+ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
+ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
 
 ((++step))
@@ -773,12 +782,10 @@ if [ $mode = a -o $mode = b ]; then
     echo
     echo "Commands:"
     echo
-    echo "ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF"
-    echo "curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null"
-    echo "sudo chmod +x /usr/local/bin/wp"
-    echo "EOF"
+    echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+    echo "    \"sudo curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp; sudo chmod +x /usr/local/bin/wp\""
 
-    if ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name "wp --info" | grep -s -q "WP-CLI version"; then
+    if ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name "wp --info" 2> /dev/null | grep -s -q "WP-CLI version"; then
         echo
         tput rev
         echo "Already Installed!"
@@ -793,21 +800,11 @@ if [ $mode = a -o $mode = b ]; then
             attempt=0
             ((seconds=$login_default * $speed / 100))
             while ((attempt++ <= login_attempts)); do
-                sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
-                sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
-                ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
-                ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
                 echo
-                echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name"
-                ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF
-echo "> curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null"
-curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp > /dev/null
-sleep 1
-echo
-echo "> sudo chmod +x /usr/local/bin/wp"
-sudo chmod +x /usr/local/bin/wp
-EOF
+                echo "# ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+                echo ">     \"sudo curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp; sudo chmod +x /usr/local/bin/wp\""
+                ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \
+                    "sudo curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp; sudo chmod +x /usr/local/bin/wp"
                 RC=$?
                 if [ $RC = 0 -o $RC = 1 ]; then
                     break
@@ -827,28 +824,61 @@ fi
 
 ((++step))
 if [ $mode = a -o $mode = b ]; then
-    if [ $aws_stack_created = y ]; then
-        clear
-        echo
-        echo "============================================================"
-        echo
-        echo "$(printf '%2d' $step). Configure WordPress on AWS Instance"
-        echo "    - Configure WordPress via a browser:"
-        echo "      $aws_wordpress_url"
-        echo "    - Using these values:"
-        echo "      - Site Title: Demo ($aws_account)"
-        echo "      - Username: $mysql_user"
-        echo "      - Password: <discover_password>"
-        echo "      - Your E-mail: <your email address>"
-        echo
-        echo "============================================================"
-        echo
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Initialize WordPress on AWS Instance"
+    echo "    - Initialize WordPress via wp command-line tool"
+    echo "    - OR - skip this step, and..."
+    echo "    - Initialize WordPress via a browser:"
+    echo "      $aws_wordpress_url"
+    echo "    - Using these values:"
+    echo "      - Site Title: Demo ($aws_account)"
+    echo "      - Username: $wordpress_admin_user"
+    echo "      - Password: $wordpress_admin_password"
+    echo "      - Your E-mail: $wordpress_admin_email"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+    echo "    \"sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\\\"$aws_wordpress_url\\\" --title=\\\"Demo ($aws_account)\\\" --admin_user=\\\"$wordpress_admin_user\\\" --admin_password=\\\"$wordpress_admin_password\\\" --admin_email=\\\"$wordpress_admin_email\\\"\""
 
-        # Look into creating this automatically via wp-cli or similar
-        # See this URL, which has some details on this: https://www.digitalocean.com/community/tutorials/how-to-use-wp-cli-to-manage-your-wordpress-site-from-the-command-line
-        # wp core install --url="$aws_public_name"  --title="Demo ($aws_region)" --admin_user="$mysql_user" --admin_password="$mysql_password" --admin_email="$wordpress_email"
+    if ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name "wp core is-installed --path=/var/www/html/wordpress" 2> /dev/null; then
+        echo
+        tput rev
+        echo "Already Initialized!"
+        tput sgr0
 
-        next 200
+        next 50
+
+    else
+        run
+
+        if [ $choice = y ]; then
+            attempt=0
+            ((seconds=$login_default * $speed / 100))
+            while ((attempt++ <= login_attempts)); do
+                echo
+                echo "# ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+                echo ">     \"sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\\\"$aws_wordpress_url\\\" --title=\\\"Demo ($aws_account)\\\" --admin_user=\\\"$wordpress_admin_user\\\" --admin_password=\\\"$wordpress_admin_password\\\" --admin_email=\\\"$wordpress_admin_email\\\"\""
+                ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \
+                    "sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress --url=\"$aws_wordpress_url\" --title=\"Demo ($aws_region)\" --admin_user=\"$wordpress_admin_user\" --admin_password=\"$wordpress_admin_password\" --admin_email=\"$wordpress_admin_email\""
+                RC=$?
+                if [ $RC = 0 -o $RC = 1 ]; then
+                    break
+                else
+                    echo
+                    echo -n "Not available ($RC). Waiting $seconds seconds..."
+                    sleep $seconds
+                    echo " Done"
+                fi
+            done
+
+            next
+        fi
     fi
 fi
 
@@ -860,20 +890,47 @@ if [ $mode = a -o $mode = b ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Create WordPress Blog Post on AWS Instance"
-    echo "    - Create a Blog Post in WordPress via a browser:"
+    echo "    - Create a WordPress Post via wp command-line tool"
+    echo "    - OR - skip this step, and..."
+    echo "    - Create a WordPress Post via a browser:"
     echo "      $aws_wordpress_url"
     echo "    - Login using these values:"
-    echo "      - Username: $mysql_user"
-    echo "      - Password: <discover_password>"
-    echo "    - This is to show migration of the current database content"
+    echo "      - Username: $wordpress_admin_user"
+    echo "      - Password: $wordpress_admin_password"
+    echo "    - This is to show migration of current database content"
     echo
     echo "============================================================"
     echo
+    echo "Commands:"
+    echo
+    echo "ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+    echo "    \"sudo /usr/local/bin/wp core post create --path=/var/www/html/wordpress --post_type=\\\"page\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date)\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
 
-    # Look into creating this automatically via wp-cli or similar
-    # wp post create --post_status=publish --post_title="Post on $(date" --edit
+    run
 
-    next 200
+    if [ $choice = y ]; then
+        attempt=0
+        ((seconds=$login_default * $speed / 100))
+        while ((attempt++ <= login_attempts)); do
+            echo
+            echo "# ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \\"
+            echo ">     \"sudo /usr/local/bin/wp core post create --path=/var/www/html/wordpress --post_type=\\\"page\\\" --post_status=\\\"publish\\\" --post_title=\\\"Post on $(date)\\\" --post_content=\\\"Post created with wp on $(hostname)\\\"\""
+
+            ssh -t -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name \
+                "sudo /usr/local/bin/wp core post create --path=/var/www/html/wordpress --post_type=\"page\" --post_status=\"publish\" --post_title=\"Post on $(date)\" --post_content=\"Post created with wp on $(hostname)\"\"
+            RC=$?
+            if [ $RC = 0 -o $RC = 1 ]; then
+                break
+            else
+                echo
+                echo -n "Not available ($RC). Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 
@@ -1013,7 +1070,7 @@ if [ $mode = e -o $mode = b ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Monitor Eucalyptus Stack creation"
-    echo "    - NOTE: This can take about 400 - 500 seconds"
+    echo "    - NOTE: This can take about 360 - 600 seconds"
     echo
     echo "============================================================"
     echo
@@ -1147,6 +1204,11 @@ else
     euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
+sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
+sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
+ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
+
 
 ((++step))
 if [ $mode = e -o $mode = b -o $mode = m ]; then
@@ -1206,11 +1268,6 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
         attempt=0
         ((seconds=$login_default * $speed / 100))
         while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
             echo
             echo "# ssh -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name"
             ssh -T -i ~/.ssh/${aws_ssh_key}_id_rsa $aws_ssh_user@$aws_public_name << EOF
@@ -1263,11 +1320,6 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
         attempt=0
         ((seconds=$login_default * $speed / 100))
         while ((attempt++ <= login_attempts)); do
-            sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
-            sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
-            ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
-            ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
-
             echo
             echo "# ssh -i ~/.ssh/${euca_ssh_key}_id_rsa $euca_ssh_user@$euca_public_name"
             ssh -T -i ~/.ssh/${euca_ssh_key}_id_rsa $euca_ssh_user@$euca_public_name << EOF
