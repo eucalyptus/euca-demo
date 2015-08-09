@@ -62,7 +62,7 @@ usage () {
     echo "  -s               slower: increase pauses by 25%"
     echo "  -f               faster: reduce pauses by 25%"
     echo "  -v               verbose"
-    echo "  -m mode          mode: Configure a:AWS, e:Eucalyptus or b:Both (default: $mode)"
+    echo "  -m mode          mode: Reset a=AWS, e=Eucalyptus or b=Both (default: $mode)"
     echo "  -r euca_region   Eucalyptus Region (default: $euca_region)"
     echo "  -a euca_account  Eucalyptus Account (default: $euca_account)"
     echo "  -u euca_user     Eucalyptus User (default: $euca_user)"
@@ -173,6 +173,19 @@ shift $(($OPTIND - 1))
 
 
 #  4. Validate environment
+
+if [ -z $mode ]; then
+    echo "-m mode missing!"
+    echo "Could not automatically determine mode, and it was not specified as a parameter"
+    exit 8
+else
+    case $mode in
+      a|e|b) ;;
+      *)
+        echo "-m $mode invalid: Valid modes are a=AWS (only), e=Eucalyptus (only), b=Both"
+        exit 9;;
+    esac
+fi
 
 if [ -z $euca_region ]; then
     echo "-r euca_region missing!"
