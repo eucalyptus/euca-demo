@@ -513,7 +513,6 @@ fi
  
 ((++step))
 if [ $mode = e ]; then
- 
     clear
     echo
     echo "============================================================"
@@ -528,11 +527,15 @@ if [ $mode = e ]; then
     echo
     echo "Commands:"
     echo
+    echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
+    echo "                                                  --region=$euca_user_region | grep \"^INSTANCE\" | cut -f2)"
     echo
     echo "for instance_id in \$terminated_instance_ids; do"
     echo "    euca-terminate-instances --region $euca_user_region \$instance_id &> /dev/null"
     echo "done"
  
+    terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
+                                                      --region=$euca_user_region | grep "^INSTANCE" | cut -f2)
     if [ -z "$terminated_instance_ids" ]; then
         echo
         tput rev
@@ -546,6 +549,10 @@ if [ $mode = e ]; then
  
         if [ $choice = y ]; then
             echo
+            echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
+            echo ">                                                   --region=$euca_user_region | grep \"^INSTANCE\" | cut -f2)"
+            terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
+                                                              --region=$euca_user_region | grep "^INSTANCE" | cut -f2)
             pause
  
             echo "# for instance_id in \$terminated_instance_ids; do"

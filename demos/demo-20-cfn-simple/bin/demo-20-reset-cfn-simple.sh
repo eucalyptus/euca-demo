@@ -290,9 +290,6 @@ fi
 
 
 ((++step))
-terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
-                                                  --region=$user_region | grep "^INSTANCE" | cut -f2)
-
 clear
 echo
 echo "============================================================"
@@ -314,6 +311,8 @@ echo "for instance_id in \$terminated_instance_ids; do"
 echo "    euca-terminate-instances --region=$user_region \$instance_id &> /dev/null"
 echo "done"
 
+terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
+                                                  --region=$user_region | grep "^INSTANCE" | cut -f2)
 if [ -z "$terminated_instance_ids" ]; then
     echo
     tput rev
