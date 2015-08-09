@@ -309,8 +309,8 @@ if [ $mode = a -o $mode = b ]; then
 
         if [ $choice = y ]; then
             echo
-            echo "# euform-delete-stack WordPressDemoStack --region $aws_user_region"
-            euform-delete-stack WordPressDemoStack --region $aws_user_region
+            echo "# euform-delete-stack --region $aws_user_region WordPressDemoStack"
+            euform-delete-stack --region $aws_user_region WordPressDemoStack 2> /dev/null
 
             next
         fi
@@ -357,7 +357,7 @@ if [ $mode = a -o $mode = b ]; then
             while ((attempt++ <= delete_attempts)); do
                 echo
                 echo "# euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5"
-                euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5
+                euform-describe-stack-events --region $aws_user_region WordPressDemoStack 2> /dev/null | head -5
 
                 if ! euform-describe-stacks --region $aws_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                     break
@@ -465,7 +465,8 @@ if [ $mode = e -o $mode = b ]; then
         run 50
  
         if [ $choice = y ]; then
-            euform-delete-stack WordPressDemoStack --region $euca_user_region
+            echo "# euform-delete-stack --region $euca_user_region WordPressDemoStack"
+            euform-delete-stack --region $euca_user_region WordPressDemoStack 2> /dev/null
  
             next
         fi
@@ -506,7 +507,7 @@ if [ $mode = e -o $mode = b ]; then
             while ((attempt++ <= delete_attempts)); do
                 echo
                 echo "# euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5"
-                euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5
+                euform-describe-stack-events --region $euca_user_region WordPressDemoStack 2> /dev/null | head -5
  
                 if ! euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                     break
