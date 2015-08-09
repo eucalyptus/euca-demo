@@ -42,7 +42,7 @@ mysql_bakfile=$mysql_db.bak
 
 wordpress_admin_user=demo
 wordpress_admin_password=JohannesGutenberg-1455
-wordpress_email=mcrawford@hp.com
+wordpress_admin_email=mcrawford@hp.com
 
 step=0
 speed_max=400
