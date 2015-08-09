@@ -568,6 +568,7 @@ if [ $mode = a -o $mode = b ]; then
     echo
     echo "euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "                    --parameter \"KeyName=$aws_ssh_key\" \\"
+    echo "                    --parameter \"InstanceType=m1.medium\" \\"
     echo "                    --parameter \"DBUser=$mysql_user\" \\"
     echo "                    --parameter \"DBPassword=$mysql_password\" \\"
     echo "                    --parameter \"DBRootPassword=$mysql_password\" \\"
@@ -591,6 +592,7 @@ if [ $mode = a -o $mode = b ]; then
             echo
             echo "# euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
             echo ">                     --parameter \"KeyName=$aws_ssh_key\" \\"
+            echo ">                     --parameter \"InstanceType=m1.medium\" \\"
             echo ">                     --parameter \"DBUser=$mysql_user\" \\"
             echo ">                     --parameter \"DBPassword=$mysql_password\" \\"
             echo ">                     --parameter \"DBRootPassword=$mysql_password\" \\"
@@ -600,6 +602,7 @@ if [ $mode = a -o $mode = b ]; then
             echo ">                     WordPressDemoStack"
             euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                 --parameter "KeyName=$aws_ssh_key" \
+                                --parameter "InstanceType=m1.medium" \
                                 --parameter "DBUser=$mysql_user" \
                                 --parameter "DBPassword=$mysql_password" \
                                 --parameter "DBRootPassword=$mysql_password" \
@@ -838,6 +841,7 @@ if [ $mode = e -o $mode = b ]; then
     echo
     echo "euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "                    --parameter \"KeyName=$euca_ssh_key\" \\"
+    echo "                    --parameter \"InstanceType=m1.medium\" \\"
     echo "                    --parameter \"DBUser=$mysql_user\" \\"
     echo "                    --parameter \"DBPassword=$mysql_password\" \\"
     echo "                    --parameter \"DBRootPassword=$mysql_password\" \\"
@@ -861,6 +865,7 @@ if [ $mode = e -o $mode = b ]; then
             echo
             echo "# euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
             echo ">                     --parameter \"KeyName=$euca_ssh_key\" \\"
+            echo ">                     --parameter \"InstanceType=m1.medium\" \\"
             echo ">                     --parameter \"DBUser=$mysql_user\" \\"
             echo ">                     --parameter \"DBPassword=$mysql_password\" \\"
             echo ">                     --parameter \"DBRootPassword=$mysql_password\" \\"
@@ -870,6 +875,7 @@ if [ $mode = e -o $mode = b ]; then
             echo ">                     WordPressDemoStack"
             euform-create-stack --template-file $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                 --parameter "KeyName=$euca_ssh_key" \
+                                --parameter "InstanceType=m1.medium" \
                                 --parameter "DBUser=$mysql_user" \
                                 --parameter "DBPassword=$mysql_password" \
                                 --parameter "DBRootPassword=$mysql_password" \

@@ -552,6 +552,7 @@ if [ $mode = a -o $mode = b ]; then
     echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
     echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "                                --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \\"
+    echo "                                             ParameterKey=InstanceType,ParameterValue=m1.medium \\"
     echo "                                             ParameterKey=DBUser,ParameterValue=$mysql_user \\"
     echo "                                             ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
     echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
@@ -575,6 +576,7 @@ if [ $mode = a -o $mode = b ]; then
             echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
             echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
             echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \\"
+            echo ">                                              ParameterKey=InstanceType,ParameterValue=m1.medium \\"
             echo ">                                              ParameterKey=DBUser,ParameterValue=$mysql_user \\"
             echo ">                                              ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
             echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
@@ -584,6 +586,7 @@ if [ $mode = a -o $mode = b ]; then
             aws cloudformation create-stack --stack-name=WordPressDemoStack \
                                             --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                             --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \
+                                                         ParameterKey=InstanceType,ParameterValue=m1.medium \
                                                          ParameterKey=DBUser,ParameterValue=$mysql_user \
                                                          ParameterKey=DBPassword,ParameterValue=$mysql_password \
                                                          ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
@@ -824,6 +827,7 @@ if [ $mode = e -o $mode = b ]; then
     echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
     echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "                                --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \\"
+    echo "                                             ParameterKey=InstanceType,ParameterValue=m1.medium \\"
     echo "                                             ParameterKey=DBUser,ParameterValue=$mysql_user \\"
     echo "                                             ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
     echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
@@ -846,6 +850,7 @@ if [ $mode = e -o $mode = b ]; then
             echo "# aws cloudformation create-stack --stack-name WordPressDemoStack \\"
             echo ">                                 --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
             echo ">                                 --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \\"
+            echo ">                                              ParameterKey=InstanceType,ParameterValue=m1.medium \\"
             echo ">                                              ParameterKey=DBUser,ParameterValue=$mysql_user \\"
             echo ">                                              ParameterKey=DBPassword,ParameterValue=$mysql_password \\"
             echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
@@ -855,6 +860,7 @@ if [ $mode = e -o $mode = b ]; then
             aws cloudformation create-stack --stack-name=WordPressDemoStack \
                                             --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                             --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \
+                                                         ParameterKey=InstanceType,ParameterValue=m1.medium \
                                                          ParameterKey=DBUser,ParameterValue=$mysql_user \
                                                          ParameterKey=DBPassword,ParameterValue=$mysql_password \
                                                          ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
