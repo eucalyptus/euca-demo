@@ -180,7 +180,11 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     ./demo-20-run-cfn-simple-awscli.sh -r hp-aw2-1 -a demo
     ```
 
-    It's also possible to run this demo via manual procedures located in this directory.
+    It's also possible to run this demo via these manual procedures located in this directory.
+
+    * [demo-20-run-cfn-simple-gui.md](demo-20-run-cfn-simple-gui.md)
+    * [demo-20-run-cfn-simple-cli.md](demo-20-run-cfn-simple-cli.md)
+    * [demo-20-run-cfn-simple-awscli.md](demo-20-run-cfn-simple-awscli.md)
 
 ### Reset CloudFormation Simple Demo
 
