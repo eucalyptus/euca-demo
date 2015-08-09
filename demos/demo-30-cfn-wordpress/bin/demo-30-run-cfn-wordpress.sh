@@ -658,7 +658,7 @@ if [ $mode = a -o $mode = b ]; then
             while ((attempt++ <= create_attempts)); do
                 echo
                 echo "# euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5"
-                euform-describe-stack-events --region $aws_user_region WordPressDemoStack | head -5
+                euform-describe-stack-events --region $aws_user_region WordPressDemoStack 2> /dev/null | head -5
 
                 status=$(euform-describe-stacks --region $aws_user_region WordPressDemoStack 2> /dev/null | grep "^STACK" | cut -f3)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
@@ -931,7 +931,7 @@ if [ $mode = e -o $mode = b ]; then
             while ((attempt++ <= create_attempts)); do
                 echo
                 echo "# euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5"
-                euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5
+                euform-describe-stack-events --region $euca_user_region WordPressDemoStack 2> /dev/null | head -5
 
                 status=$(euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep "^STACK" | cut -f3)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
