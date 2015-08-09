@@ -364,7 +364,8 @@ fi
 
 
 ((++step))
-image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" --profile $profile --region $region | cut -f3)
+image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
+                                   --profile $profile --region $region | cut -f3)
 
 clear
 echo
@@ -381,7 +382,8 @@ echo "                                --template-body file://$templatesdir/Simpl
 echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\" 
 echo "                                --profile $profile --region $region"
 
-if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
+                                           --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -425,7 +427,8 @@ echo
 echo "aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \\"
 echo "                                         --profile $profile --region $region"
 
-if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
+                                           --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -451,7 +454,8 @@ else
             aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \
                                                      --profile $profile --region $region
 
-            status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack --profile $profile --region $region | grep "^STACKS" | cut -f7)
+            status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
+                                                        --profile $profile --region $region | grep "^STACKS" | cut -f7)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -501,10 +505,14 @@ fi
 
 
 ((++step))
-instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance --profile $profile --region $region | cut -f4)
-public_name=$(aws ec2 describe-instances --instance-ids $instance_id --profile $profile --region $region | grep "^INSTANCES" | cut -f11)
-public_ip=$(aws ec2 describe-instances --instance-ids $instance_id --profile $profile --region $region | grep "^INSTANCES" | cut -f12)
-user=centos
+instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance \
+                                                          --profile $profile --region $region | cut -f4)
+public_name=$(aws ec2 describe-instances --instance-ids $instance_id 
+                                         --profile $profile --region $region | grep "^INSTANCES" | cut -f11)
+public_ip=$(aws ec2 describe-instances --instance-ids $instance_id \
+                                       --profile $profile --region $region | grep "^INSTANCES" | cut -f12)
+ssh_user=centos
+ssh_key=demo
 
 clear
 echo
@@ -524,7 +532,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+echo "ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
 
 run 50
 
@@ -538,12 +546,12 @@ if [ $choice = y ]; then
         ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
         echo
-        echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+        echo "# ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i ~/.ssh/demo_id_rsa $user@$public_name
+            ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name
             RC=$?
         else
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
+            ssh -T -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5

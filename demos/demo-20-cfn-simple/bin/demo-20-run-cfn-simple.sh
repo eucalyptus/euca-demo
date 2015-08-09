@@ -362,7 +362,8 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region=$user_region | cut -f2)
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                                --region=$user_region | cut -f2)
 
 clear
 echo
@@ -374,8 +375,10 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \\"
-echo "                    --region=$user_region"
+echo "euform-create-stack --template-file $templatesdir/Simple.template \\"
+echo "                    --parameter DemoImageId=$image_id \\"
+echo "                    --region=$user_region \\"
+echo "                    SimpleDemoStack"
 
 if [ "$(euform-describe-stacks --region=$user_region SimpleDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
@@ -390,10 +393,14 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \\"
-        echo ">                     --region=$user_region"
-        euform-create-stack --template-file $templatesdir/Simple.template -p DemoImageId=$image_id SimpleDemoStack \
-                            --region=$user_region
+        echo "# euform-create-stack --template-file $templatesdir/Simple.template \\"
+        echo ">                     --parameter DemoImageId=$image_id \\"
+        echo ">                     --region=$user_region \\"
+        echo ">                     SimpleDemoStack"
+        euform-create-stack --template-file $templatesdir/Simple.template \
+                            --parameter DemoImageId=$image_id \
+                            --region=$user_region \
+                            SimpleDemoStack
 
         next
     fi
@@ -490,10 +497,11 @@ fi
 
 
 ((++step))
-instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance --region=$user_region | cut -f3)
+instance_id=$(euform-describe-stack-resources --n SimpleDemoStack -l DemoInstance --region=$user_region | cut -f3)
 public_name=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f4)
 public_ip=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f17)
-user=centos
+ssh_user=centos
+ssh_key=demo
 
 clear
 echo
@@ -513,7 +521,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+echo "ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
 
 run 50
 
@@ -527,12 +535,12 @@ if [ $choice = y ]; then
         ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
         echo
-        echo "# ssh -i ~/.ssh/demo_id_rsa $user@$public_name"
+        echo "# ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i ~/.ssh/demo_id_rsa $user@$public_name
+            ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name
             RC=$?
         else
-            ssh -T -i ~/.ssh/demo_id_rsa $user@$public_name << EOF
+            ssh -T -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
