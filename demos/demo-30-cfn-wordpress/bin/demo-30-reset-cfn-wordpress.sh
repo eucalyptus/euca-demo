@@ -499,6 +499,10 @@ if [ $mode = e -o $mode = b ]; then
  
     else
         run 50
+
+        if [ $choice = y ]; then
+            echo
+            echo "# euform-describe-stacks --region $euca_user_region"
             euform-describe-stacks --region $euca_user_region
             pause
  
@@ -508,7 +512,7 @@ if [ $mode = e -o $mode = b ]; then
                 echo
                 echo "# euform-describe-stack-events --region $euca_user_region WordPressDemoStack | head -5"
                 euform-describe-stack-events --region $euca_user_region WordPressDemoStack 2> /dev/null | head -5
- 
+
                 if ! euform-describe-stacks --region $euca_user_region WordPressDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                     break
                 else
@@ -518,7 +522,7 @@ if [ $mode = e -o $mode = b ]; then
                     echo " Done"
                 fi
             done
- 
+
             next
         fi
     fi
