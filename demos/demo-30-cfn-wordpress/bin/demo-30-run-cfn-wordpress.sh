@@ -746,7 +746,7 @@ if [ $verbose = 1 ]; then
     echo "$aws_public_ip"
     pause
 
-    echo "# aws_wordpress_url=/$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "# aws_wordpress_url=\$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$aws_wordpress_url"
 
@@ -1134,7 +1134,7 @@ if [ $verbose = 1 ]; then
     echo "$euca_public_ip"
     pause
 
-    echo "# euca_wordpress_url=/$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "# euca_wordpress_url=\$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$euca_wordpress_url"
 
