@@ -308,7 +308,7 @@ echo
 echo "Commands:"
 echo
 echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
-echo "                                                   --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
+echo "                                                  --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
 echo
 echo "for instance_id in \$terminated_instance_ids; do"
 echo "    euca-terminate-instances --region=$user_region \$instance_id &> /dev/null"
@@ -328,7 +328,7 @@ else
     if [ $choice = y ]; then
         echo
         echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
-        echo ">                                                    --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
+        echo ">                                                   --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
         terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
                                                           --region=$user_region | grep "^INSTANCE" | cut -f2)
         pause
