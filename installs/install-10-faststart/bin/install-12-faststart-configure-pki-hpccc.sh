@@ -210,7 +210,7 @@ echo "    < /etc/pki/tls/certs/ca-bundle.trust.crt | grep \"<fingerprint>\""
 echo
 echo "keytool -list \\"
 echo "        -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
-echo "   grep -A1 hpccc-DC1A-CA"
+echo "   grep -A1 hpccc-dc1a-ca"
 
 if [ -e /etc/pki/ca-trust/source/anchors/hpccc-DC1A-CA.crt ]; then
     echo
@@ -256,10 +256,10 @@ else
         echo "#"
         echo "# keytool -list \\"
         echo ">         -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \\"
-        echo ">    grep -A1 hpccc-DC1A-CA"
+        echo ">    grep -A1 hpccc-dc1a-ca"
         keytool -list \
                 -keystore /etc/pki/java/cacerts -storepass $cacerts_password | \
-           grep -A1 hpccc-DC1A-CA
+           grep -A1 hpccc-dc1a-ca
 
         next 50
     fi

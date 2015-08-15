@@ -97,7 +97,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
      
     keytool -list \
             -keystore /etc/pki/java/cacerts -storepass changeit | \
-       grep -A1 hpccc-DC1A-CA
+       grep -A1 hpccc-dc1a-ca
     ```
 
 2. Install SSL Key
