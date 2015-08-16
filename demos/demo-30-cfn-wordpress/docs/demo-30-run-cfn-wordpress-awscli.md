@@ -51,9 +51,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
 1. Define Environment Variables used in upcoming code blocks
 
-    These instructions were based on the Eucalyptus hp-aw2-1 Region, demo Account and admin User,
-    and the AWS us-west-2 Region, mjchp Account and demo User.
-
     Adjust the variables in this section to your environment.
 
     ```bash

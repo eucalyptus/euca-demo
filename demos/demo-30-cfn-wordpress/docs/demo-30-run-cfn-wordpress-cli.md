@@ -54,9 +54,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
 1. Define Environment Variables used in upcoming code blocks
 
-    These instructions were based on the Eucalyptus hp-aw2-1 Region, demo Account and admin User,
-    and the AWS us-west-2 Region, mjchp Account and demo User.
-
     Adjust the variables in this section to your environment.
 
     ```bash
@@ -105,7 +102,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     aws s3 cp s3://demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
            /var/tmp/WordPress_Single_Instance_Eucalyptus.template \
-           --profile $AWS_PROFILE --region=$AWS_REGION
+           --profile $AWS_PROFILE --region $AWS_REGION
     ```
 
 4. Display WordPress CloudFormation Template (Optional)
