@@ -28,7 +28,7 @@ where you will be running any scripts or using a Browser which will access the E
 Console, so that you can run scripts or upload Templates or other files which may be needed.
 This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
 
-In examples below, credentials are specified via the --profile=PROFILE and --region=REGION
+In examples below, credentials are specified via the --profile PROFILE and --region REGION
 options. Normally you could shorten the command lines by use of the AWS_DEFAULT_PROFILE and
 AWS_DEFAULT_REGION environment variables set to appropriate values, but there is a conflict
 which prevents that alternative for this demo. We must switch back and forth between AWS
@@ -144,7 +144,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     as an input parameter.
 
     ```bash
-    aws cloudformation create-stack --stack-name=WordPressDemoStack \
+    aws cloudformation create-stack --stack-name WordPressDemoStack \
                                     --template-body file:///var/tmp/WordPress_Single_Instance_Eucalyptus.template \
                                     --parameters ParameterKey=KeyName,ParameterValue=demo \
                                                  ParameterKey=InstanceType,ParameterValue=m1.medium \

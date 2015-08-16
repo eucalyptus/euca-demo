@@ -10,8 +10,8 @@ more permanent accounts shortly:
   - Account: demo
   - User: admin
 - AWS
-  - Region: us-west-2
-  - Account: mjchp
+  - Region: us-east-1
+  - Account: euca
   - User: demo
 
 Prior to running this demo, the Eucalyptus Region and AWS Account must be prepared for demos via
@@ -126,7 +126,7 @@ has been done.
     it's possible to use the GUI method to setup the AWS Account, it's likely to be quicker
     and less error-prone to run the script for this step.
 
-    Choose only one of these methods.
+    **Choose only one of these methods.**
 
     GUI Procedure: [demo-30-run-cfn-wordpress-gui.md](demo-30-run-cfn-wordpress-gui.md)
 
@@ -165,7 +165,7 @@ has been done.
     it's possible to use the script methods to run the live demo, it's likely to be a better
     experience for all but a very technical audience to use the GUI.
 
-    Choose only one of these methods.
+    **Choose only one of these methods.**
 
     GUI Procedure: [demo-30-run-cfn-wordpress-gui.md](demo-30-run-cfn-wordpress-gui.md)
 

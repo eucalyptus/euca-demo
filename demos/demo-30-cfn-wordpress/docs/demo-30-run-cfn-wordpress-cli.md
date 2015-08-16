@@ -29,8 +29,8 @@ where you will be running any scripts or using a Browser which will access the E
 Console, so that you can run scripts or upload Templates or other files which may be needed. 
 This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
 
-In examples below, credentials are specified via the --region=USER@REGION option with Euca2ools, 
-or the --profile=PROFILE and --region=REGION options with AWS CLI. Normally you could shorten the
+In examples below, credentials are specified via the --region USER@REGION option with Euca2ools, 
+or the --profile PROFILE and --region REGION options with AWS CLI. Normally you could shorten the
 command lines by use of the AWS_DEFAULT_REGION and AWS_DEFAULT_PROFILE environment variables set
 to appropriate values, but there are two conflicts which prevent that alternative for this demo.
 We must switch back and forth between AWS and Eucalyptus, and explicit options make clear which
@@ -80,7 +80,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=$AWS_USER_REGION
+                           --region $AWS_USER_REGION
     ```
 
 2. Confirm existence of Eucalyptus Demo depencencies (Optional)
@@ -91,10 +91,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-CFN-AWSCLI.raw.manifest.xml" \
-                         --region=$EUCA_USER_REGION | cut -f1,2,3
+                         --region $EUCA_USER_REGION | cut -f1,2,3
 
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=$EUCA_USER_REGION
+                           --region $EUCA_USER_REGION
     ```
 
 3. Download WordPress CloudFormation Template from AWS S3 Bucket
@@ -130,9 +130,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    euca-describe-groups --region=$AWS_USER_REGION
+    euca-describe-groups --region $AWS_USER_REGION
 
-    euca-describe-instances --region=$AWS_USER_REGION
+    euca-describe-instances --region $AWS_USER_REGION
     ```
 
 6. List existing AWS CloudFormation Stacks (Optional)
@@ -140,7 +140,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    euform-describe-stacks --region=$AWS_USER_REGION
+    euform-describe-stacks --region $AWS_USER_REGION
     ```
 
 7. Create the AWS Stack
@@ -202,13 +202,3 @@ YOU ARE HERE
 
     curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
     ```
-
-### CloudFormation Simple Demo Key Points
-    
-The following are key points illustrated in this demo:
-    
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Command line, or now within the Eucalyptus Console.
-

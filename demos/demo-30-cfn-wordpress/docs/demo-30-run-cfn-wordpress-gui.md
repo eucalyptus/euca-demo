@@ -56,8 +56,8 @@ and which can then adjust the behavior of statements.
     export EUCA_USER_REGION=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER@$EUCA_REGION
     export EUCA_PROFILE=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER
 
-    export AWS_REGION=us-west-2
-    export AWS_ACCOUNT=mjchp
+    export AWS_REGION=us-east-1
+    export AWS_ACCOUNT=euca
     export AWS_USER=demo
 
     export AWS_USER_REGION=aws-$AWS_ACCOUNT-$AWS_USER@$AWS_REGION
@@ -76,9 +76,9 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
 1. Login to the AWS Console as the AWS Account Demo User
 
-    Using your browser, open the appropriate [AWS Console](https://console.hp-aw2-1.hpcloudsvc.com),
-    and login with the parameters referenced above as $AWS_ACCOUNT and $AWS_USER. The password will
-    need to be obtained separately from the AWS Account Administrator.
+    Using your browser, open the appropriate [AWS Console](https://140601064733.signin.aws.amazon.com/console),
+    and login with the parameters referenced above as $AWS_USER. The password will need to be
+    obtained separately from the AWS Account Administrator.
 
     Arrange this window or tab to the LEFT of your screen.
 
@@ -183,14 +183,10 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 6. List existing AWS CloudFormation Stacks (Optional)
 
     On the AWS Console, from the Console Home, Select the CloudFormation Service to view the
-    CloudFormation Dashboard.
+    CloudFormation Dashboard, which lists Stacks in the AWS Account. Note what Stacks exist for
+    comparison with results after the WordPressDemoStack has been created.
 
-    ![AWS EC2 Dashboard](../images/demo-30-run-cfn-wordpress-01-aws-ec2-dashboard.png?raw=true)
-
-    From the EC2 Dashboard, Select Key Pairs from Left Navigation to view Key Pairs in the AWS Account.
-    Confirm the "demo" Key Pair exists.
-
-    ![AWS Key Pairs](../images/demo-30-run-cfn-wordpress-01-aws-key-pairs.png?raw=true)
+    ![AWS Stacks](../images/demo-30-run-cfn-wordpress-06-aws-stacks.png?raw=true)
 YOU ARE HERE
 
 7. Create the AWS Stack
