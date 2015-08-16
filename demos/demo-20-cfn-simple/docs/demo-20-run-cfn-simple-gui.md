@@ -3,14 +3,25 @@
 This document describes the manual procedure to run the CloudFormation Simple demo via the 
 Eucalyptus Console (GUI).
 
-This variant can be run by any user with the appropriate permissions, as long the user's
-credentials are known, and the account was initialiozed with demo baseline dependencies. 
-This example uses the hp-aw2-1 region, demo account and admin user. The console for this
-region is here: (https://console.hp-aw2-1.hpcloudsvc.com), and will appear in screen shots.
+### CloudFormation Simple Demo Key Points
+   
+The following are key points illustrated in this demo:
+   
+* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
+  introduction to this feature in Eucalyptus.
+* It is possible to view, run and monitor activities and resources created by CloudFormation
+  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
+
+### Prepare CloudFormation Simple Demo
+
+This variant can be run by any User with the appropriate permissions, as long the User's
+credentials are known, and the Account was initialized with demo baseline dependencies. 
+This example uses the hp-aw2-1 Region, demo Account and admin User. The console for this
+Region is here: (https://console.hp-aw2-1.hpcloudsvc.com), and will appear in screen shots.
 
 You should have a copy of the "euca-demo" GitHub project checked out to the workstation 
 where you will be running any Browser which will access the Eucalyptus Console, so that
-you can upload any templates or other files which may be needed. This project should be
+you can upload any Templates or other files which may be needed. This project should be
 checked out to the ~/src/eucalyptus/euca-demo directory.
 
 Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
@@ -148,13 +159,4 @@ reverse all actions performed by this script so that it can be re-run.
     ```
 
     ![Verify Instance](../images/demo-20-run-cfn-simple-09-validate.png?raw=true)
-
-### CloudFormation Simple Demo Key Points
-
-The following are key points illustrated in this demo:
-
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Command line, or now within the Eucalyptus Console.
 

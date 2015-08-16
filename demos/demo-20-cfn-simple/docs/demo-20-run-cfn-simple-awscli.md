@@ -3,16 +3,27 @@
 This document describes the manual procedure to run the CloudFormation Simple demo via AWS CLI
 (AWS Command Line Interface).
 
-This variant can be run by any user with the appropriate permissions, as long as AWS CLI
-has been configured with the appropriate credentials, and the account was initialized with
-demo baseline dependencies. This example uses the hp-aw2-1 region, demo account and demo user.
+### CloudFormation Simple Demo Key Points
+    
+The following are key points illustrated in this demo:
+    
+* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
+  introduction to this feature in Eucalyptus.
+* It is possible to view, run and monitor activities and resources created by CloudFormation
+  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
+
+### Prepare CloudFormation Simple Demo
+
+This variant can be run by any User with the appropriate permissions, as long as AWS CLI
+has been configured with the appropriate credentials, and the Account was initialized with
+demo baseline dependencies. This example uses the hp-aw2-1 Region, demo Account and demo User.
 
 In examples below, credentials are specified via the --profile=PROFILE option, but
 to shorten the command line, you can export the AWS_DEFAULT_PROFILE environment variable with
 the same value instead.
 
 You should unset the AWS_DEFAULT_REGION environment variable, or insure it is set to the
-correct region (without any optional USER@ prefix), prior to running the statements below as
+correct Region (without any optional USER@ prefix), prior to running the statements below as
 AWS CLI will use any value found to override the default region of the profile, and it will 
 break if the value contains the USER@ prefix.
 
@@ -172,13 +183,4 @@ reverse all actions performed by this script so that it can be re-run.
 
     curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
     ```
-
-### CloudFormation Simple Demo Key Points
-    
-The following are key points illustrated in this demo:
-    
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Command line, or now within the Eucalyptus Console.
 
