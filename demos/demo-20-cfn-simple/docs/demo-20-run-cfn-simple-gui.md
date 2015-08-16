@@ -1,25 +1,26 @@
 # Demo 20: CloudFormation: Simple
 
-This document describes the manual procedure to run the CloudFormation Simple demo via the GUI.
+This document describes the manual procedure to run the CloudFormation Simple demo via the 
+Eucalyptus Console (GUI).
 
-This script will use the Eucalyptus Console for the hp-gol01-f1 region, located here:
-https://console.hp-gol01-f1.mjc.prc.eucalyptus-systems.com, in the commands and screen shots
-below. Adjust as needed to your own system.
-
-A demo account should have been created and initialized in advance. This account can be
-created with any name, allowing for multiple demo accounts. The instructions below assume
-the demo account was created with the name "demo".
+This variant can be run by any user with the appropriate permissions, as long the user's
+credentials are known, and the account was initialiozed with demo baseline dependencies. 
+This example uses the hp-aw2-1 region, demo account and admin user. The console for this
+region is here: (https://console.hp-aw2-1.hpcloudsvc.com), and will appear in screen shots.
 
 You should have a copy of the "euca-demo" GitHub project checked out to the workstation 
 where you will be running any Browser which will access the Eucalyptus Console, so that
 you can upload any templates or other files which may be needed. This project should be
 checked out to the ~/src/eucalyptus/euca-demo directory.
 
-Prior to running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
+Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
 required.
 
-### Run CloudFormation Simple Demo via the Eucalyptus Console
+After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
+reverse all actions performed by this script so that it can be re-run.
+
+### Run CloudFormation Simple Demo
 
 1. Login to the Eucalyptus Console as the Demo Account Administrator
 
@@ -27,7 +28,7 @@ required.
 
     ![Login as Demo Account Demo User](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
 
-2. Confirm existence of Demo depencencies
+2. Confirm existence of Demo depencencies (Optional)
 
     From the Dashboard, use the top left Navigation icon to display the left Navigation Panel.
 
@@ -43,36 +44,36 @@ required.
 
     ![View Key Pairs](../images/demo-20-run-cfn-simple-02-key-pairs.png?raw=true)
 
-3. List initial Resources
-
-    From the Dashboard, Select the Security groups Tile to View Security Groups in the
-    Demo Account. Note contents of list for comparison after creating Stack.
-
-    ![View Security Groups](../images/demo-20-run-cfn-simple-03-security-groups.png?raw=true)
-
-    From the Dashboard, Select the Running instances Tile to View Instances in the
-    Demo Account. Note contents of list for comparison after creating Stack.
-
-    ![View Instances](../images/demo-20-run-cfn-simple-03-instances.png?raw=true)
-
-4. List initial CloudFormation Stacks
-
-    From the Dashboard, Select the Stacks Tile to View CloudFormation Stacks in the
-    Demo Account. Note contents of list for comparison after creating Stack.
-
-    ![View Stacks](../images/demo-20-run-cfn-simple-04-stacks.png?raw=true)
-
-5. Display Simple CloudFormation template
+3. Display Simple CloudFormation Template (Optional)
 
     In another browser tab, open the [Simple.template](../templates/Simple.template) to view the Simple
     CloudFormation template we will use in this demo.
 
-    ![View Simple.template](../images/demo-20-run-cfn-simple-05-simple-template.png?raw=true)
+    ![View Simple.template](../images/demo-20-run-cfn-simple-03-simple-template.png?raw=true)
+
+4. List existing Resources (Optional)
+
+    From the Dashboard, Select the Security groups Tile to View Security Groups in the
+    Demo Account. Note contents of list for comparison after creating Stack.
+
+    ![View Security Groups](../images/demo-20-run-cfn-simple-04-security-groups.png?raw=true)
+
+    From the Dashboard, Select the Running instances Tile to View Instances in the
+    Demo Account. Note contents of list for comparison after creating Stack.
+
+    ![View Instances](../images/demo-20-run-cfn-simple-04-instances.png?raw=true)
+
+5. List existing CloudFormation Stacks (Optional)
+
+    From the Dashboard, Select the Stacks Tile to View CloudFormation Stacks in the
+    Demo Account. Note contents of list for comparison after creating Stack.
+
+    ![View Stacks](../images/demo-20-run-cfn-simple-05-stacks.png?raw=true)
 
 6. Create the Stack
 
-    Return to the Eucalyptus Console, where you should still be on the Stacks Page. Click the
-    Create Button to create a new CloudFormation Stack. Enter "SimpleDemoStack" as the Name.
+    From the Stacks List Page, click the Create Button to create a new CloudFormation Stack.
+    Enter "SimpleDemoStack" as the Name.
     
     Next, click on the Upload template Radio Button, then the Choose File Button. Find and
     select ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template.
@@ -106,7 +107,7 @@ required.
 
     ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-02-events.png?raw=true)
 
-8. List updated Resources
+8. List updated Resources (Optional)
 
     From the Dashboard, Select the Security groups Tile to View Security Groups in the
     Demo Account. Note updated contents of list, and compare with the initial set.

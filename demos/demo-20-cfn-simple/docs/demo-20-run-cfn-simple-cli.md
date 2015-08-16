@@ -1,70 +1,50 @@
 # Demo 20: CloudFormation: Simple
 
-This document describes the manual procedure to run the CloudFormation Simple demo via the CLI
+This document describes the manual procedure to run the CloudFormation Simple demo via Euca2ools
 
-This variant can be run by any user, as long as the AWS_DEFAULT_REGION environment variable
-has been set to reference the demo Eucalyptus system, and that systems credentials have
-been copied into the users appropriate ~/.creds directory structure.
+This variant can be run by any user with the appropriate permissions, as long as Euca2ools
+has been configured with the appropriate credentials, and the account was initialized with
+demo baseline dependencies. This example uses the hp-aw2-1 region, demo account and demo user.
 
-A demo account should have been created and initialized in advance. This account can be
-created with any name, allowing for multiple demo accounts. The instructions below assume
-the demo account was created with the name "demo".
+In examples below, credentials are specified via the --region=USER@REGION option, but
+to shorten the command line, you can export the AWS_DEFAULT_REGION environment variable with
+the same value instead.
 
-Prior to running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
+Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
 required.
 
-### Run CloudFormation Simple Demo via the Euca2ools Command Line
+After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
+reverse all actions performed by this script so that it can be re-run.
 
-1. Use Demo Account Demo User credentials
+### Run CloudFormation Simple Demo
 
-    ```bash
-    export AWS_DEFAULT_REGION=hp-aw2-1-demo-demo@hp-aw2-1
-    unset AWS_CREDENTIAL_FILE
-    ```
+1. Confirm existence of Demo depencencies (Optional)
 
-2. Confirm existence of Demo depencencies
-
-    The "CentOS-6-x86_64-GenericCloud" image should exist.
+    The "CentOS-6-x86_64-GenericCloud" Image should exist.
 
     The "demo" Key Pair should exist.
 
     ```bash
-    euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f1,2,3
+    euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
+                         --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f1,2,3
 
-    euca-describe-keypairs --filter "key-name=demo"
+    euca-describe-keypairs --filter "key-name=demo" \
+                           --region=hp-aw2-1-demo-demo@hp-aw2-1
     ```
 
-3. List initial Resources
+2. Display Simple CloudFormation Template (Optional)
 
-    So we can compare with what this demo creates
-
-    ```bash
-    euca-describe-groups
-
-    euca-describe-instances
-    ```
-
-4. List initial CloudFormation Stacks
-
-    So we can compare with what this demo creates
+    The Simple Template creates a Security Group and an Instance, which references a Key Pair and
+    an Image created externally and passed in as parameters
 
     ```bash
-    euform-describe-stacks
-    ```
-
-5. Display Simple CloudFormation template
-
-    The Simple.template creates a security group and an instance, which references a keypair and
-    an image created externally and passed in as parameters
-
-    ```bash
-    more ~/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template
+    more ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template
     ```
 
     Contents of Simple.template
 
-    ```bash
+    ```json
     {
       "Parameters": {
         "DemoImageId": {
@@ -106,54 +86,77 @@ required.
     }
     ```
 
-6. Create the Stack
+3. List existing Resources (Optional)
 
-    We first must lookup the EMI ID of the image to be used for this stack, so it can be passed in
+    So we can compare with what this demo creates
+
+    ```bash
+    euca-describe-groups --region=hp-aw2-1-demo-demo@hp-aw2-1
+
+    euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1
+    ```
+
+4. List existing CloudFormation Stacks (Optional)
+
+    So we can compare with what this demo creates
+
+    ```bash
+    euform-describe-stacks --region=hp-aw2-1-demo-demo@hp-aw2-1
+    ```
+
+5. Create the Stack
+
+    We first must lookup the EMI ID of the Image to be used for this Stack, so it can be passed in
     as an input parameter.
 
     ```bash
-    image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" | cut -f2)
+    image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
+                                    --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f2)
 
-    euform-create-stack --template-file ~/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
-                        -p DemoImageId=$image_id SimpleDemoStack
+    euform-create-stack --template-file ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
+                        --parameter DemoImageId=$image_id \
+                        --region=hp-aw2-1-demo-demo@hp-aw2-1 \
+                        SimpleDemoStack
     ```
 
-7. Monitor Stack creation
+6. Monitor Stack creation
 
     This stack can take 60 to 80 seconds to complete.
 
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    euform-describe-stacks
+    euform-describe-stacks --region=hp-aw2-1-demo-demo@hp-aw2-1
 
-    euform-describe-stack-events SimpleDemoStack | head -10
+    euform-describe-stack-events --region=hp-aw2-1-demo-demo@hp-aw2-1 SimpleDemoStack | head -5
     ```
 
-8. List updated Resources
+7. List updated Resources (Optional)
 
-    Note addition of new group and instance
+    Note addition of new Security Group and Instance
 
     ```bash
-    euca-describe-groups
+    euca-describe-groups --region=hp-aw2-1-demo-demo@hp-aw2-1
 
-    euca-describe-instances
+    euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1
     ```
 
-9. Confirm ability to login to Instance
+8. Confirm ability to login to Instance
 
-    We must first use some logic to find the public DNS name of the most recently launched instance.
+    We must first use some logic to find the public DNS name of the Instance within the Stack.
 
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
     ```bash
-    instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance | cut -f3)
-    public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
+    instance_id=$(euform-describe-stack-resources --name SimpleDemoStack \
+                                                  --logical-resource-id DemoInstance \
+                                                  --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f3)
+    public_name=$(euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1 $instance_id | grep "^INSTANCE" | cut -f4)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```
 
-    Once you have successfully logged into the new instance. Confirm the private IP, then
+    Once you have successfully logged into the new Instance. Confirm the private IP, then
     the public IP via the meta-data service, with the following commands:
 
     ```bash
