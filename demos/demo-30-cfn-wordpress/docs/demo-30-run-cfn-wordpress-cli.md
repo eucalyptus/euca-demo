@@ -18,28 +18,62 @@ The following are key points illustrated in this demo:
 * It is possible to view, run and monitor activities and resources created by CloudFormation
   via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
 
-### Prepare CloudFormation WordPress Demo
+### Prerequisites
 
 This variant can be run by any User with the appropriate permissions, as long as both Euca2ools
 and AWS CLI have been configured with the appropriate credentials, and the Account was initialized
-with demo baseline dependencies. This example uses the Eucalyptus hp-aw2-1 Region, demo Account
-and admin User, and the AWS us-west-2 Region, mjchp Account, and demo User.
+with demo baseline dependencies. See [this section](../../demo-00-initialize/docs) for details.
+
+You should have a copy of the "euca-demo" GitHub project checked out to the workstation
+where you will be running any scripts or using a Browser which will access the Eucalyptus 
+Console, so that you can run scripts or upload Templates or other files which may be needed. 
+This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
 
 In examples below, credentials are specified via the --region=USER@REGION option with Euca2ools, 
-or the --profile=USER and --region=REGION options with AWS CLI. Normally you could shorten the
+or the --profile=PROFILE and --region=REGION options with AWS CLI. Normally you could shorten the
 command lines by use of the AWS_DEFAULT_REGION and AWS_DEFAULT_PROFILE environment variables set
-to appropriate values, but there is a conflict between Euca2ools use of USER@REGION and AWS CLI,
-which breaks when this variable has the USER@ prefix. So, it is best to unset both the
-AWS_DEFAULT_PROFILE and AWS_DEFAULT_REGION environment variables prior to running the statements
-below. However, by specifying both --profile and --region to AWS CLI commands, these options
-take priority and any environment variables, if set, will be ignored.
+to appropriate values, but there are two conflicts which prevent that alternative for this demo.
+We must switch back and forth between AWS and Eucalyptus, and explicit options make clear which
+system is the target of each command. Also, there is a conflict between Euca2ools use of
+USER@REGION and AWS CLI, which breaks when this variable has the USER@ prefix.
 
-Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
+Before running this demo, please run the demo-30-initialize-cfn-wordpress.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
 required.
 
-After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
+After running this demo, please run the demo-30-reset-cfn-wordpress.sh script, which will
 reverse all actions performed by this script so that it can be re-run.
+
+### Define Parameters
+
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different Regions, Accounts and Users, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
+
+1. Define Environment Variables used in upcoming code blocks
+
+    These instructions were based on the Eucalyptus hp-aw2-1 Region, demo Account and admin User,
+    and the AWS us-west-2 Region, mjchp Account and demo User.
+
+    Adjust the variables in this section to your environment.
+
+    ```bash
+    export EUCA_REGION=hp-aw2-1
+    export EUCA_ACCOUNT=demo
+    export EUCA_USER=admin
+
+    export EUCA_USER_REGION=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER@$EUCA_REGION
+    export EUCA_PROFILE=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER
+
+    export AWS_REGION=us-east-1
+    export AWS_ACCOUNT=euca
+    export AWS_USER=demo
+
+    export AWS_USER_REGION=aws-$AWS_ACCOUNT-$AWS_USER@$AWS_REGION
+    export AWS_PROFILE=$AWS_ACCOUNT-$AWS_USER
+    ```
 
 ### Run CloudFormation WordPress Demo
 
@@ -49,7 +83,7 @@ reverse all actions performed by this script so that it can be re-run.
 
     ```bash
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=aws-mjchp-demo@us-west-2
+                           --region=$AWS_USER_REGION
     ```
 
 2. Confirm existence of Eucalyptus Demo depencencies (Optional)
@@ -59,25 +93,25 @@ reverse all actions performed by this script so that it can be re-run.
     The "demo" Key Pair should exist.
 
     ```bash
-    euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                         --region=hp-aw2-1-demo-admin@hp-aw2-1 | cut -f1,2,3
+    euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-CFN-AWSCLI.raw.manifest.xml" \
+                         --region=$EUCA_USER_REGION | cut -f1,2,3
 
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=hp-aw2-1-demo-admin@hp-aw2-1
+                           --region=$EUCA_USER_REGION
     ```
 
 3. Download WordPress CloudFormation Template from AWS S3 Bucket
 
     ```bash
-    aws s3 cp s3://demo-mjchp/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
+    aws s3 cp s3://demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
            /var/tmp/WordPress_Single_Instance_Eucalyptus.template \
-           --profile mjchp-demo --region=us-west-2
+           --profile $AWS_PROFILE --region=$AWS_REGION
     ```
 
 4. Display WordPress CloudFormation Template (Optional)
 
     The WordPress Template creates an Instance Profile based on the "Demos" Role, then a
-    Security Group and an Instance which references the Instance Profiole. A User-Data
+    Security Group and an Instance which references the Instance Profile. A User-Data
     script passed to the Instance installs and configures WordPress.
 
     Like most CloudFormation Templates, the WordPress Template uses the "AWSRegionArch2AMI" Map
@@ -92,58 +126,16 @@ reverse all actions performed by this script so that it can be re-run.
     more /var/tmp/WordPress_Single_Instance_Eucalyptus.template
     ```
 
-    Example contents of WordPress_Single_Instance_Eucalyptus.template (EMIs will vary).
-
-    ```json
-    {
-      "Parameters": {
-        "DemoImageId": {
-          "Description":"Image id",
-          "Type":"String"
-        },
-        "DemoKeyPair": {
-          "Description":"Key Pair",
-          "Type":"String",
-          "Default":"demo"
-        }
-      },
-      "Resources" : {
-        "DemoSecurityGroup": {
-          "Type": "AWS::EC2::SecurityGroup",
-          "Properties": {
-            "GroupDescription" : "Security Group with Ingress Rule for DemoInstance",
-            "SecurityGroupIngress" : [
-              {
-                "IpProtocol" : "tcp",
-                "FromPort" : "22",
-                "ToPort" : "22",
-                "CidrIp" : "0.0.0.0/0"
-              }
-            ]
-          }
-        },
-        "DemoInstance": {
-          "Type": "AWS::EC2::Instance",
-          "Properties": {
-            "ImageId" : { "Ref":"DemoImageId" },
-            "SecurityGroups" : [ 
-              { "Ref" : "DemoSecurityGroup" } 
-            ],
-            "KeyName" : { "Ref" : "DemoKeyPair" }
-          }
-        }
-      }
-    }
-    ```
+    [Example of WordPress_Single_Instance_Eucalyptus.template](../templates/WordPress_Single_Instance_Eucalyptus.template.example) (EMIs will vary).
 
 5. List existing AWS Resources (Optional)
 
     So we can compare with what this demo creates
 
     ```bash
-    euca-describe-groups --region=hp-aw2-1-demo-admin@hp-aw2-1
+    euca-describe-groups --region=$AWS_USER_REGION
 
-    euca-describe-instances --region=hp-aw2-1-demo-admin@hp-aw2-1
+    euca-describe-instances --region=$AWS_USER_REGION
     ```
 
 6. List existing AWS CloudFormation Stacks (Optional)
@@ -151,7 +143,7 @@ reverse all actions performed by this script so that it can be re-run.
     So we can compare with what this demo creates
 
     ```bash
-    euform-describe-stacks --region=hp-aw2-1-demo-admin@hp-aw2-1
+    euform-describe-stacks --region=$AWS_USER_REGION
     ```
 
 7. Create the AWS Stack
@@ -163,9 +155,9 @@ reverse all actions performed by this script so that it can be re-run.
                         --parameter "DBUser=demo" \
                         --parameter "DBPassword=password" \
                         --parameter "DBRootPassword=password" \
-                        --parameter "EndPoint=https://cloudformation.us-west-2.amazonaws.com" \
+                        --parameter "EndPoint=https://cloudformation.$AWS_REGION.amazonaws.com" \
                         --capabilities CAPABILITY_IAM \
-                        --region aws-mjchp-demo@us-west-2 \
+                        --region $AWS_USER_REGION \
                         WordPressDemoStack
     ```
 YOU ARE HERE
