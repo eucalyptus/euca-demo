@@ -216,8 +216,6 @@ These are steps needed to initialize this demo, on top of the baseline initializ
 
 1. Initialize the CloudFormation Simple Demo
 
-    Procedure: [demo-20-initialize-cfn-simple.md](demo-20-initialize-cfn-simple.md)
-
     Script: [demo-20-initialize-cfn-simple.sh](../bin/demo-20-initialize-cfn-simple.sh)
 
     ```bash
@@ -256,8 +254,6 @@ These are steps needed to initialize this demo, on top of the baseline initializ
 ### Reset CloudFormation Simple Demo
 
 1. Reset the CloudFormation Simple Demo
-
-    Procedure: [demo-20-reset-cfn-simple.md](demo-20-reset-cfn-simple.md)
 
     Script: [demo-20-reset-cfn-simple.sh](../bin/demo-20-reset-cfn-simple.sh)
 
