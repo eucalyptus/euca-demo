@@ -50,6 +50,7 @@ and which can then adjust the behavior of statements.
 
     ```bash
     export EUCA_REGION=hp-aw2-1
+    export EUCA_DOMAIN=hpcloudsvc.com
     export EUCA_ACCOUNT=demo
     export EUCA_USER=admin
 
@@ -182,189 +183,232 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
 6. List existing AWS CloudFormation Stacks (Optional)
 
+    So we can compare with what this demo creates
+
     On the AWS Console, from the Console Home, Select the CloudFormation Service to view the
     CloudFormation Dashboard, which lists Stacks in the AWS Account. Note what Stacks exist for
     comparison with results after the WordPressDemoStack has been created.
 
     ![AWS Stacks](../images/demo-30-run-cfn-wordpress-06-aws-stacks.png?raw=true)
-YOU ARE HERE
 
 7. Create the AWS Stack
 
-    From the Stacks List Page, click the Create Button to create a new CloudFormation Stack.
-    Enter "SimpleDemoStack" as the Name.
+    On the AWS Console, from the Stacks List Page, click the Create Button to create a new 
+    CloudFormation Stack. Enter "WordPressDemoStack" as the Name.
     
     Next, click on the Upload template Radio Button, then the Choose File Button. Find and
-    select ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template.
+    select ~/Downloads/WordPress_Single_Instance_Eucalyptus.template.
 
-    ![Create Stack - General](../images/demo-20-run-cfn-simple-06-create-general.png?raw=true)
+    ![AWS Create Stack - General](../images/demo-30-run-cfn-wordpress-07-aws-create-general.png?raw=true)
 
-    Press the Next Button to advance to the Parameters Page. Select "centos66" as the DemoImageId,
-    and "demo" as the DemoKeyPair.
+    Press the Next Button to advance to the Parameters Page. Select "demo" as the DemoKeyPair,
+    "m1.medium" as the InstanceType. Enter "demo" as the DBUser, "password" as the DBPassword,
+    "password" as the DBRootPassword, and "https://cloudformation.$AWS_REGION.amazon.aws.com"
+    (replacing $AWS_REGION with the value defined above) as the EndPoint.
 
-    ![Create Stack - Parameters](../images/demo-20-run-cfn-simple-06-create-parameters.png?raw=true)
+    ![AWS Create Stack - Parameters](../images/demo-30-run-cfn-wordpress-07-aws-create-parameters.png?raw=true)
 
     Press the CreateStack Button to initiate Stack creation.
 
-7. Monitor AWS Stack creation
+8. Monitor AWS Stack creation
 
-    Initiating Stack creation will automatically take you to the Stack General Tab, showing a 
-    periodically updating view of the state of the stack objects. Review Stack status.
+    Continuing on the AWS Console, initiating Stack creation will automatically take you
+    to the Stack General Tab, showing a periodically updating view of the state of the Stack
+    Resources. Review Stack status.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-01-details.png?raw=true)
+    ![AWS Monitor Stack - General](../images/demo-30-run-cfn-wordpress-08-aws-stack-01-details.png?raw=true)
 
     Click on the Events Tab. Review Stack Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-01-events.png?raw=true)
+    ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-01-events.png?raw=true)
 
     Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
     Completed.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-02-details.png?raw=true)
+    ![AWS Monitor Stack - General](../images/demo-30-run-cfn-wordpress-08-aws-stack-02-details.png?raw=true)
 
     Click on the Events Tab. Confirm all Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-02-events.png?raw=true)
+    ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-02-events.png?raw=true)
 
-8. List updated AWS Resources (Optional)
+9. List updated AWS Resources (Optional)
 
-    From the Dashboard, Select the Security groups Tile to view Security Groups in the
-    Demo Account. Note updated contents of list, and compare with the initial set.
+    On the AWS Console, from the Console Home, Select the EC2 Service to view the EC2 Dashboard,
+    then from the EC2 Dashboard, Select Security Groups from Left Navigation to view Security
+    Groups in the AWS Account.
 
-    ![View Security Groups](../images/demo-20-run-cfn-simple-08-security-groups.png?raw=true)
+    ![AWS Security Groups](../images/demo-30-run-cfn-wordpress-09-aws-security-groups.png?raw=true)
 
-    From the Dashboard, Select the Running instances Tile to view Instances in the
-    Demo Account. Note updated contents of list, and compare with the initial set.
+    Next, Select Instances from Left Navigation to view Instances in the AWS Account.
 
-    ![View Instances](../images/demo-20-run-cfn-simple-08-instances.png?raw=true)
+    ![AWS Instances](../images/demo-30-run-cfn-wordpress-09-aws-instances.png?raw=true)
 
-    From the Instances page, Select the instance just created. Note the Public hostname,
-    then select and copy it to the paste buffer for use in the next step.
+10. Obtain AWS Blog Details
 
-    ![View Instance Details](../images/demo-20-run-cfn-simple-08-instance-details.png?raw=true)
+    **This step is frequently the starting point for live demos, due to the time it can take
+    to create the AWS Stack.** In such cases, once we obtain the AWS WordPress Blog WebsiteURL,
+    we can jump immediately to step 13 to create a Blog post.
 
-9. Confirm ability to login to Instance
+    On the AWS Console, from the Console Home, Select the CloudFormation Service to view the
+    CloudFormation Dashboard, then from the CloudFormation Dashboard, Select the 
+    "WordPressDemoStack", then Select the "Outputs" Tab. Right-Click on the "WebsiteURL" Link
+    and open it in another window or tab.
 
-    Confirm you have the demo private key installed: ~/.ssh/demo_id_rsa. This file can
-    be found [here](../../../keys/demo_id_rsa). Adjust the ssh command line as needed if
-    you store your keys in a different location.
+    ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-stack-outputs.png?raw=true)
 
-    From a separate ssh terminal application, use a command such as the following
-    to login to the instance, replacing the public name shown with that observed in
-    the instance details page.
+11. Install WordPress Command-Line Tools on AWS Instance (Skip - Not needed for Console procedure)
 
-    ```bash
-    ssh -i ~/.ssh/demo_id_rsa centos@euca-15-185-206-78.eucalyptus.hp-aw2-1.hpcloudsvc.com
-    ```
+12. Initialize WordPress on AWS Instance
 
-    Once you have successfully logged into the new instance. Confirm the private IP, then
-    the public IP via the meta-data service, with the following commands:
+    On the AWS WordPress Blog, you should see the initial configuration page. Initialize
+    WordPress using these values:
+    - Site Title: Demo ($AWS_ACCOUNT)
+    - Username: demo
+    - Password: <your password>
+    - Your E-mail: <your email>
 
-    ```bash
-    ifconfig
+    Note this site is publically accessible, so choose a password which is non-trivial.
 
-    curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
-    ```
+    ![AWS Initialize WordPress](../images/demo-30-run-cfn-wordpress-12-aws-wordpress-init.png?raw=true)
 
-    ![Verify Instance](../images/demo-20-run-cfn-simple-09-validate.png?raw=true)
+13. Create WordPress Blog Post on AWS Instance
 
-5. List existing AWS Resources (Optional)
+    This should be done each time the demo is run, even if we do not re-create the Stack on AWS,
+    to show migration of current content.
+
+    On the AWS WordPress Blog, login using the username and password provided during the
+    initialization step, then click on the "Create your first blog post" link and create
+    a new blog post.
+
+    ![AWS Create Blog Post](../images/demo-30-run-cfn-wordpress-13-aws-wordpress-post.png?raw=true)
+
+14. List existing Eucalyptus Resources (Optional)
 
     So we can compare with what this demo creates
 
-    From the Dashboard, Select the Security groups Tile to view Security Groups in the
-    Demo Account. Note contents of list for comparison after creating Stack.
+    On the Eucalyptus Console, from the Dashboard, Select the Security groups Tile to view 
+    Security Groups in the Demo Account. Note what Security Groups exist for comparison with
+    results after the WordPressDemoStack has been created.
 
-    ![View Security Groups](../images/demo-20-run-cfn-simple-04-security-groups.png?raw=true)
+    ![Eucalyptus Security Groups](../images/demo-30-run-cfn-wordpress-14-euca-security-groups.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to view Instances in the
-    Demo Account. Note contents of list for comparison after creating Stack.
+    Demo Account. Note what Instances exist for comparison with results after the
+    WordPressDemoStack has been created.
 
-    ![View Instances](../images/demo-20-run-cfn-simple-04-instances.png?raw=true)
+    ![Eucalyptus Instances](../images/demo-30-run-cfn-wordpress-14-euca-instances.png?raw=true)
 
-5. List existing AWS CloudFormation Stacks (Optional)
+15. List existing Eucalyptus CloudFormation Stacks (Optional)
 
-    From the Dashboard, Select the Stacks Tile to view CloudFormation Stacks in the
-    Demo Account. Note contents of list for comparison after creating Stack.
+    So we can compare with what this demo creates
 
-    ![View Stacks](../images/demo-20-run-cfn-simple-05-stacks.png?raw=true)
+    On the Eucalyptus Console, from the Dashboard, Select the Stacks Tile to view CloudFormation
+    Stacks in the Demo Account. Note what Stacks exist for comparison with results after the
+    WordPressDemoStack has been created.
 
-6. Create the AWS Stack
+    ![Eucalyptus Stacks](../images/demo-30-run-cfn-wordpress-15-euca-stacks.png?raw=true)
 
-    From the Stacks List Page, click the Create Button to create a new CloudFormation Stack.
-    Enter "SimpleDemoStack" as the Name.
+16. Create the Eucalyptus Stack
+
+    On the Eucalyptus Console, from the Stacks List Page, click the Create Button to create a
+    new CloudFormation Stack.  Enter "WordPressDemoStack" as the Name.
 
     Next, click on the Upload template Radio Button, then the Choose File Button. Find and
-    select ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template.
+    select ~/Downloads/WordPress_Single_Instance_Eucalyptus.template.
 
-    ![Create Stack - General](../images/demo-20-run-cfn-simple-06-create-general.png?raw=true)
+    ![Eucalyptus Create Stack - General](../images/demo-30-run-cfn-wordpress-16-euca-create-general.png?raw=true)
 
-    Press the Next Button to advance to the Parameters Page. Select "centos66" as the DemoImageId,
-    and "demo" as the DemoKeyPair.
+    Press the Next Button to advance to the Parameters Page. Select "demo" as the DemoKeyPair,
+    "m1.medium" as the InstanceType. Enter "demo" as the DBUser, "password" as the DBPassword,
+    "password" as the DBRootPassword, and "https://cloudformation.$AWS_REGION.$AWS_DOMAIN"
+    (replacing $AWS_REGION and $AWS_DOMAIN with the values defined above) as the EndPoint.
 
-    ![Create Stack - Parameters](../images/demo-20-run-cfn-simple-06-create-parameters.png?raw=true)
+    ![Eucalyptus Create Stack - Parameters](../images/demo-30-run-cfn-wordpress-16-euca-create-parameters.png?raw=true)
 
     Press the CreateStack Button to initiate Stack creation.
 
-7. Monitor AWS Stack creation
+17. Monitor Eucalyptus Stack creation
 
-    Initiating Stack creation will automatically take you to the Stack General Tab, showing a
-    periodically updating view of the state of the stack objects. Review Stack status.
+    Continuing on the Eucalyptus Console, initiating Stack creation will automatically take you
+    to the Stack General Tab, showing a periodically updating view of the state of the Stack
+    Resources. Review Stack status.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-01-details.png?raw=true)
+    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-01-details.png?raw=true)
 
     Click on the Events Tab. Review Stack Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-01-events.png?raw=true)
+    ![Eucalyptus Stack - Events](../images/demo-30-run-cfn-wordpress-17-euca-stack-01-events.png?raw=true)
 
     Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
     Completed.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-02-details.png?raw=true)
+    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-02-details.png?raw=true)
 
     Click on the Events Tab. Confirm all Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-02-events.png?raw=true)
+    ![Eucalyptus Stack - Events](../images/demo-30-run-cfn-wordpress-17-euca-stack-02-events.png?raw=true)
 
-8. List updated AWS Resources (Optional)
+18. List updated Eucalyptus Resources (Optional)
 
-    From the Dashboard, Select the Security groups Tile to view Security Groups in the
-    Demo Account. Note updated contents of list, and compare with the initial set.
+    On the Eucalyptus Console, from the Dashboard, Select the Security groups Tile to view
+    Security Groups in the Demo Account.
 
-    ![View Security Groups](../images/demo-20-run-cfn-simple-08-security-groups.png?raw=true)
+    ![Eucalyptus Security Groups](../images/demo-30-run-cfn-wordpress-18-euca-security-groups.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to view Instances in the
-    Demo Account. Note updated contents of list, and compare with the initial set.
+    Demo Account.
 
-    ![View Instances](../images/demo-20-run-cfn-simple-08-instances.png?raw=true)
+    ![Eucalyptus Instances](../images/demo-30-run-cfn-wordpress-18-euca-instances.png?raw=true)
 
-    From the Instances page, Select the instance just created. Note the Public hostname,
-    then select and copy it to the paste buffer for use in the next step.
+19. Obtain Eucalyptus Blog Details
 
-    ![View Instance Details](../images/demo-20-run-cfn-simple-08-instance-details.png?raw=true)
+    On the Eucalyptus Console, from the Dashboard, Select the Stacks Tile to view CloudFormation
+    Stacks in the Demo Account, then Select the "Outputs" Tab. Select the "WebsiteURL" Link,
+    then copy this value to the past buffer. Open a new browser window or tab, and paste this
+    value into the address bar.
 
-9. Confirm ability to login to Instance
+    ![Eucalyptus Stack Outputs](../images/demo-30-run-cfn-wordpress-19-euca-stack-outputs.png?raw=true)
 
-    Confirm you have the demo private key installed: ~/.ssh/demo_id_rsa. This file can
-    be found [here](../../../keys/demo_id_rsa). Adjust the ssh command line as needed if
-    you store your keys in a different location.
+20. View WordPress on AWS Instance (Optional)
 
-    From a separate ssh terminal application, use a command such as the following
-    to login to the instance, replacing the public name shown with that observed in
-    the instance details page.
+    On the AWS WordPress Blog, Note current content - after migration, this content should appear
+    on the Eucalyptus WordPress Instance.
+
+    ![AWS View Blog](../images/demo-30-run-cfn-wordpress-20-aws-wordpress.png?raw=true)
+
+21. Backup WordPress on AWS Instance, and Restore to Eucalyptus Instance
+
+    On a Workstation where the "euca-demo" GitHub project exists, along with appropriate
+    credentials, run a script to migrate WordPress from AWS to Eucalyptus.
+
+    This is most easily accomplished by ssh-ing into the Host which is running Eucalyptus,
+    as it should contain the required project and credentials.
 
     ```bash
-    ssh -i ~/.ssh/demo_id_rsa centos@euca-15-185-206-78.eucalyptus.hp-aw2-1.hpcloudsvc.com
+    cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
+
+    # If you are using default Eucalyptus parameters against the default AWS account:
+    ./demo-30-run-cfn-wordpress.sh -m m
+
+    # Otherwise, if any of the parameters are different, you can specify any or all of them:
+    ./demo-30-run-cfn-wordpress.sh -m m -r $EUCA_REGION -a $EUCA_ACCOUNT -u $EUCA_USER \
+                                        -R $AWS_REGION  -A $AWS_ACCOUNT  -U $AWS_USER
     ```
 
-    Once you have successfully logged into the new instance. Confirm the private IP, then
-    the public IP via the meta-data service, with the following commands:
+    ![AWS Backup WordPress](../images/demo-30-run-cfn-wordpress-21-aws-wordpress-backup.png?raw=true)
 
-    ```bash
-    ifconfig
+    ![Eucalyptus Restore WordPress](../images/demo-30-run-cfn-wordpress-22-euca-wordpress-restore.png?raw=true)
 
-    curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
-    ```
+22. Restore WordPress on on Eucalyptus Instance (Skip - done in prior step)
 
-    ![Verify Instance](../images/demo-20-run-cfn-simple-09-validate.png?raw=true)
+    In the command-line based manual procedures, migration is split into separate backup (21) and
+    restore (22) steps, while in the console based procedure, a single script does both, so 
+    this step is not necessary. We skip this step number to remain in step sync with the 
+    command-line procedures.
+
+23. Confirm WordPress Migration on Eucalyptus Instance
+
+    On the Eucalyptus WordPress Blog, Confirm content matches the AWS WordPress Instance.
+
+    ![Eucalyptus Confirm Blog](../images/demo-30-run-cfn-wordpress-23-euca-wordpress.png?raw=true)
 

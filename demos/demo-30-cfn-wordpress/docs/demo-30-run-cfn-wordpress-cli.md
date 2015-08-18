@@ -58,6 +58,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     export EUCA_REGION=hp-aw2-1
+    export EUCA_DOMAIN=hpcloudsvc.com
     export EUCA_ACCOUNT=demo
     export EUCA_USER=admin
 
@@ -157,48 +158,215 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
                         --region $AWS_USER_REGION \
                         WordPressDemoStack
     ```
-YOU ARE HERE
 
 8. Monitor AWS Stack creation
 
-    This stack can take 60 to 80 seconds to complete.
+    This stack can take 360 to 600 seconds to complete.
 
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    euform-describe-stacks
+    euform-describe-stacks --region $AWS_USER_REGION
 
-    euform-describe-stack-events SimpleDemoStack | head -10
+    euform-describe-stack-events --region $AWS_USER_REGION WordPressDemoStack | head -10
     ```
 
-8. List updated Resources
+9. List updated AWS Resources (Optional)
 
     Note addition of new group and instance
 
     ```bash
-    euca-describe-groups
+    euca-describe-groups --region $AWS_USER_REGION
 
-    euca-describe-instances
+    euca-describe-instances --region $AWS_USER_REGION
     ```
 
-9. Confirm ability to login to Instance
+10. Obtain AWS Instance and Blog Details
 
-    We must first use some logic to find the public DNS name of the most recently launched instance.
-
-    It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
+    Note these values for future use.
 
     ```bash
-    instance_id=$(euform-describe-stack-resources -n SimpleDemoStack -l DemoInstance | cut -f3)
-    public_name=$(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$AWS_USER_REGION | cut -f3)
+    echo $aws_instance_id
 
-    ssh -i ~/.ssh/demo_id_rsa centos@$public_name
+    aws_public_name=$(euca-describe-instances --region=$AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    echo $aws_public_name
+
+    aws_public_ip=$(euca-describe-instances --region=$AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    echo $aws_public_ip
+
+    aws_wordpress_url=$(euform-describe-stacks --region=$AWS_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo $aws_wordpress_url
     ```
 
-    Once you have successfully logged into the new instance. Confirm the private IP, then
-    the public IP via the meta-data service, with the following commands:
+11. Install WordPress Command-Line Tools on AWS Instance (Optional)
+
+    These can be used to automate WordPress Initialization and Management, but are optional if 
+    you will instead perform these actions via the WordPress website.
+
+    ssh -t -i ~/.ssh/demo_id_rsa ec2-user@$aws_public_name \
+        "sudo curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp; \
+         sudo chmod +x /usr/local/bin/wp"
+
+12. Initialize WordPress on AWS Instance
+
+    We can do this via the WordPress website, or via the WordPress CLI using the command below.
+
+    If you prefer to use the website, use your Browser to visit $aws_wordpress_url, and
+    specify these values:
+    - Site Title: Demo ($AWS_ACCOUNT)
+    - Username: demo
+    - Password: <your password>
+    - Your E-mail: <your email>
+
+    Note this site is publically accessible, so choose a password which is non-trivial.
 
     ```bash
-    ifconfig
-
-    curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
+    ssh -t -i ~/.ssh/demo_id_rsa ec2-user@$aws_public_name \
+        "sudo /usr/local/bin/wp core install --path=/var/www/html/wordpress \
+                                             --url=\"$aws_wordpress_url\" \
+                                             --title=\"Demo ($AWS_ACCOUNT)\" \
+                                             --admin_user=\"demo\" \
+                                             --admin_password=\"<your password>\" \
+                                             --admin_email=\"<your email>\""
     ```
+
+13. Create WordPress Blog Post on AWS Instance
+
+    This should be done each time the demo is run, even if we do not re-create the Stack on AWS,
+    to show migration of current content.
+
+    We can do this via the WordPress website, or via the WordPress CLI using the command below.
+
+    If you prefer to use the website, use your Browser to visit $aws_wordpress_url, login using
+    the username and password provided in the prior step, and create a new blog post.
+
+    ```bash
+    ssh -t -i ~/.ssh/demo_id_rsa ec2-user@$aws_public_name \
+        "sudo /usr/local/bin/wp post create --path=/var/www/html/wordpress \
+                                            --post_type=\"post\" \
+                                            --post_status=\"publish\" \
+                                            --post_title=\"Post on $(date '+%Y-%m-%d %H:%M')\" \
+                                            --post_content=\"Post created with wp on $(hostname)\""
+    ```
+
+14. List existing Eucalyptus Resources (Optional)
+
+    So we can compare with what this demo creates
+
+    ```bash
+    euca-describe-groups --region $EUCA_USER_REGION
+
+    euca-describe-instances --region $EUCA_USER_REGION
+    ```
+
+15. List existing Eucalyptus CloudFormation Stacks (Optional)
+
+    So we can compare with what this demo creates
+
+    ```bash
+    euform-describe-stacks --region $EUCA_USER_REGION
+    ```
+
+16. Create the Eucalyptus Stack
+
+    ```bash
+    euform-create-stack --template-file /var/tmp/WordPress_Single_Instance_Eucalyptus.template \
+                        --parameter "KeyName=demo" \
+                        --parameter "InstanceType=m1.medium" \
+                        --parameter "DBUser=demo" \
+                        --parameter "DBPassword=password" \
+                        --parameter "DBRootPassword=password" \
+                        --parameter "EndPoint=https://cloudformation.$EUCA_REGION.$EUCA_DOMAIN" \
+                        --capabilities CAPABILITY_IAM \
+                        --region $EUCA_USER_REGION \
+                        WordPressDemoStack
+    ```
+
+17. Monitor Eucalyptus Stack creation
+
+    This stack can take 360 to 600 seconds to complete.
+
+    Run either of these commands as desired to monitor Stack progress.
+
+    ```bash
+    euform-describe-stacks --region $EUCA_USER_REGION
+
+    euform-describe-stack-events --region $EUCA_USER_REGION WordPressDemoStack | head -10
+    ```
+
+18. List updated Eucalyptus Resources (Optional)
+
+    Note addition of new group and instance
+
+    ```bash
+    euca-describe-groups --region $EUCA_USER_REGION
+
+    euca-describe-instances --region $EUCA_USER_REGION
+    ```
+
+19. Obtain Eucalyptus Instance and Blog Details
+
+    Note these values for future use.
+
+    ```bash
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$EUCA_USER_REGION | cut -f3)
+    echo $euca_instance_id
+
+    euca_public_name=$(euca-describe-instances --region=$EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    echo $euca_public_name
+
+    euca_public_ip=$(euca-describe-instances --region=$EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    echo $euca_public_ip
+
+    euca_wordpress_url=$(euform-describe-stacks --region=$EUCA_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo $euca_wordpress_url
+    ```
+
+20. View WordPress on AWS Instance (Optional)
+
+    We can do this via the WordPress website, or via a text-mode browser using the command below.
+
+    If you prefer to use the website, use your Browser to visit $aws_wordpress_url, and note
+    current content.
+
+    ```bash
+    w3m -dump $aws_wordpress_url
+    ```
+
+21. Backup WordPress on AWS Instance
+
+    Backup the WordPress database, then copy the database backup from the Instance to an AWS S3 
+    Bucket (demo-$AWS_ACCOUNT).
+
+    ```bash
+    ssh -T -i ~/.ssh/demo_id_rsa ec2-user@$aws_public_name << EOF
+    mysqldump -uroot -ppassword wordpressdb > /var/tmp/db.bak
+    aws s3 cp /var/tmp/db.bak s3://demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/db.bak --acl public-read
+    EOF
+    ```
+
+22. Restore WordPress on Eucalyptus Instance
+
+    Copy the database backup from the AWS S3 Bucket (demo-$AWS_ACCOUNT) to the Instance, then
+    restore the WordPress database.
+
+    ```bash
+    ssh -T -i ~/.ssh/demo_id_rsa root@$euca_public_name << EOF
+    wget http://s3.amazonaws.com/demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/db.bak -O /var/tmp/db.bak
+    mysql -uroot -ppassword -Dwordpressdb < /var/tmp/db.bak
+    rm -f /var/tmp/db.bak
+    EOF
+    ```
+
+23. Confirm WordPress Migration on Eucalyptus Instance
+
+    We can do this via the WordPress website, or via a text-mode browser using the command below.
+
+    If you prefer to use the website, use your Browser to visit $euca_wordpress_url in a separate
+    tab, and confirm content is identical to the AWS WordPress website.
+
+    ```bash
+    w3m -dump $euca_wordpress_url
+    ```
+
