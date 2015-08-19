@@ -163,8 +163,11 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     Map. It is otherwise identical to what is run in AWS.
  
     You can use your File Browser to open ~/Downloads/WordPress_Single_Instance_Eucalyptus.template,
-    or view this [example WordPress_Single_Instance_Eucalyptus.template](../templates/WordPress_Single_Instance_Eucalyptus.template.example) (EMIs will vary).
+    or view [this example](../templates/WordPress_Single_Instance_Eucalyptus.template.example) (EMIs
+    may vary) in another browser window or tab.
  
+    ![AWS WordPress Template](../images/demo-30-run-cfn-wordpress-04-aws-wordpress-template.png?raw=true)
+
 5. List existing AWS Resources (Optional)
 
     So we can compare with what this demo creates
@@ -193,22 +196,32 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
 7. Create the AWS Stack
 
-    On the AWS Console, from the Stacks List Page, click the Create Button to create a new 
-    CloudFormation Stack. Enter "WordPressDemoStack" as the Name.
-    
-    Next, click on the Upload template Radio Button, then the Choose File Button. Find and
-    select ~/Downloads/WordPress_Single_Instance_Eucalyptus.template.
+    On the AWS Console, from the CloudFormation Dashboard, which lists Stacks, click the Create
+    Stack Button to create a new CloudFormation Stack. 
 
-    ![AWS Create Stack - General](../images/demo-30-run-cfn-wordpress-07-aws-create-general.png?raw=true)
+    On the Select Template Page, Enter "WordPressDemoStack" as the Name. Click on the Upload a
+    template to Amazon S3 Radio Button, then the Choose File Button. Find and select
+    ~/Downloads/WordPress_Single_Instance_Eucalyptus.template.
 
-    Press the Next Button to advance to the Parameters Page. Select "demo" as the DemoKeyPair,
-    "m1.medium" as the InstanceType. Enter "demo" as the DBUser, "password" as the DBPassword,
-    "password" as the DBRootPassword, and "https://cloudformation.$AWS_REGION.amazon.aws.com"
-    (replacing $AWS_REGION with the value defined above) as the EndPoint.
+    ![AWS Create Stack - Select Template](../images/demo-30-run-cfn-wordpress-07-aws-stack-create-template.png?raw=true)
 
-    ![AWS Create Stack - Parameters](../images/demo-30-run-cfn-wordpress-07-aws-create-parameters.png?raw=true)
+    Press the Next Button to advance to the Specify Parameters Page. Leave DBName set to the 
+    default of "wordpressdb", enter "password" as the DBPassword, "password" as the DBRootPassword,
+    "demo" as the DBUser, "https://cloudformation.$AWS_REGION.amazon.aws.com" (replacing
+    $AWS_REGION with the value defined in parameters above) as the EndPoint, "m1.medium" as the
+    InstanceType, "demo" as the KeyName. Leave SSHLocation set to the default of "0.0.0.0/0".
 
-    Press the CreateStack Button to initiate Stack creation.
+    ![AWS Create Stack - Parameters](../images/demo-30-run-cfn-wordpress-07-aws-stack-create-parameters.png?raw=true)
+
+    Press the Next Button to advance to the Options Page. Press the Next Button again to advance to
+    the Review Page. Scroll down and Check the "I acknowledge that this template might cause AWS
+    CloudFormation to create IAM resources" checkbox.
+
+    ![AWS Create Stack - Review](../images/demo-30-run-cfn-wordpress-07-aws-stack-create-review.png?raw=true)
+
+    Press the Create Button to initiate Stack creation.
+
+YOU ARE HERE
 
 8. Monitor AWS Stack creation
 
