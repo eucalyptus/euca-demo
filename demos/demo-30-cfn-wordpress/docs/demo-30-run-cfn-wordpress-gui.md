@@ -331,10 +331,12 @@ YOU ARE HERE
 
     ![Eucalyptus Create Stack - General](../images/demo-30-run-cfn-wordpress-16-euca-create-general.png?raw=true)
 
-    Press the Next Button to advance to the Parameters Page. Select "demo" as the DemoKeyPair,
-    "m1.medium" as the InstanceType. Enter "demo" as the DBUser, "password" as the DBPassword,
-    "password" as the DBRootPassword, and "https://cloudformation.$AWS_REGION.$AWS_DOMAIN"
-    (replacing $AWS_REGION and $AWS_DOMAIN with the values defined above) as the EndPoint.
+    Press the Next Button to advance to the Parameters Page. Enter 
+    "https://cloudformation.$AWS_REGION.$AWS_DOMAIN" (replacing $AWS_REGION and $AWS_DOMAIN
+    with the values defined above) as the EndPoint. Select "m1.medium" as the InstanceType.
+    Leave SSHLocation set to the default of "0.0.0.0/0". Select "demo" as the KeyName.
+    Enter "password" as the DBPassword, "demo" as the DBUser and "password" as the
+    DBRootPassword. Leave DBName set to the default of "wordpressdb".
 
     ![Eucalyptus Create Stack - Parameters](../images/demo-30-run-cfn-wordpress-16-euca-create-parameters.png?raw=true)
 
