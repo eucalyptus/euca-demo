@@ -207,7 +207,7 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
     Press the Next Button to advance to the Specify Parameters Page. Leave DBName set to the 
     default of "wordpressdb", enter "password" as the DBPassword, "password" as the DBRootPassword,
-    "demo" as the DBUser, "https://cloudformation.$AWS_REGION.amazon.aws.com" (replacing
+    "demo" as the DBUser, "https://cloudformation.$AWS_REGION.amazonaws.com" (replacing
     $AWS_REGION with the value defined in parameters above) as the EndPoint, "m1.medium" as the
     InstanceType, "demo" as the KeyName. Leave SSHLocation set to the default of "0.0.0.0/0".
 
@@ -221,38 +221,36 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
     Press the Create Button to initiate Stack creation.
 
-YOU ARE HERE
-
 8. Monitor AWS Stack creation
 
     Continuing on the AWS Console, initiating Stack creation will automatically take you
-    to the Stack General Tab, showing a periodically updating view of the state of the Stack
-    Resources. Review Stack status.
-
-    ![AWS Monitor Stack - General](../images/demo-30-run-cfn-wordpress-08-aws-stack-01-details.png?raw=true)
-
-    Click on the Events Tab. Review Stack Events.
+    to the Stack Events Tab, showing a view of the current state of the Stack Resources.
+    Review Stack status and events.
 
     ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-01-events.png?raw=true)
 
-    Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
-    Completed.
-
-    ![AWS Monitor Stack - General](../images/demo-30-run-cfn-wordpress-08-aws-stack-02-details.png?raw=true)
-
-    Click on the Events Tab. Confirm all Events.
+    Periodically click on the refresh button at the top right to monitor Stack creation.
 
     ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-02-events.png?raw=true)
+
+    Confirm the Stack has been created successfully.
+
+    ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-03-events.png?raw=true)
+
+    View the Resources created. Note the Security Group and Instance IDs.
+
+    ![AWS Monitor Stack - Events](../images/demo-30-run-cfn-wordpress-08-aws-stack-03-resources.png?raw=true)
 
 9. List updated AWS Resources (Optional)
 
     On the AWS Console, from the Console Home, Select the EC2 Service to view the EC2 Dashboard,
     then from the EC2 Dashboard, Select Security Groups from Left Navigation to view Security
-    Groups in the AWS Account.
+    Groups in the AWS Account. Confirm the new Security Group exists.
 
     ![AWS Security Groups](../images/demo-30-run-cfn-wordpress-09-aws-security-groups.png?raw=true)
 
-    Next, Select Instances from Left Navigation to view Instances in the AWS Account.
+    Next, Select Instances from Left Navigation to view Instances in the AWS Account. Confirm
+    the new Instance exists.
 
     ![AWS Instances](../images/demo-30-run-cfn-wordpress-09-aws-instances.png?raw=true)
 
@@ -269,6 +267,10 @@ YOU ARE HERE
 
     ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-stack-outputs.png?raw=true)
 
+    View the WordPress Blog, awaiting initialization!
+
+    ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-wordpress.png?raw=true)
+
 11. Install WordPress Command-Line Tools on AWS Instance (Skip - Not needed for Console procedure)
 
 12. Initialize WordPress on AWS Instance
@@ -284,16 +286,24 @@ YOU ARE HERE
 
     ![AWS Initialize WordPress](../images/demo-30-run-cfn-wordpress-12-aws-wordpress-init.png?raw=true)
 
+    Confirm WordPress is ready.
+
+    ![AWS Initialize WordPress](../images/demo-30-run-cfn-wordpress-12-aws-wordpress-ready.png?raw=true)
+
 13. Create WordPress Blog Post on AWS Instance
 
     This should be done each time the demo is run, even if we do not re-create the Stack on AWS,
     to show migration of current content.
 
     On the AWS WordPress Blog, login using the username and password provided during the
-    initialization step, then click on the "Create your first blog post" link and create
+    initialization step, then click on the "Write your first blog post" link and create
     a new blog post.
 
     ![AWS Create Blog Post](../images/demo-30-run-cfn-wordpress-13-aws-wordpress-post.png?raw=true)
+
+    Confirm new post is visible.
+
+    ![AWS Create Blog Post](../images/demo-30-run-cfn-wordpress-13-aws-wordpress-confirm.png?raw=true)
 
 14. List existing Eucalyptus Resources (Optional)
 
