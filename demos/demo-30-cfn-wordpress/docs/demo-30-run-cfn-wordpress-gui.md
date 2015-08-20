@@ -262,14 +262,14 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
     On the AWS Console, from the Console Home, Select the CloudFormation Service to view the
     CloudFormation Dashboard, then from the CloudFormation Dashboard, Select the 
-    "WordPressDemoStack", then Select the "Outputs" Tab. Right-Click on the "WebsiteURL" Link
-    and open it in another window or tab.
+    "WordPressDemoStack", then Select the "Outputs" Tab.
 
     ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-stack-outputs.png?raw=true)
 
-    View the WordPress Blog, awaiting initialization!
+    Right-Click on the "WebsiteURL" Link and open it in another window or tab. View the
+    WordPress Blog, awaiting initialization!
 
-    ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-wordpress.png?raw=true)
+    ![AWS WordPress Unconfigured](../images/demo-30-run-cfn-wordpress-10-aws-wordpress.png?raw=true)
 
 11. Install WordPress Command-Line Tools on AWS Instance (Skip - Not needed for Console procedure)
 
@@ -358,16 +358,16 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     to the Stack General Tab, showing a periodically updating view of the state of the Stack
     Resources. Review Stack status.
 
-    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-01-details.png?raw=true)
+    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-01-general.png?raw=true)
 
     Click on the Events Tab. Review Stack Events.
 
     ![Eucalyptus Stack - Events](../images/demo-30-run-cfn-wordpress-17-euca-stack-01-events.png?raw=true)
 
     Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
-    Completed.
+    Completed. View the Resources created. Note the Security Group and Instance IDs.
 
-    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-02-details.png?raw=true)
+    ![Eucalyptus Stack - General](../images/demo-30-run-cfn-wordpress-17-euca-stack-02-general.png?raw=true)
 
     Click on the Events Tab. Confirm all Events.
 
@@ -388,11 +388,15 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 19. Obtain Eucalyptus Blog Details
 
     On the Eucalyptus Console, from the Dashboard, Select the Stacks Tile to view CloudFormation
-    Stacks in the Demo Account, then Select the "Outputs" Tab. Select the "WebsiteURL" Link,
-    then copy this value to the past buffer. Open a new browser window or tab, and paste this
-    value into the address bar.
+    Stacks in the Demo Account, then Select "WordPressDemoStack" to view the Stack General Page.
+    Select the "WebsiteURL" Link text, then copy this value to the paste buffer.
 
     ![Eucalyptus Stack Outputs](../images/demo-30-run-cfn-wordpress-19-euca-stack-outputs.png?raw=true)
+
+    Open a new browser window or tab, and paste this value into the address bar.  View the
+    WordPress Blog, awaiting initialization!
+
+    ![Eucalyptus WordPress Unconfigured](../images/demo-30-run-cfn-wordpress-19-aws-wordpress.png?raw=true)
 
 20. View WordPress on AWS Instance (Optional)
 
