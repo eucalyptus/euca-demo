@@ -228,7 +228,7 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
     ![AWS Create Stack - Review](../images/demo-30-run-cfn-wordpress-07-aws-stack-create-review.png?raw=true)
 
-    Press the Create Button to initiate Stack creation.
+    Press the Create Button to initiate Stack creation. This will take about 6 to 7 minutes.
 
 8. Monitor AWS Stack creation
 
@@ -281,7 +281,7 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     Right-Click on the "WebsiteURL" Link and open it in another window or tab. View the
     WordPress Blog, awaiting initialization!
 
-    ![AWS WordPress Unconfigured](../images/demo-30-run-cfn-wordpress-10-aws-wordpress.png?raw=true)
+    ![AWS WordPress Unconfigured](../images/demo-30-run-cfn-wordpress-10-aws-wordpress-unconfigured.png?raw=true)
 
 11. Install WordPress Command-Line Tools on AWS Instance (Skip - Not needed for Console procedure)
 
