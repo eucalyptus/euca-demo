@@ -201,7 +201,7 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     Right-Click on the "WebsiteURL" Link and open it in another window or tab. View the
     WordPress Blog, with existing posts.
 
-    ![AWS WordPress](../images/demo-30-run-cfn-wordpress-10-aws-wordpress.png?raw=true)
+    ![AWS WordPress](../images/demo-30-run-cfn-wordpress-13-aws-wordpress-confirm.png?raw=true)
 
 5. Create WordPress Blog Post on AWS Instance
 
