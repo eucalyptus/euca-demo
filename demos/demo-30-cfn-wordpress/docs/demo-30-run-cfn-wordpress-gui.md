@@ -65,12 +65,15 @@ and which can then adjust the behavior of statements.
     export AWS_PROFILE=$AWS_ACCOUNT-$AWS_USER
     ```
 
-### Login to Management Consoles
+### Login to Management Consoles and a Terminal Session
 
 This demo shows coordination between Eucalyptus and AWS Accounts, with most actions performed in parallel
 across both Accounts in an interleaved manner. You will need to open two browser windows or tabs, and 
 log into the Eucalyptus and AWS Consoles separately, then use each Console as specified in the steps
 below.
+
+Additionally, the migration of the WordPress database requires a script which must be run in a terminal
+session.
 
 Ideally, this demo should be shown on a wide-screen or multi-monitor/projector display, so that both
 consoles can be seen side-by-side. If this is not possible, use two tabs in the same browser window.
@@ -94,6 +97,17 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     Arrange this window or tab to the RIGHT of your screen.
 
     ![Login as Eucalyptus Demo Account Demo User](../images/demo-30-run-cfn-wordpress-00-euca-login.png?raw=true)
+
+3. Login to a Terminal Session
+
+    Using your favorite SSH Terminal appliocation, open a terminal session into the Eucalyptus CLC.
+
+    This can also be any other Enterprise Linux management workstation, as long as the credentials
+    for both the AWS Account and Eucalyptus Demo Account have been configured.
+
+    Arrange this window UNDERNEATH the browser windows, as the steps which require this are run last.
+
+    ![Login to Terminal Session](../images/demo-30-run-cfn-wordpress-00-ssh-login.png?raw=true)
 
 ### Run CloudFormation WordPress Demo
 
@@ -408,7 +422,8 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 21. Backup WordPress on AWS Instance, and Restore to Eucalyptus Instance
 
     On a Workstation where the "euca-demo" GitHub project exists, along with appropriate
-    credentials, run a script to migrate WordPress from AWS to Eucalyptus.
+    credentials, run a script to migrate WordPress from AWS to Eucalyptus. This script
+    will step through the commands necessary to perform the migration as you press Enter.
 
     This is most easily accomplished by ssh-ing into the Host which is running Eucalyptus,
     as it should contain the required project and credentials.
@@ -417,16 +432,18 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
 
     # If you are using default Eucalyptus parameters against the default AWS account:
-    ./demo-30-run-cfn-wordpress.sh -m m
+    ./demo-30-migrate.sh
 
     # Otherwise, if any of the parameters are different, you can specify any or all of them:
-    ./demo-30-run-cfn-wordpress.sh -m m -r $EUCA_REGION -a $EUCA_ACCOUNT -u $EUCA_USER \
-                                        -R $AWS_REGION  -A $AWS_ACCOUNT  -U $AWS_USER
+    ./demo-30-migrate.sh -r $EUCA_REGION -a $EUCA_ACCOUNT -u $EUCA_USER \
+                         -R $AWS_REGION  -A $AWS_ACCOUNT  -U $AWS_USER
     ```
 
-    ![AWS Backup WordPress](../images/demo-30-run-cfn-wordpress-21-aws-wordpress-backup.png?raw=true)
+    ![SSH Run Script](../images/demo-30-run-cfn-wordpress-21-ssh-run-script.png?raw=true)
 
-    ![Eucalyptus Restore WordPress](../images/demo-30-run-cfn-wordpress-22-euca-wordpress-restore.png?raw=true)
+    ![SSH Backup WordPress](../images/demo-30-run-cfn-wordpress-21-ssh-wordpress-backup.png?raw=true)
+
+    ![SSH Restore WordPress](../images/demo-30-run-cfn-wordpress-22-ssh-wordpress-restore.png?raw=true)
 
 22. Restore WordPress on on Eucalyptus Instance (Skip - done in prior step)
 
