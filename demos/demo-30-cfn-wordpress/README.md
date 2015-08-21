@@ -49,7 +49,7 @@ exist and the euca-demo GitHub project has been downloaded to ~/eucalyptus/euca-
 
 3. Run the CloudFormation WordPress Demo in the Eucalyptus Account
 
-   Follow [this script](docs/demo-30-run-cfn-wordpress-gui.md), which runs the
+   Follow [this script](docs/demo-30-run-cfn-wordpress-gui-short.md), which runs the
    short form of this demo.
 
 4. Reset the CloudFormation WordPress Demo in the Eucalyptus Account (after live demo)
