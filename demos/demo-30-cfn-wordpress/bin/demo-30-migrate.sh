@@ -16,10 +16,15 @@ tmpdir=/var/tmp
 
 federation=aws
 
-mysql_user=root
+mysql_root=root
+mysql_user=demo
 mysql_password=password
 mysql_db=wordpressdb
 mysql_bakfile=$mysql_db.bak
+
+wordpress_admin_user=demo
+wordpress_admin_password=JohannesGutenberg-1455
+wordpress_admin_email=mcrawford@hp.com
 
 step=0
 speed_max=400
@@ -41,10 +46,12 @@ euca_region=${AWS_DEFAULT_REGION#*@}
 euca_account=${AWS_ACCOUNT_NAME:-demo}
 euca_user=${AWS_USER_NAME:-admin}
 euca_ssh_user=root
+euca_ssh_key=demo
 aws_region=us-east-1
 aws_account=euca
 aws_user=demo
 aws_ssh_user=ec2-user
+aws_ssh_key=demo
 
 
 #  2. Define functions
@@ -334,7 +341,7 @@ if [ $verbose = 1 ]; then
 else
     aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
     aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
-    ews_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
 
     aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 
@@ -391,7 +398,7 @@ echo
 echo "Commands:"
 echo
 echo "ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF"
-echo "mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+echo "mysqldump -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
 echo "aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
 echo "EOF"
 
@@ -409,8 +416,8 @@ if [ $choice = y ]; then
         echo
         echo "# ssh -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name"
         ssh -T -i ~/.ssh/demo_id_rsa $aws_ssh_user@$aws_public_name << EOF
-echo "> mysqldump -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
-mysqldump --compatible=mysql4 -u$mysql_user -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
+echo "> mysqldump -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile"
+mysqldump --compatible=mysql4 -u$mysql_root -p$mysql_password $mysql_db > $tmpdir/$mysql_bakfile
 sleep 1
 echo
 echo "> aws s3 cp $tmpdir/$mysql_bakfile s3://demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile --acl public-read"
@@ -447,7 +454,7 @@ echo "Commands:"
 echo
 echo "ssh -T -i ~/.ssh/demo_id_rsa $euca_ssh_user@$euca_public_name << EOF"
 echo "wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile"
-echo "mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+echo "mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
 echo "EOF"
 
 run 50
@@ -468,8 +475,8 @@ echo "# wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_ba
 wget http://$s3_domain/demo-$aws_account/demo-30-cfn-wordpress/$mysql_bakfile -O $tmpdir/$mysql_bakfile
 sleep 1
 echo
-echo "# mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
-mysql -u$mysql_user -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile
+echo "# mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile"
+mysql -u$mysql_root -p$mysql_password -D$mysql_db < $tmpdir/$mysql_bakfile
 EOF
         RC=$?
         if [ $RC = 0 -o $RC = 1 ]; then
