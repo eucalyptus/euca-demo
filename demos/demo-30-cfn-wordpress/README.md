@@ -27,6 +27,37 @@ The following are key points illustrated in this demo:
 * It is possible to view, run and monitor activities and resources created by CloudFormation
   via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
 
+### CloudFormation WordPress Demo Quick Start
+
+For those in a hurry, here are the basic steps to run this demo. Statements should be run
+as root on the Eucalyptus CLC, or another management workstation where appropriate credentials
+exist and the euca-demo GitHub project has been downloaded to ~/eucalyptus/euca-demo.
+
+1. Initialize the CloudFormation WordPress Demo in both the Eucalyptus and AWS Accounts (before live demo)
+
+    ```bash
+    cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
+
+    ./demo-30-initialize-cfn-wordpress.sh -m b
+    ```
+
+2. Run the CloudFormation WordPress Demo in the AWS Account (before live demo)
+
+    ```bash
+    ./demo-30-run-cfn-wordpress.sh -m a
+    ```
+
+3. Run the CloudFormation WordPress Demo in the Eucalyptus Account
+
+   Follow [this script](docs/demo-30-run-cfn-wordpress-gui.md), which runs the
+   short form of this demo.
+
+4. Reset the CloudFormation WordPress Demo in the Eucalyptus Account (after live demo)
+
+    ```bash
+    ./demo-30-reset-cfn-wordpress.sh -m e -R us-west-2 -A mjchp
+    ```
+
 ### CloudFormation WordPress Demo Overview
 
 This demo creates a modified version of the "WordPress_Single_Instance" template in both an
