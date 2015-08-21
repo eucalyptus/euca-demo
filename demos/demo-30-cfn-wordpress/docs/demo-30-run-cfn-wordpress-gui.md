@@ -1,7 +1,11 @@
-# Demo 30: CloudFormation: WordPress
+# Demo 30: CloudFormation: WordPress (Long)
 
 This document describes the manual procedure to run the CloudFormation WordPress demo primarily
 via the Eucalyptus Console (GUI). Some steps require Linux shell access to run scripts.
+
+This variant is the complete end-to-end procedure. There is a [short](demo-30-run-cfn-wordpress-gui-short.md)
+version of this procedure which should normally be run for live demos, which removes all
+optional steps and assumes the AWS Account has been setup and left running in advance.
 
 ### CloudFormation WordPress Demo Key Points
 
@@ -103,7 +107,9 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     Using your favorite SSH Terminal appliocation, open a terminal session into the Eucalyptus CLC.
 
     This can also be any other Enterprise Linux management workstation, as long as the credentials
-    for both the AWS Account and Eucalyptus Demo Account have been configured.
+    for both the AWS Account and Eucalyptus Demo Account have been configured, and the euca-demo
+    GitHub project which contains the migration script has been downloaded to the
+    ~/src/eucalyptus/euca-demo directory.
 
     Arrange this window UNDERNEATH the browser windows, as the steps which require this are run last.
 
@@ -163,6 +169,9 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
     ![AWS S3 Template Download](../images/demo-30-run-cfn-wordpress-03-aws-s3-template-download.png?raw=true)
  
 4. Display WordPress CloudFormation Template (Optional)
+
+    We can display this Template after the Stack has been created, so this step is only needed if
+    there is a desire to display the template before we create it.
 
     The WordPress Template creates an Instance Profile based on the "Demos" Role, then a
     Security Group and an Instance which references the Instance Profile. A User-Data
@@ -268,15 +277,18 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
     ![AWS Instances](../images/demo-30-run-cfn-wordpress-09-aws-instances.png?raw=true)
 
-10. Obtain AWS Blog Details
-
-    **This step is frequently the starting point for live demos, due to the time it can take
-    to create the AWS Stack.** In such cases, once we obtain the AWS WordPress Blog WebsiteURL,
-    we can jump immediately to step 13 to create a Blog post.
+10. Display AWS WordPress Template and Blog
 
     On the AWS Console, from the Console Home, Select the CloudFormation Service to view the
     CloudFormation Dashboard, then from the CloudFormation Dashboard, Select the 
-    "WordPressDemoStack", then Select the "Outputs" Tab.
+    "WordPressDemoStack", then Select the "Template" Tab.
+ 
+    ![AWS Stack Template](../images/demo-30-run-cfn-wordpress-10-aws-stack-template.png?raw=true)
+
+    Walk through sections of the Template as needed based on your audience and any questions.
+    Highlight the lines in the "AWSRegionArch2AMI" Map which were added for Eucalyptus.
+
+    Select the "Outputs" Tab to view the WordPress Blog URL.
 
     ![AWS Stack Outputs](../images/demo-30-run-cfn-wordpress-10-aws-stack-outputs.png?raw=true)
 
@@ -421,12 +433,9 @@ consoles can be seen side-by-side. If this is not possible, use two tabs in the 
 
 21. Backup WordPress on AWS Instance, and Restore to Eucalyptus Instance
 
-    On a Workstation where the "euca-demo" GitHub project exists, along with appropriate
-    credentials, run a script to migrate WordPress from AWS to Eucalyptus. This script
-    will step through the commands necessary to perform the migration as you press Enter.
-
-    This is most easily accomplished by ssh-ing into the Host which is running Eucalyptus,
-    as it should contain the required project and credentials.
+    On the Terminal Session, run a script to migrate WordPress from AWS to Eucalyptus. This
+    script will step through the commands necessary to perform the migration one-by-one, each
+    time you press Enter.
 
     ```bash
     cd ~/src/eucalyptus/euca-demo/demos/demo-30-cfn-wordpress/bin
