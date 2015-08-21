@@ -4,20 +4,6 @@ This document describes the manual procedure to run the CloudFormation WordPress
 via Euca2ools. However, because Euca2ools does not currently support S3 operations, all tasks
 related to S3 must use another tool, such as AWS CLI, which is used here.
 
-### CloudFormation WordPress Demo Key Points
-   
-The following are key points illustrated in this demo:
-   
-* This demo demonstrates how CloudFormation Templates with simple modifications can work across
-  both AWS and Eucalyptus Regions with identical results, as long as the Template references
-  only supported Resources.
-* This also shows how a sample workload, in this case WordPress, can be migrated from an AWS
-  Account to a Eucalyptus Region via S3 Object transfer.
-* This demo also shows the use of Roles and Instance Profiles, used by the Instance when
-  saving the WordPress database backup to S3.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
-
 ### Prerequisites
 
 This variant can be run by any User with the appropriate permissions, as long as both Euca2ools
