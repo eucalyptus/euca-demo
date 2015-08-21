@@ -55,7 +55,7 @@ exist and the euca-demo GitHub project has been downloaded to ~/eucalyptus/euca-
 4. Reset the CloudFormation WordPress Demo in the Eucalyptus Account (after live demo)
 
     ```bash
-    ./demo-30-reset-cfn-wordpress.sh -m e -R us-west-2 -A mjchp
+    ./demo-30-reset-cfn-wordpress.sh -m e
     ```
 
 ### CloudFormation WordPress Demo Overview
