@@ -763,8 +763,8 @@ else
     aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
-sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
-sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
+sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts 2> /dev/null
+sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts 2> /dev/null
 ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
 ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
@@ -1204,8 +1204,8 @@ else
     euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
-sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
-sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts 2> /dev/null
+sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts 2> /dev/null
 ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
 ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 

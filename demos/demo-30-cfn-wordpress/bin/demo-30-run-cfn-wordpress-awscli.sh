@@ -769,8 +769,8 @@ else
                                                            --profile=$aws_profile --region=$aws_region 2> /dev/null)
 fi
 
-sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts
-sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts
+sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts 2> /dev/null
+sed -i -e "/$aws_public_ip/d" ~/.ssh/known_hosts 2> /dev/null
 ssh-keyscan $aws_public_name 2> /dev/null >> ~/.ssh/known_hosts
 ssh-keyscan $aws_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
@@ -1229,8 +1229,8 @@ else
                                                             --profile=$euca_profile --region=$euca_region 2> /dev/null)
 fi
 
-sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts
-sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts
+sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts 2> /dev/null
+sed -i -e "/$euca_public_ip/d" ~/.ssh/known_hosts 2> /dev/null
 ssh-keyscan $euca_public_name 2> /dev/null >> ~/.ssh/known_hosts
 ssh-keyscan $euca_public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
