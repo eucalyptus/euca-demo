@@ -1,4 +1,4 @@
-# Demo 30: CloudFormation: WordPress
+# Demo 30: CloudFormation: WordPress Scripts
 
 These scripts will initialize, run or reset a Demo which uses CloudFormation to create a WordPress
 installation first in an AWS Account, then a Eucalyptus Demo Account, then migrate content from

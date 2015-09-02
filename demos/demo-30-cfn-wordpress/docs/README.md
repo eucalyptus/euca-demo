@@ -1,4 +1,4 @@
-# Demo 30: CloudFormation: WordPress
+# Demo 30: CloudFormation: WordPress Procedures
 
 These procedures will initialize, run or reset a Demo which uses CloudFormation to create a
 WordPress installation first in an AWS Account, hten a Eucalyptus Demo Account, then migrate
@@ -15,7 +15,8 @@ Eucalyptus Console (gui), Euca2ools CLI (cli) or AWS CLI (awscli). Prior to runn
 procedures the appropriate Accounts must be initialized via the appropriate initialize
 scripts.
 
-* [demo-30-run-cfn-wordpress-gui.sh](./demo-30-run-cfn-wordpress-gui.sh)
-* [demo-30-run-cfn-wordpress-cli.sh](./demo-30-run-cfn-wordpress-cli.sh)
-* [demo-30-run-cfn-wordpress-awscli.sh](./demo-30-run-cfn-wordpress-awscli.sh)
+* [demo-30-run-cfn-wordpress-gui.md](./demo-30-run-cfn-wordpress-gui.md)
+* [demo-30-run-cfn-wordpress-gui-short.md](./demo-30-run-cfn-wordpress-gui-short.md)
+* [demo-30-run-cfn-wordpress-cli.md](./demo-30-run-cfn-wordpress-cli.md)
+* [demo-30-run-cfn-wordpress-awscli.md](./demo-30-run-cfn-wordpress-awscli.md)
 
