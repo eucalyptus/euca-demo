@@ -1,17 +1,18 @@
 # Demo Initialize: Initialize Demo Account
 
-This document describes the manual procedure to initialize a demo account within a Eucalyptus
+This document describes the manual procedure to initialize a Demo Account within a Eucalyptus
 Region for demos.
 
-This variant is meant to be run as root
+### Prerequisites
 
-This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+This variant must be run by root on the Eucalyptus CLC host.
 
-This is using the following host in the HP Goleta server room:
-- odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
-  - Public: 10.104.10.74/16
+It assumes the environment was installed via FastStart and the additional scripts needed to
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
+described in the [FastStart Install](../../../installs/install-10-faststart) section, have
+been run, or equivalent manual configuration has been done.
+
+It also assumes the [demo-00-initialize.md](./demo-00-initialize.md) procedure has been run.
 
 ### Define Parameters
 
@@ -23,21 +24,16 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
 1. Define Environment Variables used in upcoming code blocks
 
-    These instructions were based on a Faststart Install performed within the PRC on host
-    odc-f-32.prc.eucalyptus-systems.com, configured as region hp-gol01-f1, using MCrawfords
-    DNS server. Adjust the variables in this section to your environment.
+    Adjust the variables in this section to your environment.
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-f1
+    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
+    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-admin
+    export AWS_CREDENTIAL_FILE=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
     ```
 
 ### Initialize Demo Account
-
-1. Use Eucalyptus Administrator credentials
-
-    ```bash
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    ```
 
 2. Create Demo (demo) Account
 
@@ -74,17 +70,23 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Use Demo (demo) Account Administrator eucarc file for values
 
     ```bash
+    account_id=$(sed -n -e "s/export EC2_ACCOUNT_NUMBER='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
     access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
     secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
+    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/demo/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
+    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/demo/admin/$(sed -n -e "s/export EC2_CERT=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
 
-    cat << EOF >> ~/.euca/euca2ools.ini
-    [user demo-admin]
+    cat << EOF >> ~/.euca/$AWS_DEFAULT_REGION.ini
+    [user $AWS_DEFAULT_REGION-demo-admin]
+    account-id = $account_id
     key-id = $access_key
     secret-key = $secret_key
+    private-key = $private_key
+    certificate = $certificate
 
     EOF
 
-    euca-describe-availability-zones verbose --region demo-admin@$AWS_DEFAULT_REGION
+    euca-describe-availability-zones verbose --region AWS_DEFAULT_REGION-demo-admin@$AWS_DEFAULT_REGION
     ```
 
 6. Create Demo (demo) Account Administrator AWSCLI Profile
@@ -111,7 +113,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-demo-admin
+    aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-demo-admin --region $AWS_DEFAULT_REGION
     ```
 
 7. Authorize Demo (demo) Account use of Demo Generic Image
@@ -139,16 +141,22 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 9. List Demo Resources
 
     ```bash
+    euca-describe-images
+
     euare-accountlist
     ```
 
-10. List Euca2ools Configuration
+10. Display Euca2ools Configuration
 
     ```bash
-    cat ~/.euca/euca2ools.ini
+    cat /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+
+    cat ~/.euca/global.ini
+
+    cat ~/.euca/$AWS_DEFAULT_REGION.ini
     ```
 
-11. List AWSCLI Configuration
+11. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config
