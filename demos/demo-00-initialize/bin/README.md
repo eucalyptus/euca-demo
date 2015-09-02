@@ -1,7 +1,7 @@
 # Demo Initialization Scripts
 
 These scripts will initialize a Eucalyptus Region or AWS Account so that it can run the demos
-contained in this project. Simultaneously, it will initialize the host where they are run as
+contained in this project. Simultaneously, they will initialize the host where they are run as
 a Management Workstation.
 
 In some cases below, there are two scripts, identically named except for one with a "-awscli"
