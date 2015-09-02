@@ -1,40 +1,43 @@
-# Demo Account Dependencies Manual Installation
+# Demo Initialize: Initialize Demo Account Dependencies
 
-This is the set of manual steps to setup additional dependencies within the demo account.
+This document describes the manual procedure to initialize additional dependencies within the
+demo account.
 
-### Initialize Demo Account Dependencies Script
+This variant is meant to be run as root.
 
-A script to automate the steps described in the manual procedure which follows can be found here:
-https://github.com/eucalyptus/euca-demo/blob/master/demos/demo-00-initialize/bin/demo-02-initialize-account-dependencies.sh
+This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
+It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
+AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
 
-Help is available when running this script, via the -? flag.
+This is using the following host in the HP Goleta server room:
+- odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
+  - Public: 10.104.10.74/16
 
-```bash
-demo-02-initialize-account-dependencies.sh -?
-Usage: demo-02-initialize-account-dependencies.sh [-I [-s | -f]] [-a account] [-p password]
-  -I          non-interactive
-  -s          slower: increase pauses by 25%
-  -f          faster: reduce pauses by 25%
-  -a account  account to create for use in demos (default: demo)
-  -p password password prefix for demo account users (default: demo123)
-```
+### Define Parameters
 
-By default, the demo account used is named "demo", but this can be overridden with the -a account flag.
-This allows alternate and/or multiple demo accounts to be used.
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different identifiers, hosts and IP addresses, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
 
-Credentials are now stored in a directory structure which allows for multiple regions.
+1. Define Environment Variables used in upcoming code blocks
 
-Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to reference the local region.
-
-### Initialize Demo Account Dependencies Manual Procedure
-
-1. Use Demo (demo) Account Administrator credentials
-
-    Adjust AWS_DEFAULT_REGION to your new region.
+    These instructions were based on a Faststart Install performed within the PRC on host
+    odc-f-32.prc.eucalyptus-systems.com, configured as region hp-gol01-f1, using MCrawfords
+    DNS server. Adjust the variables in this section to your environment.
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-f1
+    ```
 
+### Initialize Demo Account Dependencies
+
+The steps below are automated in the [demo-03-initialize-account-dependencies.sh](../bin/demo-03-initialize-account-dependencies.sh) script.
+
+1. Use Demo (demo) Account Administrator credentials
+
+    ```bash
     source ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc
     ```
 

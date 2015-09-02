@@ -1,37 +1,42 @@
-# Demo Manual Initialization
+# Demo Initialize: Initialize Region
 
-This is the set of manual steps to initialize a new Eucalyptus system for demos.
+This document describes the manual procedure to initialize a new Eucalyptus Region for demos.
 
-### Initialize Demos Script
+This variant is meant to be run as root
 
-A script to automate the steps described in the manual procedure which follows can be found here:
-https://github.com/eucalyptus/euca-demo/blob/master/demos/demo-00-initialize/bin/demo-00-initialize.sh
+This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
+It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
+AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
 
-Help is available when running this script, via the -? flag.
+This is using the following host in the HP Goleta server room:
+- odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
+  - Public: 10.104.10.74/16
 
-```bash
-demo-00-initialize.sh -?
-Usage: demo-00-initialize.sh [-I [-s | -f]] [-d] [-l]
-  -I  non-interactive
-  -s  slower: increase pauses by 25%
-  -f  faster: reduce pauses by 25%
-  -d  use direct service endpoints in euca2ools.ini
-  -l  Use local mirror for Demo CentOS image
-```
+### Define Parameters
 
-Credentials are now stored in a directory structure which allows for multiple regions.
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different identifiers, hosts and IP addresses, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
 
-Your ~/.bash_profile should set the environment variable AWS_DEFAULT_REGION to reference the local region.
+1. Define Environment Variables used in upcoming code blocks
 
-### Initialize Demos Manual Procedure
-
-1. Use Eucalyptus Administrator credentials
-
-    Adjust AWS_DEFAULT_REGION to your new region.
+    These instructions were based on a Faststart Install performed within the PRC on host
+    odc-f-32.prc.eucalyptus-systems.com, configured as region hp-gol01-f1, using MCrawfords
+    DNS server. Adjust the variables in this section to your environment.
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-f1
+    ```
 
+### Initialize Demos
+
+The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-initialize.sh) script.
+
+1. Use Eucalyptus Administrator credentials
+
+    ```bash
     source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
