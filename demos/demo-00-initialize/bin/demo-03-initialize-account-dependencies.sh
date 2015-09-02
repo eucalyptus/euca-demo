@@ -382,9 +382,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3 mb s3://demo-$account --profile $profile --region=$region"
+echo "aws s3 mb s3://demo-$account --profile $profile --region $region"
 
-if aws s3 ls --profile $profile --region=$region | grep -s -q " demo-$account$"; then
+if aws s3 ls --profile $profile --region $region | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -397,8 +397,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws s3 mb s3://demo-$account --profile $profile --region=$region"
-        aws s3 mb s3://demo-$account --profile $profile --region=$region
+        echo "# aws s3 mb s3://demo-$account --profile $profile --region $region"
+        aws s3 mb s3://demo-$account --profile $profile --region $region
 
         next
     fi
@@ -946,7 +946,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$region-$account-$user_demo@$region"
+echo "euca-describe-availability-zones --region $region-$account-$user_demo@$region"
 
 if [ -r ~/.euca/$region.ini ] && grep -s -q "\[user $region-$account-$user_demo]" ~/.euca/$region.ini; then
     echo
@@ -976,8 +976,8 @@ else
         echo                                      >> ~/.euca/$region.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$region-$account-$user_demo@$region"
-        euca-describe-availability-zones --region=$region-$account-$user_demo@$region
+        echo "# euca-describe-availability-zones --region $region-$account-$user_demo@$region"
+        euca-describe-availability-zones --region $region-$account-$user_demo@$region
 
         next
     fi
@@ -1252,7 +1252,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$region-$account-$user_developer@$region"
+echo "euca-describe-availability-zones --region $region-$account-$user_developer@$region"
 
 if [ -r ~/.euca/$region.ini ] && grep -s -q "\[user $region-$account-$user_developer]" ~/.euca/$region.ini; then
     echo
@@ -1282,8 +1282,8 @@ else
         echo                                           >> ~/.euca/$region.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$region-$account-$user_developer@$region"
-        euca-describe-availability-zones --region=$region-$account-$user_developer@$region
+        echo "# euca-describe-availability-zones --region $region-$account-$user_developer@$region"
+        euca-describe-availability-zones --region $region-$account-$user_developer@$region
 
         next
     fi
@@ -1558,7 +1558,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$region-$account-$user_user@$region"
+echo "euca-describe-availability-zones --region $region-$account-$user_user@$region"
 
 if [ -r ~/.euca/$region.ini ] && grep -s -q "\[user $region-$account-$user_user]" ~/.euca/$region.ini; then
     echo
@@ -1588,8 +1588,8 @@ else
         echo                                      >> ~/.euca/$region.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$region-$account-$user_user@$region"
-        euca-describe-availability-zones --region=$region-$account-$user_user@$region
+        echo "# euca-describe-availability-zones --region $region-$account-$user_user@$region"
+        euca-describe-availability-zones --region $region-$account-$user_user@$region
 
         next
     fi
