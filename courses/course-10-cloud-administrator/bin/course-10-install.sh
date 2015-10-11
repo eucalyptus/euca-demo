@@ -562,4 +562,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Installation and initial configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Installation and initial configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Installation and initial configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

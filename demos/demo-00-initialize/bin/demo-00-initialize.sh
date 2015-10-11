@@ -1097,5 +1097,10 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus Account initialized for demos (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus Account initialized for demos (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus Account initialized for demos (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac
 echo "Please run \"demo-01-initialize-account.sh\" to continue with demo initialization"

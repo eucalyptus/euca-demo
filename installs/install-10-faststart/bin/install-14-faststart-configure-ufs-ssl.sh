@@ -408,4 +408,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus UFS SSL configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus UFS SSL configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus UFS SSL configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

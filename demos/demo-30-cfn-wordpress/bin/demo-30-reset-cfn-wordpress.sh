@@ -653,4 +653,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus CloudFormation WordPress demo reset complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus CloudFormation WordPress demo reset complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus CloudFormation WordPress demo reset complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

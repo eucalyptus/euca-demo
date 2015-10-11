@@ -361,4 +361,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus CloudFormation Simple demo initialization complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus CloudFormation Simple demo initialization complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus CloudFormation Simple demo initialization complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

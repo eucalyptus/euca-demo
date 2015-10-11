@@ -247,4 +247,9 @@ echo "This lab has not yet been fully implemented!"
 end=$(date +%s)
 
 echo
-echo "Security testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Security testing complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Security testing complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

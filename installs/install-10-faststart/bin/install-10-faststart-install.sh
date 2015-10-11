@@ -374,4 +374,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus installed (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus installed (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus installed (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

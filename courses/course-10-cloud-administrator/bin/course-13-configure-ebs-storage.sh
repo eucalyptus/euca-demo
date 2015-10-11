@@ -468,4 +468,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "EBS Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "EBS Storage configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "EBS Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

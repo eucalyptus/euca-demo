@@ -907,4 +907,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Image and Instance configuration and testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Image and Instance configuration and testing complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Image and Instance configuration and testing complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

@@ -328,4 +328,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus Support configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus Support configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus Support configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

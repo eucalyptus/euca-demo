@@ -696,7 +696,12 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus Account configured for demo scripts (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus Account configured for demo scripts (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac
 unset a; [ $account = demo ] || a=" -a $account"
 unset p; [ $password = ${account}123 ] || p=" -p $password"
 echo "Please run \"demo-02-initialize-account-administrator.sh$a$p\" to create at least one User-level Administrator, then"

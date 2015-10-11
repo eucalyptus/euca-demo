@@ -379,4 +379,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus Console update complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus Console update complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus Console update complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

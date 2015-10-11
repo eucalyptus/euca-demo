@@ -528,4 +528,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Object Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Object Storage configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Object Storage configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

@@ -188,4 +188,9 @@ echo "Testing permissions script not yet implemented. This is a placeholder."
 end=$(date +%s)
 
 echo
-echo "Permissions testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Permissions testing complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Permissions testing complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

@@ -408,5 +408,10 @@ if [ $valid = y ]; then
     end=$(date +%s)
 
     echo
-    echo "Environment configured (time: $(date -u -d @$((end-start)) +"%T"))"
+    case $(uname) in
+      Darwin)
+        echo "Environment configured (time: $(date -u -r $((end-start)) +"%T"))";;
+      *)
+        echo "Environment configured (time: $(date -u -d @$((end-start)) +"%T"))";;
+    esac
 fi

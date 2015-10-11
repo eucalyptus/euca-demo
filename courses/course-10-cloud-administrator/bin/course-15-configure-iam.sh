@@ -659,4 +659,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "IAM configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "IAM configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "IAM configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

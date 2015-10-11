@@ -751,4 +751,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus Demo Account Administrator configured (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus Demo Account Administrator configured (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus Demo Account Administrator configured (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

@@ -426,4 +426,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Network configuration complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Network configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Network configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

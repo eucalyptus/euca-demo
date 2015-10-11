@@ -1393,4 +1393,9 @@ end=$(date +%s)
 
 echo
 echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"
-echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

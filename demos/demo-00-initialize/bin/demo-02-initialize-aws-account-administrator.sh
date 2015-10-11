@@ -818,4 +818,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "AWS Account Administrator configured (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "AWS Account Administrator configured (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "AWS Account Administrator configured (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

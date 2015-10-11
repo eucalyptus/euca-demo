@@ -738,4 +738,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Eucalyptus DNS configured (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Eucalyptus DNS configured (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Eucalyptus DNS configured (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac

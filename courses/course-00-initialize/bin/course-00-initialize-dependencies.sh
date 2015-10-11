@@ -546,4 +546,9 @@ fi
 end=$(date +%s)
 
 echo
-echo "Dependencies initialized (time: $(date -u -d @$((end-start)) +"%T"))"
+case $(uname) in
+  Darwin)
+    echo "Dependencies initialized (time: $(date -u -r $((end-start)) +"%T"))";;
+  *)
+    echo "Dependencies initialized (time: $(date -u -d @$((end-start)) +"%T"))";;
+esac
