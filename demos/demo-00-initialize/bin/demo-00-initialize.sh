@@ -179,10 +179,7 @@ if [ -z $region ]; then
     exit 10
 else
     case $region in
-      us-east-1|us-west-1|us-west-2) ;&
-      sa-east-1) ;&
-      eu-west-1|eu-central-1) ;&
-      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
         echo "-r $region invalid: This script can not be run against AWS regions"
         exit 11;;
     esac
