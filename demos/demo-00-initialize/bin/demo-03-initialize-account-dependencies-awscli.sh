@@ -385,8 +385,8 @@ echo "Commands:"
 echo
 echo "aws s3 mb s3://demo-$account"
 
-# work around bug
-if aws s3 ls | grep " demo-$account$" > /dev/null; then
+# work around pipe bug
+if aws s3 ls 2> /dev/null | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"

@@ -770,7 +770,8 @@ echo "Commands:"
 echo
 echo "aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region"
 
-if aws s3 ls --profile $region-admin --region=$region | grep -s -q " sample-templates$"; then
+# work around pipe bug
+if aws s3 ls --profile $region-admin --region=$region 2> /dev/null | grep -s -q " sample-templates$"; then
     echo
     tput rev
     echo "Already Created!"

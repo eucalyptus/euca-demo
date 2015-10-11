@@ -381,7 +381,8 @@ echo "Commands:"
 echo
 echo "aws s3 mb s3://demo-$account --profile $profile --region $region"
 
-if aws s3 ls --profile $profile --region $region | grep -s -q " demo-$account$"; then
+# work around pipe bug
+if aws s3 ls --profile $profile --region $region 2> /dev/null | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"
