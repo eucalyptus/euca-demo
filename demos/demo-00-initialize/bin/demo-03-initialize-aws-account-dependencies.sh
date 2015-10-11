@@ -361,9 +361,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3 mb s3://demo-$account --profile $profile --region=$region"
+echo "aws s3 mb s3://demo-$account --profile ${profile#aws-} --region=$region"
 
-if aws s3 ls --profile $profile --region=$region | grep -s -q " demo-$account$"; then
+if aws s3 ls --profile ${profile#aws-} --region=$region | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"
