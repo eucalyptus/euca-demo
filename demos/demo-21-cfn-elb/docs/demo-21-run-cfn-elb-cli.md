@@ -73,7 +73,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```
 
     [Example of ELB.template](../templates/ELB.template).
-    ```
 
 3. List existing Resources (Optional)
 
