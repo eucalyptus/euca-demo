@@ -5,9 +5,9 @@ of Instances attached to the ELB.
 
 Prior to running this demo, the Eucalyptus Region must be prepared for demos via the Demo
 Initialization scripts, as this demo depends on objects created by those scripts. The
-initialization scripts can be found in [this directory](../demo-00-initialization/bin), and
+initialization scripts can be found in [this directory](../demo-00-initialize/bin), and
 manual procedures which perform the same actions can be found in
-[this directory](../demo-00-initialization/docs). Additionally, the end-to-end process of
+[this directory](../demo-00-initialize/docs). Additionally, the end-to-end process of
 installing Eucalyptus via FastStart, augmenting the installation with features such as DNS, PKI,
 reverse-proxy with SSL termination, AWSCLI and Euca2ools configuration, and demo initialization,
 are described in detail for the [Demo 20: CloudFormation: Simple](../demo-20-cfn-simple/README.md)
