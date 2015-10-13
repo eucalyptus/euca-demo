@@ -10,7 +10,7 @@ manual procedures which perform the same actions can be found in
 [this directory](../demo-00-initialization/docs). Additionally, the end-to-end process of
 installing Eucalyptus via FastStart, augmenting the installation with features such as DNS, PKI,
 reverse-proxy with SSL termination, AWSCLI and Euca2ools configuration, and demo initialization,
-are described in detail for [Demo 20: CloudFormation: Simple](../demo-20-cfn-simple/docs/README.md)
+are described in detail for the [Demo 20: CloudFormation: Simple](../demo-20-cfn-simple/README.md)
 demo.
 
 ### CloudFormation WordPress Demo Key Points

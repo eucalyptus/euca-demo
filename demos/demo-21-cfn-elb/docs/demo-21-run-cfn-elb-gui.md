@@ -76,48 +76,48 @@ console and terminal session can be seen side-by-side.
 
     From the Dashboard, use the top left Navigation icon to display the left Navigation Panel.
 
-    ![Dashboard with Navigation](../images/demo-21-run-cfn-elb-02-dashboard.png?raw=true)
+    ![Dashboard with Navigation](../images/demo-21-run-cfn-elb-01-dashboard.png?raw=true)
 
     Then, Select Images to View Images which the Demo Account can use.
     Confirm the "centos66" image exists.
 
-    ![View Images](../images/demo-21-run-cfn-elb-02-images.png?raw=true)
+    ![View Images](../images/demo-21-run-cfn-elb-01-images.png?raw=true)
 
     From the Dashboard, Select the Key pairs Tile to View Key Pairs in the Demo Account.
     Confirm the "demo" Key Pair exists.
 
-    ![View Key Pairs](../images/demo-21-run-cfn-elb-02-key-pairs.png?raw=true)
+    ![View Key Pairs](../images/demo-21-run-cfn-elb-01-key-pairs.png?raw=true)
 
 2. Display ELB CloudFormation Template (Optional)
 
     In another browser tab, open the [ELB.template](../templates/ELB.template) to view the ELB
     CloudFormation template we will use in this demo.
 
-    ![View ELB.template](../images/demo-21-run-cfn-elb-03-elb-template.png?raw=true)
+    ![View ELB.template](../images/demo-21-run-cfn-elb-02-elb-template.png?raw=true)
 
 3. List existing Resources (Optional)
 
     From the Dashboard, Select the Security groups Tile to View Security Groups in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Security Groups](../images/demo-21-run-cfn-elb-04-security-groups.png?raw=true)
+    ![View Security Groups](../images/demo-21-run-cfn-elb-03-security-groups.png?raw=true)
 
     From the Dashboard, Select the Load balancers Tile to View Load Balancers in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Load Balancers](../images/demo-21-run-cfn-elb-04-load-balancers.png?raw=true)
+    ![View Load Balancers](../images/demo-21-run-cfn-elb-03-load-balancers.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to View Instances in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Instances](../images/demo-21-run-cfn-elb-04-instances.png?raw=true)
+    ![View Instances](../images/demo-21-run-cfn-elb-03-instances.png?raw=true)
 
 4. List existing CloudFormation Stacks (Optional)
 
     From the Dashboard, Select the Stacks Tile to View CloudFormation Stacks in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Stacks](../images/demo-21-run-cfn-elb-05-stacks.png?raw=true)
+    ![View Stacks](../images/demo-21-run-cfn-elb-04-stacks.png?raw=true)
 
 5. Create the Stack
 
@@ -127,12 +127,12 @@ console and terminal session can be seen side-by-side.
     Next, click on the Upload template Radio Button, then the Choose File Button. Find and
     select ~/src/eucalyptus/euca-demo/demos/demo-21-cfn-elb/templates/ELB.template.
 
-    ![Create Stack - General](../images/demo-21-run-cfn-elb-06-create-general.png?raw=true)
+    ![Create Stack - General](../images/demo-21-run-cfn-elb-05-create-general.png?raw=true)
 
     Press the Next Button to advance to the Parameters Page. Select "centos66" as the WebServerImageId,
     and "demo" as the DemoKeyPair.
 
-    ![Create Stack - Parameters](../images/demo-21-run-cfn-elb-06-create-parameters.png?raw=true)
+    ![Create Stack - Parameters](../images/demo-21-run-cfn-elb-05-create-parameters.png?raw=true)
 
     Press the CreateStack Button to initiate Stack creation.
 
@@ -141,42 +141,42 @@ console and terminal session can be seen side-by-side.
     Initiating Stack creation will automatically take you to the Stack General Tab, showing a 
     periodically updating view of the state of the stack objects. Review Stack status.
 
-    ![Stack - General](../images/demo-21-run-cfn-elb-07-stack-01-details.png?raw=true)
+    ![Stack - General](../images/demo-21-run-cfn-elb-06-stack-01-details.png?raw=true)
 
     Click on the Events Tab. Review Stack Events.
 
-    ![Stack - Events](../images/demo-21-run-cfn-elb-07-stack-01-events.png?raw=true)
+    ![Stack - Events](../images/demo-21-run-cfn-elb-06-stack-01-events.png?raw=true)
 
     Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
     Completed.
 
-    ![Stack - General](../images/demo-21-run-cfn-elb-07-stack-02-details.png?raw=true)
+    ![Stack - General](../images/demo-21-run-cfn-elb-06-stack-02-details.png?raw=true)
 
     Click on the Events Tab. Confirm all Events.
 
-    ![Stack - Events](../images/demo-21-run-cfn-elb-07-stack-02-events.png?raw=true)
+    ![Stack - Events](../images/demo-21-run-cfn-elb-06-stack-02-events.png?raw=true)
 
 7. List updated Resources (Optional)
 
     From the Dashboard, Select the Security groups Tile to View Security Groups in the
     Demo Account. Note updated contents of list, and compare with the initial set.
 
-    ![View Security Groups](../images/demo-21-run-cfn-elb-08-security-groups.png?raw=true)
+    ![View Security Groups](../images/demo-21-run-cfn-elb-07-security-groups.png?raw=true)
 
     From the Dashboard, Select the Load balancers Tile to View Load Balancers in the
     Demo Account. Note updated contents of list, and compare with the initial set.
 
-    ![View Load Balancers](../images/demo-21-run-cfn-elb-08-load-balancers.png?raw=true)
+    ![View Load Balancers](../images/demo-21-run-cfn-elb-07-load-balancers.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to View Instances in the
     Demo Account. Note updated contents of list, and compare with the initial set.
 
-    ![View Instances](../images/demo-21-run-cfn-elb-08-instances.png?raw=true)
+    ![View Instances](../images/demo-21-run-cfn-elb-07-instances.png?raw=true)
 
     From the Instances page, Select the instance with Logical Name WebServerInstance1. Note the
     Public hostname, then select and copy it to the paste buffer for use in the next step.
 
-    ![View Instance Details](../images/demo-21-run-cfn-simple-08-instance-details.png?raw=true)
+    ![View Instance Details](../images/demo-21-run-cfn-simple-07-instance-details.png?raw=true)
 
 8. Confirm ability to login to Instance
 
@@ -200,5 +200,5 @@ console and terminal session can be seen side-by-side.
     curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
     ```
 
-    ![Verify Instance](../images/demo-21-run-cfn-elb-09-validate.png?raw=true)
+    ![Verify Instance](../images/demo-21-run-cfn-elb-08-validate.png?raw=true)
 

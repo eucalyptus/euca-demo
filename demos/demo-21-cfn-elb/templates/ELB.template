@@ -42,7 +42,7 @@
       "Type":"AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties":{
         "AvailabilityZones":{"Fn::GetAZs":""},
-        "Instances":[{"Ref":"WebServer1"},{"Ref":"WebServer2"}],
+        "Instances":[{"Ref":"WebServerInstance1"},{"Ref":"WebServerInstance2"}],
         "Listeners":[{"LoadBalancerPort":"80","InstancePort":{"Ref":"WebServerPort"},"Protocol":"HTTP"}],
         "HealthCheck":{
           "Target":{"Fn::Join":["",["HTTP:",{"Ref":"WebServerPort"},"/"]]},
@@ -53,27 +53,27 @@
         }
       }
     },
-    "WebServer1":{
+    "WebServerInstance1":{
       "Type":"AWS::EC2::Instance",
       "Properties":{
-        "SecurityGroups":[{"Ref":"InstanceSecurityGroup"}],
+        "SecurityGroups":[{"Ref":"WebServerSecurityGroup"}],
         "KeyName":{"Ref":"KeyName"},
         "InstanceType":{"Ref":"WebServerInstanceType"},
         "ImageId":{ "Ref":"WebServerImageId" },
         "UserData":{"Fn::Base64":{"Ref":"WebServerPort"}}
       }
     },
-    "WebServer2":{
+    "WebServerInstance2":{
       "Type":"AWS::EC2::Instance",
       "Properties":{
-        "SecurityGroups":[{"Ref":"InstanceSecurityGroup"}],
+        "SecurityGroups":[{"Ref":"WebServerSecurityGroup"}],
         "KeyName":{"Ref":"KeyName"},
         "InstanceType":{"Ref":"WebServerInstanceType"},
         "ImageId":{ "Ref":"WebServerImageId" },
         "UserData":{"Fn::Base64":{"Ref":"WebServerPort"}}
       }
     },
-    "InstanceSecurityGroup":{
+    "WebServerSecurityGroup":{
       "Type":"AWS::EC2::SecurityGroup",
       "Properties":{
         "GroupDescription":"Enable SSH access and HTTP access on the inbound port",

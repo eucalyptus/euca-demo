@@ -6,7 +6,7 @@ Eucalyptus, as an example of Workload Repatriation.
 
 There are multiple procedures below, identically named except for a suffix which indicates
 what method is used to perform the procedure. These include the Eucalyptus Console (-gui and
--gui-short), the Euca2ools CLI (-cli) and the AWS CLI (-awscli). These steps perform identical
+-gui-short), the Euca2ools CLI (-cli) and the AWS CLI (-awscli). These procedures perform identical
 steps using these different methods, showing how multiple AWS ecosystem tools can be used
 interchangeably.
 

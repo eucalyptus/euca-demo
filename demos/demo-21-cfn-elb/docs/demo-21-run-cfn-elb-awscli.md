@@ -101,7 +101,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile=hp-aw2-1-demo-demo | cut -f3)
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f3)
 
     aws cloudformation create-stack --stack-name ELBDemoStack \
                                     --template-body file://~/src/eucalyptus/euca-demo/demos/demo-21-cfn-elb/templates/ELB.template \
