@@ -1,38 +1,32 @@
 #/bin/bash
 #
-# This script tests API creation of SecurityGroup, ElasticLoadBalancer, 
-# LaunchConfiguration, AutoScalingGroup, ScalingPolicy, Alarms, 
-# Instances and User-Data Scripts.
+# This script runs a Eucalyptus CLI demo which creates a SecurityGroup,
+# ElasticLoadBalancer, LaunchConfiguration, AutoScalingGroup, ScaleUp and ScaleDown 
+# ScalingPolicies and associated CloudWatch Alarms, and Instances associated with
+# the LaunchConfiguration which use a user-data script for configuration.
 #
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
-# on an arbitrary management workstation, you will need to move the demo
-# account admin user's credentials zip file to
-#   ~/.creds/<region>/<demo_account_name>/admin.zip
-# then expand it's contents into the
-#   ~/.creds/<region>/<demo_account_name>/admin/ directory
-# Additionally, if you want to use the -g flag to pause while showing GUI 
-# aspects, you will need to set the EUCA_CONSOLE_URL environment variable
-# or specify the -c url parameter to the appropriate value.
+# on an arbitrary management workstation, you will need to move the appropriate
+# credentials to your management host.
 #
 # Before running this (or any other demo script in the euca-demo project),
-# you should run the euca-demo-01-initialize-account.sh as the eucalyptus
-# administrator, and the euca-demo-02-initialize-dependencies.sh as the demo
-# account administrator, to setup common dependencies required by all demos.
+# you should run the following scripts to initialize the demo environment
+# to a baseline of known resources which are assumed to exist.
+# - Run demo-00-initialize.sh on the CLC as the Eucalyptus Administrator.
+# - Run demo-01-initialize-account.sh on the CLC as the Eucalyptus Administrator.
+# - Run demo-02-initialize-account-administrator.sh on the CLC as the Demo Account Administrator.
+# - Run demo-03-initialize-account-dependencies.sh on the CLC as the Demo Account Administrator.
 #
 
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-confdir=${bindir%/*}/conf
-docdir=${bindir%/*}/doc
-logdir=${bindir%/*}/log
 scriptsdir=${bindir%/*}/scripts
-templatesdir=${bindir%/*}/templates
 tmpdir=/var/tmp
-prefix=demo-05
+prefix=demo-10
 
-image_file=CentOS-6-x86_64-GenericCloud.qcow2.xz
+image_name=CentOS-6-x86_64-GenericCloud
 
 step=0
 speed_max=400
@@ -51,23 +45,26 @@ delete_default=20
 
 interactive=1
 speed=100
-account=demo
-gui=0
-consoleurl=${EUCA_CONSOLE_URL:-https://$(hostname)}
+verbose=0
+region=${AWS_DEFAULT_REGION#*@}
+account=${AWS_ACCOUNT_NAME:-demo}
+user=${AWS_USER_NAME:-demo}
 instances=2
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-a account] [-g] [-c url] [-n instances]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-n instances]"
+    echo "                [-r region ] [-a account] [-u user]"
     echo "  -I            non-interactive"
     echo "  -s            slower: increase pauses by 25%"
     echo "  -f            faster: reduce pauses by 25%"
-    echo "  -a account    account to use in demos (default: $account)"
-    echo "  -g            add steps and time to demo GUI in another window"
-    echo "  -c url        console url (default: $consoleurl)"
-    echo "  -n instances  number of instances to create in autoscale group (default: $instances)"
+    echo "  -v            verbose"
+    echo "  -n instances  Number of Instances in AutoScale Group (default: $instances)"
+    echo "  -r region     Region (default: $region)"
+    echo "  -a account    Account (default: $account)"
+    echo "  -u user       User (default: $user)"
 }
 
 run() {
@@ -150,15 +147,16 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfa:gc:n:? arg; do
+while getopts Isfvn:r:a:u:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    a)  account="$OPTARG";;
-    g)  gui=1;;
-    c)  consoleurl="$OPTARG";;
+    v)  verbose=1;;
     n)  instances="$OPTARG";;
+    r)  region="$OPTARG";;
+    a)  account="$OPTARG";;
+    u)  user="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -169,10 +167,50 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc ]; then
-    echo "-a $account invalid: Could not find $AWS_DEFAULT_REGION Demo Account Administrator credentials!"
-    echo "   Expected to find: ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-    exit 21
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
+else
+    case $region in
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
+fi
+
+if [ -z $account ]; then
+    echo "-a account missing!"
+    echo "Could not automatically determine account, and it was not specified as a parameter"
+    exit 12
+fi
+
+if [ -z $user ]; then
+    echo "-u user missing!"
+    echo "Could not automatically determine user, and it was not specified as a parameter"
+    exit 14
+fi
+
+if [ -z $instances ]; then
+    echo "-n instances missing!"
+    echo "Could not automatically determine instances, and it was not specified as a parameter"
+    exit 30
+else
+    case $instances in
+      2|4|6|8|10|20)
+        ;;
+      *)
+        echo "-n $instances invalid: allowed values: 2, 4, 6, 8, 10, 20"
+        exit 31;;
+    esac
+fi
+
+user_region=$region-$account-$user@$region
+
+if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Demo ($user) User Euca2ools user!"
+    echo "Expected to find: [user $region-$account-$user] in ~/.euca/$region.ini"
+    exit 50
 fi
 
 if ! rpm -q --quiet w3m; then
@@ -181,160 +219,123 @@ if ! rpm -q --quiet w3m; then
 fi
 
 
-#  5. Execute Demo
+#  5. Run Demo
 
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-
-next
-
-echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
-pause
-
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/$account/admin/eucarc
-
-next
-
-
-((++step))
 demo_initialized=y
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images | grep \"${image_file%%.*}.raw.manifest.xml\""
-echo
-echo "euca-describe-keypairs | grep \"admin-demo\""
 
-next
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm existence of Demo depencencies"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
+    echo "                     --region $user_region | cut -f1,2,3"
+    echo
+    echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
+    echo "                       --region $user_region"
 
-echo
-echo "# euca-describe-images | grep \"${image_file%%.*}.raw.manifest.xml\""
-euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" || demo_initialized=n
-pause
+    next
 
-echo "# euca-describe-keypairs | grep \"admin-demo\""
-euca-describe-keypairs | grep "admin-demo" || demo_initialized=n
+    echo
+    echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
+    echo ">                      --region $user_region | cut -f1,2,3"
+    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                         --region $user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
+    pause
+
+    echo "# euca-describe-keypairs --filter \"key-name=demo\"\\"
+    echo ">                      --region $user_region"
+    euca-describe-keypairs --filter "key-name=demo" \
+                           --region $user_region | grep "demo" || euca_demo_initialized=n
+
+    next
+
+else
+    euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                         --region $user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
+    euca-describe-keypairs --filter "key-name=demo" \
+                           --region $user_region | grep -s -q "demo" || euca_demo_initialized=n
+fi
 
 if [ $demo_initialized = n ]; then
     echo
     echo "At least one prerequisite for this script was not met."
-    echo "Please re-run euca-demo-02-initialize-dependencies.sh script."
+    echo "Please re-run the demo initialization scripts referencing this demo account:"
+    echo "- demo-00-initialize.sh -r $region"
+    echo "- demo-01-initialize-account.sh -r $region -a $account"
+    echo "- demo-03-initialize-account-dependencies.sh -r $region -a $account"
     exit 99
 fi
 
-next
-
 
 ((++step))
-# Attempt to clean up any terminated instances which are still showing up in listings
-terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" | grep "^INSTANCE" | cut -f2)
-for instance_id in $terminated_instance_ids; do
-    euca-terminate-instances $instance_id &> /dev/null
-done
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List initial resources"
-echo "    - So we can compare with what this demo creates"
-if [ $gui = 1 ];  then
-    echo "    - After listing resources here, confirm via GUI"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images"
-echo
-echo "euca-describe-keypairs"
-echo
-echo "euca-describe-groups"
-echo
-echo "eulb-describe-lbs"
-echo
-echo "euca-describe-instances"
-echo
-echo "euscale-describe-launch-configs"
-echo
-echo "euscale-describe-auto-scaling-groups"
-echo
-echo "euscale-describe-policies"
-echo
-echo "euwatch-describe-alarms"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List existing Resources"
+    echo "    - So we can compare with what this demo creates"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-groups --region $user_region"
+    echo
+    echo "eulb-describe-lbs --region $user_region"
+    echo
+    echo "euca-describe-instances --region $user_region"
+    echo
+    echo "euscale-describe-launch-configs --region $user_region"
+    echo
+    echo "euscale-describe-auto-scaling-groups --region $user_region"
+    echo
+    echo "euscale-describe-policies --region $user_region"
+    echo
+    echo "euwatch-describe-alarms --region $user_region"
 
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause
+    run 50
 
-    echo "# euca-describe-groups"
-    euca-describe-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-groups.out
-    pause
-
-    echo "# eulb-describe-lbs"
-    eulb-describe-lbs | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-lbs.out
-    pause
-
-    echo "# euca-describe-instances"
-    euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
-    pause
-
-    echo "# euscale-describe-launch-configs"
-    euscale-describe-launch-configs | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-launch-configs.out
-    pause
-
-    echo "# euscale-describe-auto-scaling-groups"
-    euscale-describe-auto-scaling-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-auto-scaling-groups.out
-    pause
-
-    echo "# euscale-describe-policies"
-    euscale-describe-policies | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-policies.out
-    pause
-
-    echo "# euwatch-describe-alarms"
-    euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
-
-    next 200
-
-    if [ $gui = 1 ]; then
+    if [ $choice = y ]; then
         echo
-        echo "Browse: ${consoleurl}/?account=$account&username=admin"
-        echo "        to confirm resources via management console"
+        echo "# euca-describe-groups --region $user_region"
+        euca-describe-groups --region $user_region
+        pause
 
-        next 400
+        echo "# eulb-describe-lbs --region $user_region"
+        eulb-describe-lbs --region $user_region
+        pause
+
+        echo "# euca-describe-instances --region $user_region"
+        euca-describe-instances --region $user_region
+        pause
+
+        echo "# euscale-describe-launch-configs --region $user_region"
+        euscale-describe-launch-configs --region $user_region
+        pause
+
+        echo "# euscale-describe-auto-scaling-groups --region $user_region"
+        euscale-describe-auto-scaling-groups --region $user_region
+        pause
+
+        echo "# euscale-describe-policies --region $user_region"
+        euscale-describe-policies --region $user_region
+        pause
+
+        echo "# euwatch-describe-alarms --region $user_region"
+        euwatch-describe-alarms --region $user_region
+
+        next
     fi
 fi
 
@@ -351,45 +352,55 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-create-group -d \"Demo Security Group\" DemoSG"
+echo "euca-create-group --description \"Demo Security Group\" --region $user_region DemoSG"
 echo
-echo "euca-authorize -P icmp -t -1:-1 -s 0.0.0.0/0 DemoSG"
+echo "euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG"
 echo
-echo "euca-authorize -P tcp -p 22 -s 0.0.0.0/0 DemoSG"
+echo "euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG"
 echo
-echo "euca-authorize -P tcp -p 80 -s 0.0.0.0/0 DemoSG"
+echo "euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG"
 echo
-echo "euca-describe-groups DemoSG"
+echo "euca-describe-groups --region $user_region DemoSG"
 
-run 50
-
-if [ $choice = y ]; then
+if euca-describe-groups --region $user_region DemoSG 2> /dev/null | grep -s -q "^GROUP"; then
     echo
-    echo "# euca-create-group -d \"Demo Security Group\" DemoSG"
-    euca-create-group -d "Demo Security Group" DemoSG
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euca-authorize -P icmp -t -1:-1 -s 0.0.0.0/0 DemoSG"
-    euca-authorize -P icmp -t -1:-1 -s 0.0.0.0/0 DemoSG
-    pause
+    next 50
 
-    echo "# euca-authorize -P tcp -p 22 -s 0.0.0.0/0 DemoSG"
-    euca-authorize -P tcp -p 22 -s 0.0.0.0/0 DemoSG
-    pause
- 
-    echo "# euca-authorize -P tcp -p 80 -s 0.0.0.0/0 DemoSG"
-    euca-authorize -P tcp -p 80 -s 0.0.0.0/0 DemoSG
-    pause
+else
+    run 50
 
-    echo "# euca-describe-groups DemoSG"
-    euca-describe-groups DemoSG
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-create-group --description \"Demo Security Group\" --region $user_region DemoSG"
+        euca-create-group --description "Demo Security Group" --region $user_region DemoSG
+        pause
 
+        echo "# euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+        euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        pause
+
+        echo "# euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+        euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        pause
+
+        echo "# euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+        euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        pause
+
+        echo "# euca-describe-groups --region $user_region DemoSG"
+        euca-describe-groups --region $user_region DemoSG
+
+        next
     next
 fi
 
 
 ((++step))
-zone=$(euca-describe-availability-zones | head -1 | cut -f2)
+zone=$(euca-describe-availability-zones --region $user_region | head -1 | cut -f2)
 
 clear
 echo
@@ -403,39 +414,51 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "eulb-create-lb -z $zone -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
+echo "eulb-create-lb --availability-zones $zone --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
+echo "               --region $user_region DemoELB"
 echo
-echo "eulb-describe-lbs DemoELB"
+echo "eulb-describe-lbs --region $user_region DemoELB"
 
-run
-
-if [ $choice = y ]; then
+if eulb-describe-lbs --region $user_region DemoELB 2> /dev/null | grep -s -q "^LOAD_BALANCER"; then
     echo
-    echo "# eulb-create-lb -z $zone -l \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" DemoELB"
-    eulb-create-lb -z $zone -l "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# eulb-describe-lbs DemoELB"
-    eulb-describe-lbs DemoELB
+    next 50
 
-    lb_name=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out)
-    ((seconds=$create_default * $speed / 100))
-    while ((attempt++ <= $create_attempts)); do
+else
+    run
+
+    if [ $choice = y ]; then
         echo
-        echo "# dig +short $lb_name"
-        lb_public_ip=$(dig +short $lb_name)
-        if [ -n "$lb_public_ip" ]; then
-            echo $lb_public_ip
-            break
-        else
-            echo
-            echo -n "Not available. Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
+        echo "# eulb-create-lb --availability-zones $zone --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
+        echo ">                --region $user_region DemoELB"
+        eulb-create-lb --availability-zones $zone --listener "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" --region $user_region  DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out
+        pause
 
-    next
+        echo "# eulb-describe-lbs --region $user_region  DemoELB"
+        eulb-describe-lbs --region $user_region DemoELB
+
+        lb_name=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out)
+        ((seconds=$create_default * $speed / 100))
+        while ((attempt++ <= $create_attempts)); do
+            echo
+            echo "# dig +short $lb_name"
+            lb_public_ip=$(dig +short $lb_name)
+            if [ -n "$lb_public_ip" ]; then
+                echo $lb_public_ip
+                break
+            else
+                echo
+                echo -n "Not available. Waiting $seconds seconds..."
+                sleep $seconds
+                echo " Done"
+            fi
+        done
+
+        next
+    fi
 fi
 
 
@@ -451,51 +474,67 @@ echo
 echo "Commands:"
 echo
 echo "eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \\"
-echo "                           --target http:80/index.html DemoELB"
+echo "                           --target http:80/index.html --region $user_region DemoELB"
 
 run
 
 if [ $choice = y ]; then
     echo
     echo "# eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \\"
-    echo "                             --target http:80/index.html DemoELB"
+    echo "                             --target http:80/index.html --region $user_region DemoELB"
     eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \
-                               --target http:80/index.html DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-configure-healthcheck.out
+                               --target http:80/index.html --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-configure-healthcheck.out
 
     next
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Demo User-Data script"
-echo "    - This simple user-data script will install Apache and configure"
-echo "      a simple home page"
-echo "    - We will use this in our LaunchConfiguration to automatically"
-echo "      configure new instances created by our AutoScalingGroup"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat $scriptsdir/$prefix-user-data.sh"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat $scriptsdir/$prefix-user-data.sh"
-    cat $scriptsdir/$prefix-user-data.sh
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Demo User-Data script"
+    echo "    - This simple user-data script will install Apache and configure"
+    echo "      a simple home page"
+    echo "    - We will use this in our LaunchConfiguration to automatically"
+    echo "      configure new instances created by our AutoScalingGroup"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "more $scriptsdir/$prefix-user-data-1.sh"
 
-    next 150
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# more $scriptsdir/$prefix-user-data-1.sh"
+        if [ $interactive = 1 ]; then
+            more $scriptsdir/$prefix-user-data-1.sh
+        else
+            # This will iterate over the file in a manner similar to more, but non-interactive
+            ((rows=$(tput lines)-2))
+            lineno=0
+            while IFS= read line; do
+                echo "$line"
+                if [ $((++lineno % rows)) = 0 ]; then
+                    tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
+                    sleep 10
+                    echo -e -n "\r                                \r"
+                fi
+            done < $scriptsdir/$prefix-user-data-1.sh
+        fi
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" | cut -f2)
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region $user_region | cut -f2)
 
 clear
 echo
@@ -507,33 +546,49 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-create-launch-config DemoLC --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-echo "                                    --key=admin-demo --group=DemoSG \\"
-echo "                                    --user-data-file=$scriptsdir/$prefix-user-data.sh"
+echo "euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
+echo "                             --key=admin-demo --group=DemoSG \\"
+echo "                             --user-data-file=$scriptsdir/$prefix-user-data-1.sh \\"
+echo "                             --region $user_region \\"     
+echo "                             DemoLC"
 echo
-echo "euscale-describe-launch-configs DemoLC"
+echo "euscale-describe-launch-configs --region $user_region DemoLC"
 
-run 150
-
-if [ $choice = y ]; then
+if euscale-describe-launch-configs --region $user_region DemoLC 2> /dev/null | grep -s -q "^LAUNCH-CONFIG"; then
     echo
-    echo "# euscale-create-launch-config DemoLC --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-    echo ">                                     --key=admin-demo --group=DemoSG \\"
-    echo ">                                     --user-data-file=$scriptsdir/$prefix-user-data.sh"
-    euscale-create-launch-config DemoLC --image-id $image_id --instance-type m1.small --monitoring-enabled \
-                                        --key=admin-demo --group=DemoSG \
-                                        --user-data-file=$scriptsdir/$prefix-user-data.sh
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euscale-describe-launch-configs DemoLC"
-    euscale-describe-launch-configs DemoLC
+    next 50
 
-    next
+else
+    run 150
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
+        echo ">                              --key=admin-demo --group=DemoSG \\"
+        echo ">                              --user-data-file=$scriptsdir/$prefix-user-data-1.sh \\"
+        echo ">                              --region $user_region \\"
+        echo ">                              DemoLC"
+        euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \
+                                     --key=admin-demo --group=DemoSG \
+                                     --user-data-file=$scriptsdir/$prefix-user-data-1.sh \
+                                     --region $user_region \
+                                     DemoLC
+        pause
+
+        echo "# euscale-describe-launch-configs --region $user_region DemoLC"
+        euscale-describe-launch-configs --region $user_region DemoLC
+
+        next
+    fi
 fi
 
 
 ((++step))
-zone=$(euca-describe-availability-zones | head -1 | cut -f2)
+zone=$(euca-describe-availability-zones --region $user_region | head -1 | cut -f2)
 
 clear
 echo
@@ -549,37 +604,53 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
-echo "                                          --availability-zones $zone \\"
-echo "                                          --load-balancers DemoELB \\"
-echo "                                          --min-size $instances --max-size $((instances*2)) --desired-capacity $instances"
+echo "euscale-create-auto-scaling-group --launch-configuration DemoLC \\"
+echo "                                  --availability-zones $zone \\"
+echo "                                  --load-balancers DemoELB \\"
+echo "                                  --min-size $instances --max-size $((instances*2)) --desired-capacity $instances \\"
+echo "                                  --region $user_region \\"
+echo "                                  DemoASG"
 echo
-echo "euscale-describe-auto-scaling-groups DemoASG"
+echo "euscale-describe-auto-scaling-groups --region $user_region DemoASG"
 echo
-echo "eulb-describe-instance-health DemoELB"
+echo "eulb-describe-instance-health --region $user_region DemoELB"
 
-run 150
-
-if [ $choice = y ]; then
+if euscale-describe-auto-scaling-groups --region $user_region DemoASG 2> /dev/null | grep -s -q "^AUTO-SCALING-GROUP"; then
     echo
-    echo "# euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \\"
-    echo ">                                           --availability-zones $zone \\"
-    echo ">                                           --load-balancers DemoELB \\"
-    echo ">                                           --min-size $instances --max-size $((instances*2)) --desired-capacity $instances"
-    euscale-create-auto-scaling-group DemoASG --launch-configuration DemoLC \
-                                              --availability-zones $zone \
-                                              --load-balancers DemoELB \
-                                              --min-size $instances --max-size $((instances*2)) --desired-capacity $instances
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euscale-describe-auto-scaling-groups DemoASG"
-    euscale-describe-auto-scaling-groups DemoASG
-    pause
+    next 50
 
-    echo "# eulb-describe-instance-health DemoELB"
-    eulb-describe-instance-health DemoELB
+else
+    run 150
 
-    next
+    if [ $choice = y ]; then
+        echo
+        echo "# euscale-create-auto-scaling-group --launch-configuration DemoLC \\"
+        echo ">                                   --availability-zones $zone \\"
+        echo ">                                   --load-balancers DemoELB \\"
+        echo ">                                   --min-size $instances --max-size $((instances*2)) --desired-capacity $instances \\"
+        echo ">                                   --region $user_region \\"
+        echo ">                                   DemoASG"
+        euscale-create-auto-scaling-group --launch-configuration DemoLC \
+                                          --availability-zones $zone \
+                                          --load-balancers DemoELB \
+                                          --min-size $instances --max-size $((instances*2)) --desired-capacity $instances \
+                                          --region $user_region \
+                                          DemoASG
+        pause
+
+        echo "# euscale-describe-auto-scaling-groups --region $user_region DemoASG"
+        euscale-describe-auto-scaling-groups --region $user_region DemoASG
+        pause
+
+        echo "# eulb-describe-instance-health --region $user_region DemoELB"
+        eulb-describe-instance-health --region $user_region DemoELB
+
+        next
+    fi
 fi
 
 
@@ -588,10 +659,79 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Policies and Associated Alarms"
+echo "$(printf '%2d' $step). Create Scaling Policies"
 echo "    - Create a scale out policy"
 echo "    - Create a scale in policy"
 echo "    - Update AutoScalingGroup with a termination policy"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+echo "                           --adjustment=1 --type ChangeInCapacity \\"
+echo "                           --region $user_region \\"
+echo "                           DemoHighCPUPolicy"
+echo
+echo "euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+echo "                           --adjustment=-1 --type ChangeInCapacity \\"
+echo "                           --region $user_region \\"
+echo "                           DemoLowCPUPolicy"
+echo
+echo "euscale-update-auto-scaling-group --termination-policies \"OldestLaunchConfiguration\" \\"
+echo "                                  --region $user_region \\"
+echo "                                  DemoASG"
+echo
+echo "euscale-describe-policies --auto-scaling-group DemoASG --region $user_region"
+
+run 150
+
+if [ $choice = y ]; then
+    echo
+    echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+    echo ">                            --adjustment=1 --type ChangeInCapacity \\"
+    echo ">                            --region $user_region \\"
+    echo ">                            DemoHighCPUPolicy"
+    euscale-put-scaling-policy --auto-scaling-group DemoASG \
+                               --adjustment=1 --type ChangeInCapacity \
+                               --region $user_region \
+                               DemoHighCPUPolicy
+    pause
+
+    echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+    echo ">                            --adjustment=-1 --type ChangeInCapacity \\"
+    echo ">                            --region $user_region \\"
+    echo ">                            DemoLowCPUPolicy"
+    euscale-put-scaling-policy --auto-scaling-group DemoASG \
+                               --adjustment=-1 --type ChangeInCapacity \
+                               --region $user_region \
+                               DemoLowCPUPolicy
+    pause
+
+    echo "# euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\" \\"
+    echo ">                                   --region $user_region \\"
+    echo ">                                   DemoASG"
+    euscale-update-auto-scaling-group --termination-policies "OldestLaunchConfiguration" \
+                                      --region $user_region \
+                                      DemoASG
+    pause
+
+    echo "# euscale-describe-policies --auto-scaling-group DemoASG --region $user_region"
+    euscale-describe-policies --auto-scaling-group DemoASG --region $user_region
+
+    next
+fi
+
+
+((++step))
+high_policy_arn=$(euscale-describe-policies --region $user_region DemoHighCPUPolicy | cut -f6)
+low_policy_arn=$(euscale-describe-policies --region $user_region DemoLowCPUPolicy | cut -f6)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Create CloudWatch Alarms and Associate with Scaling Policies"
 echo "    - Create a high-cpu alarm using the scale out policy"
 echo "    - Create a low-cpu alarm using the scale in policy"
 echo
@@ -599,183 +739,143 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-put-scaling-policy DemoHighCPUPolicy --auto-scaling-group DemoASG \\"
-echo "                                             --adjustment=1 --type ChangeInCapacity"
+echo "euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+echo "                         --namespace \"AWS/EC2\" --statistic Average \\"
+echo "                         --period 60 --threshold 50 --evaluation-periods 2 \\"
+echo "                         --comparison-operator GreaterThanOrEqualToThreshold \\"
+echo "                         --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+echo "                         --alarm-actions $high_policy_arn \\"
+echo "                         --region $user_region \\"
+echo "                         DemoAddNodesAlarm"
 echo
-echo "euscale-put-scaling-policy DemoLowCPUPolicy --auto-scaling-group DemoASG \\"
-echo "                                            --adjustment=-1 --type ChangeInCapacity"
+echo "euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+echo "                         --namespace \"AWS/EC2\" --statistic Average \\"
+echo "                         --period 60 --threshold 10 --evaluation-periods 2 \\"
+echo "                         --comparison-operator LessThanOrEqualToThreshold \\"
+echo "                         --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+echo "                         --alarm-actions $low_policy_arn \\"
+echo "                         --region $user_region \\"
+echo "                         DemoDelNodesAlarm"
 echo
-echo "euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\""
-echo
-echo "euscale-describe-policies"
-echo
-echo "euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
-echo "                                           --namespace \"AWS/EC2\" --statistic Average \\"
-echo "                                           --period 60 --threshold 50 \\"
-echo "                                           --comparison-operator GreaterThanOrEqualToThreshold \\"
-echo "                                           --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-echo "                                           --evaluation-periods 2 --alarm-actions <DemoHighCPUPolicy arn>"
-echo
-echo "euwatch-put-metric-alarm DemoDelNodesAlarm --metric-name CPUUtilization --unit Percent \\"
-echo "                                           --namespace \"AWS/EC2\" --statistic Average \\"
-echo "                                           --period 60 --threshold 10 \\"
-echo "                                           --comparison-operator LessThanOrEqualToThreshold \\"
-echo "                                           --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-echo "                                           --evaluation-periods 2 --alarm-actions <DemoLowCPUPolicy arn>"
-echo
-echo "euwatch-describe-alarms"
+echo "euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region"
 
 run 150
 
 if [ $choice = y ]; then
     echo
-    echo "# euscale-put-scaling-policy DemoHighCPUPolicy --auto-scaling-group DemoASG \\" 
-    echo ">                                              --adjustment=1 --type ChangeInCapacity"
-    euscale-put-scaling-policy DemoHighCPUPolicy --auto-scaling-group DemoASG \
-                                                 --adjustment=1 --type ChangeInCapacity | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-high.out
-    pause
- 
-    echo "# euscale-put-scaling-policy DemoLowCPUPolicy --auto-scaling-group DemoASG \\"
-    echo ">                                             --adjustment=-1 --type ChangeInCapacity"
-    euscale-put-scaling-policy DemoLowCPUPolicy --auto-scaling-group DemoASG \
-                                                --adjustment=-1 --type ChangeInCapacity | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-low.out
-    pause
-
-    echo "# euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\""
-    euscale-update-auto-scaling-group DemoASG --termination-policies "OldestLaunchConfiguration"
-    pause
-
-    echo "# euscale-describe-policies"
-    euscale-describe-policies
-    pause 250
-
-    high_policy=$(cat $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-high.out)
-    echo "# euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \\"
-    echo ">                                            --namespace \"AWS/EC2\" --statistic Average \\" 
-    echo ">                                            --period 60 --threshold 50 \\"
-    echo ">                                            --comparison-operator GreaterThanOrEqualToThreshold \\"
-    echo ">                                            --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-    echo ">                                            --evaluation-periods 2 --alarm-actions $high_policy"
-    euwatch-put-metric-alarm DemoAddNodesAlarm --metric-name CPUUtilization --unit Percent \
-                                               --namespace "AWS/EC2" --statistic Average \
-                                               --period 60 --threshold 50 \
-                                               --comparison-operator GreaterThanOrEqualToThreshold \
-                                               --dimensions "AutoScalingGroupName=DemoASG" \
-                                               --evaluation-periods 2 --alarm-actions $high_policy
+    echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+    echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
+    echo ">                          --period 60 --threshold 50 --evaluation-periods 2 \\"
+    echo ">                          --comparison-operator GreaterThanOrEqualToThreshold \\"
+    echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+    echo ">                          --alarm-actions $high_policy_arn \\"
+    echo ">                          --region $user_region \\"
+    echo ">                          DemoAddNodesAlarm"
+    euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+                             --namespace "AWS/EC2" --statistic Average \
+                             --period 60 --threshold 50 --evaluation-periods 2 \
+                             --comparison-operator GreaterThanOrEqualToThreshold \
+                             --dimensions "AutoScalingGroupName=DemoASG" \
+                             --alarm-actions $high_policy_arn \
+                             --region $user_region \
+                             DemoAddNodesAlarm
     pause
 
-    low_policy=$(cat $tmpdir/$prefix-$(printf '%02d' $step)-euscale-put-scaling-policy-low.out)
-    echo "# euwatch-put-metric-alarm DemoDelNodesAlarm --metric-name CPUUtilization --unit Percent \\"
-    echo ">                                            --namespace \"AWS/EC2\" --statistic Average \\"
-    echo ">                                            --period 60 --threshold 10 \\"
-    echo ">                                            --comparison-operator LessThanOrEqualToThreshold \\"
-    echo ">                                            --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-    echo ">                                            --evaluation-periods 2 --alarm-actions $low_policy"
-    euwatch-put-metric-alarm DemoDelNodesAlarm --metric-name CPUUtilization --unit Percent \
-                                               --namespace "AWS/EC2" --statistic Average \
-                                               --period 60 --threshold 10 \
-                                               --comparison-operator LessThanOrEqualToThreshold \
-                                               --dimensions "AutoScalingGroupName=DemoASG" \
-                                               --evaluation-periods 2 --alarm-actions $low_policy
+    echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+    echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
+    echo ">                          --period 60 --threshold 10 --evaluation-periods 2 \\"
+    echo ">                          --comparison-operator LessThanOrEqualToThreshold \\"
+    echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+    echo ">                          --alarm-actions $low_policy_arn \\"
+    echo ">                          --region $user_region \\"
+    echo ">                          DemoDelNodesAlarm"
+    euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+                             --namespace "AWS/EC2" --statistic Average \
+                             --period 60 --threshold 10 --evaluation-periods 2 \
+                             --comparison-operator LessThanOrEqualToThreshold \
+                             --dimensions "AutoScalingGroupName=DemoASG" \
+                             --alarm-actions $low_policy_arn \
+                             --region $user_region \
+                             DemoDelNodesAlarm
     pause
 
-    echo "# euwatch-describe-alarms"
-    euwatch-describe-alarms
+    echo "# euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region"
+    euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region
 
     next
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List updated resources"
-if [ $gui = 1 ];  then
-    echo "    - After listing resources here, confirm via GUI"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images"
-echo
-echo "euca-describe-keypairs"
-echo
-echo "euca-describe-groups"
-echo
-echo "eulb-describe-lbs"
-echo
-echo "euca-describe-instances"
-echo
-echo "euscale-describe-launch-configs"
-echo
-echo "euscale-describe-auto-scaling-groups"
-echo
-echo "euscale-describe-policies"
-echo
-echo "euwatch-describe-alarms"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List updated Resources"
+    echo "    - Note addition of new group, ELB and instances"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-groups --region $user_region"
+    echo
+    echo "eulb-describe-lbs --region $user_region"
+    echo
+    echo "euca-describe-instances --region $user_region"
+    echo
+    echo "euscale-describe-launch-configs --region $user_region"
+    echo
+    echo "euscale-describe-auto-scaling-groups --region $user_region"
+    echo
+    echo "euscale-describe-policies --region $user_region"
+    echo
+    echo "euwatch-describe-alarms --region $user_region"
 
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause
+    run 50
 
-    echo "# euca-describe-groups"
-    euca-describe-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-groups.out
-    pause
-
-    echo "# eulb-describe-lbs"
-    eulb-describe-lbs | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-lbs.out
-    pause
-
-    echo "# euca-describe-instances"
-    euca-describe-instances | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
-    pause
-
-    echo "# euscale-describe-launch-configs"
-    euscale-describe-launch-configs | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-launch-configs.out
-    pause
-
-    echo "# euscale-describe-auto-scaling-groups"
-    euscale-describe-auto-scaling-groups | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-auto-scaling-groups.out
-    pause
-
-    echo "# euscale-describe-policies"
-    euscale-describe-policies | tee $tmpdir/$prefix-$(printf '%02d' $step)-euscale-describe-policies.out
-    pause
-
-    echo "# euwatch-describe-alarms"
-    euwatch-describe-alarms | tee $tmpdir/$prefix-$(printf '%02d' $step)-euwatch-describe-alarms.out
-
-    next 200
-
-    if [ $gui = 1 ]; then
+    if [ $choice = y ]; then
         echo
-        echo "Browse: ${consoleurl}/?account=$account&username=admin"
-        echo "        to confirm resources via management console"
+        echo "# euca-describe-groups --region $user_region"
+        euca-describe-groups --region $user_region
+        pause
 
-        next 400
+        echo "# eulb-describe-lbs --region $user_region"
+        eulb-describe-lbs --region $user_region
+        pause
+
+        echo "# euca-describe-instances --region $user_region"
+        euca-describe-instances --region $user_region
+        pause
+
+        echo "# euscale-describe-launch-configs --region $user_region"
+        euscale-describe-launch-configs --region $user_region
+        pause
+
+        echo "# euscale-describe-auto-scaling-groups --region $user_region"
+        euscale-describe-auto-scaling-groups --region $user_region
+        pause
+
+        echo "# euscale-describe-policies --region $user_region"
+        euscale-describe-policies --region $user_region
+        pause
+
+        echo "# euwatch-describe-alarms --region $user_region"
+        euwatch-describe-alarms --region $user_region
+
+        next
     fi
 fi
 
 
 ((++step))
 # This is a shortcut assuming no other activity on the system - find the most recently launched instance
-result=$(euca-describe-instances | grep "^INSTANCE" | cut -f2,4,11,17 | sort -k3 | tail -1 | cut -f1,2,4 | tr -s '[:blank:]' ':')
-instance_id=${result%%:*}
-temp=${result%:*} && public_name=${temp#*:}
-public_ip=${result##*:}
-user=centos
+instance_id=$(euca-describe-instances --region $user_region | grep "^INSTANCE" | cut -f2,11 | sort -k2 | tail -1 | cut -f1)
+public_name=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f4)
+public_ip=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f17)
+ssh_user=centos
+ssh_key=demo
 
 clear
 echo
@@ -797,32 +897,33 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name"
+echo "ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
 
 run 50
 
 if [ $choice = y ]; then
     attempt=0
     ((seconds=$login_default * $speed / 100))
-    while ((attempt++ <= $login_attempts)); do
+    while ((attempt++ <= login_attempts)); do
         sed -i -e "/$public_name/d" ~/.ssh/known_hosts
         sed -i -e "/$public_ip/d" ~/.ssh/known_hosts
         ssh-keyscan $public_name 2> /dev/null >> ~/.ssh/known_hosts
         ssh-keyscan $public_ip 2> /dev/null >> ~/.ssh/known_hosts
 
         echo
-        echo "# ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name"
+        echo "# ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name"
         if [ $interactive = 1 ]; then
-            ssh -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name
+            ssh -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name
             RC=$?
         else
-            ssh -T -i ~/.creds/$AWS_DEFAULT_REGION/$account/admin/admin-demo.pem $user@$public_name << EOF
+            ssh -T -i ~/.ssh/${ssh_key}_id_rsa $ssh_user@$public_name << EOF
 echo "# ifconfig"
 ifconfig
 sleep 5
 echo
 echo "# curl http://169.254.169.254/latest/meta-data/public-ipv4"
-curl -sS http://169.254.169.254/latest/meta-data/public-ipv4; echo
+curl -sS http://169.254.169.254/latest/meta-data/public-ipv4 -o /tmp/public-ip4
+cat /tmp/public-ip4
 sleep 5
 EOF
             RC=$?
@@ -841,15 +942,16 @@ EOF
 fi
 
 
+
 ((++step))
-instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+instance_ids="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2)"
 unset instance_names
 for instance_id in $instance_ids; do
-    instance_names="$instance_names $(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)"
+    instance_names="$instance_names $(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f4)"
 done
 instance_names=${instance_names# *}
 
-lb_name=$(eulb-describe-lbs | cut -f3)
+lb_name=$(eulb-describe-lbs --region $user_region | cut -f3)
 lb_public_ip=$(dig +short $lb_name)
 
 clear
@@ -881,14 +983,14 @@ if [ $choice = y ]; then
     ((seconds=$create_default * $speed / 100))
     while ((attempt++ <= create_attempts)); do
         echo
-        echo "# eulb-describe-instance-health DemoELB"
-        eulb-describe-instance-health DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
+        echo "# eulb-describe-instance-health --region $user_region DemoELB"
+        eulb-describe-instance-health --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
 
-        if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge 2 ]; then
+        if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge $instances ]; then
             break
         else
             echo
-            echo -n "At least 2 instances are not yet \"InService\". Waiting $seconds seconds..."
+            echo -n "At least $instances instances are not yet \"InService\". Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
@@ -911,40 +1013,56 @@ if [ $choice = y ]; then
 fi
 
 
+
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Demo Alternate User-Data script"
-echo "    - This simple user-data script will install Apache and configure"
-echo "      a simple home page"
-echo "    - This alternate makes minor changes to the simple home page"
-echo "      to demonstrate how updates to a Launch Configuration can handle"
-echo "      rolling updates"
-echo "    - We will modify our existing LaunchConfiguration to automatically"
-echo "      configure new instances created by our AutoScalingGroup"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat $scriptsdir/$prefix-user-data-2.sh"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat $scriptsdir/$prefix-user-data-2.sh"
-    cat $scriptsdir/$prefix-user-data-2.sh
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Demo Alternate User-Data script"
+    echo "    - This simple user-data script will install Apache and configure"
+    echo "      a simple home page"
+    echo "    - This alternate makes minor changes to the simple home page"
+    echo "      to demonstrate how updates to a Launch Configuration can handle"
+    echo "      rolling updates"
+    echo "    - We will modify our existing LaunchConfiguration to automatically"
+    echo "      configure new instances created by our AutoScalingGroup"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "more $scriptsdir/$prefix-user-data-2.sh"
 
-    next 150
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# more $scriptsdir/$prefix-user-data-2.sh"
+        if [ $interactive = 1 ]; then
+            more $scriptsdir/$prefix-user-data-2.sh
+        else
+            # This will iterate over the file in a manner similar to more, but non-interactive
+            ((rows=$(tput lines)-2))
+            lineno=0
+            while IFS= read line; do
+                echo "$line"
+                if [ $((++lineno % rows)) = 0 ]; then
+                    tput rev; echo -n "--More--"; tput sgr0; echo -n " (Waiting 10 seconds...)"
+                    sleep 10
+                    echo -e -n "\r                                \r"
+                fi
+            done < $scriptsdir/$prefix-user-data-2.sh
+        fi
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-image_id=$(euca-describe-images | grep "${image_file%%.*}.raw.manifest.xml" | cut -f2)
-user=centos
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region $user_region | cut -f2)
 
 clear
 echo
@@ -958,31 +1076,47 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-create-launch-config DemoLC-2 --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-echo "                                      --key=admin-demo --group=DemoSG \\"
-echo "                                      --user-data-file=$scriptsdir/$prefix-user-data-2.sh"
+echo "euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
+echo "                             --key=admin-demo --group=DemoSG \\"
+echo "                             --user-data-file=$scriptsdir/$prefix-user-data-2.sh \\"
+echo "                             --region $user_region \\"
+echo "                             DemoLC-2"
 echo
-echo "euscale-describe-launch-configs DemoLC"
-echo "euscale-describe-launch-configs DemoLC-2"
+echo "euscale-describe-launch-configs --region $user_region DemoLC"
+echo "euscale-describe-launch-configs --region $user_region DemoLC-2"
 
-run
-
-if [ $choice = y ]; then
+if euscale-describe-launch-configs --region $user_region DemoLC-2 2> /dev/null | grep -s -q "^LAUNCH-CONFIG"; then
     echo
-    echo "# euscale-create-launch-config DemoLC-2 --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-    echo ">                                       --key=admin-demo --group=DemoSG \\"
-    echo ">                                       --user-data-file=$scriptsdir/$prefix-user-data-2.sh"
-    euscale-create-launch-config DemoLC-2 --image-id $image_id --instance-type m1.small --monitoring-enabled \
-                                          --key=admin-demo --group=DemoSG \
-                                          --user-data-file=$scriptsdir/$prefix-user-data-2.sh
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euscale-describe-launch-configs DemoLC"
-    euscale-describe-launch-configs DemoLC
-    echo "# euscale-describe-launch-configs DemoLC-2"
-    euscale-describe-launch-configs DemoLC-2
+    next 50
 
-    next
+else
+    run
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
+        echo ">                              --key=admin-demo --group=DemoSG \\"
+        echo ">                              --user-data-file=$scriptsdir/$prefix-user-data-2.sh \\"
+        echo ">                              --region $user_region \\"
+        echo ">                              DemoLC-2"
+        euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \
+                                     --key=admin-demo --group=DemoSG \
+                                     --user-data-file=$scriptsdir/$prefix-user-data-2.sh \
+                                     --region $user_region \
+                                     DemoLC-2
+        pause
+
+        echo "# euscale-describe-launch-configs --region $user_region DemoLC"
+        euscale-describe-launch-configs --region $user_region DemoLC
+        echo "# euscale-describe-launch-configs --region $user_region DemoLC-2"
+        euscale-describe-launch-configs --region $user_region DemoLC-2
+
+        next
+    fi
 fi
 
 
@@ -999,27 +1133,37 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-update-auto-scaling-group DemoASG --launch-configuration DemoLC-2"
+echo "euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG"
 echo
-echo "euscale-describe-auto-scaling-groups DemoASG"
+echo "euscale-describe-auto-scaling-groups --region $user_region DemoASG"
 
-run
-
-if [ $choice = y ]; then
+if [ "$(euscale-describe-auto-scaling-groups --region $user_region DemoASG 2> /dev/null | grep "^AUTO-SCALING-GROUP" | cut -f3)" = "DemoLC-2" ]; then
     echo
-    echo "# euscale-update-auto-scaling-group DemoASG --launch-configuration DemoLC-2"
-    euscale-update-auto-scaling-group DemoASG --launch-configuration DemoLC-2
-    pause
+    tput rev
+    echo "Already Updated!"
+    tput sgr0
 
-    echo "# euscale-describe-auto-scaling-groups DemoASG"
-    euscale-describe-auto-scaling-groups DemoASG
+    next 50
 
-    next
+else
+    run
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG"
+        euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG
+        pause
+
+        echo "# euscale-describe-auto-scaling-groups --region $user_region DemoASG"
+        euscale-describe-auto-scaling-groups --region $user_region DemoASG
+
+        next
+    fi
 fi
 
 
 ((++step))
-instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+instance_ids="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2)"
 
 clear
 echo
@@ -1034,20 +1178,18 @@ echo "    - When done, one instance will use the new LaunchConfiguration,"
 echo "      while the other(s) will still use the old LaunchConfiguration"
 echo "      (normally we'd iterate through all instances when updating the application)"
 echo "    - NOTE: This can take about 140 - 200 seconds (per instance)"
-if [ $gui = 1 ];  then
-    echo "    - After confirming replacement here, confirm via GUI"
-fi
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 for instance_id in $instance_ids; do
     echo
-    echo "euscale-terminate-instance-in-auto-scaling-group $instance_id -D --show-long"
+    echo "euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \\"
+    echo "                                                 --show-long --region $user_region $instance_id"
     echo
-    echo "euscale-describe-auto-scaling-groups DemoASG"
+    echo "euscale-describe-auto-scaling-groups --region $user_region DemoASG"
     echo
-    echo "eulb-describe-instance-health DemoELB (repeat until both instances are back is \"InService\")"
+    echo "eulb-describe-instance-health --region $user_region DemoELB (repeat until both instances are back is \"InService\")"
     break    # delete only one at this time
 done
 
@@ -1056,20 +1198,22 @@ run 150
 if [ $choice = y ]; then
     for instance_id in $instance_ids; do
         echo
-        echo "# euscale-terminate-instance-in-auto-scaling-group $instance_id -D --show-long"
-        euscale-terminate-instance-in-auto-scaling-group $instance_id -D --show-long
+        echo "# euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \\"
+        echo ">                                                  --show-long --region $user_region $instance_id"
+        euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \
+                                                         --show-long --region $user_region $instance_id
         pause
 
         attempt=0
         ((seconds=$replace_default * $speed / 100))
         while ((attempt++ <= replace_attempts)); do
             echo
-            echo "# euscale-describe-auto-scaling-groups DemoASG"
-            euscale-describe-auto-scaling-groups DemoASG
+            echo "# euscale-describe-auto-scaling-groups --region $user_region DemoASG"
+            euscale-describe-auto-scaling-groups --region $user_region DemoASG
             echo
-            echo "# eulb-describe-instance-health DemoELB"
-            eulb-describe-instance-health DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
-            
+            echo "# eulb-describe-instance-health --region $user_region DemoELB"
+            eulb-describe-instance-health --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
+
             if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge $instances ]; then
                 break
             else
@@ -1082,21 +1226,15 @@ if [ $choice = y ]; then
         break    # delete only one at this time
     done
 
-    if [ $gui = 1 ]; then
-        echo
-        echo "Browse: ${consoleurl}/?account=$account&username=admin"
-        echo "        to confirm resources via management console"
-
-        next 400
-    fi
+    next 50
 fi
 
 
 ((++step))
-instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
+instance_ids="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2)"
 unset instance_names
 for instance_id in $instance_ids; do
-    instance_names="$instance_names $(euca-describe-instances $instance_id | grep "^INSTANCE" | cut -f4)"
+    instance_names="$instance_names $(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f4)"
 done
 instance_names=${instance_names# *}
 
@@ -1144,258 +1282,12 @@ if [ $choice = y ]; then
 fi
 
 
-((++step))
-instance_ids="$(euscale-describe-auto-scaling-groups DemoASG | grep "^INSTANCE" | cut -f2)"
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the AutoScalingGroup"
-echo "    - We must first reduce sizes to zero"
-echo "    - Pause a bit longer for changes to be acted upon"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0"
-echo 
-echo "euscale-delete-auto-scaling-group DemoASG"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0"
-    euscale-update-auto-scaling-group DemoASG --min-size 0 --max-size 0 --desired-capacity 0
-
-    attempt=0
-    ((seconds=$delete_default * $speed / 100))
-    while ((attempt++ <= delete_attempts)); do
-        echo
-        echo "# euca-describe-instances $instance_ids"
-        euca-describe-instances $instance_ids | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
-
-        if [ $(grep -c "terminated" $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out) -ge 2 ]; then
-            break
-        else
-            echo
-            echo -n "Instances not yet \"terminated\". Waiting $seconds seconds..."
-            sleep $seconds
-            echo " Done"
-        fi
-    done
-
-    echo "# euscale-delete-auto-scaling-group DemoASG"
-    euscale-delete-auto-scaling-group DemoASG
-    pause
-
-    # While the instances are deleted by deletion of the ASG, which removes the terminated results from listings
-    for instance_id in $instance_ids; do
-        euca-terminate-instances $instance_id &> /dev/null
-    done
-
-    # Repeat, as sometimes some terminated instances are still in listings, so we get a clean final listing
-    for instance_id in $instance_ids; do
-        euca-terminate-instances $instance_id &> /dev/null
-    done
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the Alarms"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euwatch-delete-alarms DemoAddNodesAlarm"
-echo "euwatch-delete-alarms DemoDelNodesAlarm"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euwatch-delete-alarms DemoAddNodesAlarm"
-    euwatch-delete-alarms DemoAddNodesAlarm
-    echo "# euwatch-delete-alarms DemoDelNodesAlarm"
-    euwatch-delete-alarms DemoDelNodesAlarm
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the LaunchConfigurations"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euscale-delete-launch-config DemoLC"
-echo "euscale-delete-launch-config DemoLC-2"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euscale-delete-launch-config DemoLC"
-    euscale-delete-launch-config DemoLC
-    echo "# euscale-delete-launch-config DemoLC-2"
-    euscale-delete-launch-config DemoLC-2
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the ElasticLoadBalancer"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "eulb-delete-lb DemoELB"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# eulb-delete-lb DemoELB"
-    eulb-delete-lb DemoELB
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Delete the Security Group"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-delete-group DemoSG"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-delete-group DemoSG"
-    euca-delete-group DemoSG
-
-    next
-fi
-
-
-((++step))
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List remaining resources"
-echo "    - Confirm we are back to our initial set"
-if [ $gui = 1 ];  then
-    echo "    - After listing resources here, confirm via GUI"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images"
-echo
-echo "euca-describe-keypairs"
-echo
-echo "euca-describe-groups"
-echo
-echo "eulb-describe-lbs"
-echo
-echo "euca-describe-instances"
-echo
-echo "euscale-describe-launch-configs"
-echo
-echo "euscale-describe-auto-scaling-groups"
-echo
-echo "euscale-describe-policies"
-echo
-echo "euwatch-describe-alarms"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
-
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause
-
-    echo "# euca-describe-groups"
-    euca-describe-groups
-    pause
-
-    echo "# eulb-describe-lbs"
-    eulb-describe-lbs
-    pause
-
-    echo "# euca-describe-instances"
-    euca-describe-instances
-    pause
-
-    echo "# euscale-describe-launch-configs"
-    euscale-describe-launch-configs
-    pause
-
-    echo "# euscale-describe-auto-scaling-groups"
-    euscale-describe-auto-scaling-groups
-    pause
-
-    echo "# euscale-describe-policies"
-    euscale-describe-policies
-    pause
-
-    echo "# euwatch-describe-alarms"
-    euwatch-describe-alarms
-
-    next 200
-
-    if [ $gui = 1 ]; then
-        echo
-        echo "Browse: ${consoleurl}/?account=$account&username=admin"
-        echo "        to confirm resources via management console"
-
-        next 400
-    fi
-fi
-
-
 end=$(date +%s)
 
 echo
-echo "Eucalyptus SecurityGroup, ElasticLoadBalancer, LaunchConfiguration,"
 case $(uname) in
   Darwin)
-    echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -r $((end-start)) +"%T"))";;
+    echo "Eucalyptus CLI: ELB + ASG + User-Data demo execution complete (time: $(date -u -r $((end-start)) +"%T"))";;
   *)
-    echo "           AutoScalingGroup and User-Data Script testing complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+    echo "Eucalyptus CLI: ELB + ASG + User-Data demo execution complete (time: $(date -u -d @$((end-start)) +"%T"))";;
 esac

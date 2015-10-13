@@ -1,9 +1,9 @@
 #!/bin/bash -eux
 #
-# Script to configure demo-05 instances
+# Script to configure demo-10 instances
 #
 # This is a script meant to be run via cloud-init to do simple initial configuration
-# of the Demo 05 Instances created by the associated LaunchConfiguration and 
+# of the Demo 10 Instances created by the associated LaunchConfiguration and 
 # AutoScaleGroup.
 #
 
@@ -27,7 +27,7 @@ cat << EOF >> /var/www/html/index.html
 <!DOCTYPE html>
 <html>
 <head>
-<title>Welcome to Demo 05!</title>
+<title>Welcome to Demo 10!</title>
 <style>
     body {
         width: 50em;
@@ -37,7 +37,7 @@ cat << EOF >> /var/www/html/index.html
 </style>
 </head>
 <body>
-<h1>Welcome to Demo 05!</h1>
+<h1>Welcome to Demo 10!</h1>
 
 <p>You're viewing a website running on the host with internal address: $(hostname)</p>
 </body>
