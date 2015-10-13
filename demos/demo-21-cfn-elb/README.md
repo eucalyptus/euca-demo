@@ -7,11 +7,12 @@ Prior to running this demo, the Eucalyptus Region must be prepared for demos via
 Initialization scripts, as this demo depends on objects created by those scripts. The
 initialization scripts can be found in [this directory](../demo-00-initialize/bin), and
 manual procedures which perform the same actions can be found in
-[this directory](../demo-00-initialize/docs). Additionally, the end-to-end process of
-installing Eucalyptus via FastStart, augmenting the installation with features such as DNS, PKI,
-reverse-proxy with SSL termination, AWSCLI and Euca2ools configuration, and demo initialization,
-are described in detail for the [Demo 20: CloudFormation: Simple](../demo-20-cfn-simple/README.md)
-demo.
+[this directory](../demo-00-initialize/docs).
+
+Additionally, the end-to-end process of installing Eucalyptus via FastStart, augmenting the
+installation with features such as DNS, PKI, reverse-proxy with SSL termination, AWSCLI and
+Euca2ools configuration, and demo initialization, are described in detail for the
+[Demo 20: CloudFormation: Simple](../demo-20-cfn-simple/README.md) demo.
 
 ### CloudFormation ELB Demo Key Points
 
@@ -38,7 +39,7 @@ These are steps needed to initialize this demo, on top of the baseline initializ
     ```bash
     cd ~/src/eucalyptus/euca-demo/demos/demo-21-cfn-elb/bin
 
-    ./demo-21-initialize-cfn-elb.sh
+    ./demo-21-initialize-cfn-elb.sh -r hp-aw2-1 -a demo
     ```
 
 ### Run CloudFormation ELB Demo
@@ -64,7 +65,7 @@ has been done.
     Euca2ools Script: [demo-21-run-cfn-elb.sh](bin/demo-21-run-cfn-elb.sh)
 
     ```bash
-    ./demo-21-run-cfn-wordpress.sh
+    ./demo-21-run-cfn-elb.sh -r hp-aw2-1 -a demo
     ```
 
     AWSCLI Procedure: [demo-21-run-cfn-elb-awscli.md](docs/demo-21-run-cfn-elb-awscli.md)
@@ -72,7 +73,7 @@ has been done.
     AWSCLI Script: [demo-21-run-cfn-elb-awscli.sh](bin/demo-21-run-cfn-elb-awscli.sh)
 
     ```bash
-    ./demo-21-run-cfn-elb-awscli.sh
+    ./demo-21-run-cfn-elb-awscli.sh -r hp-aw2-1 -a demo
     ```
 
 ### Reset CloudFormation ELB Demo
@@ -87,6 +88,6 @@ one or more times. It's not necessary to re-run this demo's initialization scrip
     Script: [demo-21-reset-cfn-elb.sh](bin/demo-21-reset-cfn-elb.sh)
 
     ```bash
-    ./demo-21-reset-cfn-elb.sh
+    ./demo-21-reset-cfn-elb.sh -r hp-aw2-1 -a demo
     ```
 
