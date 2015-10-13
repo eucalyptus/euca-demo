@@ -1,7 +1,7 @@
 #/bin/bash
 #
 # This script resets a Eucalyptus CloudFormation demo which uses the
-# Simple.template to create a security group and an instance.
+# Simple.template to create a Security Group and an Instance.
 #
 # This script was originally designed to run on a combined CLC+UFS+MC host,
 # as installed by FastStart or the Cloud Administrator Course. To run this
@@ -208,9 +208,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-delete-stack --region=$user_region SimpleDemoStack"
+echo "euform-delete-stack --region $user_region SimpleDemoStack"
 
-if ! euform-describe-stacks --region=$user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+if ! euform-describe-stacks --region $user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -223,8 +223,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-delete-stack --region=$user_region SimpleDemoStack"
-        euform-delete-stack --region=$user_region SimpleDemoStack
+        echo "# euform-delete-stack --region $user_region SimpleDemoStack"
+        euform-delete-stack --region $user_region SimpleDemoStack
 
         next
     fi
@@ -243,11 +243,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks --region=$user_region"
+echo "euform-describe-stacks --region $user_region"
 echo
-echo "euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5"
+echo "euform-describe-stack-events --region $user_region SimpleDemoStack | head -5"
 
-if ! euform-describe-stacks --region=$user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+if ! euform-describe-stacks --region $user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
     echo
     tput rev
     echo "Already Complete!"
@@ -260,18 +260,18 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks --region=$user_region"
-        euform-describe-stacks --region=$user_region
+        echo "# euform-describe-stacks --region $user_region"
+        euform-describe-stacks --region $user_region
         pause
 
         attempt=0
         ((seconds=$delete_default * $speed / 100))
         while ((attempt++ <= delete_attempts)); do
             echo
-            echo "# euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5"
-            euform-describe-stack-events --region=$user_region SimpleDemoStack | head -5
+            echo "# euform-describe-stack-events --region $user_region SimpleDemoStack | head -5"
+            euform-describe-stack-events --region $user_region SimpleDemoStack | head -5
 
-            if ! euform-describe-stacks --region=$user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
+            if ! euform-describe-stacks --region $user_region SimpleDemoStack 2> /dev/null | grep -s -q "^STACK"; then
                 break
             else
                 echo
@@ -302,14 +302,14 @@ echo
 echo "Commands:"
 echo
 echo "terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
-echo "                                                  --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
+echo "                                                  --region $user_region | grep \"^INSTANCE\" | cut -f2)"
 echo
 echo "for instance_id in \$terminated_instance_ids; do"
-echo "    euca-terminate-instances --region=$user_region \$instance_id &> /dev/null"
+echo "    euca-terminate-instances --region $user_region \$instance_id &> /dev/null"
 echo "done"
 
 terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
-                                                  --region=$user_region | grep "^INSTANCE" | cut -f2)
+                                                  --region $user_region | grep "^INSTANCE" | cut -f2)
 if [ -z "$terminated_instance_ids" ]; then
     echo
     tput rev
@@ -324,16 +324,16 @@ else
     if [ $choice = y ]; then
         echo
         echo "# terminated_instance_ids=\$(euca-describe-instances --filter \"instance-state-name=terminated\" \\"
-        echo ">                                                   --region=$user_region | grep \"^INSTANCE\" | cut -f2)"
+        echo ">                                                   --region $user_region | grep \"^INSTANCE\" | cut -f2)"
         terminated_instance_ids=$(euca-describe-instances --filter "instance-state-name=terminated" \
-                                                          --region=$user_region | grep "^INSTANCE" | cut -f2)
+                                                          --region $user_region | grep "^INSTANCE" | cut -f2)
         pause
 
         echo "# for instance_id in \$terminated_instance_ids; do"
-        echo ">     euca-terminate-instances --region=$user_region \$instance_id &> /dev/null"
+        echo ">     euca-terminate-instances --region $user_region \$instance_id &> /dev/null"
         echo "> done"
         for instance_id in $terminated_instance_ids; do
-            euca-terminate-instances --region=$user_region $instance_id &> /dev/null
+            euca-terminate-instances --region $user_region $instance_id &> /dev/null
         done
 
         next
@@ -354,20 +354,20 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-describe-groups --region=$user_region"
+    echo "euca-describe-groups --region $user_region"
     echo
-    echo "euca-describe-instances --region=$user_region"
+    echo "euca-describe-instances --region $user_region"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-describe-groups --region=$user_region"
-        euca-describe-groups --region=$user_region
+        echo "# euca-describe-groups --region $user_region"
+        euca-describe-groups --region $user_region
         pause
 
-        echo "# euca-describe-instances --region=$user_region"
-        euca-describe-instances --region=$user_region
+        echo "# euca-describe-instances --region $user_region"
+        euca-describe-instances --region $user_region
 
         next
     fi
@@ -387,14 +387,14 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "euform-describe-stacks --region=$user_region"
+    echo "euform-describe-stacks --region $user_region"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks --region=$user_region"
-        euform-describe-stacks --region=$user_region
+        echo "# euform-describe-stacks --region $user_region"
+        euform-describe-stacks --region $user_region
 
         next
     fi

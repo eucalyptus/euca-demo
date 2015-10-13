@@ -3,85 +3,118 @@
 This document describes the manual procedure to run the CloudFormation Simple demo via the 
 Eucalyptus Console (GUI).
 
-### CloudFormation Simple Demo Key Points
-   
-The following are key points illustrated in this demo:
-   
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
+### Prerequisites
 
-### Prepare CloudFormation Simple Demo
+This variant can be run by any User with the appropriate permissions, as long the
+credentials are known, and the Account was initialized with demo baseline dependencies.
+See [this section](../../demo-00-initialize/docs) for details.
 
-This variant can be run by any User with the appropriate permissions, as long the User's
-credentials are known, and the Account was initialized with demo baseline dependencies. 
-This example uses the hp-aw2-1 Region, demo Account and admin User. The console for this
-Region is here: (https://console.hp-aw2-1.hpcloudsvc.com), and will appear in screen shots.
+You should have a copy of the "euca-demo" GitHub project checked out to the workstation
+where you will be running any scripts or using a Browser which will access the Eucalyptus
+Console, so that you can run scripts or upload Templates or other files which may be needed.
+This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
 
-You should have a copy of the "euca-demo" GitHub project checked out to the workstation 
-where you will be running any Browser which will access the Eucalyptus Console, so that
-you can upload any Templates or other files which may be needed. This project should be
-checked out to the ~/src/eucalyptus/euca-demo directory.
-
-Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
+Before running this demo, please run the demo-21-initialize-cfn-elb.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
 required.
 
-After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
+After running this demo, please run the demo-21-reset-cfn-elb.sh script, which will
 reverse all actions performed by this script so that it can be re-run.
+
+### Define Parameters
+
+The procedure steps in this document are meant to be static - run unchanged on the appropriate
+consoles of each Region. To support reuse of this procedure on different environments with
+different Regions, Accounts and Users, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here,
+which will be referenced in GUI instructions and should be be pasted into each ssh session,
+and which can then adjust the behavior of statements.
+
+1. Define Environment Variables used in upcoming console instructions and code blocks
+
+    Adjust the variables in this section to your environment.
+
+    ```bash
+    export EUCA_REGION=hp-aw2-1
+    export EUCA_DOMAIN=hpcloudsvc.com
+    export EUCA_ACCOUNT=demo
+    export EUCA_USER=admin
+
+    export EUCA_USER_REGION=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER@$EUCA_REGION
+    ```
+
+### Login to Management Console and a Terminal Session
+
+Ideally, this demo should be shown on a wide-screen or multi-monitor/projector display, so that the
+console and terminal session can be seen side-by-side.
+
+1. Login to the Eucalyptus Console as the Demo Account Demo User
+
+    Using your browser, open the appropriate [Eucalyptus Console](https://console.hp-aw2-1.hpcloudsvc.com),
+    and login with the parameters referenced above as $EUCA_ACCOUNT and $EUCA_USER. The password will
+    need to be obtained separately from the Demo Account Administrator.
+
+    Arrange this window to the LEFT of your screen.
+
+    ![Login as Eucalyptus Demo Account Demo User](../images/demo-20-run-cfn-simple-00-euca-login.png?raw=true)
+
+2. Login to a Terminal Session
+
+    Using your favorite SSH Terminal appliocation, open a terminal session into the Eucalyptus CLC.
+
+    This can also be any other Enterprise Linux management workstation, as long as the credentials
+    for the Eucalyptus Demo Account have been configured, and the euca-demo GitHub project has been
+    downloaded to the ~/src/eucalyptus/euca-demo directory.
+
+    Arrange this window to the RIGHT or UNDERNEATH the console browser window, as the steps which require this are run last.
+
+    ![Login to Terminal Session](../images/demo-20-run-cfn-simple-00-ssh-login.png?raw=true)
 
 ### Run CloudFormation Simple Demo
 
-1. Login to the Eucalyptus Console as the Demo Account Administrator
-
-    Using your browser, open the appropriate [Eucalyptus Console](https://console.hp-aw2-1.hpcloudsvc.com).
-
-    ![Login as Demo Account Demo User](../images/demo-20-run-cfn-simple-01-login.png?raw=true)
-
-2. Confirm existence of Demo depencencies (Optional)
+1. Confirm existence of Demo depencencies (Optional)
 
     From the Dashboard, use the top left Navigation icon to display the left Navigation Panel.
 
-    ![Dashboard with Navigation](../images/demo-20-run-cfn-simple-02-dashboard.png?raw=true)
+    ![Dashboard with Navigation](../images/demo-20-run-cfn-simple-01-dashboard.png?raw=true)
 
     Then, Select Images to View Images which the Demo Account can use.
     Confirm the "centos66" image exists.
 
-    ![View Images](../images/demo-20-run-cfn-simple-02-images.png?raw=true)
+    ![View Images](../images/demo-20-run-cfn-simple-01-images.png?raw=true)
 
     From the Dashboard, Select the Key pairs Tile to View Key Pairs in the Demo Account.
     Confirm the "demo" Key Pair exists.
 
-    ![View Key Pairs](../images/demo-20-run-cfn-simple-02-key-pairs.png?raw=true)
+    ![View Key Pairs](../images/demo-20-run-cfn-simple-01-key-pairs.png?raw=true)
 
-3. Display Simple CloudFormation Template (Optional)
+2. Display Simple CloudFormation Template (Optional)
 
     In another browser tab, open the [Simple.template](../templates/Simple.template) to view the Simple
     CloudFormation template we will use in this demo.
 
-    ![View Simple.template](../images/demo-20-run-cfn-simple-03-simple-template.png?raw=true)
+    ![View Simple.template](../images/demo-20-run-cfn-simple-02-simple-template.png?raw=true)
 
-4. List existing Resources (Optional)
+3. List existing Resources (Optional)
 
     From the Dashboard, Select the Security groups Tile to View Security Groups in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Security Groups](../images/demo-20-run-cfn-simple-04-security-groups.png?raw=true)
+    ![View Security Groups](../images/demo-20-run-cfn-simple-03-security-groups.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to View Instances in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Instances](../images/demo-20-run-cfn-simple-04-instances.png?raw=true)
+    ![View Instances](../images/demo-20-run-cfn-simple-03-instances.png?raw=true)
 
-5. List existing CloudFormation Stacks (Optional)
+4. List existing CloudFormation Stacks (Optional)
 
     From the Dashboard, Select the Stacks Tile to View CloudFormation Stacks in the
     Demo Account. Note contents of list for comparison after creating Stack.
 
-    ![View Stacks](../images/demo-20-run-cfn-simple-05-stacks.png?raw=true)
+    ![View Stacks](../images/demo-20-run-cfn-simple-04-stacks.png?raw=true)
 
-6. Create the Stack
+5. Create the Stack
 
     From the Stacks List Page, click the Create Button to create a new CloudFormation Stack.
     Enter "SimpleDemoStack" as the Name.
@@ -89,53 +122,53 @@ reverse all actions performed by this script so that it can be re-run.
     Next, click on the Upload template Radio Button, then the Choose File Button. Find and
     select ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template.
 
-    ![Create Stack - General](../images/demo-20-run-cfn-simple-06-create-general.png?raw=true)
+    ![Create Stack - General](../images/demo-20-run-cfn-simple-05-create-general.png?raw=true)
 
     Press the Next Button to advance to the Parameters Page. Select "centos66" as the DemoImageId,
     and "demo" as the DemoKeyPair.
 
-    ![Create Stack - Parameters](../images/demo-20-run-cfn-simple-06-create-parameters.png?raw=true)
+    ![Create Stack - Parameters](../images/demo-20-run-cfn-simple-05-create-parameters.png?raw=true)
 
     Press the CreateStack Button to initiate Stack creation.
 
-7. Monitor Stack creation
+6. Monitor Stack creation
 
     Initiating Stack creation will automatically take you to the Stack General Tab, showing a 
     periodically updating view of the state of the stack objects. Review Stack status.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-01-details.png?raw=true)
+    ![Stack - General](../images/demo-20-run-cfn-simple-06-stack-01-details.png?raw=true)
 
     Click on the Events Tab. Review Stack Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-01-events.png?raw=true)
+    ![Stack - Events](../images/demo-20-run-cfn-simple-06-stack-01-events.png?raw=true)
 
     Click on the General Tab. Continue to monitor Stack Details until you notice the Stack is
     Completed.
 
-    ![Stack - General](../images/demo-20-run-cfn-simple-07-stack-02-details.png?raw=true)
+    ![Stack - General](../images/demo-20-run-cfn-simple-06-stack-02-details.png?raw=true)
 
     Click on the Events Tab. Confirm all Events.
 
-    ![Stack - Events](../images/demo-20-run-cfn-simple-07-stack-02-events.png?raw=true)
+    ![Stack - Events](../images/demo-20-run-cfn-simple-06-stack-02-events.png?raw=true)
 
-8. List updated Resources (Optional)
+7. List updated Resources (Optional)
 
     From the Dashboard, Select the Security groups Tile to View Security Groups in the
     Demo Account. Note updated contents of list, and compare with the initial set.
 
-    ![View Security Groups](../images/demo-20-run-cfn-simple-08-security-groups.png?raw=true)
+    ![View Security Groups](../images/demo-20-run-cfn-simple-07-security-groups.png?raw=true)
 
     From the Dashboard, Select the Running instances Tile to View Instances in the
     Demo Account. Note updated contents of list, and compare with the initial set.
 
-    ![View Instances](../images/demo-20-run-cfn-simple-08-instances.png?raw=true)
+    ![View Instances](../images/demo-20-run-cfn-simple-07-instances.png?raw=true)
 
     From the Instances page, Select the instance just created. Note the Public hostname,
     then select and copy it to the paste buffer for use in the next step.
 
-    ![View Instance Details](../images/demo-20-run-cfn-simple-08-instance-details.png?raw=true)
+    ![View Instance Details](../images/demo-20-run-cfn-simple-07-instance-details.png?raw=true)
 
-9. Confirm ability to login to Instance
+8. Confirm ability to login to Instance
 
     Confirm you have the demo private key installed: ~/.ssh/demo_id_rsa. This file can
     be found [here](../../../keys/demo_id_rsa). Adjust the ssh command line as needed if
@@ -158,5 +191,5 @@ reverse all actions performed by this script so that it can be re-run.
     curl http://169.254.169.254/latest/meta-data/public-ipv4; echo
     ```
 
-    ![Verify Instance](../images/demo-20-run-cfn-simple-09-validate.png?raw=true)
+    ![Verify Instance](../images/demo-20-run-cfn-simple-08-validate.png?raw=true)
 

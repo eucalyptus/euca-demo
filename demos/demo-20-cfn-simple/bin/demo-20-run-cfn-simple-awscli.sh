@@ -1,7 +1,7 @@
 #/bin/bash
 #
 # This script runs a Eucalyptus CloudFormation demo which uses the
-# Simple.template to create a security group and an instance.
+# Simple.template to create a Security Group and an Instance.
 #
 # This is a variant of the demo-20-run-cfn-simple.sh script which primarily uses the AWSCLI.
 #

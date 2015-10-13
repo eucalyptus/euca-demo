@@ -2,24 +2,22 @@
 
 This document describes the manual procedure to run the CloudFormation Simple demo via Euca2ools
 
-### CloudFormation Simple Demo Key Points
-   
-The following are key points illustrated in this demo:
-   
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
-
-### Prepare CloudFormation Simple Demo
+### Prerequisites
 
 This variant can be run by any User with the appropriate permissions, as long as Euca2ools
-has been configured with the appropriate credentials, and the Account was initialized with
-demo baseline dependencies. This example uses the hp-aw2-1 Region, demo Account and demo User.
+has been configured with the appropriate credentials, and the Account was initialized
+with demo baseline dependencies. See [this section](../../demo-00-initialize/docs) for details.
 
-In examples below, credentials are specified via the --region=USER@REGION option, but
-to shorten the command line, you can export the AWS_DEFAULT_REGION environment variable with
-the same value instead.
+You should have a copy of the "euca-demo" GitHub project checked out to the workstation
+where you will be running any scripts or using a Browser which will access the Eucalyptus
+Console, so that you can run scripts or upload Templates or other files which may be needed.
+This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
+
+In examples below, credentials are specified via the --region USER@REGION option. You can shorten
+the command lines by use of the AWS_DEFAULT_REGION environment variable set to the appropriate
+value, buti for this demo want want to make each command explicit. Also, there is a conflict
+between Euca2ools use of USER@REGION and AWS CLI, which breaks when this variable has the USER@
+prefix. Specifying the value as a parameter avoids this conflict.
 
 Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
@@ -27,6 +25,27 @@ required.
 
 After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
 reverse all actions performed by this script so that it can be re-run.
+
+### Define Parameters
+
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different Regions, Accounts and Users, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
+
+1. Define Environment Variables used in upcoming code blocks
+
+    Adjust the variables in this section to your environment.
+
+    ```bash
+    export EUCA_REGION=hp-aw2-1
+    export EUCA_DOMAIN=hpcloudsvc.com
+    export EUCA_ACCOUNT=demo
+    export EUCA_USER=admin
+
+    export EUCA_USER_REGION=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER@$EUCA_REGION
+    ```
 
 ### Run CloudFormation Simple Demo
 
@@ -38,10 +57,10 @@ reverse all actions performed by this script so that it can be re-run.
 
     ```bash
     euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                         --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f1,2,3
+                         --region $EUCA_USER_REGION | cut -f1,2,3
 
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=hp-aw2-1-demo-demo@hp-aw2-1
+                           --region $EUCA_USER_REGION
     ```
 
 2. Display Simple CloudFormation Template (Optional)
@@ -53,58 +72,16 @@ reverse all actions performed by this script so that it can be re-run.
     more ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template
     ```
 
-    Contents of Simple.template
-
-    ```json
-    {
-      "Parameters": {
-        "DemoImageId": {
-          "Description":"Image id",
-          "Type":"String"
-        },
-        "DemoKeyPair": {
-          "Description":"Key Pair",
-          "Type":"String",
-          "Default":"demo"
-        }
-      },
-      "Resources" : {
-        "DemoSecurityGroup": {
-          "Type": "AWS::EC2::SecurityGroup",
-          "Properties": {
-            "GroupDescription" : "Security Group with Ingress Rule for DemoInstance",
-            "SecurityGroupIngress" : [
-              {
-                "IpProtocol" : "tcp",
-                "FromPort" : "22",
-                "ToPort" : "22",
-                "CidrIp" : "0.0.0.0/0"
-              }
-            ]
-          }
-        },
-        "DemoInstance": {
-          "Type": "AWS::EC2::Instance",
-          "Properties": {
-            "ImageId" : { "Ref":"DemoImageId" },
-            "SecurityGroups" : [ 
-              { "Ref" : "DemoSecurityGroup" } 
-            ],
-            "KeyName" : { "Ref" : "DemoKeyPair" }
-          }
-        }
-      }
-    }
-    ```
+    [Example of Simple.template](../templates/Simple.template).
 
 3. List existing Resources (Optional)
 
     So we can compare with what this demo creates
 
     ```bash
-    euca-describe-groups --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euca-describe-groups --region $EUCA_USER_REGION
 
-    euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euca-describe-instances --region $EUCA_USER_REGION
     ```
 
 4. List existing CloudFormation Stacks (Optional)
@@ -112,7 +89,7 @@ reverse all actions performed by this script so that it can be re-run.
     So we can compare with what this demo creates
 
     ```bash
-    euform-describe-stacks --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euform-describe-stacks --region $EUCA_USER_REGION
     ```
 
 5. Create the Stack
@@ -122,11 +99,11 @@ reverse all actions performed by this script so that it can be re-run.
 
     ```bash
     image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                    --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f2)
+                                    --region $EUCA_USER_REGION | cut -f2)
 
     euform-create-stack --template-file ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
                         --parameter DemoImageId=$image_id \
-                        --region=hp-aw2-1-demo-demo@hp-aw2-1 \
+                        --region $EUCA_USER_REGION \
                         SimpleDemoStack
     ```
 
@@ -137,9 +114,9 @@ reverse all actions performed by this script so that it can be re-run.
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    euform-describe-stacks --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euform-describe-stacks --region $EUCA_USER_REGION
 
-    euform-describe-stack-events --region=hp-aw2-1-demo-demo@hp-aw2-1 SimpleDemoStack | head -5
+    euform-describe-stack-events --region $EUCA_USER_REGION SimpleDemoStack | head -5
     ```
 
 7. List updated Resources (Optional)
@@ -147,9 +124,9 @@ reverse all actions performed by this script so that it can be re-run.
     Note addition of new Security Group and Instance
 
     ```bash
-    euca-describe-groups --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euca-describe-groups --region $EUCA_USER_REGION
 
-    euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1
+    euca-describe-instances --region $EUCA_USER_REGION
     ```
 
 8. Confirm ability to login to Instance
@@ -161,8 +138,8 @@ reverse all actions performed by this script so that it can be re-run.
     ```bash
     instance_id=$(euform-describe-stack-resources --name SimpleDemoStack \
                                                   --logical-resource-id DemoInstance \
-                                                  --region=hp-aw2-1-demo-demo@hp-aw2-1 | cut -f3)
-    public_name=$(euca-describe-instances --region=hp-aw2-1-demo-demo@hp-aw2-1 $instance_id | grep "^INSTANCE" | cut -f4)
+                                                  --region $EUCA_USER_REGION | cut -f3)
+    public_name=$(euca-describe-instances --region $EUCA_USER_REGION $instance_id | grep "^INSTANCE" | cut -f4)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

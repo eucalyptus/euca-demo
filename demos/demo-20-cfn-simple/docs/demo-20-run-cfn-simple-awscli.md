@@ -3,29 +3,21 @@
 This document describes the manual procedure to run the CloudFormation Simple demo via AWS CLI
 (AWS Command Line Interface).
 
-### CloudFormation Simple Demo Key Points
-    
-The following are key points illustrated in this demo:
-    
-* This demo demonstrates use of CloudFormation via a Simple template, and is intended as an
-  introduction to this feature in Eucalyptus.
-* It is possible to view, run and monitor activities and resources created by CloudFormation
-  via the Eucalyptus or AWS Command line tools, or now within the Eucalyptus Console.
-
-### Prepare CloudFormation Simple Demo
+### Prerequisites
 
 This variant can be run by any User with the appropriate permissions, as long as AWS CLI
 has been configured with the appropriate credentials, and the Account was initialized with
-demo baseline dependencies. This example uses the hp-aw2-1 Region, demo Account and demo User.
+demo baseline dependencies. See [this section](../../demo-00-initialize/docs) for details.
 
-In examples below, credentials are specified via the --profile=PROFILE option, but
-to shorten the command line, you can export the AWS_DEFAULT_PROFILE environment variable with
-the same value instead.
+You should have a copy of the "euca-demo" GitHub project checked out to the workstation
+where you will be running any scripts or using a Browser which will access the Eucalyptus
+Console, so that you can run scripts or upload Templates or other files which may be needed.
+This project should be checked out to the ~/src/eucalyptus/euca-demo directory.
 
-You should unset the AWS_DEFAULT_REGION environment variable, or insure it is set to the
-correct Region (without any optional USER@ prefix), prior to running the statements below as
-AWS CLI will use any value found to override the default region of the profile, and it will 
-break if the value contains the USER@ prefix.
+In examples below, credentials are specified via the --profile PROFILE and --region REGION
+options. You can shorten the command lines by use of the AWS_DEFAULT_PROFILE and
+AWS_DEFAULT_REGION environment variables set to appropriate values, but for this demo we
+want to make each command explicit.
 
 Before running this demo, please run the demo-20-initialize-cfn-simple.sh script, which
 will confirm that all dependencies exist and perform any demo-specific initialization
@@ -33,6 +25,27 @@ required.
 
 After running this demo, please run the demo-20-reset-cfn-simple.sh script, which will
 reverse all actions performed by this script so that it can be re-run.
+
+### Define Parameters
+
+The procedure steps in this document are meant to be static - pasted unchanged into the appropriate
+ssh session of each host. To support reuse of this procedure on different environments with
+different Regions, Accounts and Users, as well as to clearly indicate the purpose of each
+parameter used in various statements, we will define a set of environment variables here, which
+will be pasted into each ssh session, and which can then adjust the behavior of statements.
+
+1. Define Environment Variables used in upcoming code blocks
+
+    Adjust the variables in this section to your environment.
+
+    ```bash
+    export EUCA_REGION=hp-aw2-1
+    export EUCA_DOMAIN=hpcloudsvc.com
+    export EUCA_ACCOUNT=demo
+    export EUCA_USER=admin
+
+    export EUCA_PROFILE=$EUCA_REGION-$EUCA_ACCOUNT-$EUCA_USER
+    ```
 
 ### Run CloudFormation Simple Demo
 
@@ -44,10 +57,10 @@ reverse all actions performed by this script so that it can be re-run.
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                            --profile=hp-aw2-1-demo-demo | cut -f1,3,4
+                            --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f1,3,4
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile=hp-aw2-1-demo-demo
+                               --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 2. Display Simple CloudFormation template (Optional)
@@ -59,58 +72,16 @@ reverse all actions performed by this script so that it can be re-run.
     more ~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template
     ```
 
-    Contents of Simple.template
-
-    ```json
-    {
-      "Parameters": {
-        "DemoImageId": {
-          "Description":"Image id",
-          "Type":"String"
-        },
-        "DemoKeyPair": {
-          "Description":"Key Pair",
-          "Type":"String",
-          "Default":"demo"
-        }
-      },
-      "Resources" : {
-        "DemoSecurityGroup": {
-          "Type": "AWS::EC2::SecurityGroup",
-          "Properties": {
-            "GroupDescription" : "Security Group with Ingress Rule for DemoInstance",
-            "SecurityGroupIngress" : [
-              {
-                "IpProtocol" : "tcp",
-                "FromPort" : "22",
-                "ToPort" : "22",
-                "CidrIp" : "0.0.0.0/0"
-              }
-            ]
-          }
-        },
-        "DemoInstance": {
-          "Type": "AWS::EC2::Instance",
-          "Properties": {
-            "ImageId" : { "Ref":"DemoImageId" },
-            "SecurityGroups" : [ 
-              { "Ref" : "DemoSecurityGroup" } 
-            ],
-            "KeyName" : { "Ref" : "DemoKeyPair" }
-          }
-        }
-      }
-    }
-    ```
+    [Example of Simple.template](../templates/Simple.template).
 
 3. List existing Resources (Optional)
 
     So we can compare with what this demo creates
 
     ```bash
-    aws ec2 describe-security-groups --profile=hp-aw2-1-demo-demo
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
 
-    aws ec2 describe-instances --profile=hp-aw2-1-demo-demo
+    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 4. List existing CloudFormation Stacks (Optional)
@@ -118,7 +89,7 @@ reverse all actions performed by this script so that it can be re-run.
     So we can compare with what this demo creates
 
     ```bash
-    aws cloudformation describe-stacks --profile=hp-aw2-1-demo-demo
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 5. Create the Stack
@@ -128,12 +99,12 @@ reverse all actions performed by this script so that it can be re-run.
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile=hp-aw2-1-demo-demo | cut -f3)
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f3)
 
     aws cloudformation create-stack --stack-name SimpleDemoStack \
                                     --template-body file://~/src/eucalyptus/euca-demo/demos/demo-20-cfn-simple/templates/Simple.template \
                                     --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \
-                                    --profile=hp-aw2-1-demo-demo
+                                    --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 6. Monitor Stack creation
@@ -143,10 +114,10 @@ reverse all actions performed by this script so that it can be re-run.
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    aws cloudformation describe-stacks --profile=hp-aw2-1-demo-demo
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
 
     aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \
-                                             --profile=hp-aw2-1-demo-demo
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 7. List updated Resources (Optional)
@@ -154,9 +125,9 @@ reverse all actions performed by this script so that it can be re-run.
     Note addition of new Security Group and Instance
 
     ```bash
-    aws ec2 describe-security-groups --profile=hp-aw2-1-demo-demo
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
 
-    aws ec2 describe-instance --profile=hp-aw2-1-demo-demo
+    aws ec2 describe-instance --profile $EUCA_PROFILE --region $EUCA_REGION
     ```
 
 8. Confirm ability to login to Instance
@@ -168,9 +139,9 @@ reverse all actions performed by this script so that it can be re-run.
     ```bash
     instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack \
                                                               --logical-resource-id DemoInstance \
-                                                              --profile=hp-aw2-1-demo-demo | cut -f4)
+                                                              --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f4)
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                             --profile=hp-aw2-1-demo-demo | grep "^INSTANCES" | cut -f11)
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION | grep "^INSTANCES" | cut -f11)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

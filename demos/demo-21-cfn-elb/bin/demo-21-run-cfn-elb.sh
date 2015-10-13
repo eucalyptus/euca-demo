@@ -216,32 +216,32 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-    echo "                     --region=$user_region | cut -f1,2,3"
+    echo "                     --region $user_region | cut -f1,2,3"
     echo
     echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
-    echo "                       --region=$user_region"
+    echo "                       --region $user_region"
 
     next
 
     echo
     echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-    echo ">                      --region=$user_region | cut -f1,2,3"
+    echo ">                      --region $user_region | cut -f1,2,3"
     euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                         --region=$user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
+                         --region $user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
     pause
 
     echo "# euca-describe-keypairs --filter \"key-name=demo\"\\"
-    echo ">                      --region=$user_region"
+    echo ">                      --region $user_region"
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=$user_region | grep "demo" || euca_demo_initialized=n
+                           --region $user_region | grep "demo" || euca_demo_initialized=n
 
     next
 
 else
     euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                         --region=$user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
+                         --region $user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
     euca-describe-keypairs --filter "key-name=demo" \
-                           --region=$user_region | grep -s -q "demo" || euca_demo_initialized=n
+                           --region $user_region | grep -s -q "demo" || euca_demo_initialized=n
 fi
 
 if [ $demo_initialized = n ]; then
@@ -311,26 +311,26 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo 
-    echo "euca-describe-groups --region=$user_region"
+    echo "euca-describe-groups --region $user_region"
     echo 
-    echo "eulb-describe-lbs --region=$user_region"
+    echo "eulb-describe-lbs --region $user_region"
     echo
-    echo "euca-describe-instances --region=$user_region"
+    echo "euca-describe-instances --region $user_region"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-describe-groups --region=$user_region"
-        euca-describe-groups --region=$user_region
+        echo "# euca-describe-groups --region $user_region"
+        euca-describe-groups --region $user_region
         pause
 
-        echo "# eulb-describe-lbs --region=$user_region"
-        eulb-describe-lbs --region=$user_region
+        echo "# eulb-describe-lbs --region $user_region"
+        eulb-describe-lbs --region $user_region
         pause
 
-        echo "# euca-describe-instances --region=$user_region"
-        euca-describe-instances --region=$user_region
+        echo "# euca-describe-instances --region $user_region"
+        euca-describe-instances --region $user_region
 
         next
     fi
@@ -350,14 +350,14 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "euform-describe-stacks --region=$user_region"
+    echo "euform-describe-stacks --region $user_region"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks --region=$user_region"
-        euform-describe-stacks --region=$user_region
+        echo "# euform-describe-stacks --region $user_region"
+        euform-describe-stacks --region $user_region
 
         next
     fi
@@ -366,7 +366,7 @@ fi
 
 ((++step))
 image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                                --region=$user_region | cut -f2)
+                                --region $user_region | cut -f2)
 
 clear
 echo
@@ -380,10 +380,10 @@ echo "Commands:"
 echo
 echo "euform-create-stack --template-file $templatesdir/ELB.template \\"
 echo "                    --parameter WebServerImageId=$image_id \\"
-echo "                    --region=$user_region \\"
+echo "                    --region $user_region \\"
 echo "                    ELBDemoStack"
 
-if [ "$(euform-describe-stacks --region=$user_region ELBDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks --region $user_region ELBDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -398,11 +398,11 @@ else
         echo
         echo "# euform-create-stack --template-file $templatesdir/ELB.template \\"
         echo ">                     --parameter WebServerImageId=$image_id \\"
-        echo ">                     --region=$user_region \\"
+        echo ">                     --region $user_region \\"
         echo ">                     ELBDemoStack"
         euform-create-stack --template-file $templatesdir/ELB.template \
                             --parameter WebServerImageId=$image_id \
-                            --region=$user_region \
+                            --region $user_region \
                             ELBDemoStack
 
         next
@@ -422,11 +422,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euform-describe-stacks --region=$user_region"
+echo "euform-describe-stacks --region $user_region"
 echo
-echo "euform-describe-stack-events --region=$user_region ELBDemoStack | head -5"
+echo "euform-describe-stack-events --region $user_region ELBDemoStack | head -5"
 
-if [ "$(euform-describe-stacks --region=$user_region ELBDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
+if [ "$(euform-describe-stacks --region $user_region ELBDemoStack | grep "^STACK" | cut -f3)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -439,18 +439,18 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euform-describe-stacks --region=$user_region"
-        euform-describe-stacks --region=$user_region
+        echo "# euform-describe-stacks --region $user_region"
+        euform-describe-stacks --region $user_region
         pause
 
         attempt=0
         ((seconds=$create_default * $speed / 100))
         while ((attempt++ <= create_attempts)); do
             echo
-            echo "# euform-describe-stack-events --region=$user_region ELBDemoStack | head -5"
-            euform-describe-stack-events --region=$user_region ELBDemoStack | head -5
+            echo "# euform-describe-stack-events --region $user_region ELBDemoStack | head -5"
+            euform-describe-stack-events --region $user_region ELBDemoStack | head -5
 
-            status=$(euform-describe-stacks --region=$user_region ELBDemoStack | grep "^STACK" | cut -f3)
+            status=$(euform-describe-stacks --region $user_region ELBDemoStack | grep "^STACK" | cut -f3)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -479,26 +479,26 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca-describe-groups --region=$user_region"
+    echo "euca-describe-groups --region $user_region"
     echo
-    echo "eulb-describe-lbs --region=$user_region"
+    echo "eulb-describe-lbs --region $user_region"
     echo
-    echo "euca-describe-instances --region=$user_region"
+    echo "euca-describe-instances --region $user_region"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-describe-groups --region=$user_region"
-        euca-describe-groups --region=$user_region
+        echo "# euca-describe-groups --region $user_region"
+        euca-describe-groups --region $user_region
         pause
 
-        echo "# eulb-describe-lbs --region=$user_region"
-        eulb-describe-lbs --region=$user_region
+        echo "# eulb-describe-lbs --region $user_region"
+        eulb-describe-lbs --region $user_region
         pause
 
-        echo "# euca-describe-instances --region=$user_region"
-        euca-describe-instances --region=$user_region
+        echo "# euca-describe-instances --region $user_region"
+        euca-describe-instances --region $user_region
 
         next
     fi
@@ -506,9 +506,9 @@ fi
 
 
 ((++step))
-instance_id=$(euform-describe-stack-resources --n ELBDemoStack -l WebServerInstance1 --region=$user_region | cut -f3)
-public_name=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f4)
-public_ip=$(euca-describe-instances --region=$user_region $instance_id | grep "^INSTANCE" | cut -f17)
+instance_id=$(euform-describe-stack-resources --n ELBDemoStack -l WebServerInstance1 --region $user_region | cut -f3)
+public_name=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f4)
+public_ip=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f17)
 ssh_user=centos
 ssh_key=demo
 
