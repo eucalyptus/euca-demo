@@ -215,10 +215,7 @@ if [ -z $euca_region ]; then
     exit 10
 else
     case $euca_region in
-      us-east-1|us-west-1|us-west-2) ;&
-      sa-east-1) ;&
-      eu-west-1|eu-central-1) ;&
-      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
         echo "-r $euca_region invalid: Please specify a Eucalyptus region"
         exit 11;;
     esac
