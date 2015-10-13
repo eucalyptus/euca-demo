@@ -206,10 +206,7 @@ else
     case $aws_region in
       us-east-1)
         s3_domain=s3.amazonaws.com;;
-      us-west-1|us-west-2) ;&
-      sa-east-1) ;&
-      eu-west-1|eu-central-1) ;&
-      ap-northeast-1|ap-southeast-1|ap-southeast-2)
+      us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
         s3_domain=s3-$aws_region.amazonaws.com;;
     *)
         echo "-R $aws_region invalid: Please specify an AWS region"
