@@ -45,7 +45,7 @@ speed=100
 verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-demo}
+user=${AWS_USER_NAME:-admin}
 
 
 #  2. Define functions
@@ -193,6 +193,19 @@ if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     exit 50
 fi
 
+# See bug: TOOLS-595 - until fixed, we need to lookup and add the AWS_CLOUDWATCH_URL environment 
+# variable to all euwatch-* commands. This statement looks up and sets an internal variable with 
+# this value, then for all euwatch-* commands below, we comment out the normal statement, and 
+# instead use a variant which sets the AWS_CLOUDWATCH_URL environment variable before running the 
+# command. Once this bug is fixed, we will remove this logic.
+aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url \(http.*\)\/services\/CloudWatch.*$/\1/p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
+
 
 #  5. Reset Demo
 
@@ -200,7 +213,7 @@ start=$(date +%s)
 
 
 ((++step))
-instance_ids="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2)"
+instance_ids=$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2 | tr "\n" " ")
 
 clear
 echo
@@ -208,13 +221,20 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Delete the AutoScalingGroup"
 echo "    - We must first reduce sizes to zero"
-echo "    - Pause a bit longer for changes to be acted upon"
+echo "    - Then wait for all Instances to be terminated"
+echo "    - Then we can delete the AutoScalingGroup"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 --region $user_region DemoASG"
+echo "euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 \\"
+echo "                                  --region $user_region \\"
+echo "                                  DemoASG"
+echo
+echo "euca-describe-instances --region $user_region \\"
+echo "                        $instance_ids | \\"
+echo "    grep \"^INSTANCE\" | cut -f2,6"
 echo
 echo "euscale-delete-auto-scaling-group --region $user_region DemoASG"
 
@@ -231,17 +251,25 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 --region $user_region DemoASG"
-        euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 --region $user_region DemoASG
+        echo "# euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 \\"
+        echo ">                                   --region $user_region \\"
+        echo ">                                   DemoASG"
+        euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capacity 0 \
+                                          --region $user_region \
+                                          DemoASG
+        pause
 
         attempt=0
         ((seconds=$delete_default * $speed / 100))
         while ((attempt++ <= delete_attempts)); do
             echo
-            echo "# euca-describe-instances --region $user_region $instance_ids"
-            euca-describe-instances --region $user_region $instance_ids | tee $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out
+            echo "# euca-describe-instances --region $user_region \\"
+            echo ">                         $instance_ids | \\"
+            echo ">     grep \"^INSTANCE\" | cut -f2,6"
+            instance_status=$(euca-describe-instances --region $user_region $instance_ids | grep "^INSTANCE" | cut -f2,6)
+            echo "$instance_status"
 
-            if [ $(grep -c "terminated" $tmpdir/$prefix-$(printf '%02d' $step)-euca-describe-instances.out) -ge $instances ]; then
+            if [ $(echo -n "$instance_status" | grep -c -v terminated) = "0" ]; then
                 break
             else
                 echo
@@ -250,10 +278,10 @@ else
                 echo " Done"
             fi
         done
+        pause
 
         echo "# euscale-delete-auto-scaling-group --region $user_region DemoASG"
-        euscale-delete-auto-scaling-groupi --region $user_region DemoASG
-        pause
+        euscale-delete-auto-scaling-group --region $user_region DemoASG
 
         next
     fi
@@ -271,13 +299,10 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euwatch-delete-alarms --region $user_region DemoAddNodesAlarm"
-echo "euwatch-delete-alarms --region $user_region DemoDelNodesAlarm"
+echo "euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
 
-# There's a bug here where euwatch is not reading the config file properly, need to lookup and add the AWS_CLOUDWATCH_URL environment variable
-aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url //p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
-#if ! euwatch-describe-alarms --region $user_region DemoAddNodesAlarm 2> /dev/null | grep -s -q "^ALARM"; then
-if ! AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoAddNodesAlarm 2> /dev/null | grep -s -q "^ALARM"; then
+#if ! euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -s -q "DemoCPU(High|Low)Alarm"; then
+if ! AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -s -q "DemoCPU(High|Low)Alarm" ]; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -290,10 +315,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euwatch-delete-alarms --region $user_region DemoAddNodesAlarm"
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-delete-alarms --region $user_region DemoAddNodesAlarm
-        echo "# euwatch-delete-alarms --region $user_region DemoDelNodesAlarm"
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-delete-alarms --region $user_region DemoDelNodesAlarm
+        echo "# euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
+        #euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
 
         next
     fi
@@ -314,7 +338,7 @@ echo
 echo "euscale-delete-launch-config --region $user_region DemoLC"
 echo "euscale-delete-launch-config --region $user_region DemoLC-2"
 
-if ! euscale-describe-launch-configs --region $user_region DemoLC 2> /dev/null | grep -s -q "^LAUNCH-CONFIG"; then
+if ! euscale-describe-launch-configs --region $user_region DemoLC DemoLC-2 2> /dev/null | grep -s -q "^LAUNCH-CONFIG"; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -516,7 +540,8 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        euwatch-describe-alarms --region $user_region
+        #euwatch-describe-alarms --region $user_region
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
 
         next
     fi

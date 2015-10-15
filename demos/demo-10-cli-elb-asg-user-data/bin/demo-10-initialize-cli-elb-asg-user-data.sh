@@ -47,7 +47,7 @@ speed=100
 verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-demo}
+user=${AWS_USER_NAME:-admin}
 
 
 #  2. Define functions
@@ -195,10 +195,25 @@ if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     exit 50
 fi
 
-if ! rpm -q --quiet w3m; then
-    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-    exit 98
+if [ ! $(uname) = "Darwin" ]; then
+    if ! rpm -q --quiet w3m; then
+        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+        exit 98
+    fi
 fi
+
+# See bug: TOOLS-595 - until fixed, we need to lookup and add the AWS_CLOUDWATCH_URL environment
+# variable to all euwatch-* commands. This statement looks up and sets an internal variable with
+# this value, then for all euwatch-* commands below, we comment out the normal statement, and
+# instead use a variant which sets the AWS_CLOUDWATCH_URL environment variable before running the
+# command. Once this bug is fixed, we will remove this logic.
+aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url \(http.*\)\/services\/CloudWatch.*$/\1/p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Initialize Demo
@@ -315,7 +330,8 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        euwatch-describe-alarms --region $user_region
+        #euwatch-describe-alarms --region $user_region
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
     
         next
     fi

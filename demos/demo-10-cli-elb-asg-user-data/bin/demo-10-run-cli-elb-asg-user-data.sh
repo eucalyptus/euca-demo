@@ -48,7 +48,7 @@ speed=100
 verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
-user=${AWS_USER_NAME:-demo}
+user=${AWS_USER_NAME:-admin}
 instances=2
 
 
@@ -213,10 +213,41 @@ if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     exit 50
 fi
 
-if ! rpm -q --quiet w3m; then
-    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-    exit 98
+if [ ! $(uname) = "Darwin" ]; then
+    if ! rpm -q --quiet w3m; then
+        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+        exit 98
+    fi
 fi
+
+# See bug: TOOLS-595 - until fixed, we need to lookup and add the AWS_CLOUDWATCH_URL environment
+# variable to all euwatch-* commands. This statement looks up and sets an internal variable with
+# this value, then for all euwatch-* commands below, we comment out the normal statement, and
+# instead use a variant which sets the AWS_CLOUDWATCH_URL environment variable before running the
+# command. Once this bug is fixed, we will remove this logic.
+aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url \(http.*\)\/services\/CloudWatch.*$/\1/p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
+
+# Prevent certain environment variables from breaking commands
+#if [ -n $AWS_DEFAULT_PROFILE ]; then
+#    if [ ! "$AWS_DEFAULT_PROFILE" = "$region-$account-$user" ]; then
+        unset AWS_DEFAULT_PROFILE
+#    fi
+#fi
+#if [ -n $AWS_CREDENTIAL_FILE ]; then
+#    if [ ! "$AWS_CREDENTIAL_FILE" = "$HOME/.creds/$region/$account/$user/iamrc" ]; then
+        unset AWS_CREDENTIAL_FILE
+#    fi
+#fi
+#if [ -n $EC2_PRIVATE_KEY ]; then
+#    if [ ! "$EC2_PRIVATE_KEY" = "$region-$account-$user" ]; then
+        unset EC2_PRIVATE_KEY
+#    fi
+#fi
+#if [ -n $EC2_CERT ]; then
+#    if [ ! "$EC2_CERT" = "$region-$account-$user" ]; then
+        unset EC2_CERT
+#    fi
+#fi
 
 
 #  5. Run Demo
@@ -333,7 +364,8 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        euwatch-describe-alarms --region $user_region
+        #euwatch-describe-alarms --region $user_region
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
 
         next
     fi
@@ -352,13 +384,21 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-create-group --description \"Demo Security Group\" --region $user_region DemoSG"
+echo "euca-create-group --description \"Demo Security Group\" \\"
+echo "                  --region $user_region \\"
+echo "                  DemoSG"
 echo
-echo "euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+echo "euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 \\"
+echo "               --region $user_region \\"
+echo "               DemoSG"
 echo
-echo "euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+echo "euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 \\"
+echo "               --region $user_region \\"
+echo "               DemoSG"
 echo
-echo "euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG"
+echo "euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 \\"
+echo "               --region $user_region \\"
+echo "               DemoSG"
 echo
 echo "euca-describe-groups --region $user_region DemoSG"
 
@@ -375,27 +415,43 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-create-group --description \"Demo Security Group\" --region $user_region DemoSG"
-        euca-create-group --description "Demo Security Group" --region $user_region DemoSG
+        echo "# euca-create-group --description \"Demo Security Group\" \\"
+        echo ">                   --region $user_region \\"
+        echo ">                   DemoSG"
+        euca-create-group --description "Demo Security Group" \
+                          --region $user_region \
+                          DemoSG
         pause
 
-        echo "# euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG"
-        euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        echo "# euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 \\"
+        echo ">                --region $user_region \\"
+        echo ">                DemoSG"
+        euca-authorize --protocol icmp --icmp-type-code -1:-1 --cidr 0.0.0.0/0 \
+                       --region $user_region \
+                       DemoSG
         pause
 
-        echo "# euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG"
-        euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        echo "# euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 \\"
+        echo ">                --region $user_region \\"
+        echo ">                DemoSG"
+        euca-authorize --protocol tcp --port-range 22 --cidr 0.0.0.0/0 \
+                       --region $user_region \
+                       DemoSG
         pause
 
-        echo "# euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG"
-        euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 --region $user_region DemoSG
+        echo "# euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 \\"
+        echo ">                --region $user_region \\"
+        echo ">                DemoSG"
+        euca-authorize --protocol tcp --port-range 80 --cidr 0.0.0.0/0 \
+                       --region $user_region \
+                       DemoSG
         pause
 
         echo "# euca-describe-groups --region $user_region DemoSG"
         euca-describe-groups --region $user_region DemoSG
 
         next
-    next
+    fi
 fi
 
 
@@ -407,15 +463,24 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create an ElasticLoadBalancer"
-echo "    - Wait for ELB to become available"
+echo "    - Configure Health Check"
+echo "    - Wait for the ELB to become visible in DNS queries"
 echo "    - NOTE: This can take about 100 - 140 seconds"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "eulb-create-lb --availability-zones $zone --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
-echo "               --region $user_region DemoELB"
+echo "eulb-create-lb --availability-zones $zone \\"
+echo "               --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
+echo "               --region $user_region \\"
+echo "               DemoELB"
+echo
+echo "eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 \\"
+echo "                           --interval 15 --timeout 30 \\"
+echo "                           --target http:80/index.html \\"
+echo "                           --region $user_region \\"
+echo "                           DemoELB"
 echo
 echo "eulb-describe-lbs --region $user_region DemoELB"
 
@@ -432,15 +497,32 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# eulb-create-lb --availability-zones $zone --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
-        echo ">                --region $user_region DemoELB"
-        eulb-create-lb --availability-zones $zone --listener "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" --region $user_region  DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out
+        echo "# eulb-create-lb --availability-zones $zone \\"
+        echo ">                --listener \"lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP\" \\"
+        echo ">                --region $user_region \\"
+        echo ">                DemoELB"
+        eulb-create-lb --availability-zones $zone \
+                       --listener "lb-port=80, protocol=HTTP, instance-port=80, instance-protocol=HTTP" \
+                       --region $user_region \
+                       DemoELB
+        pause
+
+        echo "# eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 \\"
+        echo ">                            --interval 15 --timeout 30 \\"
+        echo ">                            --target http:80/index.html \\"
+        echo ">                            --region $user_region \\"
+        echo ">                            DemoELB"
+        eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 \
+                                   --interval 15 --timeout 30 \
+                                   --target http:80/index.html \
+                                   --region $user_region \
+                                   DemoELB
         pause
 
         echo "# eulb-describe-lbs --region $user_region  DemoELB"
         eulb-describe-lbs --region $user_region DemoELB
 
-        lb_name=$(cut -f2 $tmpdir/$prefix-$(printf '%02d' $step)-eulb-create-lb.out)
+        lb_name=$(eulb-describe-lbs --region $user_region DemoELB | cut -f3)
         ((seconds=$create_default * $speed / 100))
         while ((attempt++ <= $create_attempts)); do
             echo
@@ -459,33 +541,6 @@ else
 
         next
     fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Configure an ElasticLoadBalancer HealthCheck"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \\"
-echo "                           --target http:80/index.html --region $user_region DemoELB"
-
-run
-
-if [ $choice = y ]; then
-    echo
-    echo "# eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \\"
-    echo "                             --target http:80/index.html --region $user_region DemoELB"
-    eulb-configure-healthcheck --healthy-threshold 2 --unhealthy-threshold 2 --interval 15 --timeout 30 \
-                               --target http:80/index.html --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-configure-healthcheck.out
-
-    next
 fi
 
 
@@ -534,7 +589,9 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region $user_region | cut -f2)
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                                --region $user_region | cut -f2)
+ssh_key=demo
 
 clear
 echo
@@ -547,7 +604,7 @@ echo
 echo "Commands:"
 echo
 echo "euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-echo "                             --key=admin-demo --group=DemoSG \\"
+echo "                             --key=$ssh_key --group=DemoSG \\"
 echo "                             --user-data-file=$scriptsdir/$prefix-user-data-1.sh \\"
 echo "                             --region $user_region \\"     
 echo "                             DemoLC"
@@ -568,12 +625,12 @@ else
     if [ $choice = y ]; then
         echo
         echo "# euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-        echo ">                              --key=admin-demo --group=DemoSG \\"
+        echo ">                              --key=$ssh_key --group=DemoSG \\"
         echo ">                              --user-data-file=$scriptsdir/$prefix-user-data-1.sh \\"
         echo ">                              --region $user_region \\"
         echo ">                              DemoLC"
         euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \
-                                     --key=admin-demo --group=DemoSG \
+                                     --key=$ssh_key --group=DemoSG \
                                      --user-data-file=$scriptsdir/$prefix-user-data-1.sh \
                                      --region $user_region \
                                      DemoLC
@@ -660,8 +717,8 @@ echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create Scaling Policies"
-echo "    - Create a scale out policy"
-echo "    - Create a scale in policy"
+echo "    - Create a scale up policy"
+echo "    - Create a scale down policy"
 echo "    - Update AutoScalingGroup with a termination policy"
 echo
 echo "============================================================"
@@ -671,69 +728,79 @@ echo
 echo "euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
 echo "                           --adjustment=1 --type ChangeInCapacity \\"
 echo "                           --region $user_region \\"
-echo "                           DemoHighCPUPolicy"
+echo "                           DemoScaleUpPolicy"
 echo
 echo "euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
 echo "                           --adjustment=-1 --type ChangeInCapacity \\"
 echo "                           --region $user_region \\"
-echo "                           DemoLowCPUPolicy"
+echo "                           DemoScaleDownPolicy"
 echo
 echo "euscale-update-auto-scaling-group --termination-policies \"OldestLaunchConfiguration\" \\"
 echo "                                  --region $user_region \\"
 echo "                                  DemoASG"
 echo
-echo "euscale-describe-policies --auto-scaling-group DemoASG --region $user_region"
+echo "euscale-describe-policies --region $user_region DemoScaleUpPolicy DemoScaleDownPolicy"
 
-run 150
-
-if [ $choice = y ]; then
+if [ $(euscale-describe-policies --region $user_region DemoScaleUpPolicy DemoScaleDownPolicy 2> /dev/null | egrep -c "DemoScale(Up|Down)Policy") = 2 ]; then
     echo
-    echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
-    echo ">                            --adjustment=1 --type ChangeInCapacity \\"
-    echo ">                            --region $user_region \\"
-    echo ">                            DemoHighCPUPolicy"
-    euscale-put-scaling-policy --auto-scaling-group DemoASG \
-                               --adjustment=1 --type ChangeInCapacity \
-                               --region $user_region \
-                               DemoHighCPUPolicy
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
-    echo ">                            --adjustment=-1 --type ChangeInCapacity \\"
-    echo ">                            --region $user_region \\"
-    echo ">                            DemoLowCPUPolicy"
-    euscale-put-scaling-policy --auto-scaling-group DemoASG \
-                               --adjustment=-1 --type ChangeInCapacity \
-                               --region $user_region \
-                               DemoLowCPUPolicy
-    pause
+    next 50
 
-    echo "# euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\" \\"
-    echo ">                                   --region $user_region \\"
-    echo ">                                   DemoASG"
-    euscale-update-auto-scaling-group --termination-policies "OldestLaunchConfiguration" \
-                                      --region $user_region \
-                                      DemoASG
-    pause
+else
+    run 150
 
-    echo "# euscale-describe-policies --auto-scaling-group DemoASG --region $user_region"
-    euscale-describe-policies --auto-scaling-group DemoASG --region $user_region
+    if [ $choice = y ]; then
+        echo
+        echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+        echo ">                            --adjustment=1 --type ChangeInCapacity \\"
+        echo ">                            --region $user_region \\"
+        echo ">                            DemoScaleUpPolicy"
+        euscale-put-scaling-policy --auto-scaling-group DemoASG \
+                                   --adjustment=1 --type ChangeInCapacity \
+                                   --region $user_region \
+                                   DemoScaleUpPolicy
+        pause
 
-    next
+        echo "# euscale-put-scaling-policy --auto-scaling-group DemoASG \\"
+        echo ">                            --adjustment=-1 --type ChangeInCapacity \\"
+        echo ">                            --region $user_region \\"
+        echo ">                            DemoScaleDownPolicy"
+        euscale-put-scaling-policy --auto-scaling-group DemoASG \
+                                   --adjustment=-1 --type ChangeInCapacity \
+                                   --region $user_region \
+                                   DemoScaleDownPolicy
+        pause
+
+        echo "# euscale-update-auto-scaling-group DemoASG --termination-policies \"OldestLaunchConfiguration\" \\"
+        echo ">                                   --region $user_region \\"
+        echo ">                                   DemoASG"
+        euscale-update-auto-scaling-group --termination-policies "OldestLaunchConfiguration" \
+                                          --region $user_region \
+                                          DemoASG
+        pause
+
+        echo "# euscale-describe-policies --region $user_region DemoScaleUpPolicy DemoScaleDownPolicy"
+        euscale-describe-policies --region $user_region DemoScaleUpPolicy DemoScaleDownPolicy
+
+        next
+    fi
 fi
 
 
 ((++step))
-high_policy_arn=$(euscale-describe-policies --region $user_region DemoHighCPUPolicy | cut -f6)
-low_policy_arn=$(euscale-describe-policies --region $user_region DemoLowCPUPolicy | cut -f6)
+up_policy_arn=$(euscale-describe-policies --region $user_region DemoScaleUpPolicy | cut -f6)
+down_policy_arn=$(euscale-describe-policies --region $user_region DemoScaleDownPolicy | cut -f6)
 
 clear
 echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create CloudWatch Alarms and Associate with Scaling Policies"
-echo "    - Create a high-cpu alarm using the scale out policy"
-echo "    - Create a low-cpu alarm using the scale in policy"
+echo "    - Create a high-cpu alarm which triggers the scale up policy"
+echo "    - Create a low-cpu alarm which triggers the scale down policy"
 echo
 echo "============================================================"
 echo
@@ -744,65 +811,79 @@ echo "                         --namespace \"AWS/EC2\" --statistic Average \\"
 echo "                         --period 60 --threshold 50 --evaluation-periods 2 \\"
 echo "                         --comparison-operator GreaterThanOrEqualToThreshold \\"
 echo "                         --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-echo "                         --alarm-actions $high_policy_arn \\"
+echo "                         --alarm-actions $up_policy_arn \\"
 echo "                         --region $user_region \\"
-echo "                         DemoAddNodesAlarm"
+echo "                         DemoCPUHighAlarm"
 echo
 echo "euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
 echo "                         --namespace \"AWS/EC2\" --statistic Average \\"
 echo "                         --period 60 --threshold 10 --evaluation-periods 2 \\"
 echo "                         --comparison-operator LessThanOrEqualToThreshold \\"
 echo "                         --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-echo "                         --alarm-actions $low_policy_arn \\"
+echo "                         --alarm-actions $down_policy_arn \\"
 echo "                         --region $user_region \\"
-echo "                         DemoDelNodesAlarm"
+echo "                         DemoCPULowAlarm"
 echo
-echo "euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region"
+echo "euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
 
-run 150
-
-if [ $choice = y ]; then
+#if [ $(euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -c "DemoCPU(High|Low)Alarm") = 2 ]; then
+if [ $(AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -c "DemoCPU(High|Low)Alarm") = 2 ]; then
     echo
-    echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
-    echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
-    echo ">                          --period 60 --threshold 50 --evaluation-periods 2 \\"
-    echo ">                          --comparison-operator GreaterThanOrEqualToThreshold \\"
-    echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-    echo ">                          --alarm-actions $high_policy_arn \\"
-    echo ">                          --region $user_region \\"
-    echo ">                          DemoAddNodesAlarm"
-    euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
-                             --namespace "AWS/EC2" --statistic Average \
-                             --period 60 --threshold 50 --evaluation-periods 2 \
-                             --comparison-operator GreaterThanOrEqualToThreshold \
-                             --dimensions "AutoScalingGroupName=DemoASG" \
-                             --alarm-actions $high_policy_arn \
-                             --region $user_region \
-                             DemoAddNodesAlarm
-    pause
+    tput rev
+    echo "Already Created!"
+    tput sgr0
 
-    echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
-    echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
-    echo ">                          --period 60 --threshold 10 --evaluation-periods 2 \\"
-    echo ">                          --comparison-operator LessThanOrEqualToThreshold \\"
-    echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
-    echo ">                          --alarm-actions $low_policy_arn \\"
-    echo ">                          --region $user_region \\"
-    echo ">                          DemoDelNodesAlarm"
-    euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
-                             --namespace "AWS/EC2" --statistic Average \
-                             --period 60 --threshold 10 --evaluation-periods 2 \
-                             --comparison-operator LessThanOrEqualToThreshold \
-                             --dimensions "AutoScalingGroupName=DemoASG" \
-                             --alarm-actions $low_policy_arn \
-                             --region $user_region \
-                             DemoDelNodesAlarm
-    pause
+    next 50
 
-    echo "# euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region"
-    euwatch-describe-alarms --alarm-name-prefix Demo --region $user_region
+else
+    run 150
 
-    next
+    if [ $choice = y ]; then
+        echo
+        echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+        echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
+        echo ">                          --period 60 --threshold 50 --evaluation-periods 2 \\"
+        echo ">                          --comparison-operator GreaterThanOrEqualToThreshold \\"
+        echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+        echo ">                          --alarm-actions $up_policy_arn \\"
+        echo ">                          --region $user_region \\"
+        echo ">                          DemoCPUHighAlarm"
+        #euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+                                 --namespace "AWS/EC2" --statistic Average \
+                                 --period 60 --threshold 50 --evaluation-periods 2 \
+                                 --comparison-operator GreaterThanOrEqualToThreshold \
+                                 --dimensions "AutoScalingGroupName=DemoASG" \
+                                 --alarm-actions $up_policy_arn \
+                                 --region $user_region \
+                                 DemoCPUHighAlarm
+        pause
+
+        echo "# euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \\"
+        echo ">                          --namespace \"AWS/EC2\" --statistic Average \\"
+        echo ">                          --period 60 --threshold 10 --evaluation-periods 2 \\"
+        echo ">                          --comparison-operator LessThanOrEqualToThreshold \\"
+        echo ">                          --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+        echo ">                          --alarm-actions $down_policy_arn \\"
+        echo ">                          --region $user_region \\"
+        echo ">                          DemoCPULowAlarm"
+        #euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+                                 --namespace "AWS/EC2" --statistic Average \
+                                 --period 60 --threshold 10 --evaluation-periods 2 \
+                                 --comparison-operator LessThanOrEqualToThreshold \
+                                 --dimensions "AutoScalingGroupName=DemoASG" \
+                                 --alarm-actions $down_policy_arn \
+                                 --region $user_region \
+                                 DemoCPULowAlarm
+        pause
+
+        echo "# euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
+        #euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
+
+        next
+    fi
 fi
 
 
@@ -813,7 +894,9 @@ if [ $verbose = 1 ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). List updated Resources"
-    echo "    - Note addition of new group, ELB and instances"
+    echo "    - Note addition of new SecurityGroup, ElasticLoadBalancer,"
+    echo "      Instances, LaunchConfiguration, AutoScaleGroup, Policies,"
+    echo "      and Alarms"
     echo
     echo "============================================================"
     echo
@@ -862,7 +945,8 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        euwatch-describe-alarms --region $user_region
+        #euwatch-describe-alarms --region $user_region
+        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
 
         next
     fi
@@ -870,8 +954,7 @@ fi
 
 
 ((++step))
-# This is a shortcut assuming no other activity on the system - find the most recently launched instance
-instance_id=$(euca-describe-instances --region $user_region | grep "^INSTANCE" | cut -f2,11 | sort -k2 | tail -1 | cut -f1)
+instance_id="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | tail -1 | cut -f2)"
 public_name=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f4)
 public_ip=$(euca-describe-instances --region $user_region $instance_id | grep "^INSTANCE" | cut -f17)
 ssh_user=centos
@@ -942,7 +1025,6 @@ EOF
 fi
 
 
-
 ((++step))
 instance_ids="$(euscale-describe-auto-scaling-groups --region $user_region DemoASG | grep "^INSTANCE" | cut -f2)"
 unset instance_names
@@ -966,14 +1048,27 @@ echo
 echo "============================================================"
 echo
 echo "Commands:"
+echo
+echo "eulb-describe-instance-health --region $user_region DemoELB"
 for instance_name in $instance_names; do
     echo
-    echo "w3m -dump $instance_name"
+    case $(uname) in
+      Darwin)
+        echo "open -a Safari http://$instance_name";;
+      *)
+        echo "w3m -dump http://$instance_name";;
+    esac
 done
 if [ -n "$lb_public_ip" ]; then
     echo
-    echo "w3m -dump $lb_name"
-    echo "w3m -dump $lb_name"
+    case $(uname) in
+      Darwin)
+        echo "open -a Safari http://$lb_name"
+        echo "open -a Safari http://$lb_name";;
+      *)
+        echo "w3m -dump http://$lb_name"
+        echo "w3m -dump http://$lb_name";;
+    esac
 fi
 
 run 50
@@ -984,13 +1079,14 @@ if [ $choice = y ]; then
     while ((attempt++ <= create_attempts)); do
         echo
         echo "# eulb-describe-instance-health --region $user_region DemoELB"
-        eulb-describe-instance-health --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
+        instance_health=$(eulb-describe-instance-health --region $user_region DemoELB)
+        echo "$instance_health"
 
-        if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge $instances ]; then
+        if [ $(echo -n "$instance_health" | grep -c OutOfService) = "0" ]; then
             break
         else
             echo
-            echo -n "At least $instances instances are not yet \"InService\". Waiting $seconds seconds..."
+            echo -n "Some instances are still \"OutOfService\". Waiting $seconds seconds..."
             sleep $seconds
             echo " Done"
         fi
@@ -998,20 +1094,33 @@ if [ $choice = y ]; then
 
     echo
     for instance_name in $instance_names; do
-        echo "# w3m -dump $instance_name"
-        w3m -dump $instance_name
+        case $(uname) in
+          Darwin)
+            echo "# open -a Safari http://$instance_name"
+            open -a Safari http://$instance_name;;
+          *)
+            echo "# w3m -dump http://$instance_name"
+            w3m -dump http://$instance_name;;
+          esac
         pause
     done
     if [ -n "$lb_public_ip" ]; then
-        echo "# w3m -dump $lb_name"
-        w3m -dump $lb_name
-        echo "# w3m -dump $lb_name"
-        w3m -dump $lb_name
+        case $(uname) in
+          Darwin)
+            echo "# open -a Safari http://$lb_name"
+            open -a Safari http://$lb_name
+            echo "# open -a Safari http://$lb_name"
+            open -a Safari http://$lb_name;;
+          *)
+            echo "# w3m -dump http://$lb_name"
+            w3m -dump http://$lb_name
+            echo "# w3m -dump http://$lb_name"
+            w3m -dump http://$lb_name;;
+        esac
     fi
 
     next
 fi
-
 
 
 ((++step))
@@ -1062,7 +1171,9 @@ fi
 
 
 ((++step))
-image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region $user_region | cut -f2)
+image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+                                --region $user_region | cut -f2)
+ssh_key=demo
 
 clear
 echo
@@ -1077,13 +1188,12 @@ echo
 echo "Commands:"
 echo
 echo "euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-echo "                             --key=admin-demo --group=DemoSG \\"
+echo "                             --key=$ssh_key --group=DemoSG \\"
 echo "                             --user-data-file=$scriptsdir/$prefix-user-data-2.sh \\"
 echo "                             --region $user_region \\"
 echo "                             DemoLC-2"
 echo
-echo "euscale-describe-launch-configs --region $user_region DemoLC"
-echo "euscale-describe-launch-configs --region $user_region DemoLC-2"
+echo "euscale-describe-launch-configs --region $user_region DemoLC DemoLC-2"
 
 if euscale-describe-launch-configs --region $user_region DemoLC-2 2> /dev/null | grep -s -q "^LAUNCH-CONFIG"; then
     echo
@@ -1099,21 +1209,19 @@ else
     if [ $choice = y ]; then
         echo
         echo "# euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \\"
-        echo ">                              --key=admin-demo --group=DemoSG \\"
+        echo ">                              --key=$ssh_key --group=DemoSG \\"
         echo ">                              --user-data-file=$scriptsdir/$prefix-user-data-2.sh \\"
         echo ">                              --region $user_region \\"
         echo ">                              DemoLC-2"
         euscale-create-launch-config --image-id $image_id --instance-type m1.small --monitoring-enabled \
-                                     --key=admin-demo --group=DemoSG \
+                                     --key=$ssh_key --group=DemoSG \
                                      --user-data-file=$scriptsdir/$prefix-user-data-2.sh \
                                      --region $user_region \
                                      DemoLC-2
         pause
 
-        echo "# euscale-describe-launch-configs --region $user_region DemoLC"
-        euscale-describe-launch-configs --region $user_region DemoLC
-        echo "# euscale-describe-launch-configs --region $user_region DemoLC-2"
-        euscale-describe-launch-configs --region $user_region DemoLC-2
+        echo "# euscale-describe-launch-configs --region $user_region DemoLC DemoLC-2"
+        euscale-describe-launch-configs --region $user_region DemoLC DemoLC-2
 
         next
     fi
@@ -1133,7 +1241,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG"
+echo "euscale-update-auto-scaling-group --launch-configuration DemoLC-2 \\"
+echo "                                  --region $user_region \\"
+echo "                                  DemoASG"
 echo
 echo "euscale-describe-auto-scaling-groups --region $user_region DemoASG"
 
@@ -1150,8 +1260,12 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG"
-        euscale-update-auto-scaling-group --launch-configuration DemoLC-2 --region $user_region DemoASG
+        echo "# euscale-update-auto-scaling-group --launch-configuration DemoLC-2 \\"
+        echo ">                                   --region $user_region i\\"
+        echo ">                                   DemoASG"
+        euscale-update-auto-scaling-group --launch-configuration DemoLC-2 \
+                                          --region $user_region \
+                                          DemoASG
         pause
 
         echo "# euscale-describe-auto-scaling-groups --region $user_region DemoASG"
@@ -1185,11 +1299,13 @@ echo "Commands:"
 for instance_id in $instance_ids; do
     echo
     echo "euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \\"
-    echo "                                                 --show-long --region $user_region $instance_id"
+    echo "                                                 --show-long \\"
+    echo "                                                 --region $user_region \\"
+    echo "                                                 $instance_id"
     echo
     echo "euscale-describe-auto-scaling-groups --region $user_region DemoASG"
     echo
-    echo "eulb-describe-instance-health --region $user_region DemoELB (repeat until both instances are back is \"InService\")"
+    echo "eulb-describe-instance-health --region $user_region DemoELB"
     break    # delete only one at this time
 done
 
@@ -1199,9 +1315,13 @@ if [ $choice = y ]; then
     for instance_id in $instance_ids; do
         echo
         echo "# euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \\"
-        echo ">                                                  --show-long --region $user_region $instance_id"
+        echo ">                                                  --show-long \\"
+        echo ">                                                  --region $user_region \\"
+        echo ">                                                  $instance_id"
         euscale-terminate-instance-in-auto-scaling-group --no-decrement-desired-capacity \
-                                                         --show-long --region $user_region $instance_id
+                                                         --show-long \
+                                                         --region $user_region \
+                                                         $instance_id
         pause
 
         attempt=0
@@ -1212,13 +1332,14 @@ if [ $choice = y ]; then
             euscale-describe-auto-scaling-groups --region $user_region DemoASG
             echo
             echo "# eulb-describe-instance-health --region $user_region DemoELB"
-            eulb-describe-instance-health --region $user_region DemoELB | tee $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out
+            instance_health=$(eulb-describe-instance-health --region $user_region DemoELB)
+            echo "$instance_health"
 
-            if [ $(grep -c "InService" $tmpdir/$prefix-$(printf '%02d' $step)-eulb-describe-instance-health.out) -ge $instances ]; then
+            if [ $(echo -n "$instance_health" | grep -c OutOfService) = "0" ]; then
                 break
             else
                 echo
-                echo -n "At least $instances instances are not \"InService\". Waiting $seconds seconds..."
+                echo -n "Some instances are still \"OutOfService\". Waiting $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi
@@ -1238,7 +1359,7 @@ for instance_id in $instance_ids; do
 done
 instance_names=${instance_names# *}
 
-lb_name=$(eulb-describe-lbs | cut -f3)
+lb_name=$(eulb-describe-lbs --region $user_region | cut -f3)
 lb_public_ip=$(dig +short $lb_name)
 
 clear
@@ -1254,12 +1375,23 @@ echo
 echo "Commands:"
 for instance_name in $instance_names; do
     echo
-    echo "w3m -dump $instance_name"
+    case $(uname) in
+      Darwin)
+        echo "open -a Safari http://$instance_name";;
+      *)
+        echo "w3m -dump http://$instance_name";;
+    esac
 done
 if [ -n "$lb_public_ip" ]; then
     echo
-    echo "w3m -dump $lb_name"
-    echo "w3m -dump $lb_name"
+    case $(uname) in
+      Darwin)
+        echo "open -a Safari http://$lb_name"
+        echo "open -a Safari http://$lb_name";;
+      *)
+        echo "w3m -dump http://$lb_name"
+        echo "w3m -dump http://$lb_name";;
+    esac
 fi
 
 run 50
@@ -1267,15 +1399,29 @@ run 50
 if [ $choice = y ]; then
     echo
     for instance_name in $instance_names; do
-        echo "# w3m -dump $instance_name"
-        w3m -dump $instance_name
+        case $(uname) in
+          Darwin)
+            echo "# open -a Safari http://$instance_name"
+            open -a Safari http://$instance_name;;
+          *)
+            echo "# w3m -dump http://$instance_name"
+            w3m -dump http://$instance_name;;
+          esac
         pause
     done
     if [ -n "$lb_public_ip" ]; then
-        echo "# w3m -dump $lb_name"
-        w3m -dump $lb_name
-        echo "# w3m -dump $lb_name"
-        w3m -dump $lb_name
+        case $(uname) in
+          Darwin)
+            echo "# open -a Safari http://$lb_name"
+            open -a Safari http://$lb_name
+            echo "# open -a Safari http://$lb_name"
+            open -a Safari http://$lb_name;;
+          *)
+            echo "# w3m -dump http://$lb_name"
+            w3m -dump http://$lb_name
+            echo "# w3m -dump http://$lb_name"
+            w3m -dump http://$lb_name;;
+        esac
     fi
 
     next
