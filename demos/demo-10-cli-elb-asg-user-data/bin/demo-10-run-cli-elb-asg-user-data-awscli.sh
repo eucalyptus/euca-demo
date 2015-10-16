@@ -24,7 +24,7 @@
 #  1. Initalize Environment
 
 bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-scriptsdir=${bindir%/*}/scriptsdir
+scriptsdir=${bindir%/*}/scripts
 tmpdir=/var/tmp
 prefix=demo-10
 
@@ -377,10 +377,12 @@ echo
 echo "aws ec2 describe-security-groups --filters \"Name=group-name,Values=DemoSG\" \\"
 echo "                                 --profile $profile --region $region --output text"
 
-if aws ec2 describe-security-groups --filters \"Name=group-name,Values=DemoSG\" \
-                                    --profile $profile --region $region --output text" 2> /dev/null | grep -s -q "^GROUP"; then
+if aws ec2 describe-security-groups --filters "Name=group-name,Values=DemoSG" \
+                                    --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^SECURITYGROUPS"; then
     echo
     tput rev
+    echo "Already Created!"
+    tput sgr0
 
     next 50
 
@@ -448,7 +450,7 @@ echo "aws elb configure-health-check --load-balancer-name DemoELB \\"
 echo "                               --health-check \"Target=http:80/index.html,Interval=15,Timeout=30,UnhealthyThreshold=2,HealthyThreshold=2\" \\"
 echo "                               --profile $profile --region $region --output text"
 echo
-echo "aws elb describe-load-balancers --load-balancer-names DemoELB \
+echo "aws elb describe-load-balancers --load-balancer-names DemoELB \\"
 echo "                                --profile $profile --region $region --output text"
 
 if aws elb describe-load-balancers --load-balancer-names DemoELB \
@@ -597,6 +599,8 @@ if aws autoscaling describe-launch-configurations --launch-configuration-names D
     echo
     tput rev
     echo "Already Created!"
+    tput sgr0
+
     next 50
 
 else
@@ -633,6 +637,8 @@ fi
 ((++step))
 zone=$(aws ec2 describe-availability-zones --profile $profile --region $region --output text | head -1 | cut -f4)
 
+clear
+echo
 echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create an AutoScalingGroup"
@@ -965,10 +971,12 @@ fi
 instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \
                                                            --query 'AutoScalingGroups[].Instances[].InstanceId' \
                                                            --profile $profile --region $region --output text | cut -f1)
-public_name=$(aws ec2 describe-instances --instance-ids $instance_id 
-                                         --profile $profile --region $region | grep "^INSTANCES" | cut -f11)
+public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
+                                         --query 'Reservations[].Instances[].PublicDnsName' \
+                                         --profile $profile --region $region --output text)
 public_ip=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                       --profile $profile --region $region | grep "^INSTANCES" | cut -f12)
+                                       --query 'Reservations[].Instances[].PublicIpAddress' \
+                                       --profile $profile --region $region --output text)
 ssh_user=centos
 ssh_key=demo
 
@@ -1045,7 +1053,7 @@ unset instance_public_names
 for instance_id in $instance_ids; do
     instance_public_names="$instance_public_names $(aws ec2 describe-instances --instance-ids $instance_id \
                                                                                --query 'Reservations[].Instances[].PublicDnsName' \
-                                                                               --profile $profile --region $region --output text)
+                                                                               --profile $profile --region $region --output text)"
 done
 instance_public_names=${instance_public_names# *}
 
