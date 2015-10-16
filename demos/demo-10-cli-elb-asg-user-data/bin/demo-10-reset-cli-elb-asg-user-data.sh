@@ -193,13 +193,6 @@ if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     exit 50
 fi
 
-# See bug: TOOLS-595 - until fixed, we need to lookup and add the AWS_CLOUDWATCH_URL environment 
-# variable to all euwatch-* commands. This statement looks up and sets an internal variable with 
-# this value, then for all euwatch-* commands below, we comment out the normal statement, and 
-# instead use a variant which sets the AWS_CLOUDWATCH_URL environment variable before running the 
-# command. Once this bug is fixed, we will remove this logic.
-aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url \(http.*\)\/services\/CloudWatch.*$/\1/p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
-
 # Prevent certain environment variables from breaking commands
 unset AWS_DEFAULT_PROFILE
 unset AWS_CREDENTIAL_FILE
@@ -301,8 +294,7 @@ echo "Commands:"
 echo
 echo "euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
 
-#if ! euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -s -q "DemoCPU(High|Low)Alarm"; then
-if ! AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -s -q "DemoCPU(High|Low)Alarm" ]; then
+if ! euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -s -q "DemoCPU(High|Low)Alarm"; then
     echo
     tput rev
     echo "Already Deleted!"
@@ -316,8 +308,7 @@ else
     if [ $choice = y ]; then
         echo
         echo "# euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
-        #euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
+        euwatch-delete-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
 
         next
     fi
@@ -540,8 +531,7 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        #euwatch-describe-alarms --region $user_region
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
+        euwatch-describe-alarms --region $user_region
 
         next
     fi

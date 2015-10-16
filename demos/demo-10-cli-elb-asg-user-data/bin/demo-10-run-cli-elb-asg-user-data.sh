@@ -220,34 +220,11 @@ if [ ! $(uname) = "Darwin" ]; then
     fi
 fi
 
-# See bug: TOOLS-595 - until fixed, we need to lookup and add the AWS_CLOUDWATCH_URL environment
-# variable to all euwatch-* commands. This statement looks up and sets an internal variable with
-# this value, then for all euwatch-* commands below, we comment out the normal statement, and
-# instead use a variant which sets the AWS_CLOUDWATCH_URL environment variable before running the
-# command. Once this bug is fixed, we will remove this logic.
-aws_cloudwatch_url=$(sed -n -e 's/^monitoring-url \(http.*\)\/services\/CloudWatch.*$/\1/p' /etc/euca2ools/conf.d/${user_region#*@}.ini)
-
 # Prevent certain environment variables from breaking commands
-#if [ -n $AWS_DEFAULT_PROFILE ]; then
-#    if [ ! "$AWS_DEFAULT_PROFILE" = "$region-$account-$user" ]; then
-        unset AWS_DEFAULT_PROFILE
-#    fi
-#fi
-#if [ -n $AWS_CREDENTIAL_FILE ]; then
-#    if [ ! "$AWS_CREDENTIAL_FILE" = "$HOME/.creds/$region/$account/$user/iamrc" ]; then
-        unset AWS_CREDENTIAL_FILE
-#    fi
-#fi
-#if [ -n $EC2_PRIVATE_KEY ]; then
-#    if [ ! "$EC2_PRIVATE_KEY" = "$region-$account-$user" ]; then
-        unset EC2_PRIVATE_KEY
-#    fi
-#fi
-#if [ -n $EC2_CERT ]; then
-#    if [ ! "$EC2_CERT" = "$region-$account-$user" ]; then
-        unset EC2_CERT
-#    fi
-#fi
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Run Demo
@@ -364,8 +341,7 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        #euwatch-describe-alarms --region $user_region
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
+        euwatch-describe-alarms --region $user_region
 
         next
     fi
@@ -826,8 +802,7 @@ echo "                         DemoCPULowAlarm"
 echo
 echo "euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
 
-#if [ $(euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -c "DemoCPU(High|Low)Alarm") = 2 ]; then
-if [ $(AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -c "DemoCPU(High|Low)Alarm") = 2 ]; then
+if [ $(euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm 2> /dev/null | egrep -c "DemoCPU(High|Low)Alarm") = 2 ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -848,8 +823,7 @@ else
         echo ">                          --alarm-actions $up_policy_arn \\"
         echo ">                          --region $user_region \\"
         echo ">                          DemoCPUHighAlarm"
-        #euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+        euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
                                  --namespace "AWS/EC2" --statistic Average \
                                  --period 60 --threshold 50 --evaluation-periods 2 \
                                  --comparison-operator GreaterThanOrEqualToThreshold \
@@ -867,8 +841,7 @@ else
         echo ">                          --alarm-actions $down_policy_arn \\"
         echo ">                          --region $user_region \\"
         echo ">                          DemoCPULowAlarm"
-        #euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
+        euwatch-put-metric-alarm --metric-name CPUUtilization --unit Percent \
                                  --namespace "AWS/EC2" --statistic Average \
                                  --period 60 --threshold 10 --evaluation-periods 2 \
                                  --comparison-operator LessThanOrEqualToThreshold \
@@ -879,8 +852,7 @@ else
         pause
 
         echo "# euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
-        #euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
+        euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm
 
         next
     fi
@@ -945,8 +917,7 @@ if [ $verbose = 1 ]; then
         pause
 
         echo "# euwatch-describe-alarms --region $user_region"
-        #euwatch-describe-alarms --region $user_region
-        AWS_CLOUDWATCH_URL=$aws_cloudwatch_url euwatch-describe-alarms --region $user_region
+        euwatch-describe-alarms --region $user_region
 
         next
     fi
@@ -1091,6 +1062,7 @@ if [ $choice = y ]; then
             echo " Done"
         fi
     done
+    pause
 
     echo
     for instance_name in $instance_names; do
@@ -1335,11 +1307,11 @@ if [ $choice = y ]; then
             instance_health=$(eulb-describe-instance-health --region $user_region DemoELB)
             echo "$instance_health"
 
-            if [ $(echo -n "$instance_health" | grep -c OutOfService) = "0" ]; then
+            if [ $(echo -n "$instance_health" | grep -c InService) -ge $instances ]; then
                 break
             else
                 echo
-                echo -n "Some instances are still \"OutOfService\". Waiting $seconds seconds..."
+                echo -n "Still waiting for $instances Instances to be \"InService\". Waiting $seconds seconds..."
                 sleep $seconds
                 echo " Done"
             fi
