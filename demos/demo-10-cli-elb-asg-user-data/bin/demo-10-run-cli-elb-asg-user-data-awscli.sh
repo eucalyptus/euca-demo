@@ -658,7 +658,7 @@ echo "                                          --default-cooldown 60 \\"
 echo "                                          --availability-zones $zone \\"
 echo "                                          --load-balancer-names DemoELB \\"
 echo "                                          --health-check-type ELB \\"
-echo "                                          --health-check-grace-period 30 \\"
+echo "                                          --health-check-grace-period 300 \\"
 echo "                                          --profile $profile --region $region --output text"
 echo
 echo "aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \\"
@@ -689,7 +689,7 @@ else
         echo ">                                           --availability-zones $zone \\"
         echo ">                                           --load-balancer-names DemoELB \\"
         echo ">                                           --health-check-type ELB \\"
-        echo ">                                           --health-check-grace-period 30 \\"
+        echo ">                                           --health-check-grace-period 300 \\"
         echo ">                                           --profile $profile --region $region --output text"
         aws autoscaling create-auto-scaling-group --auto-scaling-group-name DemoASG \
                                                   --launch-configuration-name DemoLC \
@@ -698,7 +698,7 @@ else
                                                   --availability-zones $zone \
                                                   --load-balancer-names DemoELB \
                                                   --health-check-type ELB \
-                                                  --health-check-grace-period 30 \
+                                                  --health-check-grace-period 300 \
                                                   --profile $profile --region $region --output text
         pause
 

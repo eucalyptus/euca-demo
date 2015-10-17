@@ -654,7 +654,7 @@ echo "                                  --default-cooldown 60 \\"
 echo "                                  --availability-zones $zone \\"
 echo "                                  --load-balancers DemoELB \\"
 echo "                                  --health-check-type ELB \\"
-echo "                                  --grace-period 30 \\"
+echo "                                  --grace-period 300 \\"
 echo "                                  --region $user_region \\"
 echo "                                  DemoASG"
 echo
@@ -681,7 +681,7 @@ else
         echo ">                                   --availability-zones $zone \\"
         echo ">                                   --load-balancers DemoELB \\"
         echo ">                                   --health-check-type ELB \\"
-        echo ">                                   --grace-period 30 \\"
+        echo ">                                   --grace-period 300 \\"
         echo ">                                   --region $user_region \\"
         echo ">                                   DemoASG"
         euscale-create-auto-scaling-group --launch-configuration DemoLC \
@@ -690,7 +690,7 @@ else
                                           --availability-zones $zone \
                                           --load-balancers DemoELB \
                                           --health-check-type ELB \
-                                          --grace-period 30 \
+                                          --grace-period 300 \
                                           --region $user_region \
                                           DemoASG
         pause
