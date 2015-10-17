@@ -789,23 +789,23 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euwatch-put-metric-alarm --alarm-description \"Scale Up DemoELB by 1 when CPU >= 50%\" \\
-echo "                         --alarm-actions $up_policy_arn \\
-echo "                         --metric-name CPUUtilization --namespace \"AWS/EC2\" \\
-echo "                         --statistic Average --dimensions \"AutoScalingGroupName=DemoASG\" \\
-echo "                         --period 60 --unit Percent --evaluation-periods 2 --threshold 50 \\
-echo "                         --comparison-operator GreaterThanOrEqualToThreshold \\
-echo "                         --region $user_region \\
-echo "                         DemoCPUHighAlarm
+echo "euwatch-put-metric-alarm --alarm-description \"Scale Up DemoELB by 1 when CPU >= 50%\" \\"
+echo "                         --alarm-actions $up_policy_arn \\"
+echo "                         --metric-name CPUUtilization --namespace \"AWS/EC2\" \\"
+echo "                         --statistic Average --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+echo "                         --period 60 --unit Percent --evaluation-periods 2 --threshold 50 \\"
+echo "                         --comparison-operator GreaterThanOrEqualToThreshold \\"
+echo "                         --region $user_region \\"
+echo "                         DemoCPUHighAlarm"
 echo
-echo "euwatch-put-metric-alarm --alarm-description \"Scale Down DemoELB by 1 when CPU <= 10%\" \\
-echo "                         --alarm-actions $down_policy_arn \\
-echo "                         --metric-name CPUUtilization --namespace \"AWS/EC2\" \\
-echo "                         --statistic Average --dimensions \"AutoScalingGroupName=DemoASG\" \\
-echo "                         --period 60 --unit Percent --evaluation-periods 2 --threshold 10 \\
-echo "                         --comparison-operator LessThanOrEqualToThreshold \\
-echo "                         --region $user_region \\
-echo "                         DemoCPULowAlarm
+echo "euwatch-put-metric-alarm --alarm-description \"Scale Down DemoELB by 1 when CPU <= 10%\" \\"
+echo "                         --alarm-actions $down_policy_arn \\"
+echo "                         --metric-name CPUUtilization --namespace \"AWS/EC2\" \\"
+echo "                         --statistic Average --dimensions \"AutoScalingGroupName=DemoASG\" \\"
+echo "                         --period 60 --unit Percent --evaluation-periods 2 --threshold 10 \\"
+echo "                         --comparison-operator LessThanOrEqualToThreshold \\"
+echo "                         --region $user_region \\"
+echo "                         DemoCPULowAlarm"
 echo
 echo "euwatch-describe-alarms --region $user_region DemoCPUHighAlarm DemoCPULowAlarm"
 

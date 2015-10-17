@@ -1,7 +1,7 @@
 #/bin/bash
 #
 # This script runs a Eucalyptus CLI demo which creates a SecurityGroup,
-# ElasticLoadBalancer, LaunchConfiguration, AutoScalingGroup, ScaleUp and ScaleDown 
+# ElasticLoadBalancer, LaunchConfiguration, AutoScalingGroup, ScaleUp and ScaleDown
 # ScalingPolicies and associated CloudWatch Alarms, and Instances associated with
 # the LaunchConfiguration which use a user-data script for configuration.
 #
@@ -299,9 +299,9 @@ if [ $verbose = 1 ]; then
     echo "============================================================"
     echo
     echo "Commands:"
-    echo 
+    echo
     echo "aws ec2 describe-security-groups --profile $profile --region $region --output text"
-    echo 
+    echo
     echo "aws elb describe-load-balancers --profile $profile --region $region --output text"
     echo
     echo "aws ec2 describe-instances --profile $profile --region $region --output text"
@@ -344,7 +344,7 @@ if [ $verbose = 1 ]; then
 
         echo "# aws cloudwatch describe-alarms --profile $profile --region $region --output text"
         aws cloudwatch describe-alarms --profile $profile --region $region --output text
-    
+
         next
     fi
 fi
@@ -567,7 +567,7 @@ image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=image
 account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region | cut -d ':' -f5)
 instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                --profile $profile --region $region --output text | \
-                                                               tr "\t" "\n" | grep $account_id)
+                                                               tr "\t" "\n" | grep $account_id | grep "Demos$")
 #instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
 #                                                               --profile $profile --region $region --output text)
 ssh_key=demo
@@ -1205,7 +1205,7 @@ image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=image
 account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region | cut -d ':' -f5)
 instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                --profile $profile --region $region --output text | \
-                                                               tr "\t" "\n" | grep $account_id)
+                                                               tr "\t" "\n" | grep $account_id | grep "Demos$")
 #instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
 #                                                               --profile $profile --region $region --output text)
 ssh_key=demo
@@ -1414,7 +1414,7 @@ unset instance_public_names
 for instance_id in $instance_ids; do
     instance_public_names="$instance_public_names $(aws ec2 describe-instances --instance-ids $instance_id \
                                                                                --query 'Reservations[].Instances[].PublicDnsName' \
-                                                                               --profile $profile --region $region --output text)
+                                                                               --profile $profile --region $region --output text)"
 done
 instance_public_names=${instance_public_names# *}
 
