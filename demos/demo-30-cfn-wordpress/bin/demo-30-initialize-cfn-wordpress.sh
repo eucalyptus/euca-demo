@@ -404,7 +404,7 @@ echo "aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          --acl public-read --profile $aws_profile --region=$aws_region"
 
-if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region=$aws_region | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
+if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region=$aws_region 2> /dev/null | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
     echo
     tput rev
     echo "Already Uploaded!"
