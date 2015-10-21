@@ -273,9 +273,11 @@ if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
     exit 53
 fi
 
-if ! rpm -q --quiet w3m; then
-    echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-    exit 98
+if [ ! $(uname) = "Darwin" ]; then
+    if ! rpm -q --quiet w3m; then
+        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
+        exit 98
+    fi
 fi
 
 
