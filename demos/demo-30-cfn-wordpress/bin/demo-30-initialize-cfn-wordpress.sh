@@ -486,23 +486,31 @@ if [ $mode = e -o $mode = b ]; then
     echo
     echo "sed -i -e \"/^    \\\"AWSRegionArch2AMI\\\" : {\$/a\\"
     echo "\\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$euca_region\"\\\"\" $image_id $image_id)\" \\"
-    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
+    echo "       /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
 
     run 50
 
     if [ $choice = y ]; then
         echo "# sed -i -e \"/\\\"$euca_region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
         echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-        sed -i -e "/\"$euca_region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
+        sed -i "" -e "/\"$euca_region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
                /var/tmp/WordPress_Single_Instance_Eucalyptus.template
         pause
 
         echo "# sed -i -e \"/^    \\\"AWSRegionArch2AMI\\\" : {\$/a\\"
         echo "> \\      \$(printf \"%-16s : { \\\"PV64\\\" : \\\"%s\\\", \\\"HVM64\\\" : \\\"%s\\\", \\\"HVMG2\\\" : \\\"NOT_SUPPORTED\\\" },\\n\" \"\\\"\"$euca_region\"\\\"\" $image_id $image_id)\" \\"
-        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template\""
-        sed -i -e "/^    \"AWSRegionArch2AMI\" : {$/a\
-        \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$euca_region"\"" $image_id $image_id)" \
-               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
+        echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
+        case $(uname) in
+          Darwin)
+            # I really hate OSX sed, which cost me hours figuring out this ugly workaround - not making this visible to viewers to avoid confusion
+            line="$(printf "\ \ \ \ \ \ %-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" \"$euca_region\" $image_id $image_id)"
+            sedscript='/^    "AWSRegionArch2AMI" : {$/a\'$'\n'"$line"
+            sed -i "" -e "$sedscript" /var/tmp/WordPress_Single_Instance_Eucalyptus.template;;
+          *)
+            sed -i -e "/^    \"AWSRegionArch2AMI\" : {$/a\
+            \      $(printf "%-16s : { \"PV64\" : \"%s\", \"HVM64\" : \"%s\", \"HVMG2\" : \"NOT_SUPPORTED\" },\n" "\""$euca_region"\"" $image_id $image_id)" \
+                   /var/tmp/WordPress_Single_Instance_Eucalyptus.template;;
+        esac
 
         next
     fi
