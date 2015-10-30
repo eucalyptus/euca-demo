@@ -918,31 +918,27 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
-24. (ALL?): Configure additional network settings
+24. (ALL): Configure additional network settings
 
-    TBD: Getting these errors, add steps to prevent these messages:
+    ```bash
+    cat << EOF >> /etc/sysctl.conf
 
-    WARN: net.ipv4.neigh.default.gc_interval is lower than the expected value of 3600
-    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_interval = 3600 in /etc/sysctl.conf.
-    Setting /proc/sys/net/ipv4/neigh/default/gc_interval dynamically to 3600
+    # Additional Eucalyptus settings
+    net.ipv4.neigh.default.gc_interval = 3600
+    net.ipv4.neigh.default.gc_stale_time = 3600
+    net.ipv4.neigh.default.gc_thresh1 = 1024
+    net.ipv4.neigh.default.gc_thresh2 = 2048
+    net.ipv4.neigh.default.gc_thresh3 = 4096
+    EOF
 
-    WARN: net.ipv4.neigh.default.gc_stale_time is lower than the expected value of 3600
-    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_stale_time = 3600 in /etc/sysctl.conf.
-    Setting /proc/sys/net/ipv4/neigh/default/gc_stale_time dynamically to 3600
+    sysctl -p
 
-    WARN: net.ipv4.neigh.default.gc_thresh1 is lower than the expected value of 1024
-    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh1 = 1024 in /etc/sysctl.conf.
-    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh1 dynamically to 1024
-
-    WARN: net.ipv4.neigh.default.gc_thresh3 is lower than the expected value of 4096
-    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh3 = 4096 in /etc/sysctl.conf.
-    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh3 dynamically to 4096
-
-    WARN: net.ipv4.neigh.default.gc_thresh2 is lower than the expected value of 2048
-    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh2 = 2048 in /etc/sysctl.conf.
-    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh2 dynamically to 2048
-    done.
-
+    cat /proc/sys/net/ipv4/neigh/default/gc_interval
+    cat /proc/sys/net/ipv4/neigh/default/gc_stale_time
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh1
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh2
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh3
+    ```
 
 ### Prepare Network
 
@@ -1175,9 +1171,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-7. (NC): Configure Eucalyptus Disk Allocation
-
-    SKIP? 
+7. (NC): (Skip) Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=750000
@@ -1199,12 +1193,10 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-9. (CLC+UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+9. (CLC+UFS/OSP/SC): (Skip) Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
-
-    SKIP?
 
     ```bash
     heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -1214,9 +1206,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with User Facing Services Address
+10. (MC): (Skip) Configure Management Console with User Facing Services Address
 
-    SKIP? On same host currently, test when they are on different hosts.
+    On same host currently, may have to set when CLC and UFS are on different hosts.
 
     ```bash
     cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
@@ -1270,8 +1262,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```
 
 7. (CLC): Wait for services to respond
-
-    TBD: Confirm this logic works with 4.2.
 
     ```bash
     while true; do
@@ -1340,8 +1330,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     Optional: Confirm service status.
 
-    * All services should be in the **enabled** state except for objectstorage, loadbalancingbackend
-      and imagingbackend.
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
     * The cluster, storage and walrusbackend services should not yet be listed.
 
     ```bash
@@ -1362,6 +1352,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-register-service -t walrusbackend -h ${EUCA_OSP_PRIVATE_IP} walrus
     ```
 
+    Wait for service to become **enabled**.
+
+    ```bash
+    sleep 30
+    ```
+
 3. (CLC): Register Cluster Controller services
 
     Register the Cluster Controller services.
@@ -1376,7 +1372,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     clcadmin-copy-keys -z ${EUCA_ZONEA} ${EUCA_CCA_PRIVATE_IP}
     clcadmin-copy-keys -z ${EUCA_ZONEB} ${EUCA_CCB_PRIVATE_IP}
-    sleep 15
+    ```
+
+    Wait for services to become **enabled**.
+
+    ```bash
+    sleep 30
     ```
 
 4. (CLC): Register Storage Controller services
@@ -1391,11 +1392,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     Register the Storage Controller services.
 
     ```bash
-    euca_conf --register-sc -P ${EUCA_ZONEA} -C ${EUCA_ZONEA_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
-    euca_conf --register-sc -P ${EUCA_ZONEB} -C ${EUCA_ZONEB_SC_NAME} -H ${EUCA_SCB_PRIVATE_IP}
-
     euserv-register-service -t storage -h ${EUCA_SCA_PRIVATE_IP} -z ${EUCA_ZONEA} ${EUCA_ZONEA_SC_NAME}
     euserv-register-service -t storage -h ${EUCA_SCB_PRIVATE_IP} -z ${EUCA_ZONEB} ${EUCA_ZONEB_SC_NAME}
+    ```
+
+    Wait for services to become **broken**.
+
+    ```bash
     sleep 30
     ```
 
@@ -1405,7 +1408,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     clusteradmin-register-nodes ${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}
-    sleep 15
     ```
 
     Copy Encryption Keys.
@@ -1420,7 +1422,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     clusteradmin-register-nodes ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}
-    sleep 15
     ```
 
     Copy Encryption Keys. 
@@ -1465,7 +1466,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     euca-describe-regions
 
-    euca-describe-availablity-zones verbose
+    euca-describe-availability-zones verbose
     ```
 
 3. (CLC): Configure Eucalyptus Administrator Password
@@ -1586,7 +1587,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 9. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
-    euctl --region @localhost objectstorage.providerclient=walrus
+    euctl objectstorage.providerclient=walrus
     ```
 
     Optional: Confirm service status.
@@ -1631,7 +1632,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     esi-install-image --install-default
     ```
 
-    Set the Worker KeyPair, allowing use of the support KeyPair for Intance debugging.
+    (Skip - seems keypair must be in "(eucalyptus)imaging" Account. Set the Worker KeyPair, allowing use of the support KeyPair for Intance debugging.
 
     ```bash
     euctl services.imaging.worker.keyname=support
@@ -1643,8 +1644,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     euctl services.imaging.worker.instance_type=m1.xlarge
-    euctl services.loadbalancing.worker.instance_type=m1.xlarge
-    euctl services.database.worker.instance_type=m1.xlarge
+    euctl services.loadbalancing.worker.instance_type=m1.small
+    euctl services.database.worker.instance_type=m1.small
     ```
 
 12. (CLC): Configure DNS
@@ -1733,7 +1734,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     objectstorage           A       10.104.10.83
     tokens                  A       10.104.10.83
 
-    cloud                   NS      ns1
+    vm                      NS      ns1
     lb                      NS      ns1
     ```
 
@@ -1772,7 +1773,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     euca-describe-availability-zones verbose
 
-    euca-describe-nodes
+    euserv-describe-node-controllers
 
     euca-describe-instance-types --show-capacity
     ```
