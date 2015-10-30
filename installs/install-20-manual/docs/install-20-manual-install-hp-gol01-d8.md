@@ -25,16 +25,16 @@ This is using the following nodes in the PRC:
 - odc-d-29.prc.eucalyptus-systems.com: CCB+SCB
   - Public: 10.104.1.208/16 (em1)
   - Private: 10.105.1.208/16 (em2)
-- odc-d-35.prc.eucalyptus-systems.com: NCA1
+- odc-d-35.prc.eucalyptus-systems.com: NC1
   - Public: 10.104.1.190/16 (em1)
   - Private: 10.105.1.190/16 (em2)
-- odc-d-38.prc.eucalyptus-systems.com: NCA2
+- odc-d-38.prc.eucalyptus-systems.com: NC2
   - Public: 10.104.1.187/16 (em1)
   - Private: 10.105.1.187/16 (em2)
-- odc-f-14.prc.eucalyptus-systems.com: NCB1
+- odc-f-14.prc.eucalyptus-systems.com: NC3
   - Public: 10.104.10.56/16 (em1)
   - Private: 10.105.10.56/16 (em2)
-- odc-f-17.prc.eucalyptus-systems.com: NCB2
+- odc-f-17.prc.eucalyptus-systems.com: NC4
   - Public: 10.104.10.59/16 (em1)
   - Private: 10.105.10.59/16 (em2)
 
@@ -44,12 +44,11 @@ Each step uses a code to indicate what node the step should be run on:
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
 - OSP: Object Storage Provider (Walrus)
-- CCA:  Cluster Controller Host (Cluster A)
-- SCA:  Storage Controller Host (Cluster A)
-- NCAn: Node Controller(s) (Cluster A)
-- CCB:  Cluster Controller Host (Cluster B)
-- SCB:  Storage Controller Host (Cluster B)
-- NCBn: Node Controller(s) (Cluster B)
+- CCA: Cluster Controller Host (Cluster A)
+- SCA: Storage Controller Host (Cluster A)
+- CCB: Cluster Controller Host (Cluster B)
+- SCB: Storage Controller Host (Cluster B)
+- NCn: Node Controller(s)
 
 ### Hardware Configuration and Operating System Installation
 
@@ -78,93 +77,97 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-d8
+    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
 
-    export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PRIVATE_DOMAIN=internal
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=cloud
+    export EUCA_DNS_INSTANCE_SUBDOMAIN=vm
     export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
     export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PARENT_IP=10.104.10.80
 
-    export EUCA_SERVICE_API_NAME=api
+    export EUCA_SERVICE_API_NAME=user-api-1
 
     export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-    export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
-    export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
-    export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
+    export EUCA_ZONEA=${AWS_DEFAULT_REGION}a
+    export EUCA_ZONEA_CC_NAME=${EUCA_ZONEA}-cc
+    export EUCA_ZONEA_SC_NAME=${EUCA_ZONEA}-sc
 
-    export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.127
-    export EUCA_CLUSTER1_PRIVATE_NAME=10.105.0.0
-    export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
-    export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
-    export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
+    export EUCA_ZONEA_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.127
+    export EUCA_ZONEA_PRIVATE_NAME=10.105.0.0
+    export EUCA_ZONEA_PRIVATE_SUBNET=10.105.0.0
+    export EUCA_ZONEA_PRIVATE_NETMASK=255.255.0.0
+    export EUCA_ZONEA_PRIVATE_GATEWAY=10.105.0.1
 
-    export EUCA_CLUSTER2=${AWS_DEFAULT_REGION}b
-    export EUCA_CLUSTER2_CC_NAME=${EUCA_CLUSTER2}-cc
-    export EUCA_CLUSTER2_SC_NAME=${EUCA_CLUSTER2}-sc
+    export EUCA_ZONEB=${AWS_DEFAULT_REGION}b
+    export EUCA_ZONEB_CC_NAME=${EUCA_ZONEB}-cc
+    export EUCA_ZONEB_SC_NAME=${EUCA_ZONEB}-sc
 
-    export EUCA_CLUSTER2_PRIVATE_IP_RANGE=10.105.40.128-10.105.40.254
-    export EUCA_CLUSTER2_PRIVATE_NAME=10.105.0.0
-    export EUCA_CLUSTER2_PRIVATE_SUBNET=10.105.0.0
-    export EUCA_CLUSTER2_PRIVATE_NETMASK=255.255.0.0
-    export EUCA_CLUSTER2_PRIVATE_GATEWAY=10.105.0.1
+    export EUCA_ZONEB_PRIVATE_IP_RANGE=10.105.40.128-10.105.40.254
+    export EUCA_ZONEB_PRIVATE_NAME=10.105.0.0
+    export EUCA_ZONEB_PRIVATE_SUBNET=10.105.0.0
+    export EUCA_ZONEB_PRIVATE_NETMASK=255.255.0.0
+    export EUCA_ZONEB_PRIVATE_GATEWAY=10.105.0.1
 
+    export EUCA_CLC_MANAGEMENT_INTERFACE=em1
+    export EUCA_CLC_MANAGEMENT_IP=10.104.10.83
     export EUCA_CLC_PUBLIC_INTERFACE=em1
-    export EUCA_CLC_PRIVATE_INTERFACE=em2
     export EUCA_CLC_PUBLIC_IP=10.104.10.83
+    export EUCA_CLC_PRIVATE_INTERFACE=em2
     export EUCA_CLC_PRIVATE_IP=10.105.10.83
+    export EUCA_CLC_SAN_INTERFACE=em2
+    export EUCA_CLC_SAN_IP=10.105.10.83
 
     export EUCA_UFS_PUBLIC_INTERFACE=em1
-    export EUCA_UFS_PRIVATE_INTERFACE=em2
     export EUCA_UFS_PUBLIC_IP=10.104.10.83
+    export EUCA_UFS_PRIVATE_INTERFACE=em2
     export EUCA_UFS_PRIVATE_IP=10.105.10.83
 
     export EUCA_MC_PUBLIC_INTERFACE=em1
-    export EUCA_MC_PRIVATE_INTERFACE=em2
     export EUCA_MC_PUBLIC_IP=10.104.10.83
+    export EUCA_MC_PRIVATE_INTERFACE=em2
     export EUCA_MC_PRIVATE_IP=10.105.10.83
 
     export EUCA_OSP_PUBLIC_INTERFACE=em1
-    export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PUBLIC_IP=10.104.10.84
+    export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PRIVATE_IP=10.105.10.84
 
     export EUCA_CCA_PUBLIC_INTERFACE=em1
-    export EUCA_CCA_PRIVATE_INTERFACE=em2
     export EUCA_CCA_PUBLIC_IP=10.104.10.85
+    export EUCA_CCA_PRIVATE_INTERFACE=em2
     export EUCA_CCA_PRIVATE_IP=10.105.10.85
 
     export EUCA_SCA_PUBLIC_INTERFACE=em1
-    export EUCA_SCA_PRIVATE_INTERFACE=em2
     export EUCA_SCA_PUBLIC_IP=10.104.10.85
+    export EUCA_SCA_PRIVATE_INTERFACE=em2
     export EUCA_SCA_PRIVATE_IP=10.105.10.85
 
     export EUCA_CCB_PUBLIC_INTERFACE=em1
-    export EUCA_CCB_PRIVATE_INTERFACE=em2
     export EUCA_CCB_PUBLIC_IP=10.104.1.208
+    export EUCA_CCB_PRIVATE_INTERFACE=em2
     export EUCA_CCB_PRIVATE_IP=10.105.1.208
 
     export EUCA_SCB_PUBLIC_INTERFACE=em1
-    export EUCA_SCB_PRIVATE_INTERFACE=em2
     export EUCA_SCB_PUBLIC_IP=10.104.1.208
+    export EUCA_SCB_PRIVATE_INTERFACE=em2
     export EUCA_SCB_PRIVATE_IP=10.105.1.208
 
+    export EUCA_NC_PUBLIC_INTERFACE=em1
     export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
-    export EUCA_NC_PUBLIC_INTERFACE=em1
 
-    export EUCA_NCA1_PUBLIC_IP=10.104.1.190
-    export EUCA_NCA1_PRIVATE_IP=10.105.1.190
+    export EUCA_NC1_PUBLIC_IP=10.104.1.190
+    export EUCA_NC1_PRIVATE_IP=10.105.1.190
 
-    export EUCA_NCA2_PUBLIC_IP=10.104.1.187
-    export EUCA_NCA2_PRIVATE_IP=10.105.1.187
+    export EUCA_NC2_PUBLIC_IP=10.104.1.187
+    export EUCA_NC2_PRIVATE_IP=10.105.1.187
 
-    export EUCA_NCB1_PUBLIC_IP=10.104.10.56
-    export EUCA_NCB1_PRIVATE_IP=10.105.10.56
+    export EUCA_NC3_PUBLIC_IP=10.104.10.56
+    export EUCA_NC3_PRIVATE_IP=10.105.10.56
 
-    export EUCA_NCB2_PUBLIC_IP=10.104.10.59
-    export EUCA_NCB2_PRIVATE_IP=10.105.10.59
+    export EUCA_NC4_PUBLIC_IP=10.104.10.59
+    export EUCA_NC4_PRIVATE_IP=10.105.10.59
     ```
 
 ### Initialize Host Conventions
@@ -177,7 +180,7 @@ process, not currently available for this host.
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
+    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree screen
     ```
 
 2. (All) Configure Sudo
@@ -280,32 +283,32 @@ above are changed, expected results below should also be updated to match.
 **A Records**
 
 ```bash
-dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ${AWS_DEFAULT_DOMAIN}
 10.104.10.80
 
-dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.83
 
-dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ns1.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.83
 
-dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short clc.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.83
 
-dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ufs.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.83
 
-dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short console.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.83
 ```
 
 **NS Records**
 
 ```bash
-dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short -t NS ${AWS_DEFAULT_DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 
-dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short -t NS ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 ```
 
@@ -913,6 +916,32 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
+24. (ALL?): Configure additional network settings
+
+    TBD: Getting these errors, add steps to prevent these messages:
+
+    WARN: net.ipv4.neigh.default.gc_interval is lower than the expected value of 3600
+    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_interval = 3600 in /etc/sysctl.conf.
+    Setting /proc/sys/net/ipv4/neigh/default/gc_interval dynamically to 3600
+
+    WARN: net.ipv4.neigh.default.gc_stale_time is lower than the expected value of 3600
+    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_stale_time = 3600 in /etc/sysctl.conf.
+    Setting /proc/sys/net/ipv4/neigh/default/gc_stale_time dynamically to 3600
+
+    WARN: net.ipv4.neigh.default.gc_thresh1 is lower than the expected value of 1024
+    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh1 = 1024 in /etc/sysctl.conf.
+    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh1 dynamically to 1024
+
+    WARN: net.ipv4.neigh.default.gc_thresh3 is lower than the expected value of 4096
+    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh3 = 4096 in /etc/sysctl.conf.
+    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh3 dynamically to 4096
+
+    WARN: net.ipv4.neigh.default.gc_thresh2 is lower than the expected value of 2048
+    To ensure that the settings are persisted, set net.ipv4.neigh.default.gc_thresh2 = 2048 in /etc/sysctl.conf.
+    Setting /proc/sys/net/ipv4/neigh/default/gc_thresh2 dynamically to 2048
+    done.
+
+
 ### Prepare Network
 
 1. (ALL): Configure external switches, routers and firewalls to allow Eucalyptus Traffic
@@ -929,15 +958,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     This tool should be run simultaneously on all hosts running Java components.
 
+    NOTE: This was moved to after Eucalyptus package installation in 4.2.
+
     ```bash
-    yum install -y java
+    yum install -y --nogpgcheck http://downloads.eucalyptus.com/software/tools/centos/6/x86_64/network-tomography-1.0.0-3.el6.x86_64.rpm
 
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP} ${EUCA_SCB_PRIVATE_IP}
+    /usr/bin/network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP} ${EUCA_SCB_PRIVATE_IP}
     ```
 
 3. (CLC): Scan for unknown SSH host keys
@@ -955,25 +981,25 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ssh-keyscan ${EUCA_CCB_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CCB_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 4. (CCA): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 
 5. (CCB): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_NCB1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCB2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC3_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC4_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 ### Install Eucalyptus
@@ -985,9 +1011,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     yum install -y \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
-        http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+        http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/eucalyptus/4.2/centos/6/x86_64/eucalyptus-release-4.2-1.el6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/euca2ools/3.3/centos/6/x86_64/euca2ools-release-3.3-1.el6.noarch.rpm
     ```
 
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
@@ -995,7 +1021,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
-    yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+    yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.2-1.el6.noarch.rpm
     ```
 
 2. (ALL): Override external yum repos to internal servers
@@ -1117,29 +1143,29 @@ ns1.mjc.prc.eucalyptus-systems.com.
       ],
       "Clusters": [
         {
-          "Name": "${EUCA_CLUSTER1}",
+          "Name": "${EUCA_ZONEA}",
           "MacPrefix": "d0:0d",
           "Subnet": {
-            "Name": "${EUCA_CLUSTER1_PRIVATE_NAME}",
-            "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
-            "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
-            "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
+            "Name": "${EUCA_ZONEA_PRIVATE_NAME}",
+            "Subnet": "${EUCA_ZONEA_PRIVATE_SUBNET}",
+            "Netmask": "${EUCA_ZONEA_PRIVATE_NETMASK}",
+            "Gateway": "${EUCA_ZONEA_PRIVATE_GATEWAY}"
           },
           "PrivateIps": [
-            "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
+            "${EUCA_ZONEA_PRIVATE_IP_RANGE}"
           ]
         },
         {
-          "Name": "${EUCA_CLUSTER2}",
+          "Name": "${EUCA_ZONEB}",
           "MacPrefix": "d0:0d",
           "Subnet": {
-            "Name": "${EUCA_CLUSTER2_PRIVATE_NAME}",
-            "Subnet": "${EUCA_CLUSTER2_PRIVATE_SUBNET}",
-            "Netmask": "${EUCA_CLUSTER2_PRIVATE_NETMASK}",
-            "Gateway": "${EUCA_CLUSTER2_PRIVATE_GATEWAY}"
+            "Name": "${EUCA_ZONEB_PRIVATE_NAME}",
+            "Subnet": "${EUCA_ZONEB_PRIVATE_SUBNET}",
+            "Netmask": "${EUCA_ZONEB_PRIVATE_NETMASK}",
+            "Gateway": "${EUCA_ZONEB_PRIVATE_GATEWAY}"
           },
           "PrivateIps": [
-            "${EUCA_CLUSTER2_PRIVATE_IP_RANGE}"
+            "${EUCA_ZONEB_PRIVATE_IP_RANGE}"
           ]
         }
       ]
@@ -1148,6 +1174,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```
 
 7. (NC): Configure Eucalyptus Disk Allocation
+
+    SKIP? 
 
     ```bash
     nc_work_size=750000
@@ -1165,6 +1193,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     # Set this to Y to use the private IP of the CLC for the metadata service.
     # The default is to use the public IP.
     METADATA_USE_VM_PRIVATE="Y"
+    METADATA_IP="$EUCA_CLC_PRIVATE_IP"
     EOF
     ```
 
@@ -1172,6 +1201,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
     regardless of value
+
+    SKIP?
 
     ```bash
     heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -1183,22 +1214,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
 10. (MC): Configure Management Console with User Facing Services Address
 
-    The clchost parameter within console.ini is misleadingly named, as it should reference the
-    public IP of the host running User Facing Services.
+    SKIP? On same host currently, test when they are on different hosts.
 
     ```bash
     cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
 
-    sed -i -e "/^clchost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" \
-           -e "/# since eucalyptus allows for different services to be located on different/d" \
-           -e "/# physical hosts, you may override the above host and port for each service./d" \
-           -e "/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d" \
-           -e "/For each service, you can specify a different host and\/or port, for example;/d" \
-           -e "/#elb.host=10.20.30.40/d" \
-           -e "/#elb.port=443/d" \
-           -e "/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d" \
-           -e "/# that won't work from client's browsers./d" \
-           -e "/#s3.host=<your host IP or name>/d" /etc/eucaconsole/console.ini
+    sed -i -e "/^ufshost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" /etc/eucaconsole/console.ini
     ```
 
 ### Start Eucalyptus
@@ -1206,7 +1227,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 1. (CLC): Initialize the Cloud Controller service
 
     ```bash
-    euca_conf --initialize
+   clcadmin-initialize-cloud
     ```
 
 2. (CLC+UFS/OSP/SC): Start the Cloud Controller service
@@ -1246,16 +1267,14 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ls -l /var/log/eucalyptus
     ```
 
-### Register Eucalyptus
+7. (CLC): Wait for services to respond
 
-1. (CLC): Register User-Facing services
-
-    Wait for CLC services to respond.
+    TBD: Confirm this logic works with 4.2.
 
     ```bash
     while true; do
         echo -n "Testing services... "
-        if nc -z localhost 8777 &> /dev/null; then 
+        if nc -z localhost 8777 &> /dev/null; then
             echo " Started"
             break
         else
@@ -1267,13 +1286,40 @@ ns1.mjc.prc.eucalyptus-systems.com.
     done
     ```
 
-    Register UFS services.
+    TBD: Add steps to verify this using nc
+
+    Verify that everything has started without error. Expected outcomes include:
+
+    * The CLC is listening on ports 8443 and 8773
+    * Walrus is listening on port 8773
+    * The SC is listening on port 8773
+    * The CC is listening on port 8774
+    * The NCs are listening on port 8775
+
+
+### Register Eucalyptus
+
+1. (CLC): Obtain temporary credentials
 
     ```bash
-    euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    eval $(clcadmin-assume-system-credentials)
     ```
 
-    Wait for UFS services to respond.
+2. (CLC): Register User-Facing services
+
+    Copy Encryption Keys. This is not needed in this example as UFS is coresident on the same host with the CLC.
+
+    ```bash
+    #clcadmin-copy-keys ${EUCA_UFS_PRIVATE_IP}
+    ```
+
+    Register User-Facing Services.
+
+    ```bash
+    euserv-register-service -t user-api -h ${EUCA_UFS_PRIVATE_IP} ${EUCA_SERVICE_API_NAME}
+    ```
+
+    Wait for User-Facing Services to respond.
 
     ```bash
     while true; do
@@ -1292,49 +1338,93 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     Optional: Confirm service status.
 
-    * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend
+    * All services should be in the **enabled** state except for objectstorage, loadbalancingbackend
       and imagingbackend.
     * The cluster, storage and walrusbackend services should not yet be listed.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services
     ```
 
 2. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
+    Copy Encryption Keys.
+
     ```bash
-    euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
+    clcadmin-copy-keys ${EUCA_OSP_PRIVATE_IP}
+    ```
+
+    Register the Walrus Backend Service.
+
+    ```bash
+    euserv-register-service -t walrusbackend -h ${EUCA_OSP_PRIVATE_IP} walrus
+    ```
+
+3. (CLC): Register Cluster Controller services
+
+    Register the Cluster Controller services.
+
+    ```bash
+    euserv-register-service -t cluster -h ${EUCA_CCA_PRIVATE_IP} -z ${EUCA_ZONEA} ${EUCA_ZONEA_CC_NAME}
+    euserv-register-service -t cluster -h ${EUCA_CCB_PRIVATE_IP} -z ${EUCA_ZONEB} ${EUCA_ZONEB_CC_NAME}
+    ```
+
+    Copy Encryption Keys.
+
+    ```bash
+    clcadmin-copy-keys -z ${EUCA_ZONEA} ${EUCA_CCA_PRIVATE_IP}
+    clcadmin-copy-keys -z ${EUCA_ZONEB} ${EUCA_CCB_PRIVATE_IP}
     sleep 15
     ```
 
-3. (CLC): Register Storage Controller services
+4. (CLC): Register Storage Controller services
+
+    Copy Encryption Keys. This is not needed in this example as each SC is coresident on the same host as the CC.
 
     ```bash
-    euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
-    euca_conf --register-sc -P ${EUCA_CLUSTER2} -C ${EUCA_CLUSTER2_SC_NAME} -H ${EUCA_SCB_PRIVATE_IP}
-    sleep 15
+    #clcadmin-copy-keys -z ${EUCA_ZONEA} ${EUCA_SCA_PRIVATE_IP}
+    #clcadmin-copy-keys -z ${EUCA_ZONEB} ${EUCA_SCB_PRIVATE_IP}
     ```
 
-4. (CLC): Register Cluster Controller services
+    Register the Storage Controller services.
 
     ```bash
-    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
-    euca_conf --register-cluster -P ${EUCA_CLUSTER2} -C ${EUCA_CLUSTER2_CC_NAME} -H ${EUCA_CCB_PRIVATE_IP}
-    sleep 15
+    euca_conf --register-sc -P ${EUCA_ZONEA} -C ${EUCA_ZONEA_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
+    euca_conf --register-sc -P ${EUCA_ZONEB} -C ${EUCA_ZONEB_SC_NAME} -H ${EUCA_SCB_PRIVATE_IP}
+
+    euserv-register-service -t storage -h ${EUCA_SCA_PRIVATE_IP} -z ${EUCA_ZONEA} ${EUCA_ZONEA_SC_NAME}
+    euserv-register-service -t storage -h ${EUCA_SCB_PRIVATE_IP} -z ${EUCA_ZONEB} ${EUCA_ZONEB_SC_NAME}
+    sleep 30
     ```
 
 5. (CCA): Register Node Controller host(s) associated with Cluster 1
 
+    Register the Node Controller services.
+
     ```bash
-    euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP}"
+    clusteradmin-register-nodes ${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}
     sleep 15
+    ```
+
+    Copy Encryption Keys.
+
+    ```bash
+    clusteradmin-copy-keys ${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}
     ```
 
 6. (CCB): Register Node Controller host(s) associated with Cluster 2
 
+    Register the Node Controller services.
+
     ```bash
-    euca_conf --register-nodes="${EUCA_NCB1_PRIVATE_IP} ${EUCA_NCB2_PRIVATE_IP}"
+    clusteradmin-register-nodes ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}
     sleep 15
+    ```
+
+    Copy Encryption Keys. 
+
+    ```bash
+    clusteradmin-copy-keys ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}
     ```
 
 7. (NC): Restart the Node Controller services
@@ -1347,7 +1437,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
 ### Runtime Configuration
 
-1. (CLC): Use Eucalyptus Administrator credentials
+1. (CLC): Generate Eucalyptus Administrator credentials
 
     Note that there is a limit to the number of times the primary key and certificate
     can be downloaded, without deleting and recreating them. So, insure you do not
@@ -1380,20 +1470,51 @@ ns1.mjc.prc.eucalyptus-systems.com.
     source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
     ```
 
-2. (CLC): Confirm initial service status
+2. (CLC): Define the region
 
-    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend,
-      imagingbackend, and storage.
-    * All nodes should be in the ENABLED state.
+    This needs more work - the initial region is localhost, which is defined in /etc/euca2ools/conf.d/localhost as URLs which use http on 127.0.0.1 on port 8773.
+    This command updates the variable, so that euca-describe-regions returns this value, but it has not yet updated DNS or created a region which euca2ools can use.
+
+    ```bash
+    euctl region.region_name=$AWS_DEFAULT_REGION
+    ```
+
+3. (CLC): Confirm initial service status
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend, 
+      objectstorage and storage.
+    * All nodes should be in the **enabled** state.
 
     ````bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services
+
+    euserv-describe-node-controllers
 
     euca-describe-regions
 
     euca-describe-availability-zones verbose
+    ```
 
-    euca-describe-nodes
+3. (CLC): Load Edge Network JSON configuration
+
+    ```bash
+    euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
+    ```
+
+4. (CLC): Configure Object Storage to use Walrus Backend
+
+    ```bash
+    euctl --region @localhost objectstorage.providerclient=walrus
+    ```
+
+    Optional: Confirm service status.
+
+    * The objectstorage service should now be in the **enabled** state.
+    * All services should be in the **enabled** state, except for imagingbackend,
+      loadbalancingbackend and storage.
+
+    ```bash
+    euserv-describe-services
     ```
 
 3. (CLC): Configure EBS Storage
@@ -1403,167 +1524,88 @@ ns1.mjc.prc.eucalyptus-systems.com.
     intended for DAS storage mode Logical Volumes.
 
     ```bash
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
-    euca-modify-property -p ${EUCA_CLUSTER2}.storage.blockstoragemanager=das
-    sleep 15
+    euctl ${EUCA_ZONEA}.storage.blockstoragemanager=das
+    euctl ${EUCA_ZONEB}.storage.blockstoragemanager=das
 
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=eucalyptus
-    euca-modify-property -p ${EUCA_CLUSTER2}.storage.dasdevice=eucalyptus
-    sleep 15
+    euctl ${EUCA_ZONEA}.storage.dasdevice=eucalyptus
+    euctl ${EUCA_ZONEB}.storage.dasdevice=eucalyptus
     ```
 
     Optional: Confirm service status.
 
-    * The storage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend
-      and imagingbackend.
+    * The storage service should now be in the **enabled** state.
+    * All services should be in the **enabled** state except for imagingbackend and
+      loadbalancingbackend.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services
     ```
 
-4. (CLC): Configure Object Storage
+7. (CLC): Install the Eucalyptus Service Image
+
+    Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
     ```bash
-    euca-modify-property -p objectstorage.providerclient=walrus
-    sleep 15
+    esi-install-image --install-default
     ```
 
-    Optional: Confirm service status.
-
-    * The objectstorage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state, except for loadbalancingbackend and
-      imagingbackend.
+    TBD: add step to set key, but have to add step above to import support keypair.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euctl services.imaging.worker.keyname=support
+    euctl services.loadbalancing.worker.keyname=support
     ```
 
-5. (CLC): Refresh Eucalyptus Administrator credentials
-
-    As noted above, if the eucarc does not contain the environment variables for the key and
-    certificate, we must patch it to add the missing variables which reference the previously
-    downloaded versions of the key and certificate files.
+    (Optional) Adjust Worker Instance Types.
 
     ```bash
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    euctl services.imaging.worker.instance_type=m1.xlarge
+    euctl services.loadbalancing.worker.instance_type=m1.xlarge
     ```
 
-6. (CLC): Load Edge Network JSON configuration
+8. (CLC): Configure DNS
+
+    TBD
+
+
+1. (CLC): Configure Eucalyptus DNS Server (SKIP)
 
     ```bash
-    euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
-    sleep 15
+    euctl dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
+
+    euctl system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
+
+    euctl system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
     ```
 
-7. (CLC): Install the imaging-worker and load-balancer images
+2. (CLC): Configure DNS Timeout and TTL (Optional)
 
     ```bash
-    euca-install-load-balancer --install-default
+    euctl dns.tcp.timeout_seconds=30
 
-    euca-install-imaging-worker --install-default
-    ```
-
-8. (CLC): Confirm service status
-
-    All services should now be in the ENABLED state.
-
-    ```bash
-    euca-describe-services | cut -f1-5
-    ```
-
-9. (CLC): Confirm apis
-
-    ```bash
-    euca-describe-regions
-
-    euca-describe-availability-zones verbose
-
-    euca-describe-nodes
-
-    euca-describe-instance-types --show-capacity
-    ```
-
-### Configure DNS
-
-1. (CLC): Configure Eucalyptus DNS Server
-
-    ```bash
-    euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
-
-    euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
-
-    euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
-    ```
-
-2. (CLC): Configure DNS Timeout and TTL
-
-    ```bash
-    euca-modify-property -p dns.tcp.timeout_seconds=30
-
-    euca-modify-property -p services.loadbalancing.dns_ttl=15
+    euctl services.loadbalancing.dns_ttl=15
     ```
 
 3. (CLC): Configure DNS Domain
 
     ```bash
-    euca-modify-property -p system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    euctl system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
 4. (CLC): Configure DNS Sub-Domains
 
     ```bash
-    euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
+    euctl cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
 
-    euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
+    euctl services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
     ```
 
 5. (CLC): Enable DNS
 
     ```bash
-    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
+    euctl bootstrap.webservices.use_instance_dns=true
 
-    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
-    ```
-
-6. (CLC): Refresh Eucalyptus Administrator credentials
- 
-    As noted above, if the eucarc does not contain the environment variables for the key and 
-    certificate, we must patch it to add the missing variables which reference the previously 
-    downloaded versions of the key and certificate files.
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    euctl bootstrap.webservices.use_dns_delegation=true
     ```
 
 7. (CLC): Display Parent DNS Server Configuration
@@ -1574,7 +1616,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     $ORIGIN hp-gol01-d8.mjc.prc.eucalyptus-systems.com.
     ;Name           TTL     Type    Value
     @                       SOA     ns1.mjc.prc.eucalyptus-systems.com. root.mjc.prc.eucalyptus-systems.com. (
-                                    2015042101      ; serial
+                                    2015102901      ; serial
                                     1H              ; refresh
                                     10M             ; retry
                                     1D              ; expiry
@@ -1595,10 +1637,10 @@ ns1.mjc.prc.eucalyptus-systems.com.
     sca                     A       10.104.10.85
     ccb                     A       10.104.1.208
     scb                     A       10.104.1.208
-    nca1                    A       10.104.1.190
-    nca2                    A       10.104.1.187
-    ncb1                    A       10.104.10.56
-    ncb2                    A       10.104.10.59
+    nc1                     A       10.104.1.190
+    nc2                     A       10.104.1.187
+    nc3                     A       10.104.10.56
+    nc4                     A       10.104.10.59
 
     console                 A       10.104.10.83
     autoscaling             A       10.104.10.83
@@ -1617,21 +1659,44 @@ ns1.mjc.prc.eucalyptus-systems.com.
 8. (CLC): Confirm DNS resolution for Services
 
     ```bash
-    dig +short compute.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short objectstorage.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short objectstorage.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short euare.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short tokens.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short tokens.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short autoscaling.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short autoscaling.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short cloudformation.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudformation.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short loadbalancing.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+    dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    ```
+
+
+----------------- UNSORTED --------
+
+8. (CLC): Confirm service status
+
+    All services should now be in the **enabled** state.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+9. (CLC): Confirm apis
+
+    ```bash
+    euca-describe-regions
+
+    euca-describe-availability-zones verbose
+
+    euca-describe-nodes
+
+    euca-describe-instance-types --show-capacity
     ```
 
 ### Configure Minimal IAM
@@ -1725,7 +1790,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 2. (ALL) Install Wildcard Host SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    cat << EOF > /etc/pki/tls/private/star.${AWS_DEFAULT_DOMAIN#*.}.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEowIBAAKCAQEApyjRCMhXk96DWLBbjsDiXSmHuCTVNIHMowQqXv1Mvi9W98xF
     VtJYDJz0yhgshbO3DGuYqTr2R451CELmYbBYlhQQMi0tWO4IxwseBJRoxJcAAxx1
@@ -1755,13 +1820,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    chmod 400 /etc/pki/tls/private/star.${AWS_DEFAULT_DOMAIN#*.}.key
     ```
 
 3. (ALL) Install Wildcard Host SSL Certificate
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    cat << EOF > /etc/pki/tls/certs/star.${AWS_DEFAULT_DOMAIN#*.}.crt
     -----BEGIN CERTIFICATE-----
     MIIFiDCCA3CgAwIBAgIBDjANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1796,13 +1861,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    chmod 444 /etc/pki/tls/certs/star.${AWS_DEFAULT_DOMAIN#*.}.crt
     ```
 
 4. (CLC+UFS+MC) Install Wildcard Site SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEpQIBAAKCAQEAxYGf/J0nk3BsIaQIQjoZZv9AVGm4A5T38E5GDsIrhQtbWL3c
     zo36ZZssrFoF+73kn7D7fePqt1pYvfOfyUTiQLwcE05BcOmde4xdA85tDctISK0g
@@ -1832,14 +1897,14 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
     ```
 
 5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
 
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     -----BEGIN CERTIFICATE-----
     MIIFuDCCA6CgAwIBAgIBCTANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1875,7 +1940,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
 ### Configure Management Console for SSL
@@ -1883,7 +1948,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 1. (MW): Confirm Eucalyptus Console service on default port
 
     ```bash
-    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8888
     ```
 
 2. (MC):  4. Stop Eucalyptus Console service
@@ -1905,8 +1970,8 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 
     sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
            -e "s/# \(ssl_certificate\)/\1/" \
-           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
-           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
+           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt/" \
+           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key/" /etc/nginx/nginx.conf
     ```
 
 7. (MC): Start Nginx service
@@ -1934,7 +1999,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 10. (MC): Confirm Eucalyptus Console service
 
     ```bash
-    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     ```
 
 ### Configure for Demos

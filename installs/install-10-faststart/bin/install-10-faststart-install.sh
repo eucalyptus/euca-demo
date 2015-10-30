@@ -15,8 +15,8 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 confdir=${bindir%/*}/conf
 tmpdir=/var/tmp
 
-external_faststart_url=eucalyptus.com/install
-internal_faststart_url=mirror.mjc.prc.eucalyptus-systems.com/install
+external_faststart_url=hphelion.com/eucalyptus-install
+internal_faststart_url=mirror.mjc.prc.eucalyptus-systems.com/eucalyptus-install
 
 step=0
 speed_max=400
@@ -186,14 +186,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "bash <(curl -Ls eucalyptus.com/install)"
+echo "bash <(curl -Ls hphelion.com/eucalyptus-install)"
 
 run 50
 
 if [ $choice = y ]; then
     echo
     pushd $HOME &> /dev/null
-    echo "# bash <(curl -Ls eucalyptus.com/install)"
+    echo "# bash <(curl -Ls hphelion.com/eucalyptus-install)"
     bash <(curl -Ls $faststart_url)
     popd &> /dev/null
 
