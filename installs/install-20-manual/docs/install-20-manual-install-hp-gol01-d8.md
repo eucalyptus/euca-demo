@@ -79,6 +79,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export AWS_DEFAULT_REGION=hp-gol01-d8
     export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
 
+    export EUCA_ADMIN_PASSWORD=password
+
     export EUCA_DNS_PRIVATE_DOMAIN=internal
     export EUCA_DNS_INSTANCE_SUBDOMAIN=vm
     export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
@@ -1437,49 +1439,133 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
 ### Runtime Configuration
 
-1. (CLC): Generate Eucalyptus Administrator credentials
+1. (CLC): Initialize Euca2ools Region
 
-    Note that there is a limit to the number of times the primary key and certificate
-    can be downloaded, without deleting and recreating them. So, insure you do not
-    accidentally delete any primary key or certificate files when refreshing credentials
-    on steps further down in this procedure.
+    Convert the localhost Euca2ools Region configuration file into a specific Euca2ools Region
+    configuration file, not yet using DNS or SSL.
 
-    Additionally, if `euca_conf --get-credentials` or `euca-get-credentials` is called
-    to refresh credentials, and the key or certificate is not included in the download
-    zip file because they were previously downloaded, the included eucarc file will be
-    missing two lines which set the EC2_PRIVATE_KEY and EC2_CERT environment variables
-    to the (now missing) files. This causes all image related API calls to fail.
+    We will replace this file once DNS is configured, then again once PKI and SSL certificates
+    are configured.
 
-    To work around this issue, we must save the original eucarc file, and insure we do
-    not delete the original key and certificate files, and replace the missing lines
-    within eucarc on each refresh of credentials.
+    ```bash
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+
+    sed -e "s/(all user services on localhost)/Region $AWS_DEFAULT_REGION/g" \
+        -e "s/region localhost/region $AWS_DEFAULT_REGION/g" \
+        -e "s/127.0.0.1/$EUCA_UFS_PUBLIC_IP/g" \
+        -e "/^certificate =/ s/=.*$/= \/usr\/share\/euca2ools\/certs\/cert-$AWS_DEFAULT_REGION.pem/" \
+        -e "$ a\verify-ssl = false" \
+        /etc/euca2ools/conf.d/localhost.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ```
+
+2. (CLC): Configure Eucalyptus Region
+
+    ```bash
+    euctl region.region_name=$AWS_DEFAULT_REGION
+
+    euca-describe-regions
+
+    euca-describe-availablity-zones verbose
+    ```
+
+3. (CLC): Configure Eucalyptus Administrator Password
+
+    ```bash
+    euare-usermodloginprofile -u admin -p $EUCA_ADMIN_PASSWORD
+    ```
+
+4. (CLC): Generate Eucalyptus Administrator Certificates
 
     ```bash
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
 
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    euca_conf --get-credentials ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    unzip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-
-    cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc.orig
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    euare-usercreatecert --out ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem \
+                         --keyout ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
     ```
 
-2. (CLC): Define the region
+5. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
 
-    This needs more work - the initial region is localhost, which is defined in /etc/euca2ools/conf.d/localhost as URLs which use http on 127.0.0.1 on port 8773.
-    This command updates the variable, so that euca-describe-regions returns this value, but it has not yet updated DNS or created a region which euca2ools can use.
+    Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
 
     ```bash
-    euctl region.region_name=$AWS_DEFAULT_REGION
+    account_id=$(euare-userlistbypath | grep "user/admin" | cut -d ":" -f5)
+    access_key=$AWS_ACCESS_KEY_ID
+    secret_key=$AWS_SECRET_ACCESS_KEY
+    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
+    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem
+
+    mkdir -p ~/.euca
+    chmod 0700 ~/.euca
+
+    cat << EOF > ~/.euca/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [user $AWS_DEFAULT_REGION-admin]
+    account-id = $account_id
+    key-id = $access_key
+    secret-key = $secret_key
+    private-key = $private_key
+    certificate = $certificate
+
+    EOF
+
+    euca-describe-regions --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
+
+    euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
     ```
 
-3. (CLC): Confirm initial service status
+6. (CLC): Import Support Keypair
+
+    ```bash
+    cat << EOF > ~/.ssh/support_id_rsa
+    -----BEGIN RSA PRIVATE KEY-----
+    Proc-Type: 4,ENCRYPTED
+    DEK-Info: AES-128-CBC,A7E90718BF61C84826297430F36A3092
+
+    ZaLkWHam/D0edJYg+q/cmu7norygv6uhiTMCyYYWQbqAazdcBT6zvpcxmmCbdoeX
+    0FQ0AhM3rD+1/d1e+2nOU0F2SJ9bjfU3FU/MY+OJ5qH5fO6ChMO6H3+x4bQ2knwB
+    oYItOvy9PnFCG58XycCam+q8wV49BXsGaHZtoykzTa7v77cvCKwl29QQRUCgym8G
+    bXrb90n7V3jEWgHEi3rQZ0/8qGvPU8UDNV+8Jiu16j9GNVShP/30W8uqgT0kj1oS
+    TpIFAYQFLW0HlhAmKnqNqqzd2Jet/ebvD3+Om6yIjg6+tncgRjV2kBiIU2WwjJMC
+    rTHG0KpQzbEMTfFA8OGEKK3yVjwE92Ypu2SiitFnVVZMYMm0aHR2/Tx5chjed7rV
+    gVmPApCjNPOhyQFc+f+KpFsIIOjF7LVRRLRVhnYLujyA+an+BWJjHMhMlQ18Ek9u
+    l6b77LoImQIGXq626YSAe9w3rCkOb6CWqMGDKaagvl92N8Topn9W0NXawfbV7ZTM
+    Unvi2sLTgsurQ/JpuS7BKmq8gmmmzm8IqhzGBEE9a5G4zJ3vTjRo2lZ6hRN6ri50
+    pSHDt6m9b0OU6ZV3FerpjIZWigCkI0VWZPQgPJTF0VKdusU7atG7N1fSCc+GBW39
+    opB/mpWghZvI4MLC/5GKG753A2nDYp1K8rBGwXyb27UmZ/6B920cV6L2fqGvyoRO
+    q8sP7zsqtU6U+nmZOeRGOQW/XLKRYDnqe5NCC/8tkpMXNk9PAQP9We1X7kxfAl6B
+    8WAw+IfSVtBRT76TqwMSqmS3BqAehbeGRZQ+JF33cCxd/8DJcLh8ZHKnlO66m6B9
+    K/e2lN+Y6mJCU7g2VSpK6/QzPwYPA63N/CqRoACZw/nQ3T2CBOLK5i7vU57iLHqq
+    dUHSdwKrylyb3QPSkttnD9MIuByPN2ZXZCNOp5gXWC/s1hbdGeX/voHtJl8a7g1Z
+    1keeDuqW95LMJKhKl0CXFznUHF9wQa3vx8nJVl2K/rXUi5tEw7I/0QD+fER3DTmM
+    SYRwinfayzHEUqUCNVEMg/wPfTPPvem07SHPOV8mlVPwusl2RVbHfVg9tTjiB59c
+    sc5oEDv2DkWkV6DLXmGR8RVdzYVE845tiJdsEuH5rL5wZyhcCeTccG2PV7+EXjsf
+    hxaUqOyZ41izsB0CDg+XwTVKfEg/HO9aqldzn1pSLB2ljVLXdA4PzDpFza2Ey7yy
+    d6zyYqGavQ7RXEicv/drdumJI80OwK+BfGw/ex1yjcAQk3jC69Mh3P4ZwVhYBoz1
+    TuwTh9yAwTe0cgoaBtesY/KjZaOdYEAZ5HwzT+ofN/HO6UgutZfPH08foNo1+6Hj
+    uaSvKENpes/4CviPxX6NuUMyy7VAz6vf+naFzvRB0enB9XmmBnjnT1JTXWPHTIdq
+    1rMI8KCvQ0U27KI5bhjYWQOmON0Ai4qfrbtuhQx2sZuU7fM+bqErERVW9gekloX3
+    eWHtsITbrRT16luUcCgnubIXMcRCO2rAgbwF4z5YpshexZFFnbqgxOAJC58gtPAi
+    dKu/FFZMVwFukKFeyf7WvNleTMu9ziOIs71USXBZpHEiWjsJlcpdkE9KYDX9mLu6
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 0600 ~/.ssh/support_id_rsa
+
+    cat << EOF > ~/.ssh/support_id_rsa.pub
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTXOsL3dwPJxQ9GCpS4izXtxwq\
+    tzGw5PCTTVqjy54ZkbmgtqJJTEbT9W4vY6QwuNvsoY7clij7u6Gskfcv93YxMW8c\
+    tXIi89lnMAA3VzehAulYOF21+W3sRLe9nPf52js8Mekhl364udTbHMtnpueHyZvG\
+    pTJmc3CxO2xYdCa0f8wKxOEXOzGY2EcwWurQPu+jLHU6C5LPulcYfLsYHz1fFuDp\
+    8tpVXpHONJwpXLKDoe4iAtkxpKtIZEZEeJNIpuIqiVT8L0uRvYH9Za7yj3Tcxh5r\
+    8uE5v925bxkgHk+Hk95YdnfMqJfG8qGtC3tfE6bTOkweLjmiadY+Qz4QBv67\
+     support@hpcloud.com
+    EOF
+
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+    ```
+
+7. (CLC): Confirm initial service status
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend, 
       objectstorage and storage.
@@ -1489,19 +1575,15 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
 
     euserv-describe-node-controllers
-
-    euca-describe-regions
-
-    euca-describe-availability-zones verbose
     ```
 
-3. (CLC): Load Edge Network JSON configuration
+8. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-4. (CLC): Configure Object Storage to use Walrus Backend
+9. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
     euctl --region @localhost objectstorage.providerclient=walrus
@@ -1517,7 +1599,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-3. (CLC): Configure EBS Storage
+10. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1541,7 +1623,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-7. (CLC): Install the Eucalyptus Service Image
+11. (CLC): Install the Eucalyptus Service Image
 
     Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
@@ -1549,11 +1631,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     esi-install-image --install-default
     ```
 
-    TBD: add step to set key, but have to add step above to import support keypair.
+    Set the Worker KeyPair, allowing use of the support KeyPair for Intance debugging.
 
     ```bash
     euctl services.imaging.worker.keyname=support
     euctl services.loadbalancing.worker.keyname=support
+    euctl services.database.worker.keyname=support
     ```
 
     (Optional) Adjust Worker Instance Types.
@@ -1561,14 +1644,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     euctl services.imaging.worker.instance_type=m1.xlarge
     euctl services.loadbalancing.worker.instance_type=m1.xlarge
+    euctl services.database.worker.instance_type=m1.xlarge
     ```
 
-8. (CLC): Configure DNS
+12. (CLC): Configure DNS
 
-    TBD
-
-
-1. (CLC): Configure Eucalyptus DNS Server (SKIP)
+    (Skip) Configure Eucalyptus DNS Server
 
     ```bash
     euctl dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
@@ -1578,7 +1659,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
     ```
 
-2. (CLC): Configure DNS Timeout and TTL (Optional)
+    (Optional) Configure DNS Timeout and TTL
 
     ```bash
     euctl dns.tcp.timeout_seconds=30
@@ -1586,13 +1667,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl services.loadbalancing.dns_ttl=15
     ```
 
-3. (CLC): Configure DNS Domain
+    Configure DNS Domain
 
     ```bash
     euctl system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-4. (CLC): Configure DNS Sub-Domains
+    Configure DNS Sub-Domains
 
     ```bash
     euctl cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
@@ -1600,7 +1681,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
     ```
 
-5. (CLC): Enable DNS
+    Enable DNS
 
     ```bash
     euctl bootstrap.webservices.use_instance_dns=true
@@ -1608,7 +1689,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl bootstrap.webservices.use_dns_delegation=true
     ```
 
-7. (CLC): Display Parent DNS Server Configuration
+    Display Parent DNS Server Configuration
 
     ```bash
     cat /var/named/private/masters/hp-gol01-d8.mjc.prc.eucalyptus-systems.com.zone
@@ -1656,7 +1737,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     lb                      NS      ns1
     ```
 
-8. (CLC): Confirm DNS resolution for Services
+    Confirm DNS resolution for Services
 
     ```bash
     dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
@@ -1676,10 +1757,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-
------------------ UNSORTED --------
-
-8. (CLC): Confirm service status
+13. (CLC): Confirm service status
 
     All services should now be in the **enabled** state.
 
@@ -1697,32 +1775,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-describe-nodes
 
     euca-describe-instance-types --show-capacity
-    ```
-
-### Configure Minimal IAM
-
-1. (CLC): Configure Eucalyptus Administrator Password
-
-    ```bash
-    euare-usermodloginprofile -u admin -p password
-    ```
-
-### Configure Support-Related Properties
-
-1. (CLC): Create Eucalyptus Administrator Support Keypair
-
-    ```bash
-    euca-create-keypair admin-support | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
-    ```
-
-2. (CLC): Configure Service Instance Login
-
-    ```bash
-    euca-modify-property -p services.database.worker.keyname=admin-support
-
-    euca-modify-property -p services.imaging.worker.keyname=admin-support
-
-    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
     ```
 
 ### Configure SSL Certificates
