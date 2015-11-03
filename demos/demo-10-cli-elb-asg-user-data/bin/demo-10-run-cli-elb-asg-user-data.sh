@@ -1349,7 +1349,7 @@ done
 instance_public_names=${instance_public_names# *}
 
 lb_public_name=$(eulb-describe-lbs --region $user_region | cut -f3)
-lb_public_ip=$(dig +short $lb_name)
+lb_public_ip=$(dig +short $lb_public_name)
 
 clear
 echo

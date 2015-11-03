@@ -158,7 +158,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     the Instance Profile, so these can be passed in as an input parameters.
 
     ```bash
-    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+    image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                     --region $EUCA_USER_REGION | cut -f2)
     account_id=$(euare-usergetattributes --region $EUCA_USER_REGION | grep "^arn" | cut -d ':' -f5)
     instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos \
@@ -354,7 +354,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     the Instance Profile, so these can be passed in as an input parameters.
 
     ```bash
-    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
+    image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                     --region $EUCA_USER_REGION | cut -f2)
     account_id=$(euare-usergetattributes --region $EUCA_USER_REGION | grep "^arn" | cut -d ':' -f5)
     instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos \
@@ -381,7 +381,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
                                       --region $EUCA_USER_REGION \
                                       DemoASG
 
-      euscale-describe-auto-scaling-groups --region $EUCA_USER_REGION DemoASG
+    euscale-describe-auto-scaling-groups --region $EUCA_USER_REGION DemoASG
     ```
 
 17. Trigger AutoScalingGroup Instance Replacement
@@ -429,9 +429,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     instance_public_names=${instance_public_names# *}
 
     lb_public_name=$(eulb-describe-lbs --region $EUCA_USER_REGION | cut -f3)
-    lb_public_ip=$(dig +short $lb_name)
-
-    eulb-describe-instance-health --region $user_region DemoELB"
+    lb_public_ip=$(dig +short $lb_public_name)
 
     for instance_public_name in $instance_public_names; do
         w3m -dump http://$instance_public_name
