@@ -78,7 +78,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This format was constructed by hand to match the existing certificates.
 
     ```bash
-    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
+    cp -a /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+          /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
 
     # Issuer: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
     # Subject: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
@@ -125,6 +128,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Zg+lWqylmGZ/aaG3qEnB1I+q6dUCrKDmxtOk6HAJ6PI=
     -----END CERTIFICATE-----
     EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+       /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.orig
+
+    ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
 5. Configure AWS CLI to support local Eucalyptus region
@@ -139,267 +147,280 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl
     {
-      \"_default\":[
+      "_default":[
         {
-          \"uri\":\"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ],
-          \"properties\": {
-              \"signatureVersion\": \"v4\"
+          "properties": {
+              "signatureVersion": "v4"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"ec2\": [
+      "ec2": [
         {
-          \"uri\":\"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\": [
-            [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
           ]
         }
       ],
-      \"elasticloadbalancing\": [
+      "elasticloadbalancing": [
        {
-        \"uri\":\"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN\",
-        \"constraints\": [
-          [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+        "uri":"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
         ]
        }
       ],
-      \"monitoring\":[
+      "monitoring":[
         {
-          \"uri\":\"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\": [
-           [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
           ]
         }
       ],
-      \"swf\":[
+      "swf":[
        {
-        \"uri\":\"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN\",
-        \"constraints\": [
-         [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+        "uri":"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
         ]
        }
       ],
-      \"iam\":[
+      "iam":[
         {
-          \"uri\":\"https://euare.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"https://euare.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.us-gov.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"us-gov\"]
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
           ]
         },
         {
-          \"uri\":\"https://iam.amazonaws.com\",
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"sdb\":[
+      "sdb":[
         {
-          \"uri\":\"https://sdb.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
           ]
         }
       ],
-      \"sts\":[
+      "sts":[
         {
-          \"uri\":\"https://tokens.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"https://tokens.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.{region}.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"us-gov\"]
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
           ]
         },
         {
-          \"uri\":\"https://sts.amazonaws.com\",
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"s3\":[
+      "s3":[
         {
-          \"uri\":\"{scheme}://s3.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"oneOf\", [\"us-east-1\", null]]
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         },
         {
-          \"uri\":\"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//\",
-          \"constraints\": [
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//",
+          "constraints": [
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3\"
+          "properties": {
+            "signatureVersion": "s3"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\",
-          \"constraints\": [
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3v4\"
+          "properties": {
+            "signatureVersion": "s3v4"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}-{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"oneOf\", [\"us-east-1\", \"ap-northeast-1\", \"sa-east-1\",
-                                 \"ap-southeast-1\", \"ap-southeast-2\", \"us-west-2\",
-                                 \"us-west-1\", \"eu-west-1\", \"us-gov-west-1\",
-                                 \"fips-us-gov-west-1\"]]
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3v4\"
+          "properties": {
+            "signatureVersion": "s3v4"
           }
         }
       ],
-      \"rds\":[
+      "rds":[
         {
-          \"uri\":\"https://rds.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
           ]
         }
       ],
-      \"route53\":[
+      "route53":[
         {
-          \"uri\":\"https://route53.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ]
         }
       ],
-      \"elasticmapreduce\":[
+      "waf":[
         {
-          \"uri\":\"https://elasticmapreduce.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
-          ]
-        },
-        {
-          \"uri\":\"https://elasticmapreduce.eu-central-1.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"eu-central-1\"]
-          ]
-        },
-        {
-          \"uri\":\"https://elasticmapreduce.us-east-1.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"us-east-1\"]
-          ]
-        },
-        {
-          \"uri\":\"https://{region}.elasticmapreduce.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ]
         }
       ],
-      \"sqs\":[
+      "elasticmapreduce":[
         {
-          \"uri\":\"https://queue.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{region}.queue.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
           ]
         },
         {
-          \"uri\":\"https://{region}.queue.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"importexport\": [
+      "sqs":[
         {
-          \"uri\":\"https://importexport.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"cloudfront\":[
+      "importexport": [
         {
-          \"uri\":\"https://cloudfront.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"dynamodb\": [
+      "dynamodb": [
         {
-          \"uri\": \"http://localhost:8000\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"local\"]
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\",
-                \"service\": \"dynamodb\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
             }
           }
         }

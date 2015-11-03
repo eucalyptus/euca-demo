@@ -1590,6 +1590,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl objectstorage.providerclient=walrus
     ```
 
+    Wait for objectstorage service to become **enabled**.
+
+    ```bash
+    sleep 20
+    ```
+
     Optional: Confirm service status.
 
     * The objectstorage service should now be in the **enabled** state.
@@ -1610,13 +1616,21 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl ${EUCA_ZONEA}.storage.blockstoragemanager=das
     euctl ${EUCA_ZONEB}.storage.blockstoragemanager=das
 
+    sleep 10
+
     euctl ${EUCA_ZONEA}.storage.dasdevice=eucalyptus
     euctl ${EUCA_ZONEB}.storage.dasdevice=eucalyptus
     ```
 
+    Wait for storage services to become **enabled**.
+
+    ```bash
+    sleep 20
+    ```
+
     Optional: Confirm service status.
 
-    * The storage service should now be in the **enabled** state.
+    * The storage services should now be in the **enabled** state.
     * All services should be in the **enabled** state except for imagingbackend and
       loadbalancingbackend.
 
@@ -1629,6 +1643,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
     ```bash
+    export S3_URL=http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
     esi-install-image --install-default
     ```
 
@@ -1955,7 +1970,6 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 
 5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
 
-
     ```bash
     cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     -----BEGIN CERTIFICATE-----
@@ -1996,63 +2010,1094 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
-### Configure Management Console for SSL
+### Replace Management Console Nginx Implementation with an Alternative which also supports UFS
 
-1. (MW): Confirm Eucalyptus Console service on default port
+In 4.2, the Eucalyptus Management Console pulls in Nginx along with a configuration file which
+only works with the Management Console using self-signed SSL Certificates. We will replace this
+with an alternate configuration which will support both the Mangement Console and User-Facing
+Services with SSL, using SSL Certificates signed by a local Certification Authority. This
+requires disabling the automatic use of Nginx by the Management Console first, and use of a
+later version of Nginx.
+
+1. (MW): Confirm Default Eucalyptus Console is accessible via default Nginx configuration
+
+    Let's confirm the default configuration works before we replace it.
 
     ```bash
-    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     ```
 
-2. (MC):  4. Stop Eucalyptus Console service
+2. (MC): Disable Default Nginx Implementation
+
+    ```bash
+    sed -i -e "/NGINX_FLAGS=/ s/=/=NO/" /etc/sysconfig/eucaconsole
+    ```
+
+3. (MC): Restart Eucalyptus Console service
 
     ```bash
     service eucaconsole stop
     ```
 
-3. (MC): Install Nginx package
+4. (UFS+MC): Install Nginx yum repository
+
+    We need a later version of Nginx than is currently in EPEL.
+
+    ```bash
+    cat << EOF > /etc/yum.repos.d/nginx.repo
+    [nginx]
+    name=nginx repo
+    baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/
+    priority=1
+    gpgcheck=0
+    enabled=1
+    EOF
+    ```
+
+5. (UFS+MC): Install Nginx
+
+    This is needed for HTTP and HTTPS support running on standard ports
 
     ```bash
     yum install -y nginx
     ```
 
-4. (MC): Configure Nginx
+6. (UFS+MC): Configure Nginx to support virtual hosts
 
     ```bash
-    \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
+    if [ ! -f /etc/nginx/nginx.conf.orig ]; then
+        \cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+    fi
 
-    sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
-           -e "s/# \(ssl_certificate\)/\1/" \
-           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt/" \
-           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key/" /etc/nginx/nginx.conf
+    mkdir -p /etc/nginx/server.d
+
+    sed -i -e '/include.*conf\.d/a\    include /etc/nginx/server.d/*.conf;' \
+           -e '/tcp_nopush/a\\n    server_names_hash_bucket_size 128;' \
+           /etc/nginx/nginx.conf
     ```
 
-7. (MC): Start Nginx service
+7. (UFS+MC): Start Nginx service
+
+    Confirm Nginx is running via a browser:
+    http://$(hostname)/
 
     ```bash
     chkconfig nginx on
+
     service nginx start
     ```
 
-8. (MC): Configure Eucalyptus Console for SSL
+8. (UFS+MC): Configure Nginx Upstream Servers
+
+    Note this file assumes UFS and MC are co-located on the same host, as is the case in this
+    example. If they are split, or multiple copies of one or both exist, this file should be
+    created by hand to reference the appropriate server entries.
 
     ```bash
-    sed -i -e '/^session.secure =/s/= .*$/= true/' \
-           -e '/^session.secure/a\
-    sslcert=/etc/eucaconsole/console.crt\
-    sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
+    cat << EOF > /etc/nginx/conf.d/upstream.conf
+    #
+    # Upstream servers
+    #
+
+    # Eucalytus User-Facing Services
+    upstream ufs {
+        server localhost:8773 max_fails=3 fail_timeout=30s;
+    }
+
+    # Eucalyptus Console
+    upstream console {
+        server localhost:8888 max_fails=3 fail_timeout=30s;
+    }
+    EOF
     ```
 
-9. (MC): Start Eucalyptus Console service
+9. (UFS+MC): Configure Default Server
+
+    We also need to update or create the default home and error pages. Because we are not
+    using the EPEL re-packaging, we do not get what they added in this area, and must
+    create something similar from scratch.
 
     ```bash
-    service eucaconsole start
+    if [ ! -f /etc/nginx/conf.d/default.conf.orig ]; then
+        \cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.orig
+    fi
+
+    cat << EOF > /etc/nginx/conf.d/default.conf
+    #
+    # Default server: http://$(hostname)
+    #
+
+    server {
+        listen       80;
+        server_name  $(hostname);
+
+        root  /usr/share/nginx/html;
+
+        access_log  /var/log/nginx/access.log;
+        error_log   /var/log/nginx/error.log;
+
+        charset  utf-8;
+
+        keepalive_timeout  70;
+
+        location / {
+            index  index.html;
+        }
+
+        error_page  404  /404.html;
+        location = /404.html {
+            root   /usr/share/nginx/html;
+        }
+
+        error_page  500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+
+        location ~ /\.ht {
+            deny  all;
+        }
+    }
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/index.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>Test Page for the Nginx HTTP Server on $(hostname -s)</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+        <body>
+            <h1>Welcome to <strong>nginx</strong> on $(hostname -s)!</h1>
+            <div class=\"content\">
+                <p>This page is used to test the proper operation of the
+                <strong>nginx</strong> HTTP server after it has been
+                installed. If you can read this page, it means that the
+                web server installed at this site is working
+                properly.</p>
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>This is the default <tt>index.html</tt> page that
+                        is distributed with <strong>nginx</strong> on
+                        EPEL.  It is located in
+                        <tt>/usr/share/nginx/html</tt>.</p>
+                        <p>You should now put your content in a location of
+                        your choice and edit the <tt>root</tt> configuration
+                        directive in the <strong>nginx</strong>
+                        configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/404.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>The page is not found</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                h3 {
+                    text-align: center;
+                    background-color: #ff0000;
+                    padding: 0.5em;
+                    color: #fff;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+
+        <body>
+            <h1><strong>nginx error!</strong></h1>
+
+            <div class=\"content\">
+
+                <h3>The page you are looking for is not found.</h3>
+
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>Something has triggered missing webpage on your
+                        website. This is the default 404 error page for
+                        <strong>nginx</strong> that is distributed with
+                        EPEL.  It is located
+                        <tt>/usr/share/nginx/html/404.html</tt></p>
+
+                        <p>You should customize this error page for your own
+                        site or edit the <tt>error_page</tt> directive in
+                        the <strong>nginx</strong> configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/50x.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>The page is temporarily unavailable</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                h3 {
+                    text-align: center;
+                    background-color: #ff0000;
+                    padding: 0.5em;
+                    color: #fff;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+
+        <body>
+            <h1><strong>nginx error!</strong></h1>
+
+            <div class=\"content\">
+
+                <h3>The page you are looking for is temporarily unavailable.  Please try again later.</h3>
+
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>Something has triggered an error on your
+                        website.  This is the default error page for
+                        <strong>nginx</strong> that is distributed with
+                        EPEL.  It is located
+                        <tt>/usr/share/nginx/html/50x.html</tt></p>
+
+                        <p>You should customize this error page for your own
+                        site or edit the <tt>error_page</tt> directive in
+                        the <strong>nginx</strong> configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
     ```
 
-10. (MC): Confirm Eucalyptus Console service
+10. (UFS+MC): Restart Nginx service
+
+    Confirm Nginx is running via a browser:
+    http://$(hostname)/
 
     ```bash
-    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    service nginx restart
+    ```
+
+11. (UFS): Configure Eucalyptus User-Facing Services Reverse Proxy Server
+
+    This server will proxy all API URLs via standard HTTP and HTTPS ports.
+
+    ```bash
+    cat << EOF > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    #
+    # Eucalyptus User-Facing Services
+    #
+
+    server {
+        listen       80  default_server;
+        listen       443 default_server ssl;
+        server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+
+        access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
+        error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+
+        charset  utf-8;
+
+        ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+
+        keepalive_timeout  70;
+        client_max_body_size 100M;
+        client_body_buffer_size 128K;
+
+        location / {
+            proxy_pass            http://ufs;
+            proxy_redirect        default;
+            proxy_next_upstream   error timeout invalid_header http_500;
+            proxy_connect_timeout 30;
+            proxy_send_timeout    90;
+            proxy_read_timeout    90;
+
+            proxy_http_version    1.1;
+
+            proxy_buffering       on;
+            proxy_buffer_size     128K;
+            proxy_buffers         4 256K;
+            proxy_busy_buffers_size 256K;
+            proxy_temp_file_write_size 512K;
+
+            proxy_set_header      Host \$host;
+            proxy_set_header      X-Real-IP  \$remote_addr;
+            proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header      X-Forwarded-Proto \$scheme;
+        }
+    }
+    EOF
+
+    chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    ```
+
+12. (UFS): Restart Nginx service
+
+    Confirm Eucalyptus User-Facing Services are running via a browser:
+    http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+
+    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
+    if working correctly
+
+    ```bash
+    service nginx restart
+    ```
+
+13. (MC): Configure Eucalyptus Console Reverse Proxy Server
+
+    This server will proxy the console via standard HTTP and HTTPS ports
+
+    Requests which use HTTP are immediately rerouted to use HTTPS
+
+    Once proxy is configured, configure the console to expect HTTPS
+
+    ```bash
+    cat << EOF > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    #
+    # Eucalyptus Console
+    #
+
+    server {
+        listen       80;
+        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        return       301 https://\$server_name\$request_uri;
+    }
+
+    server {
+        listen       443 ssl;
+        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+
+        access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
+        error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+
+        charset  utf-8;
+
+        ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+
+        keepalive_timeout  70;
+        client_max_body_size 100M;
+        client_body_buffer_size 128K;
+
+        location / {
+            proxy_pass            http://console;
+            proxy_redirect        default;
+            proxy_next_upstream   error timeout invalid_header http_500;
+
+            proxy_connect_timeout 30;
+            proxy_send_timeout    90;
+            proxy_read_timeout    90;
+
+            proxy_buffering       on;
+            proxy_buffer_size     128K;
+            proxy_buffers         4 256K;
+            proxy_busy_buffers_size 256K;
+            proxy_temp_file_write_size 512K;
+
+            proxy_set_header      Host \$host;
+            proxy_set_header      X-Real-IP  \$remote_addr;
+            proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header      X-Forwarded-Proto \$scheme;
+        }
+    }
+    EOF
+
+    chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+
+    sed -i -e "/^session.secure =/s/= .*$/= true/" \
+           -e "/^session.secure/a\
+    sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
+    sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
+    ```
+
+14. (MC): Restart Nginx and Eucalyptus Console services
+
+    Confirm Eucalyptus Console is running via a browser:
+    http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+
+    ```bash
+    service nginx restart
+
+    service eucaconsole restart
+    ```
+
+### Configure AWSCLI
+
+This installs and configures AWS CLI to work with this region directly on the CLC. Apparently this is
+currently an unsupported configuration without the use of Python virtual environments as pip updates
+some of the python modules used by Eucalyptus, and this has not been tested. I haven't found this to 
+cause any problems so far, but use at your own risk.
+
+To be safe, you might want to skip the installation of AWS CLI on the CLC+MC, and install it only on
+a separate management workstation, or set this up within a Python virtual environment, either of which
+would be supported configurations.
+
+1. (CLC): Install and Update Python Pip
+
+    This step assumes the EPEL repo has been configured.
+
+    ```bash
+    yum install -y python-pip
+
+    pip install --update pip
+    ```
+
+2. (CLC): Install AWSCLI
+
+    ```bash
+    pip install awscli
+    ```
+
+3. (CLC+MC): Fix Broken Python Dependencies
+
+    When awscli is installed by pip on the same host as the Management Console, it breaks the Console
+    due to updated python dependencies which AWSCLI doesn't appear to need, but which Management Console
+    can't use. We will reverse these changes so that Eucalyptus Console works again as before.
+
+    ```bash
+    pip uninstall boto
+    yum downgrade ftp://bo.mirror.garr.it/pub/1/slc/rhcommon/slc6X/x86_64/RPMS/python-boto-2.34.0-5.el6.noarch.rpm
+    ```
+
+4. (CLC): Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
+
+    We will use the Helion Eucalyptus Development Root Certification Authority to sign SSL
+    certificates. Certificates issued by this CA are not trusted by default.
+
+    We must add this CA cert to the trusted root certificate authorities used by botocore on all
+    clients where AWSCLI is run.
+
+    This format was constructed by hand to match the existing certificates.
+
+    ```bash
+    cp -a /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+          /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    # Issuer: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
+    # Subject: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
+    # Label: "Helion Eucalyptus Development Root Certification Authority"
+    # Serial: 0
+    # MD5 Fingerprint: 95:b3:42:d3:1d:78:05:3a:17:c3:01:47:24:df:ce:12
+    # SHA1 Fingerprint: 75:76:2a:df:a3:97:e8:c8:2f:0a:60:d7:4a:a1:94:ac:8e:a9:e9:3B
+    # SHA256 Fingerprint: 3a:8f:d3:c6:7d:f2:f2:54:5c:50:50:5f:d5:5a:a6:12:73:67:96:b3:6c:9a:5b:91:23:11:81:27:67:0c:a5:fd
+    -----BEGIN CERTIFICATE-----
+    MIIGfDCCBGSgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+    SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+    bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+    Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTA0MjAyMzI2MzNaFw0y
+    NTA0MTcyMzI2MzNaMIG6MQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+    YTEPMA0GA1UEBwwGR29sZXRhMRgwFgYDVQQKDA9IZXdsZXR0LVBhY2thcmQxJjAk
+    BgNVBAsMHUhlbGlvbiBFdWNhbHlwdHVzIERldmVsb3BtZW50MUMwQQYDVQQDDDpI
+    ZWxpb24gRXVjYWx5cHR1cyBEZXZlbG9wbWVudCBSb290IENlcnRpZmljYXRpb24g
+    QXV0aG9yaXR5MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzTy4eoFV
+    BNQYawVhvzZ2rawfV6+oOOr6bNfg8K+TV3faLBXicN1q2XIMuGh2DGMNe0kPskku
+    Tn1kk1SMatC8FtrwNQZRlZCqYQP2PC3jabOawo4yJU+3AMMvR+j33MSDY4Tm2uuh
+    lwXKzxDgMadpRTxDSbMmBQXqHTAPubIOTM4Nu8LEUiNmTv4tvUJjRxYqTYfbsSUd
+    Ox8cvQKr4k/R/kuxD6iwTwdyZ227oXqSv/cQC+7lcyCuq+7+ergbmz52uzAD0klL
+    GLxeFpNLk+WcL6LV/KlTBPuMmIlT/ZsJ9plHsNB6lVWXsacVSG2jHQhylLu32rvT
+    47D1AXCvIDQeMxzLvJeLQoUM7XXV/oAMZww6b4aXTsFl07avEE7u7I6vNSqiRWtn
+    23DuiD6QExSWiwDUEzj0DxCsU366jiHw7j5fgjg3k7TNIKn3oTYnx8WFJMH7/DPc
+    HwZ7zOYj3hzCASy2ROqV4/K8mniicQHWpfrvgX980EWsrgNlgDbPCBXBqKwCp5I9
+    WDCjx7IDtY3peDfa8+rKzWCE+cwjH7v+1avm16Y/rq4cuP/uUazbT3HtEPbAZHvb
+    qAwace0g57w1Yckk3WtzbaQqI+rkV503HT7DCNDZ+MryuWxSU8+xSHUdKsEmPpr1
+    ejMcYAEjdau1x5+jMgpBMN2opZZfmWoNWRsCAwEAAaOBijCBhzAdBgNVHQ4EFgQU
+    NkKFNpC6OqbkLgVZoFATE+TS21gwHwYDVR0jBBgwFoAUNkKFNpC6OqbkLgVZoFAT
+    E+TS21gwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwEQYJYIZIAYb4QgEB
+    BAQDAgEGMAkGA1UdEQQCMAAwCQYDVR0SBAIwADANBgkqhkiG9w0BAQsFAAOCAgEA
+    OBZU/IohiseYPFFhhvUfKyCvoAlb2tx9jL0UxQifgd02G3wyWOa5q0sRVGynd/qa
+    jjTkw0DN/9gt8dQIUU1XdfJ+KT8sfTd6z4/w/yqU6uJ3EvCTV3+G67W9UOtyJqub
+    sdCYP24v2uZdF4WLU6Gacq2C/oL0yAngXcEdEC8uwo62WKJftN+AiV7YByWyrX4d
+    vaNjxoa/ZF2sXPeY76ZliprgG4xEe9v0SdE7qU8wVlDVc8DtdUkAyosc38HynizI
+    kCxPZKgyn+doBXNwMPeq/yyeWjt7av9MozBSgdUhnpHWbmPTouBc+8p58wiolBap
+    oMHur98tQYDpwTYwPXL9gQ6V22GaKjJmMGZ8S9pNGhUeHzLVyaFiLBeKh1am7HiX
+    wzoERgKZX8Pcs/Rk6/Z0IK1AG7aOHTrE9jrmFNHWDqme0Y7sIRukkd88JgthRRZD
+    zq/GCP6kaAclH4Cm6bgeXw7TvEv2B7ocoBoWhV3cqnNJbujB66H59ItCfG9xG3j8
+    qkU3RQU7V9UDb/2+anPE+w/SukYILKHT9GCqsyC3Afc855ugPhXC7EMMyd+Xp88M
+    Hx6H/MmbW0Pe72Fs27ipgJrEzRXd5FHIzpj2qug9SHEw3d7H7LrqDYs6eA07oL8I
+    Zg+lWqylmGZ/aaG3qEnB1I+q6dUCrKDmxtOk6HAJ6PI=
+    -----END CERTIFICATE-----
+    EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+       /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.orig
+
+    ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
+    ```
+
+5. (CLC): Configure AWS CLI to support local Eucalyptus region
+
+    This creates a modified version of the _endpoints.json file which the botocore Python module
+    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region endpoints.
+
+    We rename the original _endpoints.json file with the .orig extension, so we can diff for
+    changes if we need to update in the future against a new _endpoints.json, then create a
+    symlink with the original name pointing to our new SSL version.
+
+    ```bash
+    cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl
+    {
+      "_default":[
+        {
+          "uri":"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+              "signatureVersion": "v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "ec2": [
+        {
+          "uri":"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "elasticloadbalancing": [
+       {
+        "uri":"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "monitoring":[
+        {
+          "uri":"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "swf":[
+       {
+        "uri":"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "iam":[
+        {
+          "uri":"https://euare.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "sdb":[
+        {
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "sts":[
+        {
+          "uri":"https://tokens.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "s3":[
+        {
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        },
+        {
+          "uri":"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//",
+          "constraints": [
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        }
+      ],
+      "rds":[
+        {
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "route53":[
+        {
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "waf":[
+        {
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "elasticmapreduce":[
+        {
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "sqs":[
+        {
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "importexport": [
+        {
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "dynamodb": [
+        {
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
+            }
+          }
+        }
+      ]
+    }
+    EOF
+
+    mv _endpoints.json _endpoints.json.orig
+
+    ln -s _endoints.json.local.ssl _endpoints.json
+    ```
+
+6. (CLC): Configure Default AWS credentials
+
+    This configures the Eucalyptus Administrator as the default and an explicit profile.
+
+    This step assumes the AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables are still
+    set to the Eucalyptus Administrator from a prior call to "eval $(clcadmin-assume-system-credentials)".
+
+    ```bash
+    mkdir -p ~/.aws
+
+    # cat << EOF > ~/.aws/config
+    #
+    # AWS Config file
+    #
+
+    [default]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    [profile-$AWS_DEFAULT_REGION-admin]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    EOF
+
+    cat << EOF > ~/.aws/credentials
+    #
+    # AWS Credentials file
+    #
+
+    [default]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    [$AWS_DEFAULT_REGION-admin]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    EOF
+
+    chmod -R og-rwx ~/.aws
+    ```
+
+7. (CLC): Test AWSCLI
+
+    ```bash
+    aws ec2 describe-key-pairs
+
+    aws ec2 describe-key-pairs --profile=defaults
+
+    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
     ```
 
 ### Configure for Demos
