@@ -1484,7 +1484,32 @@ ns1.mjc.prc.eucalyptus-systems.com.
                          --keyout ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
     ```
 
-5. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
+5. (CLC): Generate Eucalyptus Administrator Credentials File
+
+    This is only needed for reference by the AWS_CREDENTIALS_FILE environment variable, which
+    itself is only needed when you want to use both Euca2ools and AWSCLI in parallel.
+
+    There is currently a conflict between a Euca2ools extension to the semantics of the
+    AWS_DEFAULT_REGION environment variable, where Euca2ools requires the "USER@" prefix to the
+    REGION value to pass such USER information via the environment, but when this prefix is
+    present it breaks AWSCLI, which uses AWS_DEFAULT_REGION and does not expect this prefix.
+
+    As a workaround, we can restrict the AWS_DEFAULT_REGION environment variable to the original
+    AWS semantics where only the REGION is present, and pass the USER into Euca2ools via the
+    AWS_DEFAULT_CREDENTIALS environment variable, which Euca2ools still recognizes but which
+    is no longer recognized by AWS CLI. 
+
+    ```bash
+    access_key=$AWS_ACCESS_KEY_ID
+    secret_key=$AWS_SECRET_ACCESS_KEY
+
+    cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    AWSAccessKeyId=$access_key
+    AWSSecretKey=$secret_key
+    EOF
+    ```
+
+6. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
 
     Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
 
@@ -1515,7 +1540,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
     ```
 
-6. (CLC): Import Support Keypair
+7. (CLC): Import Support Keypair
 
     ```bash
     cat << EOF > ~/.ssh/support_id_rsa
@@ -1566,7 +1591,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
     ```
 
-7. (CLC): Confirm initial service status
+8. (CLC): Confirm initial service status
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend, 
       objectstorage and storage.
@@ -1578,13 +1603,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-node-controllers
     ```
 
-8. (CLC): Load Edge Network JSON configuration
+9. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-9. (CLC): Configure Object Storage to use Walrus Backend
+10. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
     euctl objectstorage.providerclient=walrus
@@ -1606,7 +1631,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-10. (CLC): Configure EBS Storage for DAS storage mode
+11. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1638,7 +1663,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-11. (CLC): Install the Eucalyptus Service Image
+12. (CLC): Install and Initialize the Eucalyptus Service Image
 
     Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
@@ -1663,9 +1688,17 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euctl services.database.worker.instance_type=m1.small
     ```
 
-12. (CLC): Configure DNS
+    Start the Imaging Worker Instance.
+
+    ```bash
+    esi-manage-stack -a create imaging
+    ```
+
+13. (CLC): Configure DNS
 
     (Skip) Configure Eucalyptus DNS Server
+
+    Not sure if this does anything more than provide documentation.
 
     ```bash
     euctl dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
@@ -1773,7 +1806,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-13. (CLC): Confirm service status
+14. (CLC): Confirm service status
 
     All services should now be in the **enabled** state.
 
@@ -1781,7 +1814,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-9. (CLC): Confirm apis
+15. (CLC): Confirm apis
 
     ```bash
     euca-describe-regions
@@ -2037,7 +2070,7 @@ later version of Nginx.
 3. (MC): Restart Eucalyptus Console service
 
     ```bash
-    service eucaconsole stop
+    service eucaconsole restart
     ```
 
 4. (UFS+MC): Install Nginx yum repository
@@ -2661,7 +2694,7 @@ would be supported configurations.
     ```bash
     yum install -y python-pip
 
-    pip install --update pip
+    pip install --upgrade pip
     ```
 
 2. (CLC): Install AWSCLI
@@ -2676,9 +2709,12 @@ would be supported configurations.
     due to updated python dependencies which AWSCLI doesn't appear to need, but which Management Console
     can't use. We will reverse these changes so that Eucalyptus Console works again as before.
 
+    These broken dependencies may vary over time. To discover what may be broken, run eucaconsole
+    directly on the command line and note any errors.
+
     ```bash
-    pip uninstall boto
-    yum downgrade ftp://bo.mirror.garr.it/pub/1/slc/rhcommon/slc6X/x86_64/RPMS/python-boto-2.34.0-5.el6.noarch.rpm
+    pip uninstall -y python-dateutil
+    yum reinstall -y python-dateutil
     ```
 
 4. (CLC): Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
@@ -3042,9 +3078,10 @@ would be supported configurations.
     }
     EOF
 
-    mv _endpoints.json _endpoints.json.orig
+    mv /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json \
+       /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.orig
 
-    ln -s _endoints.json.local.ssl _endpoints.json
+    ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
     ```
 
 6. (CLC): Configure Default AWS credentials
@@ -3057,7 +3094,7 @@ would be supported configurations.
     ```bash
     mkdir -p ~/.aws
 
-    # cat << EOF > ~/.aws/config
+    cat << EOF > ~/.aws/config
     #
     # AWS Config file
     #
@@ -3102,100 +3139,5 @@ would be supported configurations.
 
 ### Configure for Demos
 
-There are scripts within this git project which can be used to configure a new Eucalyptus region for use in
-demos. These are useful for any system, as they indicate the type of setup usually needed to prepare any
-system for use by users.
-
-1. (CLC): Initialize Demo Account 
-
-    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>` 
-    parameter to create additional accounts. Without this parameter, the default demo account
-    is named "demo", and that will be used here.
-
-    ```bash
-    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
-    ```
-
-2. (CLC): Initiali Demo Account Dependencies.sh
-
-    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
-    parameter to create dependencies in additional accounts created for demo purposes with the
-    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
-    is named "demo", and that will be used here.
-
-    ```bash
-    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
-    ```
-
-### Test Inter-Component Connectivity
-
-This section has not yet been confirmed for accuracy. Running this is fine, but there may be
-additonal ports we should add to ensure complete interconnectivity testing.
-
-1. (MW): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
-
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-    ```
-
-2. (CLC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-    nc -z ${EUCA_CC_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
-    ```
-
-3. (UFS): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-    ```
-
-4. (OSP): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-    ```
-
-5. (CC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_NC1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
-    nc -z ${EUCA_NC2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
-    ```
-
-6. (SC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
-    ```
-
-7. (NC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-    nc -z ${EUCA_SC_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
-    ```
-
-8. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
-    on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
-    available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
-    UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
-    TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
+Continue with the Demo initialization scripts.
 
