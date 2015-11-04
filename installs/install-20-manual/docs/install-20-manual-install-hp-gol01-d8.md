@@ -3103,7 +3103,7 @@ would be supported configurations.
     region = $AWS_DEFAULT_REGION
     output = text
 
-    [profile-$AWS_DEFAULT_REGION-admin]
+    [profile $AWS_DEFAULT_REGION-admin]
     region = $AWS_DEFAULT_REGION
     output = text
 
@@ -3132,7 +3132,7 @@ would be supported configurations.
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=defaults
+    aws ec2 describe-key-pairs --profile=default
 
     aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
     ```
