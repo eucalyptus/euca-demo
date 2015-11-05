@@ -24,10 +24,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-admin
-    export AWS_CREDENTIAL_FILE=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-d8
+    export USER=admin
+
+    export USER_REGION=$REGION-$USER@$REGION
+    export PROFILE=$REGION-$USER
     ```
 
 ### Initialize Demos
@@ -39,15 +41,19 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     We will programatically construct the service endpoint URLs, assuming the SSL reverse proxy is in place.
 
     ```bash
-    autoscaling_url=https://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/AutoScaling
-    cloudformation_url=https://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/CloudFormation
-    ec2_url=https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/compute
-    elasticloadbalancing_url=https://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/LoadBalancing
-    iam_url=https://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/Euare
-    monitoring_url=https://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/CloudWatch
-    s3_url=https://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/objectstorage
-    sts_url=https://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/Tokens
-    swf_url=https://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/services/SimpleWorkflow
+    autoscaling_url=https://autoscaling.$REGION.$DOMAIN/services/AutoScaling/
+    cloudformation_url=https://cloudformation.$REGION.$DOMAIN/services/CloudFormation/
+    ec2_url=https://compute.$REGION.$DOMAIN/services/compute/
+    elasticloadbalancing_url=https://loadbalancing.$REGION.$DOMAIN/services/LoadBalancing/
+    iam_url=https://euare.$REGION.$DOMAIN/services/Euare/
+    monitoring_url=https://cloudwatch.$REGION.$DOMAIN/services/CloudWatch/
+    s3_url=https://objectstorage.$REGION.$DOMAIN/services/objectstorage/
+    sts_url=https://tokens.$REGION.$DOMAIN/services/Tokens/
+    swf_url=https://simpleworkflow.$REGION.$DOMAIN/services/SimpleWorkflow/
+
+    bootstrap-url = https://bootstrap.$REGION.$DOMAIN/services/Empyrean/
+    properties-url = https://properties.$REGION.$DOMAIN/services/Properties/
+    reporting-url = https://reporting.$REGION.$DOMAIN/services/Reporting/
 
     mkdir -p ~/.euca
     chmod 0700 ~/.euca
@@ -56,70 +62,71 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     ; Eucalyptus Global
 
     [global]
-    region = $AWS_DEFAULT_REGION
+    region = $REGION
 
     EOF
 
-    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
-    ; Eucalyptus Region $AWS_DEFAULT_REGION
+    cat << EOF > /etc/euca2ools/conf.d/$REGION.ini
+    ; Eucalyptus Region $REGION
 
-    [region $AWS_DEFAULT_REGION]
+    [region $REGION]
     autoscaling-url = $autoscaling_url
     cloudformation-url = $cloudformation_url
     ec2-url = $ec2_url
     elasticloadbalancing-url = $elasticloadbalancing_url
     iam-url = $iam_url
-    monitoring-url $monitoring_url
+    monitoring-url = $monitoring_url
     s3-url = $s3_url
     sts-url = $sts_url
     swf-url = $swf_url
-    user = $region-admin
 
-    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
-    verify-ssl = false
+    bootstrap-url = $bootstrap_url
+    properties-url = $properties_url
+    reporting-url = $reporting_url
+    user = $REGION-admin
+
+    certificate = /usr/share/euca2ools/certs/cert-$REGION.pem
+    verify-ssl = true
 
     EOF
 
-    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
-    chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$REGION.pem
+    chmod 0644 /usr/share/euca2ools/certs/cert-$REGION.pem
     ```
 
 3. Initialize Eucalyptus Administrator Euca2ools Profile
 
-    Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
+    This allows the Demo Account Administrator to run API commands via Euca2ools.
 
     ```bash
-    account_id=$(sed -n -e "s/export EC2_ACCOUNT_NUMBER='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-    access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-    secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
-    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/$(sed -n -e "s/export EC2_CERT=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc)
+    access_key=$(clcadmin-assume-system-credentials | sed -n -e 's/export AWS_ACCESS_KEY="\(.*\)";$/\1/p')
+    secret_key=$(clcadmin-assume-system-credentials | sed -n -e 's/export AWS_SECRET_KEY="\(.*\)";$/\1/p')
+    account_id=$(euare-accountlist --access-key-id $access_key --secret-key $secret_key \
+                                   --region $REGION | grep "^demo" | cut -f2)
 
-    cat << EOF > ~/.euca/$AWS_DEFAULT_REGION.ini
-    ; Eucalyptus Region $AWS_DEFAULT_REGION
+    private_key=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-pk.pem
+    certificate=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-cert.pem
 
-    [user $AWS_DEFAULT_REGION-admin]
-    account-id = $account_id
+    cat << EOF > ~/.euca/$REGION.ini
+    ; Eucalyptus Region $REGION
+
+    [user $REGION-admin]
     key-id = $access_key
     secret-key = $secret_key
+    account-id = $account_id
     private-key = $private_key
     certificate = $certificate
 
     EOF
 
-    euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
+    euca-describe-availability-zones verbose --region $USER_REGION
     ```
 
 4. Create Eucalyptus Administrator AWSCLI Profile
 
-    This assumes the AWSCLI was installed and configured with Eucalyptus endpoints via separate instructions.
-
-    Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
+    This allows the Demo Account Administrator to run API commands via AWSCLI.
 
     ```bash
-    access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
-    secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$AWS_DEFAULT_REGION/demo/admin/eucarc)
-
     mkdir -p ~/.aws
     chmod 0700 ~/.aws
 
@@ -129,11 +136,11 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     #
 
     [default]
-    region = $AWS_DEFAULT_REGION
+    region = $REGION
     output = text
 
-    [profile $AWS_DEFAULT_REGION-admin]
-    region = $AWS_DEFAULT_REGION
+    [profile $REGION-admin]
+    region = $REGION
     output = text
 
     EOF
@@ -147,15 +154,15 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     aws_access_key_id = $access_key
     aws_secret_access_key = $secret_key
 
-    [$AWS_DEFAULT_REGION-admin]
+    [$REGION-admin]
     aws_access_key_id = $access_key
     aws_secret_access_key = $secret_key
 
     EOF
 
-    aws ec2 describe-availability-zones --profile default --region $AWS_DEFAULT_REGION
+    aws ec2 describe-availability-zones --profile default --region $REGION
 
-    aws ec2 describe-availability-zones --profile $AWS_DEFAULT_REGION-admin --region $AWS_DEFAULT_REGION
+    aws ec2 describe-availability-zones --profile $PROFILE --region $REGION
     ```
 
 5. Import Eucalyptus Administrator Demo Keypair
@@ -200,10 +207,10 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     RTtDq6S6LCg+wDBLMbudVfJrRvItOLmrImMG6mvRKeZ7uTF5TRF5lYRWPlOkjqOa\
     92kzHFiFilkEaJhiBZZeFXLHQezA/zxK1+TFqFyz4wDhwS2OkJHB6o1vQLZrr+Rs\
     vaYlq+3EkLG/UgME843rOzUqgwSnlCSDS27HnbtAF0iqaU5tmZYpw3ex7yCT\
-    demo@hpcloud.com
+     demo@hpcloud.com
     EOF
 
-    euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo
+    euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub --region $USER_REGION demo
     ```
 
 6. Create sample-templates Bucket
@@ -211,7 +218,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     This bucket is intended for Sample CloudFormation Templates.
 
     ```bash
-    aws s3api create-bucket --bucket sample-templates --acl public-read --profile $AWS_DEFAULT_REGION-admin --region=$AWS_DEFAULT_REGION
+    aws s3api create-bucket --bucket sample-templates --acl public-read --profile $PROFILE --region=$REGION
     ```
 
 7. Download Demo Generic Image (CentOS 6.6)
@@ -231,8 +238,13 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 8. Install Demo Generic Image
 
     ```bash
-    euca-install-image -n centos66 -b images -r x86_64 -i /var/tmp/CentOS-6-x86_64-GenericCloud.raw \
-                       --virtualization-type hvm
+    euca-install-image --name centos66 \
+                       --description "Centos 6 Generic Cloud Image" \
+                       --bucket images \
+                       --arch x86_64 \
+                       --image /var/tmp/CentOS-6-x86_64-GenericCloud.raw \
+                       --virtualization-type hvm \
+                       --region $USER_REGION
     ```
 
 9. Download Demo CFN + AWSCLI Image (CentOS 6.6)
@@ -240,7 +252,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     This is a Generic Cloud Image modified to add CFN tools and AWSCLI.
 
     ```bash
-    wget http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz \
+    wget http://images-euca.s3-website-us-east-1.amazonaws.com/CentOS-6-x86_64-CFN-AWSCLI.raw.xz \
          -O /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw.xz
 
     xz -v -d /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw.xz
@@ -249,37 +261,42 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 10. Install Demo CFN + AWSCLI Image
 
     ```bash
-    euca-install-image -n centos66-cfn-init -b images -r x86_64 -i /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw \
-                       --virtualization-type hvm
+    euca-install-image --name centos66-cfn-init \
+                       --description "Centos 6 Cloud Image with CloudFormation and AWSCLI" \
+                       --bucket images \
+                       --arch x86_64 \
+                       --image /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw \
+                       --virtualization-type hvm \
+                       --region $USER_REGION
     ```
 
 11. Modify an Instance Type
 
-    Change the m1.small instance type to use 1GB memory and 10GB disk, as the default CentOS
+    Change the m1.small instance type to use 1GB memory and 8GB disk, as the default CentOS
     cloud image requires this additional memory and disk to run.
 
     ```bash
-    euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small
+    euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small
     ```
 
 12. List Demo Resources
 
     ```bash
-    euca-describe-keypairs
+    euca-describe-keypairs --region $USER_REGION
 
-    euca-describe-images
+    euca-describe-images --region $USER_REGION
 
-    euca-describe-instance-types
+    euca-describe-instance-types --region $USER_REGION
     ```
 
 13. Display Euca2ools Configuration
 
     ```bash
-    cat /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    cat /etc/euca2ools/conf.d/$REGION.ini
 
     cat ~/.euca/global.ini
 
-    cat ~/.euca/$AWS_DEFAULT_REGION.ini
+    cat ~/.euca/$REGION.ini
     ```
 
 14. Display AWSCLI Configuration
