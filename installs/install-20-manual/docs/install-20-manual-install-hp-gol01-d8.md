@@ -229,16 +229,13 @@ process, not currently available for this host.
         echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
         echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
     fi
+
+    source /etc/profile.d/local.sh
     ```
 
-    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
-    and profile.
+    Adjust user profile to set default Eucalyptus region and profile.
 
     ```bash
-    if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
-        sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
-    fi
-
     if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
@@ -261,14 +258,6 @@ process, not currently available for this host.
 
         git clone https://github.com/eucalyptus/euca-demo.git
     fi
-    ```
-
-6. (All) Refresh Profile
-
-    The easiest way to do this is simply to log out, then log back in.
-
-    ```bash
-    exit
     ```
 
 ### Initialize External DNS
@@ -1352,10 +1341,21 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-register-service -t walrusbackend -h ${EUCA_OSP_PRIVATE_IP} walrus
     ```
 
-    Wait for service to become **enabled**.
+    Wait for walrusbackend service to become **enabled**.
 
     ```bash
     sleep 30
+    ```
+
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
+    * The walrusbackend service should now be listed.
+    * The cluster and storage services should not yet be listed.
+
+    ```bash
+    euserv-describe-services
     ```
 
 3. (CLC): Register Cluster Controller services
@@ -1380,6 +1380,17 @@ ns1.mjc.prc.eucalyptus-systems.com.
     sleep 30
     ```
 
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
+    * The cluster service should now be listed.
+    * The storage services should not yet be listed.
+
+    ```bash
+    euserv-describe-services
+    ```
+
 4. (CLC): Register Storage Controller services
 
     Copy Encryption Keys. This is not needed in this example as each SC is coresident on the same host as the CC.
@@ -1396,10 +1407,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-register-service -t storage -h ${EUCA_SCB_PRIVATE_IP} -z ${EUCA_ZONEB} ${EUCA_ZONEB_SC_NAME}
     ```
 
-    Wait for services to become **broken**.
+    Wait for storage services to become **broken**.
 
     ```bash
     sleep 30
+    ```
+
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend,
+      objectstorage and storage.
+    * The storage services should now be listed.
+
+    ```bash
+    euserv-describe-services
     ```
 
 5. (CCA): Register Node Controller host(s) associated with Cluster 1
@@ -1451,12 +1472,28 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
 
-    sed -e "s/(all user services on localhost)/Region $AWS_DEFAULT_REGION/g" \
-        -e "s/region localhost/region $AWS_DEFAULT_REGION/g" \
-        -e "s/127.0.0.1/$EUCA_UFS_PUBLIC_IP/g" \
-        -e "/^certificate =/ s/=.*$/= \/usr\/share\/euca2ools\/certs\/cert-$AWS_DEFAULT_REGION.pem/" \
-        -e "$ a\verify-ssl = false" \
-        /etc/euca2ools/conf.d/localhost.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling/
+    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation/
+    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute/
+    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing/
+    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare/
+    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch/
+    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage/
+    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens/
+    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow/
+
+    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Empyrean/
+    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Properties/
+    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Reporting/
+
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = false
+    user = $AWS_DEFAULT_REGION-admin
+    EOF
     ```
 
 2. (CLC): Configure Eucalyptus Region
@@ -1472,10 +1509,10 @@ ns1.mjc.prc.eucalyptus-systems.com.
 3. (CLC): Configure Eucalyptus Administrator Password
 
     ```bash
-    euare-usermodloginprofile -u admin -p $EUCA_ADMIN_PASSWORD
+    euare-usermodloginprofile --password $EUCA_ADMIN_PASSWORD admin
     ```
 
-4. (CLC): Generate Eucalyptus Administrator Certificates
+4. (CLC): Create Eucalyptus Administrator Certificates
 
     ```bash
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
@@ -1694,6 +1731,24 @@ ns1.mjc.prc.eucalyptus-systems.com.
     esi-manage-stack -a create imaging
     ```
 
+    Wait for imaging and loadbalancing services to become **enabled**. The imagingbackend service may at
+    first appear enabled, then switch to **notready** until the imaging worker created by the last statement
+    is stable. Continue to wait until all services are enabled.
+
+    ```bash
+    sleep 20
+    ```
+
+    Optional: Confirm service status.
+
+    * The imaging, imagingbackend, loadbalanging and loadbalancingbackend services should now be in the
+      **enabled** state.
+    * All services should now be listed and in the **enabled** state.
+
+    ```bash
+    euserv-describe-services
+    ```
+
 13. (CLC): Configure DNS
 
     (Skip) Configure Eucalyptus DNS Server
@@ -1781,6 +1836,10 @@ ns1.mjc.prc.eucalyptus-systems.com.
     loadbalancing           A       10.104.10.83
     objectstorage           A       10.104.10.83
     tokens                  A       10.104.10.83
+    simpleworkflow          A       10.104.10.83
+    bootstrap               A       10.104.10.83
+    properties              A       10.104.10.83
+    reporting               A       10.104.10.83
 
     vm                      NS      ns1
     lb                      NS      ns1
@@ -1789,13 +1848,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     Confirm DNS resolution for Services
 
     ```bash
-    dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-
-    dig +short objectstorage.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-
-    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-
-    dig +short tokens.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short console.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
     dig +short autoscaling.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
@@ -1803,12 +1856,28 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     dig +short cloudwatch.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
+    dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
     dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short objectstorage.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short tokens.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short simpleworkflow.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short bootstrap.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short properties.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short reporting.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
 14. (CLC): Confirm service status
 
-    All services should now be in the **enabled** state.
+    All services should now be listed and in the **enabled** state.
 
     ```bash
     euserv-describe-services
@@ -2703,7 +2772,17 @@ would be supported configurations.
     pip install awscli
     ```
 
-3. (CLC+MC): Fix Broken Python Dependencies
+3. (CLC): Configure AWSCLI Command Completion
+
+    ```bash
+    cat << EOF >> /etc/profile.d/aws.sh
+    complete -C '/usr/local/bin/aws_completer' aws
+    EOF
+
+    source /etc/profile.d/aws.sh
+    ```
+
+4. (CLC+MC): Fix Broken Python Dependencies
 
     When awscli is installed by pip on the same host as the Management Console, it breaks the Console
     due to updated python dependencies which AWSCLI doesn't appear to need, but which Management Console
@@ -2717,7 +2796,16 @@ would be supported configurations.
     yum reinstall -y python-dateutil
     ```
 
-4. (CLC): Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
+    Confirm you can restart eucaconsole without it failing immediately, which is the symptom of a 
+    broken dependency. On the second restart, confirm the stop is **OK**.
+
+    ```bash
+    service eucaconsole restart
+    sleep 5
+    service eucaconsole restart
+    ```
+
+5. (CLC): Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
 
     We will use the Helion Eucalyptus Development Root Certification Authority to sign SSL
     certificates. Certificates issued by this CA are not trusted by default.
@@ -2785,7 +2873,7 @@ would be supported configurations.
     ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
-5. (CLC): Configure AWS CLI to support local Eucalyptus region
+6. (CLC): Configure AWS CLI to support local Eucalyptus region
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
     within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region endpoints.
@@ -3084,7 +3172,7 @@ would be supported configurations.
     ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
     ```
 
-6. (CLC): Configure Default AWS credentials
+7. (CLC): Configure Default AWS credentials
 
     This configures the Eucalyptus Administrator as the default and an explicit profile.
 
@@ -3127,7 +3215,7 @@ would be supported configurations.
     chmod -R og-rwx ~/.aws
     ```
 
-7. (CLC): Test AWSCLI
+8. (CLC): Test AWSCLI
 
     ```bash
     aws ec2 describe-key-pairs
