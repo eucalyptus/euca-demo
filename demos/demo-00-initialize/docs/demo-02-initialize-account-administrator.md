@@ -66,8 +66,8 @@ The steps below are automated in the [demo-02-initialize-account-administrator.s
     }
     EOF
 
-    euare-groupuploadpolicy --policy-name DemosPolicy \
-                            --policy-document /var/tmp/demo/DemosGroupPolicy.json \
+    euare-groupuploadpolicy --policy-name AdministratorsPolicy \
+                            --policy-document /var/tmp/demo/AdministratorsGroupPolicy.json \
                             --region $USER_REGION \
                             Administrators
     ```
@@ -102,7 +102,7 @@ The steps below are automated in the [demo-02-initialize-account-administrator.s
     result=$(euare-useraddkey --region $USER_REGION mcrawford)
     read access_key secret_key <<< $result
 
-    cat << EOF > > ~/.creds/$REGION/demo/mcrawford/iamrc
+    cat << EOF > ~/.creds/$REGION/demo/mcrawford/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF

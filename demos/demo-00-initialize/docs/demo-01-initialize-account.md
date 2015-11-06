@@ -54,12 +54,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This allows the Demo Account Administrator to run API commands.
 
     ```bash
-    mkdir -p ~/.creds/$REGION/demo/demo
+    mkdir -p ~/.creds/$REGION/demo/admin
 
-    result=$(euare-useraddkey --region $USER_REGION demo)
+    result=$(euare-useraddkey --as-account demo --region $USER_REGION admin)
     read access_key secret_key <<< $result
 
-    cat << EOF > > ~/.creds/$REGION/demo/demo/iamrc
+    cat << EOF > ~/.creds/$REGION/demo/admin/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
@@ -74,7 +74,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     private_key=~/.creds/$REGION/demo/admin/euca2-admin-pk.pem
     certificate=~/.creds/$REGION/demo/admin/euca2-admin-cert.pem
 
-    euare-usercreatecert --keyout $private_key --out $certificate --region $USER_REGION
+    euare-usercreatecert --keyout $private_key --out $certificate --as-account demo --region $USER_REGION admin
     ```
 
 5. Create Demo (demo) Account Administrator Euca2ools Profile

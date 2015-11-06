@@ -96,13 +96,13 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 
 3. Initialize Eucalyptus Administrator Euca2ools Profile
 
-    This allows the Demo Account Administrator to run API commands via Euca2ools.
+    This allows the Eucalyptus Administrator to run API commands via Euca2ools.
 
     ```bash
     access_key=$(clcadmin-assume-system-credentials | sed -n -e 's/export AWS_ACCESS_KEY="\(.*\)";$/\1/p')
     secret_key=$(clcadmin-assume-system-credentials | sed -n -e 's/export AWS_SECRET_KEY="\(.*\)";$/\1/p')
     account_id=$(euare-accountlist --access-key-id $access_key --secret-key $secret_key \
-                                   --region $REGION | grep "^demo" | cut -f2)
+                                   --region $REGION | grep "^eucalyptus" | cut -f2)
 
     private_key=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-pk.pem
     certificate=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-cert.pem
@@ -124,7 +124,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 
 4. Create Eucalyptus Administrator AWSCLI Profile
 
-    This allows the Demo Account Administrator to run API commands via AWSCLI.
+    This allows the Eucalyptus Administrator to run API commands via AWSCLI.
 
     ```bash
     mkdir -p ~/.aws

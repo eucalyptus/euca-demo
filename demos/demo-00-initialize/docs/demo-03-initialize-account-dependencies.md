@@ -90,7 +90,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     mG07svtcV5AY5vdAY4s6zPXUbmq6WAIUicDsKk9vWqDrHlAwNoSYC4HLgpjnQc0/\
     clshE1hImDjJd6oZQsIHpLQBrPzVMN5yTWRMKe+b/tkGyJ5wA0+1CnbPhOBL+eAG\
     lN9/vp/T+iQ9jgHvs1WcqF4PRTJLaUd3Dy+yv9Bu37vWZNCngmJwvKifKUcb\
-    demo@hpcloud.com
+     demo@hpcloud.com
     EOF
 
     euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub --region $USER_REGION demo
@@ -339,7 +339,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     result=$(euare-useraddkey --region $USER_REGION demo)
     read access_key secret_key <<< $result
 
-    cat << EOF > > ~/.creds/$REGION/demo/demo/iamrc
+    cat << EOF > ~/.creds/$REGION/demo/demo/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
@@ -413,7 +413,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     result=$(euare-useraddkey --region $USER_REGION developer)
     read access_key secret_key <<< $result
 
-    cat << EOF > > ~/.creds/$REGION/demo/developer/iamrc
+    cat << EOF > ~/.creds/$REGION/demo/developer/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
@@ -486,7 +486,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     result=$(euare-useraddkey --region $USER_REGION user)
     read access_key secret_key <<< $result
 
-    cat << EOF > > ~/.creds/$REGION/demo/user/iamrc
+    cat << EOF > ~/.creds/$REGION/demo/user/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
