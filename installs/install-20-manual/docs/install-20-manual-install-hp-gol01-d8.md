@@ -1485,6 +1485,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage/
     sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens/
     swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow/
+    user = $AWS_DEFAULT_REGION-admin
 
     bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Empyrean/
     properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Properties/
@@ -1492,7 +1493,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
     verify-ssl = false
-    user = $AWS_DEFAULT_REGION-admin
     EOF
     ```
 

@@ -51,9 +51,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     sts_url=https://tokens.$REGION.$DOMAIN/services/Tokens/
     swf_url=https://simpleworkflow.$REGION.$DOMAIN/services/SimpleWorkflow/
 
-    bootstrap-url = https://bootstrap.$REGION.$DOMAIN/services/Empyrean/
-    properties-url = https://properties.$REGION.$DOMAIN/services/Properties/
-    reporting-url = https://reporting.$REGION.$DOMAIN/services/Reporting/
+    bootstrap_url=https://bootstrap.$REGION.$DOMAIN/services/Empyrean/
+    properties_url=https://properties.$REGION.$DOMAIN/services/Properties/
+    reporting_url=https://reporting.$REGION.$DOMAIN/services/Reporting/
 
     mkdir -p ~/.euca
     chmod 0700 ~/.euca
@@ -79,11 +79,11 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     s3-url = $s3_url
     sts-url = $sts_url
     swf-url = $swf_url
+    user = $REGION-admin
 
     bootstrap-url = $bootstrap_url
     properties-url = $properties_url
     reporting-url = $reporting_url
-    user = $REGION-admin
 
     certificate = /usr/share/euca2ools/certs/cert-$REGION.pem
     verify-ssl = true
