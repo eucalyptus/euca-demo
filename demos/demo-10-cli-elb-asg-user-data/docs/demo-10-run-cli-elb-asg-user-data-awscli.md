@@ -315,7 +315,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     We first must lookup the public DNS names of all Instances in the AutoScaleGroup, as well as the
     DNS name of the ELB, so these can be used in the browser commands.
 
-    We will use the w3m text-mode browser to dump the web page contents, but you can also use
+    We will use the lynx text-mode browser to dump the web page contents, but you can also use
     any graphical browser to confirm the contents with the same DNS names.
 
     ```bash
@@ -341,12 +341,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
 
     for instance_public_name in $instance_public_names; do
-        w3m -dump http://$instance_public_name
+        lynx -dump http://$instance_public_name
     done
 
     if [ -n "$lb_public_ip" ]; then
-        w3m -dump http://$lb_public_name
-        w3m -dump http://$lb_public_name
+        lynx -dump http://$lb_public_name
+        lynx -dump http://$lb_public_name
     fi
     ```
 
@@ -437,7 +437,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     We first must lookup the public DNS names of all Instances in the AutoScaleGroup, as well as the
     DNS name of the ELB, so these can be used in the browser commands.
 
-    We will use the w3m text-mode browser to dump the web page contents, but you can also use
+    We will use the lynx text-mode browser to dump the web page contents, but you can also use
     any graphical browser to confirm the contents with the same DNS names.
 
     ```bash
@@ -458,12 +458,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     lb_public_ip=$(dig +short $lb_public_name)
 
     for instance_public_name in $instance_public_names; do
-        w3m -dump http://$instance_public_name
+        lynx -dump http://$instance_public_name
     done
 
     if [ -n "$lb_public_ip" ]; then
-        w3m -dump http://$lb_public_name
-        w3m -dump http://$lb_public_name
+        lynx -dump http://$lb_public_name
+        lynx -dump http://$lb_public_name
     fi
     ```
 

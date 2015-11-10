@@ -195,11 +195,17 @@ if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
     exit 50
 fi
 
-if [ ! $(uname) = "Darwin" ]; then
-    if ! rpm -q --quiet w3m; then
-        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-        exit 98
-    fi
+if ! which lynx > /dev/null; then
+    echo "lynx missing: This demo uses the lynx text-mode browser to confirm webpage content"
+    case $(uname) in
+      Darwin)
+        echo "- Lynx for OSX can be found here: http://habilis.net/lynxlet/"
+        echo "- Follow instructions to install and create /usr/bin/lynx symlink";;
+      *)
+        echo "- yum install -y lynx";;
+    esac
+
+    exit 98
 fi
 
 # Prevent certain environment variables from breaking commands

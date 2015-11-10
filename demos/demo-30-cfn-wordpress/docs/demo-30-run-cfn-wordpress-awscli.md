@@ -326,7 +326,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     current content.
 
     ```bash
-    w3m -dump $aws_wordpress_url
+    lynx -dump $aws_wordpress_url
     ```
 
 21. Backup WordPress on AWS Instance
@@ -362,6 +362,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     tab, and confirm content is identical to the AWS WordPress website.
 
     ```bash
-    w3m -dump $euca_wordpress_url
+    lynx -dump $euca_wordpress_url
     ```
 

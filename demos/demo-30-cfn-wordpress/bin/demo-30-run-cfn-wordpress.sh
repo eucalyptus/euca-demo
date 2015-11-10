@@ -302,11 +302,17 @@ if [ -z $euca_cloudformation_url ]; then
     echo 60
 fi
 
-if [ ! $(uname) = "Darwin" ]; then
-    if ! rpm -q --quiet w3m; then
-        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-        exit 98
-    fi
+if ! which lynx > /dev/null; then
+    echo "lynx missing: This demo uses the lynx text-mode browser to confirm webpage content"
+    case $(uname) in
+      Darwin)
+        echo "- Lynx for OSX can be found here: http://habilis.net/lynxlet/"
+        echo "- Follow instructions to install and create /usr/bin/lynx symlink";;
+      *)
+        echo "- yum install -y lynx";;
+    esac
+
+    exit 98
 fi
 
 
@@ -1223,14 +1229,14 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
         echo
         echo "Commands:"
         echo
-        echo "w3m -dump $aws_wordpress_url"
+        echo "lynx -dump $aws_wordpress_url"
 
         run 50
 
         if [ $choice = y ]; then
 
-            echo "# w3m -dump $aws_wordpress_url"
-            w3m -dump $aws_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+            echo "# lynx -dump $aws_wordpress_url"
+            lynx -dump $aws_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
 
             next 50
 
@@ -1359,14 +1365,14 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
 
     echo "Commands:"
     echo
-    echo "w3m -dump $euca_wordpress_url"
+    echo "lynx -dump $euca_wordpress_url"
 
     run 50
 
     if [ $choice = y ]; then
 
-        echo "# w3m -dump $euca_wordpress_url"
-        w3m -dump $euca_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+        echo "# lynx -dump $euca_wordpress_url"
+        lynx -dump $euca_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
 
         next 50
 

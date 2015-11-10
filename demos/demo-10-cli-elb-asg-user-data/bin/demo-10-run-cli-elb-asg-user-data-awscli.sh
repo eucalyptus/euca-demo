@@ -215,11 +215,17 @@ if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
     exit 51
 fi
 
-if [ ! $(uname) = "Darwin" ]; then
-    if ! rpm -q --quiet w3m; then
-        echo "w3m missing: This demo uses the w3m text-mode browser to confirm webpage content"
-        exit 98
-    fi
+if ! which lynx > /dev/null; then
+    echo "lynx missing: This demo uses the lynx text-mode browser to confirm webpage content"
+    case $(uname) in
+      Darwin)
+        echo "- Lynx for OSX can be found here: http://habilis.net/lynxlet/"
+        echo "- Follow instructions to install and create /usr/bin/lynx symlink";;
+      *)
+        echo "- yum install -y lynx";;
+    esac
+
+    exit 98
 fi
 
 # Prevent certain environment variables from breaking commands
@@ -1079,23 +1085,12 @@ echo "aws elb describe-instance-health --load-balancer-name DemoELB \\"
 echo "                                 --profile $profile --region $region --output text"
 for instance_public_name in $instance_public_names; do
     echo
-    case $(uname) in
-      Darwin)
-        echo "open -a Safari http://$instance_public_name";;
-      *)
-        echo "w3m -dump http://$instance_public_name";;
-    esac
+    echo "lynx -dump http://$instance_public_name";;
 done
 if [ -n "$lb_public_ip" ]; then
     echo
-    case $(uname) in
-      Darwin)
-        echo "open -a Safari http://$lb_public_name"
-        echo "open -a Safari http://$lb_public_name";;
-      *)
-        echo "w3m -dump http://$lb_public_name"
-        echo "w3m -dump http://$lb_public_name";;
-    esac
+    echo "lynx -dump http://$lb_public_name"
+    echo "lynx -dump http://$lb_public_name"
 fi
 
 run 50
@@ -1124,29 +1119,15 @@ if [ $choice = y ]; then
 
     echo
     for instance_public_name in $instance_public_names; do
-        case $(uname) in
-          Darwin)
-            echo "# open -a Safari http://$instance_public_name"
-            open -a Safari http://$instance_public_name;;
-          *)
-            echo "# w3m -dump http://$instance_public_name"
-            w3m -dump http://$instance_public_name;;
-          esac
+        echo "# lynx -dump http://$instance_public_name"
+        lynx -dump http://$instance_public_name
         pause
     done
     if [ -n "$lb_public_ip" ]; then
-        case $(uname) in
-          Darwin)
-            echo "# open -a Safari http://$lb_public_name"
-            open -a Safari http://$lb_public_name
-            echo "# open -a Safari http://$lb_public_name"
-            open -a Safari http://$lb_public_name;;
-          *)
-            echo "# w3m -dump http://$lb_public_name"
-            w3m -dump http://$lb_public_name
-            echo "# w3m -dump http://$lb_public_name"
-            w3m -dump http://$lb_public_name;;
-        esac
+        echo "# lynx -dump http://$lb_public_name"
+        lynx -dump http://$lb_public_name
+        echo "# lynx -dump http://$lb_public_name"
+        lynx -dump http://$lb_public_name;;
     fi
 
     next
@@ -1436,23 +1417,12 @@ echo
 echo "Commands:"
 for instance_public_name in $instance_public_names; do
     echo
-    case $(uname) in
-      Darwin)
-        echo "open -a Safari http://$instance_public_name";;
-      *)
-        echo "w3m -dump http://$instance_public_name";;
-    esac
+    echo "lynx -dump http://$instance_public_name";;
 done
 if [ -n "$lb_public_ip" ]; then
     echo
-    case $(uname) in
-      Darwin)
-        echo "open -a Safari http://$lb_public_name"
-        echo "open -a Safari http://$lb_public_name";;
-      *)
-        echo "w3m -dump http://$lb_public_name"
-        echo "w3m -dump http://$lb_public_name";;
-    esac
+    echo "lynx -dump http://$lb_public_name"
+    echo "lynx -dump http://$lb_public_name";;
 fi
 
 run 50
@@ -1460,29 +1430,15 @@ run 50
 if [ $choice = y ]; then
     echo
     for instance_public_name in $instance_public_names; do
-        case $(uname) in
-          Darwin)
-            echo "# open -a Safari http://$instance_public_name"
-            open -a Safari http://$instance_public_name;;
-          *)
-            echo "# w3m -dump http://$instance_public_name"
-            w3m -dump http://$instance_public_name;;
-          esac
+        echo "# lynx -dump http://$instance_public_name"
+        lynx -dump http://$instance_public_name;;
         pause
     done
     if [ -n "$lb_public_ip" ]; then
-        case $(uname) in
-          Darwin)
-            echo "# open -a Safari http://$lb_public_name"
-            open -a Safari http://$lb_public_name
-            echo "# open -a Safari http://$lb_public_name"
-            open -a Safari http://$lb_public_name;;
-          *)
-            echo "# w3m -dump http://$lb_public_name"
-            w3m -dump http://$lb_public_name
-            echo "# w3m -dump http://$lb_public_name"
-            w3m -dump http://$lb_public_name;;
-        esac
+        echo "# lynx -dump http://$lb_public_name"
+        lynx -dump http://$lb_public_name
+        echo "# lynx -dump http://$lb_public_name"
+        lynx -dump http://$lb_public_name;;
     fi
 
     next
