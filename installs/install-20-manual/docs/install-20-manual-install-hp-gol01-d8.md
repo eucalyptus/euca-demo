@@ -630,6 +630,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -667,6 +668,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -706,6 +708,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -743,13 +746,17 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
 18. (ALL): Disable SELinux
 
+    There is a bug in 4.2.0 which prevents NC from starting with SELinux in permissive mode. So
+    we must completely disable SELinux.
+
     ```bash
-    sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
+    sed -i -e "/^SELINUX=/s/=.*$/=disabled/" /etc/selinux/config
 
     setenforce 0
     ```
@@ -760,9 +767,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     yum install -y ntp
 
     chkconfig ntpd on
+
     service ntpd start
 
     ntpdate -u  0.centos.pool.ntp.org
+
     hwclock --systohc
     ```
 
@@ -864,6 +873,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     postmap sender_canonical
 
     chkconfig postfix on
+
     service postfix restart
 
     popd
@@ -881,11 +891,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
-22. (CC): Configure packet routing
+22. (CC/NC): Configure packet forwarding
 
-    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic,
-    you will get a warning when starting the CC if this routing has not been configured, and the
-    package would turn this on at that time. So, this is to prevent that warning.
+    Note that while this is not required on the CC when using EDGE mode, as the CC no longer routes
+    traffic, you will get a warning when starting the CC if this routing has not been configured, and
+    the package would turn this on at that time. So, this is to prevent that warning.
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -895,15 +905,24 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-23. (NC): Configure packet routing
+23. (NC): Configure bridge filtering
+
+    The normal behavior of libvirt is to disable to the kernel's default behavior where bridge
+    traffic is routed through iptables on the host, so that traffic to virtual guests is not
+    blocked because of iptables rules on the host. Eucalyptus depends on the default functionality
+    to implement security groups, so we must re-enable the original default behavior.
 
     ```bash
-    sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-    sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    if grep -s -q bridge-nf-call-iptables /etc/sysctl.conf; then
+        sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    else
+        echo >> /etc/sysctl.conf
+        echo "# Re-enable netfilter on bridges"
+        echo "net.bridge.bridge-nf-call-iptables = 1"
+    fi
 
     sysctl -p
 
-    cat /proc/sys/net/ipv4/ip_forward
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
@@ -1216,12 +1235,16 @@ ns1.mjc.prc.eucalyptus-systems.com.
 2. (CLC+UFS/OSP/SC): Start the Cloud Controller service
 
     ```bash
+    chkconfig eucalyptus-cloud on
+
     service eucalyptus-cloud start
     ```
 
 3. (CC): Start the Cluster Controller service
 
     ```bash
+    chkconfig eucalyptus-cc on
+
     service eucalyptus-cc start
     ```
 
@@ -1231,7 +1254,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     registered.
 
     ```bash
+    chkconfig eucalyptus-nc on
+
     service eucalyptus-nc start
+
+    chkconfig eucanetd on
 
     service eucanetd start
     ```
@@ -1239,6 +1266,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
 5. (MC): Start the Management Console service
 
     ```bash
+    chkconfig eucaconsole on
+
     service eucaconsole start
     ```
 
@@ -1564,9 +1593,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ; Eucalyptus Region $AWS_DEFAULT_REGION
 
     [user $AWS_DEFAULT_REGION-admin]
-    account-id = $account_id
     key-id = $access_key
     secret-key = $secret_key
+    account-id = $account_id
     private-key = $private_key
     certificate = $certificate
 
