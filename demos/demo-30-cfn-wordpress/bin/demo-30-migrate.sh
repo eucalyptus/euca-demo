@@ -237,7 +237,7 @@ fi
 euca_profile=$euca_region-$euca_account-$euca_user
 
 if ! grep -s -q "\[profile $euca_profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($euca_user) User AWSCLI profile!"
     echo "Expected to find: [profile $euca_profile] in ~/.aws/config"
     exit 51
 fi
