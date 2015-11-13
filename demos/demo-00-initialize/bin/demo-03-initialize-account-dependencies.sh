@@ -47,8 +47,8 @@
 # Administrator as many times as needed to create one or more IAM Users in the Demo Account
 # Administrators Group.
 #
-# Then this script should be run by the Demo Account Administrator or an IAM User in the 
-# Administrators Group to create additional groups, users, roles and instance profiles in the 
+# Then this script should be run by the Demo Account Administrator or an IAM User in the
+# Administrators Group to create additional groups, users, roles and instance profiles in the
 # Demo Account.
 #
 # All four initialization scripts are pre-requisites of running any demos!
@@ -80,26 +80,29 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
-account=demo
-password=${account}123
-user_demo_password=${password}-${user_demo}
-user_developer_password=${password}-${user_developer}
-user_user_password=${password}-${user_user}
-admin=admin
+account=${AWS_ACCOUNT_NAME:-demo}
+user=${AWS_USER_NAME:-admin}
+prefix=${account}123
+user_demo_password=${prefix}-${user_demo}
+user_developer_password=${prefix}-${user_developer}
+user_user_password=${prefix}-${user_user}
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-p password] [-U admin]"
-    echo "  -I           non-interactive"
-    echo "  -s           slower: increase pauses by 25%"
-    echo "  -f           faster: reduce pauses by 25%"
-    echo "  -r region    Eucalyptus Region (default: $region)"
-    echo "  -a account   Eucalyptus Account (default: $account)"
-    echo "  -p password  password prefix for new Users (default: $password)"
-    echo "  -U admin     existing Eucalyptus User with permissions to create new Groups and Users (default $admin)"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-p prefix]"
+    echo "              [-r region] [-a account] [-u user]"
+    echo "  -I          non-interactive"
+    echo "  -s          slower: increase pauses by 25%"
+    echo "  -f          faster: reduce pauses by 25%"
+    echo "  -v          verbose"
+    echo "  -p prefix   prefix for passwords created for new Users (default: $prefix)"
+    echo "  -r region   Eucalyptus Region (default: $region)"
+    echo "  -a account  Eucalyptus Account (default: $account)"
+    echo "  -u user     Eucalyptus User with permissions to create new Groups and Users (default $user)"
 }
 
 run() {
@@ -182,18 +185,19 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:p:U:? arg; do
+while getopts Isfvr:a:u:p:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
-    p)  password="$OPTARG"
-        user_demo_password=${password}-${user_demo}
-        user_developer_password=${password}-${user_developer}
-        user_user_password=${password}-${user_user};;
-    U)  admin="$OPTARG";;
+    u)  user="$OPTARG";;
+    p)  prefix="$OPTARG"
+        user_demo_password=${prefix}-${user_demo}
+        user_developer_password=${prefix}-${user_developer}
+        user_user_password=${prefix}-${user_user};;
     ?)  usage
         exit 1;;
     esac
@@ -222,28 +226,41 @@ if [ -z $account ]; then
     exit 12
 fi
 
-if [ -z $password ]; then
-    echo "-p password missing!"
-    echo "Password must be specified as a parameter"
+if [ -z $user ]; then
+    echo "-u user missing!"
+    echo "Could not automatically determine user, and it was not specified as a parameter"
+    exit 14
+fi
+
+if [ -z $prefix ]; then
+    echo "-p prefix missing!"
+    echo "Password prefix must be specified as a parameter"
     exit 16
 fi
 
-if [ -z $admin ]; then
-    echo "-U admin missing!"
-    echo "Existing Administrator must be specified as a parameter"
-    exit 18
+user_region=$region-$account-$user@$region
+
+if ! grep -s -q "\[user $region-$account-$user]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User Euca2ools user!"
+    echo "Expected to find: [user $region-$account-$user] in ~/.euca/$region.ini"
+    exit 50
 fi
 
-profile=$region-$account-$admin
-profile_region=$profile@$region
+profile=$region-$account-$user
 
-if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-    echo "Could not find $region Demo ($account) Account Administrator ($admin) User Euca2ools user!"
-    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
-    exit 20
+if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
+    exit 51
 fi
 
 mkdir -p $tmpdir/$account
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Prepare Eucalyptus Demo Account for Demo Dependencies
@@ -251,55 +268,28 @@ mkdir -p $tmpdir/$account
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-if [ $admin = admin ]; then
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator credentials"
-else
-    echo "$(printf '%2d' $step). Use Demo ($account) Account Administrator ($admin) User credentials"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List Images available to Demo ($account) Account Administrator"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images -a"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-images -a"
-    euca-describe-images -a
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List Images available to Demo ($account) Account Administrator"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-images --all --region $user_region"
 
-    next
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-images --all --region $user_region"
+        euca-describe-images --all --region $user_region
+
+        next
+    fi
 fi
 
 
@@ -324,9 +314,11 @@ echo "cat << EOF > ~/.ssh/demo_id_rsa.pub"
 cat $keysdir/demo_id_rsa.pub
 echo "EOF"
 echo
-echo "euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo"
+echo "euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \\"
+echo "                    --region $user_region \\"
+echo "                    demo"
 
-if euca-describe-keypairs | cut -f2 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
+if euca-describe-keypairs --region $user_region | cut -f2 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
     echo
     tput rev
     echo "Already Imported!"
@@ -335,7 +327,7 @@ if euca-describe-keypairs | cut -f2 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id
     next 50
 
 else
-    euca-delete-keypair demo &> /dev/null
+    euca-delete-keypair --region $user_region demo &> /dev/null
     rm -f ~/.ssh/demo_id_rsa
     rm -f ~/.ssh/demo_id_rsa.pub
 
@@ -358,8 +350,12 @@ else
         cp $keysdir/demo_id_rsa.pub ~/.ssh/demo_id_rsa.pub
         pause
 
-        echo "# euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo"
-        euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo
+        echo "# euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \\"
+        echo ">                     --region $user_region \\"
+        echo ">                     demo"
+        euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \
+                            --region $user_region \
+                            demo
 
         next
     fi
@@ -381,7 +377,6 @@ echo "Commands:"
 echo
 echo "aws s3 mb s3://demo-$account --profile $profile --region $region"
 
-# work around pipe bug
 if aws s3 ls --profile $profile --region $region 2> /dev/null | grep -s -q " demo-$account$"; then
     echo
     tput rev
@@ -419,13 +414,14 @@ echo "cat << EOF >> $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
 cat $policiesdir/DemosRoleTrustPolicy.json
 echo "EOF"
 echo
-echo "euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
+echo "euare-rolecreate -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json \\"
+echo "                 --region $user_region $role_demos"
 echo
-echo "euare-instanceprofilecreate -s $instance_profile_demos"
+echo "euare-instanceprofilecreate --region $user_region $instance_profile_demos"
 echo
-echo "euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
+echo "euare-instanceprofileaddrole --role-name $role_demos --region $user_region $instance_profile_demos"
 
-if euare-rolelistbypath | grep -s -q ":role/$role_demos$"; then
+if euare-rolelistbypath --region $user_region | grep -s -q ":role/$role_demos$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -444,16 +440,18 @@ else
         cp $policiesdir/DemosRoleTrustPolicy.json $tmpdir/$account/${role_demos}RoleTrustPolicy.json
         pause
 
-        echo "# euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json"
-        euare-rolecreate -r $role_demos -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json
+        echo "# euare-rolecreate -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json \\"
+        echo "                   --region $user_region $role_demos"
+        euare-rolecreate -f $tmpdir/$account/${role_demos}RoleTrustPolicy.json \
+                         --region $user_region $role_demos
         pause
 
-        echo "# euare-instanceprofilecreate -s $instance_profile_demos"
-        euare-instanceprofilecreate -s $instance_profile_demos
+        echo "# euare-instanceprofilecreate --region $user_region $instance_profile_demos"
+        euare-instanceprofilecreate --region $user_region $instance_profile_demos
         pause
 
-        echo "# euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos"
-        euare-instanceprofileaddrole -s $instance_profile_demos -r $role_demos
+        echo "# euare-instanceprofileaddrole --role-name $role_demos --region $user_region $instance_profile_demos"
+        euare-instanceprofileaddrole --role-name $role_demos --region $user_region $instance_profile_demos
 
         next
     fi
@@ -476,10 +474,12 @@ echo "cat << EOF >> $tmpdir/$account/${role_demos}RolePolicy.json"
 sed -e "s/\${account}/$account/g" $policiesdir/DemosRolePolicy.json
 echo "EOF"
 echo
-echo "euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
-echo "                       -f $tmpdir/$account/${role_demos}RolePolicy.json"
+echo "euare-roleuploadpolicy --policy-name ${role_demos}Policy \\"
+echo "                       --policy-document $tmpdir/$account/${role_demos}RolePolicy.json \\"
+echo "                       --region $user_region \\"
+echo "                       $role_demos"
 
-if euare-rolelistpolicies -r $role_demos | grep -s -q "${role_demos}Policy$"; then
+if euare-rolelistpolicies --region $user_region $role_demos | grep -s -q "${role_demos}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -498,10 +498,14 @@ else
         sed -e "s/\${account}/$account/g" $policiesdir/DemosRolePolicy.json > $tmpdir/$account/${role_demos}RolePolicy.json
         pause
 
-        echo "# euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \\"
-        echo ">                        -f $tmpdir/$account/${role_demos}RolePolicy.json"
-        euare-roleuploadpolicy -r $role_demos -p ${role_demos}Policy \
-                               -f $tmpdir/$account/${role_demos}RolePolicy.json
+        echo "# euare-roleuploadpolicy --policy-name ${role_demos}Policy \\"
+        echo ">                        --policy-document $tmpdir/$account/${role_demos}RolePolicy.json \\"
+        echo ">                        --region $user_region \\"
+        echo ">                        $role_demos"
+        euare-roleuploadpolicy --policy-name ${role_demos}Policy \
+                               --policy-document $tmpdir/$account/${role_demos}RolePolicy.json \
+                               --region $user_region \
+                               $role_demos
 
         next
     fi
@@ -520,9 +524,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupcreate -g $group_demos"
+echo "euare-groupcreate --region $user_region $group_demos"
 
-if euare-grouplistbypath | grep -s -q ":group/$group_demos$"; then
+if euare-grouplistbypath --region $user_region | grep -s -q ":group/$group_demos$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -535,8 +539,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupcreate -g $group_demos"
-        euare-groupcreate -g $group_demos
+        echo "# euare-groupcreate --region $user_region $group_demos"
+        euare-groupcreate --region $user_region $group_demos
 
         next
     fi
@@ -559,10 +563,12 @@ echo "cat << EOF >> $tmpdir/$account/${group_demos}GroupPolicy.json"
 cat $policiesdir/DemosGroupPolicy.json
 echo "EOF"
 echo
-echo "euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
-echo "                        -f $tmpdir/$account/${group_demos}GroupPolicy.json"
+echo "euare-groupuploadpolicy --policy-name ${group_demos}Policy \\"
+echo "                        --policy-document $tmpdir/$account/${group_demos}GroupPolicy.json \\"
+echo "                        --region $user_region \\"
+echo "                        $group_demos"
 
-if euare-grouplistpolicies -g $group_demos | grep -s -q "${group_demos}Policy$"; then
+if euare-grouplistpolicies --region $user_region $group_demos | grep -s -q "${group_demos}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -581,10 +587,14 @@ else
         cp $policiesdir/DemosGroupPolicy.json $tmpdir/$account/${group_demos}GroupPolicy.json
         pause
 
-        echo "# euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_demos}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_demos -p ${group_demos}Policy \
-                                -f $tmpdir/$account/${group_demos}GroupPolicy.json
+        echo "# euare-groupuploadpolicy --policy-name ${group_demos}Policy \\"
+        echo ">                         --policy-document $tmpdir/$account/${group_demos}GroupPolicy.json \\"
+        echo ">                         --region $user_region \\"
+        echo ">                         $group_demos"
+        euare-groupuploadpolicy --policy-name ${group_demos}Policy \
+                                --policy-document $tmpdir/$account/${group_demos}GroupPolicy.json \
+                                --region $user_region \
+                                $group_demos
 
         next
     fi
@@ -603,9 +613,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupcreate -g $group_developers"
+echo "euare-groupcreate --region $user_region $group_developers"
 
-if euare-grouplistbypath | grep -s -q ":group/$group_developers$"; then
+if euare-grouplistbypath --region $user_region | grep -s -q ":group/$group_developers$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -618,8 +628,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupcreate -g $group_developers"
-        euare-groupcreate -g $group_developers
+        echo "# euare-groupcreate --region $user_region $group_developers"
+        euare-groupcreate --region $user_region $group_developers
 
         next
     fi
@@ -642,10 +652,13 @@ echo "cat << EOF >> $tmpdir/$account/${group_developers}GroupPolicy.json"
 cat $policiesdir/DevelopersGroupPolicy.json
 echo "EOF"
 echo
-echo "euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
-echo "                        -f $tmpdir/$account/${group_developers}GroupPolicy.json"
+echo "euare-groupuploadpolicy --policy-name ${group_developers}Policy \\"
+echo "                        --policy-document $tmpdir/$account/${group_developers}GroupPolicy.json \\"
+echo "                        --region $user_region \\"
+echo "                        $group_developers"
 
-if euare-grouplistpolicies -g $group_developers | grep -s -q "${group_developers}Policy$"; then
+
+if euare-grouplistpolicies --region $user_region $group_developers | grep -s -q "${group_developers}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -664,10 +677,14 @@ else
         cp $policiesdir/DevelopersGroupPolicy.json $tmpdir/$account/${group_developers}GroupPolicy.json
         pause
 
-        echo "# euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_developers}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_developers -p ${group_developers}Policy \
-                                -f $tmpdir/$account/${group_developers}GroupPolicy.json
+        echo "# euare-groupuploadpolicy --policy-name ${group_developers}Policy \\"
+        echo ">                         --policy-document $tmpdir/$account/${group_developers}GroupPolicy.json \\"
+        echo ">                         --region $user_region \\"
+        echo ">                         $group_developers"
+        euare-groupuploadpolicy --policy-name ${group_developers}Policy \
+                                --policy-document $tmpdir/$account/${group_developers}GroupPolicy.json \
+                                --region $user_region \
+                                $group_developers
 
         next
     fi
@@ -686,9 +703,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupcreate -g $group_users"
+echo "euare-groupcreate --region $user_region $group_users"
 
-if euare-grouplistbypath | grep -s -q ":group/$group_users$"; then
+if euare-grouplistbypath --region $user_region | grep -s -q ":group/$group_users$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -701,8 +718,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupcreate -g $group_users"
-        euare-groupcreate -g $group_users
+        echo "# euare-groupcreate --region $user_region $group_users"
+        euare-groupcreate --region $user_region $group_users
 
         next
     fi
@@ -725,10 +742,12 @@ echo "cat << EOF >> $tmpdir/$account/${group_users}GroupPolicy.json"
 cat $policiesdir/UsersGroupPolicy.json
 echo "EOF"
 echo
-echo "euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
-echo "                        -f $tmpdir/$account/${group_users}GroupPolicy.json"
+echo "euare-groupuploadpolicy --policy-name ${group_users}Policy \\"
+echo "                        --policy-document $tmpdir/$account/${group_users}GroupPolicy.json \\"
+echo "                        --region $user_region \\"
+echo "                        $group_users"
 
-if euare-grouplistpolicies -g $group_users | grep -s -q "${group_users}Policy$"; then
+if euare-grouplistpolicies --region $user_region $group_users | grep -s -q "${group_users}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -747,10 +766,14 @@ else
         cp $policiesdir/UsersGroupPolicy.json $tmpdir/$account/${group_users}GroupPolicy.json
         pause
 
-        echo "# euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group_users}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group_users -p ${group_users}Policy \
-                                -f $tmpdir/$account/${group_users}GroupPolicy.json
+        echo "# euare-groupuploadpolicy --policy-name ${group_users}Policy \\"
+        echo ">                         --policy-document $tmpdir/$account/${group_users}GroupPolicy.json \\"
+        echo ">                         --region $user_region \\"
+        echo ">                         $group_users"
+        euare-groupuploadpolicy --policy-name ${group_users}Policy \
+                                --policy-document $tmpdir/$account/${group_users}GroupPolicy.json \
+                                --region $user_region \
+                                $group_users
 
         next
     fi
@@ -768,9 +791,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usercreate -u $user_demo"
+echo "euare-usercreate --region $user_region $user_demo"
 
-if euare-userlistbypath | grep -s -q ":user/$user_demo$"; then
+if euare-userlistbypath --region $user_region | grep -s -q ":user/$user_demo$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -783,8 +806,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usercreate -u $user_demo"
-        euare-usercreate -u $user_demo
+        echo "# euare-usercreate --region $user_region $user_demo"
+        euare-usercreate --region $user_region $user_demo
 
         next
     fi
@@ -802,9 +825,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_demos -u $user_demo"
+echo "euare-groupadduser --user-name $user_demo --region $user_region $group_demos"
 
-if euare-grouplistusers -g $group_demos | grep -s -q ":user/$user_demo$"; then
+if euare-grouplistusers --region $user_region $group_demos | grep -s -q ":user/$user_demo$"; then
     echo
     tput rev
     echo "Already Added!"
@@ -817,8 +840,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupadduser -g $group_demos -u $user_demo"
-        euare-groupadduser -g $group_demos -u $user_demo
+        echo "# euare-groupadduser --user-name $user_demo --region $user_region $group_demos"
+        euare-groupadduser --user-name $user_demo --region $user_region $group_demos
 
         next
     fi
@@ -837,9 +860,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-useraddloginprofile -u $user_demo -p $user_demo_password"
+echo "euare-useraddloginprofile --password $user_demo_password --region $user_region $user_demo"
 
-if euare-usergetloginprofile -u $user_demo &> /dev/null; then
+if euare-usergetloginprofile --region $user_region $user_demo &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -852,8 +875,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-useraddloginprofile -u $user_demo -p $user_demo_password"
-        euare-useraddloginprofile -u $user_demo -p $user_demo_password
+        echo "# euare-useraddloginprofile --password $user_demo_password --region $user_region $user_demo"
+        euare-useraddloginprofile --password $user_demo_password --region $user_region $user_demo
 
         next
     fi
@@ -874,7 +897,7 @@ echo "Commands:"
 echo
 echo "mkdir -p ~/.creds/$region/$account/$user_demo"
 echo
-echo "euare-useraddkey -u $user_demo"
+echo "euare-useraddkey --region $user_region $user_demo"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/$user_demo/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
@@ -900,8 +923,8 @@ else
         mkdir -p ~/.creds/$region/$account/$user_demo
         pause
 
-        echo "# euare-useraddkey -u $user_demo"
-        result=$(euare-useraddkey -u $user_demo) && echo $result
+        echo "# euare-useraddkey --region $user_region $user_demo"
+        result=$(euare-useraddkey --region $user_region $user_demo) && echo $result
         read access_key secret_key <<< $result
         pause
 
@@ -1074,9 +1097,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usercreate -u $user_developer"
+echo "euare-usercreate --region $user_region $user_developer"
 
-if euare-userlistbypath | grep -s -q ":user/$user_developer$"; then
+if euare-userlistbypath --region $user_region | grep -s -q ":user/$user_developer$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -1089,8 +1112,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usercreate -u $user_developer"
-        euare-usercreate -u $user_developer
+        echo "# euare-usercreate --region $user_region $user_developer"
+        euare-usercreate --region $user_region $user_developer
 
         next
     fi
@@ -1108,9 +1131,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_developers -u $user_developer"
+echo "euare-groupadduser --user-name $user_developer --region $user_region $group_developers"
 
-if euare-grouplistusers -g $group_developers | grep -s -q ":user/$user_developer$"; then
+if euare-grouplistusers --region $user_region $group_developers | grep -s -q ":user/$user_developer$"; then
     echo
     tput rev
     echo "Already Added!"
@@ -1123,8 +1146,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupadduser -g $group_developers -u $user_developer"
-        euare-groupadduser -g $group_developers -u $user_developer
+        echo "# euare-groupadduser --user-name $user_developer --region $user_region $group_developers"
+        euare-groupadduser --user-name $user_developer --region $user_region $group_developers
 
         next
     fi
@@ -1143,9 +1166,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-useraddloginprofile -u $user_developer -p $user_developer_password"
+echo "euare-useraddloginprofile --password $user_developer_password --region $user_region $user_developer"
 
-if euare-usergetloginprofile -u $user_developer &> /dev/null; then
+if euare-usergetloginprofile --region $user_region $user_developer &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -1158,8 +1181,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-useraddloginprofile -u $user_developer -p $user_developer_password"
-        euare-useraddloginprofile -u $user_developer -p $user_developer_password
+        echo "# euare-useraddloginprofile --password $user_developer_password --region $user_region $user_developer"
+        euare-useraddloginprofile --password $user_developer_password --region $user_region $user_developer
 
         next
     fi
@@ -1180,7 +1203,7 @@ echo "Commands:"
 echo
 echo "mkdir -p ~/.creds/$region/$account/$user_developer"
 echo
-echo "euare-useraddkey -u $user_developer"
+echo "euare-useraddkey --region $user_region $user_developer"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/$user_developer/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
@@ -1206,8 +1229,8 @@ else
         mkdir -p ~/.creds/$region/$account/$user_developer
         pause
 
-        echo "# euare-useraddkey -u $user_developer"
-        result=$(euare-useraddkey -u $user_developer) && echo $result
+        echo "# euare-useraddkey --region $user_region $user_developer"
+        result=$(euare-useraddkey --region $user_region $user_developer) && echo $result
         read access_key secret_key <<< $result
         pause
 
@@ -1380,9 +1403,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usercreate -u $user_user"
+echo "euare-usercreate --region $user_region $user_user"
 
-if euare-userlistbypath | grep -s -q ":user/$user_user$"; then
+if euare-userlistbypath --region $user_region | grep -s -q ":user/$user_user$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -1395,8 +1418,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usercreate -u $user_user"
-        euare-usercreate -u $user_user
+        echo "# euare-usercreate --region $user_region $user_user"
+        euare-usercreate --region $user_region $user_user
 
         next
     fi
@@ -1414,9 +1437,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group_users -u $user_user"
+echo "euare-groupadduser --user-name $user_user --region $user_region $group_users"
 
-if euare-grouplistusers -g $group_users | grep -s -q ":user/$user_user$"; then
+if euare-grouplistusers --region $user_region $group_users | grep -s -q ":user/$user_user$"; then
     echo
     tput rev
     echo "Already Added!"
@@ -1429,8 +1452,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupadduser -g $group_users -u $user_user"
-        euare-groupadduser -g $group_users -u $user_user
+        echo "# euare-groupadduser --user-name $user_user --region $user_region $group_users"
+        euare-groupadduser --user-name $user_user --region $user_region $group_users
 
         next
     fi
@@ -1449,9 +1472,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-useraddloginprofile -u $user_user -p $user_user_password"
+echo "euare-useraddloginprofile --password $user_user_password --region $user_region $user_user"
 
-if euare-usergetloginprofile -u $user_user &> /dev/null; then
+if euare-usergetloginprofile --region $user_region $user_user &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -1464,8 +1487,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-useraddloginprofile -u $user_user -p $user_user_password"
-        euare-useraddloginprofile -u $user_user -p $user_user_password
+        echo "# euare-useraddloginprofile --password $user_user_password --region $user_region $user_user"
+        euare-useraddloginprofile --password $user_user_password --region $user_region $user_user
 
         next
     fi
@@ -1486,7 +1509,7 @@ echo "Commands:"
 echo
 echo "mkdir -p ~/.creds/$region/$account/$user_user"
 echo
-echo "euare-useraddkey -u $user_user"
+echo "euare-useraddkey --region $user_region $user_user"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/$user_user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
@@ -1512,8 +1535,8 @@ else
         mkdir -p ~/.creds/$region/$account/$user_user
         pause
 
-        echo "# euare-useraddkey -u $user_user"
-        result=$(euare-useraddkey -u $user_user) && echo $result
+        echo "# euare-useraddkey --region $user_region $user_user"
+        result=$(euare-useraddkey --region $user_region $user_user) && echo $result
         read access_key secret_key <<< $result
         pause
 
@@ -1676,138 +1699,144 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List Demo Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images"
-echo
-echo "euca-describe-keypairs"
-echo
-echo "euare-rolelistbypath"
-echo "euare-instanceprofilelistbypath"
-echo "euare-instanceprofilelistforrole -r $role_demos"
-echo
-echo "euare-grouplistbypath"
-echo
-echo "euare-userlistbypath"
-echo
-echo "euare-grouplistusers -g $group_demos"
-echo "euare-grouplistusers -g $group_developers"
-echo "euare-grouplistusers -g $group_users"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List Demo Resources"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-images --region $user_region"
+    echo
+    echo "euca-describe-keypairs --region $user_region"
+    echo
+    echo "euare-rolelistbypath --region $user_region"
+    echo "euare-instanceprofilelistbypath --region $user_region"
+    echo "euare-instanceprofilelistforrole --region $user_region $role_demos"
+    echo
+    echo "euare-grouplistbypath --region $user_region"
+    echo
+    echo "euare-userlistbypath --region $user_region"
+    echo
+    echo "euare-grouplistusers --region $user_region $group_demos"
+    echo "euare-grouplistusers --region $user_region $group_developers"
+    echo "euare-grouplistusers --region $user_region $group_users"
 
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause
+    run 50
 
-    echo "# euare-rolelistbypath"
-    euare-rolelistbypath
-    echo "#"
-    echo "# euare-instanceprofilelistbypath"
-    euare-instanceprofilelistbypath
-    echo "#"
-    echo "# euare-instanceprofilelistforrole -r $role_demos"
-    euare-instanceprofilelistforrole -r $role_demos
-    pause
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-images --region $user_region"
+        euca-describe-images --region $user_region
+        pause
 
-    echo "# euare-grouplistbypath"
-    euare-grouplistbypath
-    pause
+        echo "# euca-describe-keypairs --region $user_region"
+        euca-describe-keypairs --region $user_region
+        pause
 
-    echo "# euare-userlistbypath"
-    euare-userlistbypath
-    pause
+        echo "# euare-rolelistbypath --region $user_region"
+        euare-rolelistbypath --region $user_region
+        echo "#"
+        echo "# euare-instanceprofilelistbypath --region $user_region"
+        euare-instanceprofilelistbypath --region $user_region
+        echo "#"
+        echo "# euare-instanceprofilelistforrole --region $user_region $role_demos"
+        euare-instanceprofilelistforrole --region $user_region $role_demos
+        pause
 
-    echo "# euare-grouplistusers -g $group_demos"
-    euare-grouplistusers -g $group_demos
-    echo "#"
-    echo "# euare-grouplistusers -g $group_developers"
-    euare-grouplistusers -g $group_developers
-    echo "#"
-    echo "# euare-grouplistusers -g $group_users"
-    euare-grouplistusers -g $group_users
+        echo "# euare-grouplistbypath --region $user_region"
+        euare-grouplistbypath --region $user_region
+        pause
 
-    next 200
+        echo "# euare-userlistbypath --region $user_region"
+        euare-userlistbypath --region $user_region
+        pause
+
+        echo "# euare-grouplistusers --region $user_region $group_demos"
+        euare-grouplistusers --region $user_region $group_demos
+        echo "#"
+        echo "# euare-grouplistusers --region $user_region $group_developers"
+        euare-grouplistusers --region $user_region $group_developers
+        echo "#"
+        echo "# euare-grouplistusers --region $user_region $group_users"
+        euare-grouplistusers --region $user_region $group_users
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat /etc/euca2ools/conf.d/$region.ini"
-echo
-echo "cat ~/.euca/global.ini"
-echo
-echo "cat ~/.euca/$region.ini"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat /etc/euca2ools/conf.d/$region.ini"
-    cat /etc/euca2ools/conf.d/$region.ini
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
 
-    echo "# cat ~/.euca/global.ini"
-    cat ~/.euca/global.ini
-    pause
+    run 50
 
-    echo "# cat ~/.euca/$region.ini"
-    cat ~/.euca/$region.ini
+    if [ $choice = y ]; then
+        echo
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
 
-    next 200
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display AWSCLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.aws/config"
-echo
-echo "cat ~/.aws/credentials"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat ~/.aws/config"
-    cat ~/.aws/config
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
 
-    echo "# cat ~/.aws/credentials"
-    cat ~/.aws/credentials
+    run 50
 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+
+        next 200
+    fi
 fi
 
 
