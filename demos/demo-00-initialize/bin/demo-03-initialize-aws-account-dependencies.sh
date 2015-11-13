@@ -83,8 +83,8 @@ interactive=1
 speed=100
 verbose=0
 region=${AWS_DEFAULT_REGION#*@}
-account=euca
-user=admin
+account=${AWS_ACCOUNT_NAME:-euca}
+user=${AWS_USER_NAME:-admin}
 prefix=${account}123
 user_demo_password=${prefix}-${user_demo}
 user_developer_password=${prefix}-${user_developer}
@@ -186,20 +186,19 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfvr:a:u:p:? arg; do
+while getopts Isfvp:r:a:u:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     v)  verbose=1;;
-    r)  region="$OPTARG";;
-    a)  account="$OPTARG";;
-    u)  user="$OPTARG";;
     p)  prefix="$OPTARG"
         user_demo_password=${prefix}-${user_demo}
         user_developer_password=${prefix}-${user_developer}
         user_user_password=${prefix}-${user_user};;
-    U)  admin="$OPTARG";;
+    r)  region="$OPTARG";;
+    a)  account="$OPTARG";;
+    u)  user="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -239,7 +238,7 @@ fi
 if [ -z $prefix ]; then
     echo "-p prefix missing!"
     echo "Password prefix must be specified as a parameter"
-    exit 16
+    exit 18
 fi
 
 user_region=$federation-$account-$user@$region

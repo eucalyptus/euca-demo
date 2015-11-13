@@ -51,25 +51,28 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
-account=euca
-unset user
+account=${AWS_ACCOUNT_NAME:-euca}
+user=${AWS_USER_NAME:-admin}
+unset new_user
 unset password
-admin=admin
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-u user] [-p password] [-U admin]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-n new_user] [-p password]"
+    echo "               [-r region] [-a account] [-u user]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
-    echo "  -r region    AWS Region (default: $region)"
-    echo "  -a account   AWS Account name to use in demos (default: $account)"
-    echo "  -u user      AWS User to create and add to Administrators Group"
+    echo "  -v           verbose"
+    echo "  -n new_user  new User to create and add to Administrators Group"
     echo "  -p password  password for new User"
-    echo "  -U admin     existing AWS User with permissions to create new Groups and Users (default $admin)"
+    echo "  -r region    AWS Region (default: $region)"
+    echo "  -a account   AWS Account (default: $account)"
+    echo "  -u user      AWS User with permissions to create new Groups and Users (default $user)"
 }
 
 run() {
@@ -152,16 +155,17 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:u:p:U:? arg; do
+while getopts Isfvn:p:r:a:u:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
+    n)  new_user="$OPTARG";;
+    p)  password="$OPTARG";;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
     u)  user="$OPTARG";;
-    p)  password="$OPTARG";;
-    U)  admin="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -194,66 +198,42 @@ fi
 
 if [ -z $user ]; then
     echo "-u user missing!"
-    echo "User must be specified as a parameter"
+    echo "Could not automatically determine user, and it was not specified as a parameter"
     exit 14
+fi
+
+if [ -z $new_user ]; then
+    echo "-n new_user missing!"
+    echo "New User must be specified as a parameter"
+    exit 16
 fi
 
 if [ -z $password ]; then
     echo "-p password missing!"
     echo "Password must be specified as a parameter"
-    exit 16
-fi
-
-if [ -z $admin ]; then
-    echo "-U admin missing!"
-    echo "Existing Administrator must be specified as a parameter"
     exit 18
 fi
 
-profile=$federation-$account-$admin
-profile_region=$profile@$region
+user_region=$federation-$account-$user@$region
 
-if ! grep -s -q "\[user $profile]" ~/.euca/$federation.ini; then
-    echo "Could not find AWS ($account) Account Administrator ($admin) User Euca2ools user!"
-    echo "Expected to find: [user $profile] in ~/.euca/$federation.ini"
-    exit 20
+if ! grep -s -q "\[user $federation-$account-$user]" ~/.euca/$federation.ini; then
+    echo "Could not find AWS ($account) Account Administrator ($user) User Euca2ools user!"
+    echo "Expected to find: [user $federation-$account-$user] in ~/.euca/$federation.ini"
+    exit 50
 fi
 
 mkdir -p $tmpdir/$account
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Prepare AWS Account for Administrators
 
 start=$(date +%s)
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-if [ $admin = admin ]; then
-    echo "$(printf '%2d' $step). Use AWS ($account) Account Administrator credentials"
-else
-    echo "$(printf '%2d' $step). Use AWS ($account) Account Administrator ($admin) User credentials"
-fi
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
 
 ((++step))
 clear
@@ -267,9 +247,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupcreate -g $group"
+echo "euare-groupcreate --region $user_region $group"
 
-if euare-grouplistbypath | grep -s -q ":group/$group$"; then
+if euare-grouplistbypath --region $user_region | grep -s -q ":group/$group$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -282,8 +262,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupcreate -g $group"
-        euare-groupcreate -g $group
+        echo "# euare-groupcreate --region $user_region $group"
+        euare-groupcreate --region $user_region $group
 
         next
     fi
@@ -306,10 +286,12 @@ echo "cat << EOF >> $tmpdir/$account/${group}GroupPolicy.json"
 cat $policiesdir/AdministratorsGroupPolicy.json
 echo "EOF"
 echo
-echo "euare-groupuploadpolicy -g $group -p ${group}Policy \\"
-echo "                        -f $tmpdir/$account/${group}GroupPolicy.json"
+echo "euare-groupuploadpolicy --policy-name ${group}Policy \\"
+echo "                        --policy-document $tmpdir/$account/${group}GroupPolicy.json \\"
+echo "                        --region $user_region \\"
+echo "                        $group"
 
-if euare-grouplistpolicies -g $group | grep -s -q "${group}Policy$"; then
+if euare-grouplistpolicies --region $user_region $group | grep -s -q "${group}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -328,10 +310,14 @@ else
         cp $policiesdir/AdministratorsGroupPolicy.json $tmpdir/$account/${group}GroupPolicy.json
         pause
 
-        echo "# euare-groupuploadpolicy -g $group -p ${group}Policy \\"
-        echo ">                         -f $tmpdir/$account/${group}GroupPolicy.json"
-        euare-groupuploadpolicy -g $group -p ${group}Policy \
-                                -f $tmpdir/$account/${group}GroupPolicy.json
+        echo "# euare-groupuploadpolicy --policy-name ${group}Policy \\"
+        echo ">                         --policy-document $tmpdir/$account/${group}GroupPolicy.json \\"
+        echo ">                         --region $user_region \\"
+        echo ">                         $group"
+        euare-groupuploadpolicy --policy-name ${group}Policy \
+                                --policy-document $tmpdir/$account/${group}GroupPolicy.json \
+                                --region $user_region \
+                                $group
 
         next
     fi
@@ -343,15 +329,15 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($user) User"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usercreate -u $user"
+echo "euare-usercreate --region $user_region $new_user"
 
-if euare-userlistbypath | grep -s -q ":user/$user$"; then
+if euare-userlistbypath --region $user_region | grep -s -q ":user/$new_user$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -364,8 +350,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usercreate -u $user"
-        euare-usercreate -u $user
+        echo "# euare-usercreate --region $user_region $new_user"
+        euare-usercreate --region $user_region $new_user
 
         next
     fi
@@ -377,15 +363,15 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Add AWS ($account) Account Administrator ($user) User to Administrators ($group) Group"
+echo "$(printf '%2d' $step). Add AWS ($account) Account Administrator ($new_user) User to Administrators ($group) Group"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-groupadduser -g $group -u $user"
+echo "euare-groupadduser --user-name $new_user --region $user_region $group"
 
-if euare-grouplistusers -g $group | grep -s -q ":user/$user$"; then
+if euare-grouplistusers --region $user_region $group | grep -s -q ":user/$new_user$"; then
     echo
     tput rev
     echo "Already Added!"
@@ -398,8 +384,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-groupadduser -g $group -u $user"
-        euare-groupadduser -g $group -u $user
+        echo "# euare-groupadduser --user-name $new_user --region $user_region $group"
+        euare-groupadduser --user-name $new_user --region $user_region $group
 
         next
     fi
@@ -411,16 +397,16 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($user) User Login Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User Login Profile"
 echo "    - This allows the AWS Account Administrator User to login to the console"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-useraddloginprofile -u $user -p $password"
+echo "euare-useraddloginprofile --password $password --region $user_region $new_user"
 
-if euare-usergetloginprofile -u $user &> /dev/null; then
+if euare-usergetloginprofile --region $user_region $new_user &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -433,8 +419,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-useraddloginprofile -u $user -p $password"
-        euare-useraddloginprofile -u $user -p $password
+        echo "# euare-useraddloginprofile --password $password --region $user_region $new_user"
+        euare-useraddloginprofile --password $password --region $user_region $new_user
 
         next
     fi
@@ -446,25 +432,25 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($user) User Access Key"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User Access Key"
 echo "    - This allows the AWS Account Administrator User to run API commands"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "mkdir -p ~/.creds/$federation/$account/$user"
+echo "mkdir -p ~/.creds/$federation/$account/$new_user"
 echo
-echo "euare-useraddkey -u $user"
+echo "euare-useraddkey --region $user_region $new_user"
 echo
-echo "cat << EOF > ~/.creds/$federation/$account/$user/iamrc"
+echo "cat << EOF > ~/.creds/$federation/$account/$new_user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
 echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 echo
-echo "chmod 0600 ~/.creds/$federation/$account/$user/iamrc"
+echo "chmod 0600 ~/.creds/$federation/$account/$new_user/iamrc"
 
-if [ -r ~/.creds/$federation/$account/$user/iamrc ]; then
+if [ -r ~/.creds/$federation/$account/$new_user/iamrc ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -477,25 +463,25 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# mkdir -p ~/.creds/$federation/$account/$user"
-        mkdir -p ~/.creds/$federation/$account/$user
+        echo "# mkdir -p ~/.creds/$federation/$account/$new_user"
+        mkdir -p ~/.creds/$federation/$account/$new_user
         pause
 
-        echo "# euare-useraddkey -u $user"
-        result=$(euare-useraddkey -u $user) && echo $result
+        echo "# euare-useraddkey --region $user_region $new_user"
+        result=$(euare-useraddkey --region $user_region $new_user) && echo $result
         read access_key secret_key <<< $result
         pause
 
-        echo "# cat << EOF > ~/.creds/$federation/$account/$user/iamrc"
+        echo "# cat << EOF > ~/.creds/$federation/$account/$new_user/iamrc"
         echo "> AWSAccessKeyId=$access_key"
         echo "> AWSSecretKey=$secret_key"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$user/iamrc
-        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$user/iamrc
+        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$federation/$account/$new_user/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$federation/$account/$new_user/iamrc
         echo "#"
-        echo "# chmod 0600 ~/.creds/$federation/$account/$user/iamrc"
-        chmod 0600 ~/.creds/$federation/$account/$user/iamrc
+        echo "# chmod 0600 ~/.creds/$federation/$account/$new_user/iamrc"
+        chmod 0600 ~/.creds/$federation/$account/$new_user/iamrc
 
         next
     fi
@@ -504,14 +490,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$new_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$new_user/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($user) User Euca2ools Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User Euca2ools Profile"
 echo "    - This allows the AWS Account Administrator User to run API commands via Euca2ools"
 echo
 echo "============================================================"
@@ -526,15 +512,15 @@ if [ ! -r ~/.euca/$federation.ini ]; then
     echo
 fi
 echo "cat << EOF >> ~/.euca/$federation.ini"
-echo "[user $federation-$account-$user]"
+echo "[user $federation-$account-$new_user]"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user@$region"
+echo "euca-describe-availability-zones --region=$federation-$account-$new_user@$region"
 
-if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user]" ~/.euca/$federation.ini; then
+if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$new_user]" ~/.euca/$federation.ini; then
     echo
     tput rev
     echo "Already Created!"
@@ -560,20 +546,20 @@ else
             pause
         fi
         echo "# cat << EOF >> ~/.euca/$federation.ini"
-        echo "> [user $federation-$account-$user]"
+        echo "> [user $federation-$account-$new_user]"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[user $federation-$account-$user]" >> ~/.euca/$federation.ini
+        echo "[user $federation-$account-$new_user]" >> ~/.euca/$federation.ini
         echo "key-id = $access_key"              >> ~/.euca/$federation.ini
         echo "secret-key = $secret_key"          >> ~/.euca/$federation.ini
         echo                                     >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user@$region
+        echo "# euca-describe-availability-zones --region=$federation-$account-$new_user@$region"
+        euca-describe-availability-zones --region=$federation-$account-$new_user@$region
 
         next
     fi
@@ -582,14 +568,14 @@ fi
 
 ((++step))
 # Obtain all values we need from iamrc
-access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user/iamrc)
-secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$user/iamrc)
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$federation/$account/$new_user/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$federation/$account/$new_user/iamrc)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($user) User AWSCLI Profile"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User AWSCLI Profile"
 echo "    - This allows the AWS Account Administrator User to run AWSCLI commands"
 echo
 echo "============================================================"
@@ -606,7 +592,7 @@ if [ ! -r ~/.aws/config ]; then
     echo
 fi
 echo "cat << EOF >> ~/.aws/config"
-echo "[profile $account-$user]"
+echo "[profile $account-$new_user]"
 echo "region = $region"
 echo "output = text"
 echo
@@ -622,15 +608,15 @@ if [ ! -r ~/.aws/credentials ]; then
     echo
 fi
 echo "cat << EOF >> ~/.aws/credentials"
-echo "[$account-$user]"
+echo "[$account-$new_user]"
 echo "aws_access_key_id = $access_key"
 echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $account-$user --region $region"
+echo "aws ec2 describe-availability-zones --profile $account-$new_user --region $region"
 
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user]" ~/.aws/config; then
+if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$new_user]" ~/.aws/config; then
     echo
     tput rev
     echo "Already Created!"
@@ -660,13 +646,13 @@ else
             echo "#"
         fi
         echo "# cat << EOF >> ~/.aws/config"
-        echo "> [profile $account-$user]"
+        echo "> [profile $account-$new_user]"
         echo "> region = $region"
         echo "> output = text"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $account-$user]" >> ~/.aws/config
+        echo "[profile $account-$new_user]" >> ~/.aws/config
         echo "region = $region"         >> ~/.aws/config
         echo "output = text"            >> ~/.aws/config
         echo                            >> ~/.aws/config
@@ -687,20 +673,20 @@ else
             echo "#"
         fi
         echo "# cat << EOF >> ~/.aws/credentials"
-        echo "> [$account-$user]"
+        echo "> [$account-$new_user]"
         echo "> aws_access_key_id = $access_key"
         echo "> aws_secret_access_key = $secret_key"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$account-$user]"                    >> ~/.aws/credentials
+        echo "[$account-$new_user]"                    >> ~/.aws/credentials
         echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $account-$user --region $region"
-        aws ec2 describe-availability-zones --profile $account-$user --region $region
+        echo "# aws ec2 describe-availability-zones --profile $account-$new_user --region $region"
+        aws ec2 describe-availability-zones --profile $account-$new_user --region $region
 
         next
     fi
@@ -708,110 +694,116 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List Demo Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-keypairs"
-echo
-echo "euare-grouplistbypath"
-echo
-echo "euare-userlistbypath"
-echo
-echo "euare-grouplistusers -g $group"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List Demo Resources"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-keypairs --region $user_region"
+    echo
+    echo "euare-grouplistbypath --region $user_region"
+    echo
+    echo "euare-userlistbypath --region $user_region"
+    echo
+    echo "euare-grouplistusers --region $user_region $group"
 
-    echo "# euare-grouplistbypath"
-    euare-grouplistbypath
-    pause
+    run 50
 
-    echo "# euare-userlistbypath"
-    euare-userlistbypath
-    pause
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-keypairs --region $user_region"
+        euca-describe-keypairs --region $user_region
+        pause
 
-    echo "# euare-grouplistusers -g $group"
-    euare-grouplistusers -g $group
+        echo "# euare-grouplistbypath --region $user_region"
+        euare-grouplistbypath --region $user_region
+        pause
 
-    next 200
+        echo "# euare-userlistbypath --region $user_region"
+        euare-userlistbypath --region $user_region
+        pause
+
+        echo "# euare-grouplistusers --region $user_region $group"
+        euare-grouplistusers --region $user_region $group
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat /etc/euca2ools/conf.d/$federation.ini"
-echo
-echo "cat ~/.euca/global.ini"
-echo
-echo "cat ~/.euca/$federation.ini"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat /etc/euca2ools/conf.d/$federation.ini"
-    cat /etc/euca2ools/conf.d/$federation.ini
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$federation.ini"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat ~/.euca/$federation.ini"
 
-    echo "# cat ~/.euca/global.ini"
-    cat ~/.euca/global.ini
-    pause
+    run 50
 
-    echo "# cat ~/.euca/$federation.ini"
-    cat ~/.euca/$federation.ini
+    if [ $choice = y ]; then
+        echo
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini
+        pause
 
-    next 200
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat ~/.euca/$federation.ini"
+        cat ~/.euca/$federation.ini
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display AWSCLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.aws/config"
-echo
-echo "cat ~/.aws/credentials"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat ~/.aws/config"
-    cat ~/.aws/config
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
 
-    echo "# cat ~/.aws/credentials"
-    cat ~/.aws/credentials
+    run 50
 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+
+        next 200
+    fi
 fi
 
 
