@@ -23,10 +23,10 @@ This is using the following nodes in the PRC:
 - odc-d-29.prc.eucalyptus-systems.com: CCA, SCA
   - Public: 10.104.1.208/16 (em1)
   - Private: 10.105.1.208/16 (em2)
-- odc-d-35.prc.eucalyptus-systems.com: NCA1
+- odc-d-35.prc.eucalyptus-systems.com: NC1
   - Public: 10.104.1.190/16 (em1)
   - Private: 10.105.1.190/16 (em2)
-- odc-d-38.prc.eucalyptus-systems.com: NCA2
+- odc-d-38.prc.eucalyptus-systems.com: NC2
   - Public: 10.104.1.187/16 (em1)
   - Private: 10.105.1.187/16 (em2)
 
@@ -36,12 +36,11 @@ Each step uses a code to indicate what node the step should be run on:
 - UFS: User-Facing Services Host
 - MC:  Management Console Host
 - OSP: Object Storage Provider (Walrus)
-- CCA:  Cluster Controller Host (Cluster A)
-- CCB:  Cluster Controller Host (Cluster B)
-- SCA:  Storage Controller Host (Cluster A)
-- SCB:  Storage Controller Host (Cluster B)
-- NCAn: Node Controller(s) (Cluster A)
-- NCBn: Node Controller(s) (Cluster B)
+- CCA: Cluster Controller Host (Cluster A)
+- CCB: Cluster Controller Host (Cluster B)
+- SCA: Storage Controller Host (Cluster A)
+- SCB: Storage Controller Host (Cluster B)
+- NCn: Node Controller(s)
 
 ### Hardware Configuration and Operating System Installation
 
@@ -53,7 +52,7 @@ Each host has 2 1TB disks configured as follows:
 - Disk 1, /dev/sda, used for boot (/boot), root (/), and swap, with most space left unreserved.
 - Disk 2, /dev/sdb, is not initially configured.
 
-A manual installation of CentOS 6.6 is done, but additional configuration is also included.
+A manual installation of CentOS 6.7 is done, but additional configuration is also included.
 Local repos are also installed.
 
 Additional disk space allocation is manually performed, as described below.
@@ -70,61 +69,63 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     export AWS_DEFAULT_REGION=hp-gol01-d6
+    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
 
-    export EUCA_DNS_PUBLIC_DOMAIN=mjc.prc.eucalyptus-systems.com
+    export EUCA_ADMIN_PASSWORD=password
+
     export EUCA_DNS_PRIVATE_DOMAIN=internal
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=cloud
+    export EUCA_DNS_INSTANCE_SUBDOMAIN=vm
     export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
     export EUCA_DNS_PARENT_HOST=ns1.mjc.prc.eucalyptus-systems.com
     export EUCA_DNS_PARENT_IP=10.104.10.80
 
-    export EUCA_SERVICE_API_NAME=api
+    export EUCA_SERVICE_API_NAME=user-api-1
 
     export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
-    export EUCA_CLUSTER1=${AWS_DEFAULT_REGION}a
-    export EUCA_CLUSTER1_CC_NAME=${EUCA_CLUSTER1}-cc
-    export EUCA_CLUSTER1_SC_NAME=${EUCA_CLUSTER1}-sc
+    export EUCA_ZONEA=${AWS_DEFAULT_REGION}a
+    export EUCA_ZONEA_CC_NAME=${EUCA_ZONEA}-cc
+    export EUCA_ZONEA_SC_NAME=${EUCA_ZONEA}-sc
 
-    export EUCA_CLUSTER1_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
-    export EUCA_CLUSTER1_PRIVATE_NAME=10.105.0.0
-    export EUCA_CLUSTER1_PRIVATE_SUBNET=10.105.0.0
-    export EUCA_CLUSTER1_PRIVATE_NETMASK=255.255.0.0
-    export EUCA_CLUSTER1_PRIVATE_GATEWAY=10.105.0.1
+    export EUCA_ZONEA_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
+    export EUCA_ZONEA_PRIVATE_NAME=10.105.0.0
+    export EUCA_ZONEA_PRIVATE_SUBNET=10.105.0.0
+    export EUCA_ZONEA_PRIVATE_NETMASK=255.255.0.0
+    export EUCA_ZONEA_PRIVATE_GATEWAY=10.105.0.1
 
     export EUCA_CLC_PUBLIC_INTERFACE=em1
-    export EUCA_CLC_PRIVATE_INTERFACE=em2
     export EUCA_CLC_PUBLIC_IP=10.104.10.83
+    export EUCA_CLC_PRIVATE_INTERFACE=em2
     export EUCA_CLC_PRIVATE_IP=10.105.10.83
 
     export EUCA_UFS_PUBLIC_INTERFACE=em1
-    export EUCA_UFS_PRIVATE_INTERFACE=em2
     export EUCA_UFS_PUBLIC_IP=10.104.10.84
+    export EUCA_UFS_PRIVATE_INTERFACE=em2
     export EUCA_UFS_PRIVATE_IP=10.105.10.84
 
     export EUCA_MC_PUBLIC_INTERFACE=em1
-    export EUCA_MC_PRIVATE_INTERFACE=em2
     export EUCA_MC_PUBLIC_IP=10.104.10.84
+    export EUCA_MC_PRIVATE_INTERFACE=em2
     export EUCA_MC_PRIVATE_IP=10.105.10.84
 
     export EUCA_OSP_PUBLIC_INTERFACE=em1
-    export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PUBLIC_IP=10.104.10.85
+    export EUCA_OSP_PRIVATE_INTERFACE=em2
     export EUCA_OSP_PRIVATE_IP=10.105.10.85
 
     export EUCA_CCA_PUBLIC_INTERFACE=em1
-    export EUCA_CCA_PRIVATE_INTERFACE=em2
     export EUCA_CCA_PUBLIC_IP=10.104.1.208
+    export EUCA_CCA_PRIVATE_INTERFACE=em2
     export EUCA_CCA_PRIVATE_IP=10.105.1.208
 
     export EUCA_SCA_PUBLIC_INTERFACE=em1
-    export EUCA_SCA_PRIVATE_INTERFACE=em2
     export EUCA_SCA_PUBLIC_IP=10.104.1.208
+    export EUCA_SCA_PRIVATE_INTERFACE=em2
     export EUCA_SCA_PRIVATE_IP=10.105.1.208
 
-    export EUCA_NC_PRIVATE_BRIDGE=br0
-    export EUCA_NC_PRIVATE_INTERFACE=em2
     export EUCA_NC_PUBLIC_INTERFACE=em1
+    export EUCA_NC_PRIVATE_INTERFACE=em2
+    export EUCA_NC_PRIVATE_BRIDGE=br0
 
     export EUCA_NCA1_PUBLIC_IP=10.104.1.190
     export EUCA_NCA1_PRIVATE_IP=10.105.1.190
@@ -143,7 +144,7 @@ process, not currently available for this host.
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree
+    yum install -y man wget zip unzip git qemu-img-rhev nc lynx rsync bind-utils tree screen
     ```
 
 2. (All) Configure Sudo
@@ -176,8 +177,8 @@ process, not currently available for this host.
 
     if [ ! -r /root/.gitconfig ]; then
         echo -e "[user]" > /root/.gitconfig
-        echo -e "\tname = Administrator" >> /root/.gitconfig
-        echo -e "\temail = admin@eucalyptus.com" >> /root/.gitconfig
+        echo -e "\tname = Eucalyptus Administrator" >> /root/.gitconfig
+        echo -e "\temail = eucalyptus.admin@hpe.com" >> /root/.gitconfig
     fi
     ```
 
@@ -190,16 +191,13 @@ process, not currently available for this host.
         echo "alias lsa='ls -lAF'" > /etc/profile.d/local.sh
         echo "alias ip4='ip addr | grep \" inet \"'" >> /etc/profile.d/local.sh
     fi
+
+    source /etc/profile.d/local.sh
     ```
 
-    Adjust user profile to include demo scripts on PATH, and set default Eucalyptus region
-    and profile.
+    Adjust user profile to set default Eucalyptus region and profile.
 
     ```bash
-    if ! grep -s -q "^PATH=.*eucalyptus/euca-demo/bin" ~/.bash_profile; then
-        sed -i -e '/^PATH=/s/$/:\$HOME\/src\/eucalyptus\/euca-demo\/bin/' ~/.bash_profile
-    fi
-
     if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
         echo >> ~/.bash_profile
         echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
@@ -224,14 +222,6 @@ process, not currently available for this host.
     fi
     ```
 
-6. (All) Refresh Profile
-
-    The easiest way to do this is simply to log out, then log back in.
-
-    ```bash
-    exit
-    ```
-
 ### Initialize External DNS
 
 I will not describe this in detail here, except to note that this must be in place and working
@@ -246,32 +236,32 @@ above are changed, expected results below should also be updated to match.
 **A Records**
 
 ```bash
-dig +short ${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ${AWS_DEFAULT_DOMAIN}
 10.104.10.80
 
-dig +short ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.84
 
-dig +short ns1.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-10.104.10.83
-
-dig +short clc.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-10.104.10.83
-
-dig +short ufs.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short ns1.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.84
 
-dig +short console.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short clc.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+10.104.10.83
+
+dig +short ufs.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+10.104.10.84
+
+dig +short console.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 10.104.10.84
 ```
 
 **NS Records**
 
 ```bash
-dig +short -t NS ${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short -t NS ${AWS_DEFAULT_DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 
-dig +short -t NS ${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
+dig +short -t NS ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 ```
 
@@ -419,7 +409,37 @@ ns1.mjc.prc.eucalyptus-systems.com.
     mount /var/lib/eucalyptus/archive
     ```
 
-3. (OSP)  Configure additional disk storage for the Object Storage Provider
+3. (UFS+MC)  Configure additional disk storage for User-Facing Services and Management Console
+
+    As we only have 2 physical disks to work with, for the UFS+MC, use of the second disk is best
+    suited for additional space in /var for logs.
+
+    ```bash
+    pvcreate -Z y /dev/sdb
+
+    pvscan
+
+    vgcreate var /dev/sdb
+
+    lvcreate -l 100%FREE -n log var
+
+    mke2fs -t ext4 /dev/var/log
+
+    e2label /dev/var/log log
+
+    echo "LABEL=log               /var/lib/var/log                ext4    defaults        1 1" >> /etc/fstab
+
+    mv /var/log /var/log-save
+
+    mkdir -p /var/log
+
+    mount /var/log
+
+    rsync -avzP /var/log-save/ /var/log
+    rm -Rf /var/log-save
+    ```
+
+4. (OSP)  Configure additional disk storage for the Object Storage Provider
 
     As we only have 2 physical disks to work with, for the OSP, use of the second disk is best
     suited to keeping the storage buckets separate from other disk activity.
@@ -444,7 +464,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     mount /var/lib/eucalyptus/bukkits
     ```
 
-4. (SC)  Configure additional disk storage for the Storage Controller
+5. (SC)  Configure additional disk storage for the Storage Controller
 
     As we only have 2 physical disks to work with, for the SC, use of the second disk is best
     suited to an additional volume group used for the logical volumes which are used for EBS
@@ -459,7 +479,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     vgcreate eucalyptus /dev/sdb
     ```
 
-5. (NC)  Configure additional disk storage for the Node Controller
+6. (NC)  Configure additional disk storage for the Node Controller
 
     As we only have 2 physical disks to work with, for the NC, use of the second disk is best
     suited to where the instance virtual disks are created.
@@ -594,6 +614,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -637,6 +658,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -674,6 +696,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -713,6 +736,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
@@ -750,13 +774,17 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
 
     chkconfig iptables on
+
     service iptables stop
     ```
 
 19. (ALL): Disable SELinux
 
+    There is a bug in 4.2.0 which prevents NC from starting with SELinux in permissive mode. So
+    we must completely disable SELinux.
+
     ```bash
-    sed -i -e "/^SELINUX=/s/=.*$/=permissive/" /etc/selinux/config
+    sed -i -e "/^SELINUX=/s/=.*$/=disabled/" /etc/selinux/config
 
     setenforce 0
     ```
@@ -767,9 +795,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     yum install -y ntp
 
     chkconfig ntpd on
+
     service ntpd start
 
     ntpdate -u  0.centos.pool.ntp.org
+
     hwclock --systohc
     ```
 
@@ -888,11 +918,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
-23. (CC): Configure packet routing
+23. (CC/NC): Configure packet forwarding
 
-    Note that while this is not required when using EDGE mode, as the CC no longer routes traffic,
-    you will get a warning when starting the CC if this routing has not been configured, and the
-    package would turn this on at that time. So, this is to prevent that warning.
+    Note that while this is not required on the CC when using EDGE mode, as the CC no longer routes
+    traffic, you will get a warning when starting the CC if this routing has not been configured, and
+    the package would turn this on at that time. So, this is to prevent that warning.
 
     ```bash
     sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
@@ -902,16 +932,47 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-24. (NC): Configure packet routing
+24. (NC): Configure bridge filtering
+
+    The normal behavior of libvirt is to disable to the kernel's default behavior where bridge
+    traffic is routed through iptables on the host, so that traffic to virtual guests is not
+    blocked because of iptables rules on the host. Eucalyptus depends on the default functionality
+    to implement security groups, so we must re-enable the original default behavior.
 
     ```bash
-    sed -i -e '/^net.ipv4.ip_forward = 0/s/=.*$/= 1/' /etc/sysctl.conf
-    sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    if grep -s -q bridge-nf-call-iptables /etc/sysctl.conf; then
+        sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
+    else
+        echo >> /etc/sysctl.conf
+        echo "# Re-enable netfilter on bridges"
+        echo "net.bridge.bridge-nf-call-iptables = 1"
+    fi
 
     sysctl -p
 
-    cat /proc/sys/net/ipv4/ip_forward
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
+    ```
+
+25. (ALL): Configure additional network settings
+
+    ```bash
+    cat << EOF >> /etc/sysctl.conf
+
+    # Additional Eucalyptus settings
+    net.ipv4.neigh.default.gc_interval = 3600
+    net.ipv4.neigh.default.gc_stale_time = 3600
+    net.ipv4.neigh.default.gc_thresh1 = 1024
+    net.ipv4.neigh.default.gc_thresh2 = 2048
+    net.ipv4.neigh.default.gc_thresh3 = 4096
+    EOF
+
+    sysctl -p
+
+    cat /proc/sys/net/ipv4/neigh/default/gc_interval
+    cat /proc/sys/net/ipv4/neigh/default/gc_stale_time
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh1
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh2
+    cat /proc/sys/net/ipv4/neigh/default/gc_thresh3
     ```
 
 ### Prepare Network
@@ -930,41 +991,38 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     This tool should be run simultaneously on all hosts running Java components.
 
+    NOTE: This was moved to after Eucalyptus package installation in 4.2.
+
     ```bash
-    yum install -y java
+    yum install -y --nogpgcheck http://downloads.eucalyptus.com/software/tools/centos/6/x86_64/network-tomography-1.0.0-3.el6.x86_64.rpm
 
-    mkdir -p ~/src/eucalyptus
-    cd ~/src/eucalyptus
-    git clone https://github.com/eucalyptus/deveutils
-
-    cd deveutils/network-tomography
-    ./network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
+    /usr/bin/network-tomography ${EUCA_CLC_PRIVATE_IP} ${EUCA_UFS_PRIVATE_IP} ${EUCA_OSP_PRIVATE_IP} ${EUCA_SCA_PRIVATE_IP}
     ```
 
 3. (CLC): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_UFS_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_UFS_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_UFS_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
     ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CCA_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 4. (CC): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_NCA1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_NCA2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ```
 
 ### Install Eucalyptus
@@ -976,16 +1034,16 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     yum install -y \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/epel-release-6-8.noarch.rpm \
-        http://downloads.eucalyptus.com/software/eucalyptus/4.1/centos/6Server/x86_64/eucalyptus-release-4.1-1.el6.noarch.rpm \
-        http://downloads.eucalyptus.com/software/euca2ools/3.2/centos/6Server/x86_64/euca2ools-release-3.2-1.el6.noarch.rpm
+        http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/eucalyptus/4.2/centos/6/x86_64/eucalyptus-release-4.2-1.el6.noarch.rpm \
+        http://downloads.eucalyptus.com/software/euca2ools/3.3/centos/6/x86_64/euca2ools-release-3.3-1.el6.noarch.rpm
     ```
 
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
     repositories which contain subscription-only Eucalyptus software, which requires a license.
 
     yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
-    yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.1-1.el6.noarch.rpm
+    yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.2-1.el6.noarch.rpm
     ```
 
 2. (ALL): Override external yum repos to internal servers
@@ -1075,7 +1133,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
            -e "s/^CLOUD_OPTS=.*$/CLOUD_OPTS=\"--bind-addr=${EUCA_OSP_PRIVATE_IP}\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-4. (SC+CC): Configure Eucalyptus Networking
+4. (CCA+SCA): Configure Eucalyptus Networking
 
     ```bash
     cp -a /etc/eucalyptus/eucalyptus.conf /etc/eucalyptus/eucalyptus.conf.orig
@@ -1106,23 +1164,23 @@ ns1.mjc.prc.eucalyptus-systems.com.
     {
       "InstanceDnsDomain": "${EUCA_DNS_INSTANCE_SUBDOMAIN}.${EUCA_DNS_PRIVATE_DOMAIN}",
       "InstanceDnsServers": [
-        "${EUCA_CLC_PUBLIC_IP}"
+        "${EUCA_UFS_PUBLIC_IP}"
       ],
       "PublicIps": [
         "${EUCA_PUBLIC_IP_RANGE}"
       ],
       "Clusters": [
         {
-          "Name": "${EUCA_CLUSTER1}",
+          "Name": "${EUCA_ZONEA}",
           "MacPrefix": "d0:0d",
           "Subnet": {
-            "Name": "${EUCA_CLUSTER1_PRIVATE_NAME}",
-            "Subnet": "${EUCA_CLUSTER1_PRIVATE_SUBNET}",
-            "Netmask": "${EUCA_CLUSTER1_PRIVATE_NETMASK}",
-            "Gateway": "${EUCA_CLUSTER1_PRIVATE_GATEWAY}"
+            "Name": "${EUCA_ZONEA_PRIVATE_NAME}",
+            "Subnet": "${EUCA_ZONEA_PRIVATE_SUBNET}",
+            "Netmask": "${EUCA_ZONEA_PRIVATE_NETMASK}",
+            "Gateway": "${EUCA_ZONEA_PRIVATE_GATEWAY}"
           },
           "PrivateIps": [
-            "${EUCA_CLUSTER1_PRIVATE_IP_RANGE}"
+            "${EUCA_ZONEA_PRIVATE_IP_RANGE}"
           ]
         }
       ]
@@ -1130,7 +1188,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-7. (NC): Configure Eucalyptus Disk Allocation
+7. (NC): (Skip) Configure Eucalyptus Disk Allocation
 
     ```bash
     nc_work_size=2400000
@@ -1148,13 +1206,14 @@ ns1.mjc.prc.eucalyptus-systems.com.
     # Set this to Y to use the private IP of the CLC for the metadata service.
     # The default is to use the public IP.
     METADATA_USE_VM_PRIVATE="Y"
+    METADATA_IP="$EUCA_CLC_PRIVATE_IP"
     EOF
     ```
 
-9. (CLC/UFS/OSP/SC): Configure Eucalyptus Java Memory Allocation
+9. (CLC/UFS/OSP/SC): (Skip) Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
-    regardless of value
+    regardless of value, in 4.1, need to retest for 4.2, but appears to set itself automatically.
 
     ```bash
     heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -1164,24 +1223,14 @@ ns1.mjc.prc.eucalyptus-systems.com.
     # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
     ```
 
-10. (MC): Configure Management Console with Cloud Controller and Walrus addresses
+10. (MC): (Skip) Configure Management Console with User Facing Services Address
 
-    The clchost parameter within console.ini is misleadingly named, as it should reference the
-    public IP of the host running User Facing Services.
+    On same host currently, may have to set when CLC and UFS are on different hosts.
 
     ```bash
     cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
 
-    sed -i -e "/^clchost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" \
-           -e "/# since eucalyptus allows for different services to be located on different/d" \
-           -e "/# physical hosts, you may override the above host and port for each service./d" \
-           -e "/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d" \
-           -e "/For each service, you can specify a different host and\/or port, for example;/d" \
-           -e "/#elb.host=10.20.30.40/d" \
-           -e "/#elb.port=443/d" \
-           -e "/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d" \
-           -e "/# that won't work from client's browsers./d" \
-           -e "/#s3.host=<your host IP or name>/d" /etc/eucaconsole/console.ini
+    sed -i -e "/^ufshost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" /etc/eucaconsole/console.ini
     ```
 
 ### Start Eucalyptus
@@ -1189,18 +1238,22 @@ ns1.mjc.prc.eucalyptus-systems.com.
 1. (CLC): Initialize the Cloud Controller service
 
     ```bash
-    euca_conf --initialize
+    clcadmin-initialize-cloud
     ```
 
 2. (CLC/UFS/OSP/SC): Start the Cloud Controller service
 
     ```bash
+    chkconfig eucalyptus-cloud on
+
     service eucalyptus-cloud start
     ```
 
 3. (CC): Start the Cluster Controller service
 
     ```bash
+    chkconfig eucalyptus-cc on
+
     service eucalyptus-cc start
     ```
 
@@ -1210,7 +1263,11 @@ ns1.mjc.prc.eucalyptus-systems.com.
     registered.
 
     ```bash
+    chkconfig eucalyptus-nc on
+
     service eucalyptus-nc start
+
+    chkconfig eucanetd on
 
     service eucanetd start
     ```
@@ -1218,6 +1275,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
 5. (MC): Start the Management Console service
 
     ```bash
+    chkconfig eucaconsole on
+
     service eucaconsole start
     ```
 
@@ -1229,16 +1288,12 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ls -l /var/log/eucalyptus
     ```
 
-### Register Eucalyptus
-
-1. (CLC): Register User-Facing services
-
-    Wait for CLC services to respond.
+7. (CLC): Wait for services to respond
 
     ```bash
     while true; do
         echo -n "Testing services... "
-        if nc -z localhost 8777 &> /dev/null; then 
+        if nc -z localhost 8777 &> /dev/null; then
             echo " Started"
             break
         else
@@ -1250,13 +1305,39 @@ ns1.mjc.prc.eucalyptus-systems.com.
     done
     ```
 
-    Register UFS services.
+    TBD: Add steps to verify this using nc
+
+    Verify that everything has started without error. Expected outcomes include:
+
+    * The CLC is listening on ports 8443 and 8773
+    * Walrus is listening on port 8773
+    * The SC is listening on port 8773
+    * The CC is listening on port 8774
+    * The NCs are listening on port 8775
+
+### Register Eucalyptus
+
+1. (CLC): Assume Eucalyptus Administrator Credentials
 
     ```bash
-    euca_conf --register-service -T user-api -N ${EUCA_SERVICE_API_NAME} -H ${EUCA_UFS_PRIVATE_IP}
+    eval $(clcadmin-assume-system-credentials)
     ```
 
-    Wait for UFS services to respond.
+2. (CLC): Register User-Facing services
+
+    Copy Encryption Keys.
+
+    ```bash
+    clcadmin-copy-keys ${EUCA_UFS_PRIVATE_IP}
+    ```
+
+    Register User-Facing Services.
+
+    ```bash
+    euserv-register-service -t user-api -h ${EUCA_UFS_PRIVATE_IP} ${EUCA_SERVICE_API_NAME}
+    ```
+
+    Wait for User-Facing Services to respond.
 
     ```bash
     while true; do
@@ -1275,43 +1356,121 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     Optional: Confirm service status.
 
-    * All services should be in the ENABLED state except for objectstorage, loadbalancingbackend
-      and imagingbackend.
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
     * The cluster, storage and walrusbackend services should not yet be listed.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services
     ```
 
-2. (CLC): Register Walrus as the Object Storage Provider (OSP)
+3. (CLC): Register Walrus as the Object Storage Provider (OSP)
+
+    Copy Encryption Keys.
 
     ```bash
-    euca_conf --register-walrusbackend -P walrus -C walrus -H ${EUCA_OSP_PRIVATE_IP}
-    sleep 15
+    clcadmin-copy-keys ${EUCA_OSP_PRIVATE_IP}
     ```
 
-3. (CLC): Register Storage Controller service
+    Register the Walrus Backend Service.
 
     ```bash
-    euca_conf --register-sc -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_SC_NAME} -H ${EUCA_SCA_PRIVATE_IP}
-    sleep 15
+    euserv-register-service -t walrusbackend -h ${EUCA_OSP_PRIVATE_IP} walrus
+    ```
+
+    Wait for walrusbackend service to become **enabled**.
+
+    ```bash
+    sleep 30
+    ```
+
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
+    * The walrusbackend service should now be listed.
+    * The cluster and storage services should not yet be listed.
+
+    ```bash
+    euserv-describe-services
     ```
 
 4. (CLC): Register Cluster Controller service
 
-    ```bash
-    euca_conf --register-cluster -P ${EUCA_CLUSTER1} -C ${EUCA_CLUSTER1_CC_NAME} -H ${EUCA_CCA_PRIVATE_IP}
-    sleep 15
-    ```
-
-5. (CC): Register Node Controller host(s)
+    Register the Cluster Controller service.
 
     ```bash
-    euca_conf --register-nodes="${EUCA_NCA1_PRIVATE_IP} ${EUCA_NCA2_PRIVATE_IP} ${EUCA_NCA3_PRIVATE_IP} ${EUCA_NCA4_PRIVATE_IP}"
-    sleep 15
+    euserv-register-service -t cluster -h ${EUCA_CCA_PRIVATE_IP} -z ${EUCA_ZONEA} ${EUCA_ZONEA_CC_NAME}
     ```
 
-6. (NC): Restart the Node Controller services
+    Copy Encryption Keys.
+
+    ```bash
+    clcadmin-copy-keys -z ${EUCA_ZONEA} ${EUCA_CCA_PRIVATE_IP}
+    ```
+
+    Wait for services to become **enabled**.
+
+    ```bash
+    sleep 30
+    ```
+
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
+      and objectstorage.
+    * The cluster service should now be listed.
+    * The storage service should not yet be listed.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+5. (CLC): Register Storage Controller service
+
+    Copy Encryption Keys. This is not needed in this example as each SC is coresident on the same host as the CC.
+
+    ```bash
+    #clcadmin-copy-keys -z ${EUCA_ZONEA} ${EUCA_SCA_PRIVATE_IP}
+    ```
+
+    Register the Storage Controller service.
+
+    ```bash
+    euserv-register-service -t storage -h ${EUCA_SCA_PRIVATE_IP} -z ${EUCA_ZONEA} ${EUCA_ZONEA_SC_NAME}
+    ```
+
+    Wait for storage services to become **broken**.
+
+    ```bash
+    sleep 30
+    ```
+
+    Optional: Confirm service status.
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend,
+      objectstorage and storage.
+    * The storage service should now be listed.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+6. (CCA): Register Node Controller host(s)
+
+    Register the Node Controller services.
+
+    ```bash
+    clusteradmin-register-nodes ${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}
+    ```
+
+    Copy Encryption Keys.
+
+    ```bash
+    clusteradmin-copy-keys ${EUCA_NC1_PRIVATE_IP} ${EUCA_NC2_PRIVATE_IP}
+    ```
+
+7. (NC): Restart the Node Controller services
 
     The failure messages due to missing keys should no longer be there on restart.
 
@@ -1321,273 +1480,495 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
 ### Runtime Configuration
 
-1. (CLC): Use Eucalyptus Administrator credentials
+1. (CLC): Initialize Euca2ools Region
 
-    Note that there is a limit to the number of times the primary key and certificate
-    can be downloaded, without deleting and recreating them. So, insure you do not
-    accidentally delete any primary key or certificate files when refreshing credentials
-    on steps further down in this procedure.
+    Convert the localhost Euca2ools Region configuration file into a specific Euca2ools Region
+    configuration file, not yet using DNS or SSL.
 
-    Additionally, if `euca_conf --get-credentials` or `euca-get-credentials` is called
-    to refresh credentials, and the key or certificate is not included in the download
-    zip file because they were previously downloaded, the included eucarc file will be
-    missing two lines which set the EC2_PRIVATE_KEY and EC2_CERT environment variables
-    to the (now missing) files. This causes all image related API calls to fail.
-
-    To work around this issue, we must save the original eucarc file, and insure we do
-    not delete the original key and certificate files, and replace the missing lines
-    within eucarc on each refresh of credentials.
+    We will replace this file once DNS is configured, then again once PKI and SSL certificates
+    are configured.
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
 
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
 
-    euca_conf --get-credentials ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling/
+    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation/
+    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute/
+    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing/
+    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare/
+    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch/
+    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage/
+    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens/
+    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow/
+    user = $AWS_DEFAULT_REGION-admin
 
-    unzip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Empyrean/
+    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Properties/
+    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Reporting/
 
-    cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc.orig
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = false
+    EOF
     ```
 
-2. (CLC): Confirm initial service status
+2. (CLC): Configure Eucalyptus Region
 
-    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend,
-      imagingbackend, and storage.
-    * All nodes should be in the ENABLED state.
-
-    ````bash
-    euca-describe-services | cut -f1-5
+    ```bash
+    euctl region.region_name=$AWS_DEFAULT_REGION
 
     euca-describe-regions
 
     euca-describe-availability-zones verbose
-
-    euca-describe-nodes
     ```
 
-3. (CLC): Configure EBS Storage
+3. (CLC): Configure Eucalyptus Administrator Password
+
+    ```bash
+    euare-usermodloginprofile --password $EUCA_ADMIN_PASSWORD admin
+    ```
+
+4. (CLC): Create Eucalyptus Administrator Certificates
+
+    ```bash
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+
+    euare-usercreatecert --out ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem \
+                         --keyout ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
+    ```
+
+5. (CLC): Generate Eucalyptus Administrator Credentials File
+
+    This is only needed for reference by the AWS_CREDENTIALS_FILE environment variable, which
+    itself is only needed when you want to use both Euca2ools and AWSCLI in parallel.
+
+    There is currently a conflict between a Euca2ools extension to the semantics of the
+    AWS_DEFAULT_REGION environment variable, where Euca2ools requires the "USER@" prefix to the
+    REGION value to pass such USER information via the environment, but when this prefix is
+    present it breaks AWSCLI, which uses AWS_DEFAULT_REGION and does not expect this prefix.
+
+    As a workaround, we can restrict the AWS_DEFAULT_REGION environment variable to the original
+    AWS semantics where only the REGION is present, and pass the USER into Euca2ools via the
+    AWS_DEFAULT_CREDENTIALS environment variable, which Euca2ools still recognizes but which
+    is no longer recognized by AWS CLI.
+
+    ```bash
+    access_key=$AWS_ACCESS_KEY_ID
+    secret_key=$AWS_SECRET_ACCESS_KEY
+
+    cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    AWSAccessKeyId=$access_key
+    AWSSecretKey=$secret_key
+    EOF
+    ```
+
+6. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
+
+    Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
+
+    ```bash
+    account_id=$(euare-userlistbypath | grep "user/admin" | cut -d ":" -f5)
+    access_key=$AWS_ACCESS_KEY_ID
+    secret_key=$AWS_SECRET_ACCESS_KEY
+    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
+    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem
+
+    mkdir -p ~/.euca
+    chmod 0700 ~/.euca
+
+    cat << EOF > ~/.euca/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [user $AWS_DEFAULT_REGION-admin]
+    key-id = $access_key
+    secret-key = $secret_key
+    account-id = $account_id
+    private-key = $private_key
+    certificate = $certificate
+
+    EOF
+
+    euca-describe-regions --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
+
+    euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
+    ```
+
+7. (CLC): Confirm initial service status
+
+    * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend,
+      objectstorage and storage.
+    * All nodes should be in the **enabled** state.
+
+    ````bash
+    euserv-describe-services
+
+    euserv-describe-node-controllers
+    ```
+
+8. (CLC): Load Edge Network JSON configuration
+
+    ```bash
+    euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
+    ```
+
+9. (CLC): Configure Object Storage to use Walrus Backend
+
+    ```bash
+    euctl objectstorage.providerclient=walrus
+    ```
+
+    Wait for objectstorage service to become **enabled**.
+
+    ```bash
+    sleep 20
+    ```
+
+    Optional: Confirm service status.
+
+    * The objectstorage service should now be in the **enabled** state.
+    * All services should be in the **enabled** state, except for imagingbackend,
+      loadbalancingbackend and storage.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+10. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
     intended for DAS storage mode Logical Volumes.
 
     ```bash
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.blockstoragemanager=das
-    sleep 15
+    euctl ${EUCA_ZONEA}.storage.blockstoragemanager=das
 
-    euca-modify-property -p ${EUCA_CLUSTER1}.storage.dasdevice=eucalyptus
-    sleep 15
+    sleep 10
+
+    euctl ${EUCA_ZONEA}.storage.dasdevice=eucalyptus
+    ```
+
+    Wait for storage services to become **enabled**.
+
+    ```bash
+    sleep 20
     ```
 
     Optional: Confirm service status.
 
-    * The storage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state except, for objectstorage, loadbalancingbackend
-      and imagingbackend.
+    * The storage services should now be in the **enabled** state.
+    * All services should be in the **enabled** state except for imagingbackend and
+      loadbalancingbackend.
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services
     ```
 
-4. (CLC): Configure Object Storage
+11. (CLC): Configure DNS
+
+    (Skip) Configure Eucalyptus DNS Server
+
+    Not sure if this does anything more than provide documentation.
 
     ```bash
-    euca-modify-property -p objectstorage.providerclient=walrus
-    sleep 15
+    euctl dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
+
+    euctl system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
+
+    euctl system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
     ```
 
-    Optional: Confirm service status.
-
-    * The objectstorage service should now be in the ENABLED state.
-    * All services should be in the ENABLED state, except for loadbalancingbackend and
-      imagingbackend.
+    (Optional) Configure DNS Timeout and TTL
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euctl dns.tcp.timeout_seconds=30
+
+    euctl services.loadbalancing.dns_ttl=15
     ```
 
-5. (CLC): Refresh Eucalyptus Administrator credentials
-
-    As noted above, if the eucarc does not contain the environment variables for the key and
-    certificate, we must patch it to add the missing variables which reference the previously
-    downloaded versions of the key and certificate files.
+    Configure DNS Domain
 
     ```bash
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    euctl system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-6. (CLC): Load Edge Network JSON configuration
+    Configure DNS Sub-Domains
 
     ```bash
-    euca-modify-property -f cloud.network.network_configuration=/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
-    sleep 15
+    euctl cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
+
+    euctl services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
     ```
 
-7. (CLC): Install the imaging-worker and load-balancer images
+    Enable DNS
 
     ```bash
-    euca-install-load-balancer --install-default
+    euctl bootstrap.webservices.use_instance_dns=true
 
-    euca-install-imaging-worker --install-default
+    euctl bootstrap.webservices.use_dns_delegation=true
     ```
 
-8. (CLC): Confirm service status
-
-    All services should now be in the ENABLED state.
+    Display Parent DNS Server Configuration
 
     ```bash
-    euca-describe-services | cut -f1-5
+    cat /var/named/private/masters/hp-gol01-d8.mjc.prc.eucalyptus-systems.com.zone
+    $TTL 1M
+    $ORIGIN hp-gol01-d8.mjc.prc.eucalyptus-systems.com.
+    ;Name           TTL     Type    Value
+    @                       SOA     ns1.mjc.prc.eucalyptus-systems.com. root.mjc.prc.eucalyptus-systems.com. (
+                                    2015102901      ; serial
+                                    1H              ; refresh
+                                    10M             ; retry
+                                    1D              ; expiry
+                                    1H )            ; minimum
+
+                            NS      ns1.mjc.prc.eucalyptus-systems.com.
+
+                            A       10.104.10.84
+
+    ns1                     A       10.104.10.84
+
+    clc                     A       10.104.10.83
+    ufs                     A       10.104.10.84
+    mc                      A       10.104.10.84
+    osp                     A       10.104.10.85
+    walrus                  A       10.104.10.85
+    cc                      A       10.104.1.208
+    cca                     A       10.104.1.208
+    sc                      A       10.104.1.208
+    sca                     A       10.104.1.208
+    nc1                     A       10.104.1.190
+    nc2                     A       10.104.1.187
+
+    console                 A       10.104.10.84
+    autoscaling             A       10.104.10.84
+    cloudformation          A       10.104.10.84
+    ec2                     A       10.104.10.84
+    compute                 A       10.104.10.84
+    elasticloadbalancing    A       10.104.10.84
+    loadbalancing           A       10.104.10.84
+    iam                     A       10.104.10.84
+    euare                   A       10.104.10.84
+    monitoring              A       10.104.10.84
+    cloudwatch              A       10.104.10.84
+    s3                      A       10.104.10.84
+    objectstorage           A       10.104.10.84
+    sts                     A       10.104.10.84
+    tokens                  A       10.104.10.84
+    swf                     A       10.104.10.84
+    simpleworkflow          A       10.104.10.84
+    bootstrap               A       10.104.10.83
+    properties              A       10.104.10.83
+    reporting               A       10.104.10.83
+
+    vm                      NS      ns1
+    lb                      NS      ns1
     ```
 
-9. (CLC): Confirm apis
+    Confirm DNS resolution for Services
+
+    ```bash
+    dig +short console.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short autoscaling.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short cloudformation.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short ec2.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short elasticloadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short iam.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short monitoring.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short s3.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short objectstorage.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short sts.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short tokens.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short swf.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short simpleworkflow.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short bootstrap.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short properties.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short reporting.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    ```
+
+12. (CLC): Update Euca2ools Region to use DNS Names
+
+    This is the first replacement of this file to use DNS names, but as http against the native port.
+
+    We will replace this file once more once PKI and SSL certificates are configured.
+
+    ```bash
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/AutoScaling/
+    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudFormation/
+    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/compute/
+    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/LoadBalancing/
+    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Euare/
+    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudWatch/
+    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/objectstorage/
+    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Tokens/
+    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/SimpleWorkflow/
+    user = $AWS_DEFAULT_REGION-admin
+
+    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Empyrean/
+    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Properties/
+    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Reporting/
+
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = false
+    EOF
+    ```
+
+13. (CLC): Import Support Keypair
+
+    Create a known and consistent set of KeyPair files.
+
+    ```bash
+    cat << EOF > ~/.ssh/support_id_rsa
+    -----BEGIN RSA PRIVATE KEY-----
+    Proc-Type: 4,ENCRYPTED
+    DEK-Info: AES-128-CBC,A7E90718BF61C84826297430F36A3092
+
+    ZaLkWHam/D0edJYg+q/cmu7norygv6uhiTMCyYYWQbqAazdcBT6zvpcxmmCbdoeX
+    0FQ0AhM3rD+1/d1e+2nOU0F2SJ9bjfU3FU/MY+OJ5qH5fO6ChMO6H3+x4bQ2knwB
+    oYItOvy9PnFCG58XycCam+q8wV49BXsGaHZtoykzTa7v77cvCKwl29QQRUCgym8G
+    bXrb90n7V3jEWgHEi3rQZ0/8qGvPU8UDNV+8Jiu16j9GNVShP/30W8uqgT0kj1oS
+    TpIFAYQFLW0HlhAmKnqNqqzd2Jet/ebvD3+Om6yIjg6+tncgRjV2kBiIU2WwjJMC
+    rTHG0KpQzbEMTfFA8OGEKK3yVjwE92Ypu2SiitFnVVZMYMm0aHR2/Tx5chjed7rV
+    gVmPApCjNPOhyQFc+f+KpFsIIOjF7LVRRLRVhnYLujyA+an+BWJjHMhMlQ18Ek9u
+    l6b77LoImQIGXq626YSAe9w3rCkOb6CWqMGDKaagvl92N8Topn9W0NXawfbV7ZTM
+    Unvi2sLTgsurQ/JpuS7BKmq8gmmmzm8IqhzGBEE9a5G4zJ3vTjRo2lZ6hRN6ri50
+    pSHDt6m9b0OU6ZV3FerpjIZWigCkI0VWZPQgPJTF0VKdusU7atG7N1fSCc+GBW39
+    opB/mpWghZvI4MLC/5GKG753A2nDYp1K8rBGwXyb27UmZ/6B920cV6L2fqGvyoRO
+    q8sP7zsqtU6U+nmZOeRGOQW/XLKRYDnqe5NCC/8tkpMXNk9PAQP9We1X7kxfAl6B
+    8WAw+IfSVtBRT76TqwMSqmS3BqAehbeGRZQ+JF33cCxd/8DJcLh8ZHKnlO66m6B9
+    K/e2lN+Y6mJCU7g2VSpK6/QzPwYPA63N/CqRoACZw/nQ3T2CBOLK5i7vU57iLHqq
+    dUHSdwKrylyb3QPSkttnD9MIuByPN2ZXZCNOp5gXWC/s1hbdGeX/voHtJl8a7g1Z
+    1keeDuqW95LMJKhKl0CXFznUHF9wQa3vx8nJVl2K/rXUi5tEw7I/0QD+fER3DTmM
+    SYRwinfayzHEUqUCNVEMg/wPfTPPvem07SHPOV8mlVPwusl2RVbHfVg9tTjiB59c
+    sc5oEDv2DkWkV6DLXmGR8RVdzYVE845tiJdsEuH5rL5wZyhcCeTccG2PV7+EXjsf
+    hxaUqOyZ41izsB0CDg+XwTVKfEg/HO9aqldzn1pSLB2ljVLXdA4PzDpFza2Ey7yy
+    d6zyYqGavQ7RXEicv/drdumJI80OwK+BfGw/ex1yjcAQk3jC69Mh3P4ZwVhYBoz1
+    TuwTh9yAwTe0cgoaBtesY/KjZaOdYEAZ5HwzT+ofN/HO6UgutZfPH08foNo1+6Hj
+    uaSvKENpes/4CviPxX6NuUMyy7VAz6vf+naFzvRB0enB9XmmBnjnT1JTXWPHTIdq
+    1rMI8KCvQ0U27KI5bhjYWQOmON0Ai4qfrbtuhQx2sZuU7fM+bqErERVW9gekloX3
+    eWHtsITbrRT16luUcCgnubIXMcRCO2rAgbwF4z5YpshexZFFnbqgxOAJC58gtPAi
+    dKu/FFZMVwFukKFeyf7WvNleTMu9ziOIs71USXBZpHEiWjsJlcpdkE9KYDX9mLu6
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 0600 ~/.ssh/support_id_rsa
+
+    cat << EOF > ~/.ssh/support_id_rsa.pub
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTXOsL3dwPJxQ9GCpS4izXtxwq\
+    tzGw5PCTTVqjy54ZkbmgtqJJTEbT9W4vY6QwuNvsoY7clij7u6Gskfcv93YxMW8c\
+    tXIi89lnMAA3VzehAulYOF21+W3sRLe9nPf52js8Mekhl364udTbHMtnpueHyZvG\
+    pTJmc3CxO2xYdCa0f8wKxOEXOzGY2EcwWurQPu+jLHU6C5LPulcYfLsYHz1fFuDp\
+    8tpVXpHONJwpXLKDoe4iAtkxpKtIZEZEeJNIpuIqiVT8L0uRvYH9Za7yj3Tcxh5r\
+    8uE5v925bxkgHk+Hk95YdnfMqJfG8qGtC3tfE6bTOkweLjmiadY+Qz4QBv67\
+     support@hpcloud.com
+    EOF
+    ```
+
+    Assume the Imaging Service Role, in order to import the Support KeyPair into the 
+    Imaging Service Account.
+
+    ```bash
+    imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
+    eval $(euare-assumerole $imaging_arn)
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+    eval $(euare-releaserole)
+    ```
+    
+    Assume the LoadBalancing Service Role, in order to import the Support KeyPair into the 
+    LoadBalancing Service Account.
+
+    ```bash
+    loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
+    eval $(euare-assumerole $loadbalancing_arn)
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+    eval $(euare-releaserole)
+    ```
+
+    Re-Assume the Eucalyptus Administrator Credentials
+    
+    ```bash
+    eval $(clcadmin-assume-system-credentials)
+    ```
+
+14. (CLC): Install and Initialize the Eucalyptus Service Image
+
+    Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
+
+    ```bash
+    export S3_URL=http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
+    esi-install-image --install-default
+    ```
+
+    Set the Service Worker KeyPairs, allowing use of the support KeyPair for debugging.
+
+    ```bash
+    euctl services.imaging.worker.keyname=support
+    euctl services.loadbalancing.worker.keyname=support
+    ```
+
+    (Optional) Adjust Worker Instance Types.
+
+    ```bash
+    euctl services.imaging.worker.instance_type=m1.xlarge
+    euctl services.loadbalancing.worker.instance_type=m1.small
+    ```
+
+    Start the Imaging Worker Instance.
+
+    ```bash
+    esi-manage-stack -a create imaging
+    ```
+
+    Wait for imaging and loadbalancing services to become **enabled**. The imagingbackend service may at
+    first appear enabled, then switch to **notready** until the imaging worker created by the last statement
+    is stable. Continue to wait until all services are enabled.
+
+    ```bash
+    sleep 20
+    ```
+
+15. (CLC): Confirm service status
+
+    All services should now be listed and in the **enabled** state.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+16. (CLC): Confirm apis
 
     ```bash
     euca-describe-regions
 
     euca-describe-availability-zones verbose
 
-    euca-describe-nodes
+    euserv-describe-node-controllers
 
     euca-describe-instance-types --show-capacity
-    ```
 
-### Configure DNS
-
-1. (CLC): Configure Eucalyptus DNS Server
-
-    ```bash
-    euca-modify-property -p dns.dns_listener_address_match=${EUCA_CLC_PUBLIC_IP}
-
-    euca-modify-property -p system.dns.nameserver=${EUCA_DNS_PARENT_HOST}
-
-    euca-modify-property -p system.dns.nameserveraddress=${EUCA_DNS_PARENT_IP}
-    ```
-
-2. (CLC): Configure DNS Timeout and TTL
-
-    ```bash
-    euca-modify-property -p dns.tcp.timeout_seconds=30
-
-    euca-modify-property -p services.loadbalancing.dns_ttl=15
-    ```
-
-3. (CLC): Configure DNS Domain
-
-    ```bash
-    euca-modify-property -p system.dns.dnsdomain=${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-    ```
-
-4. (CLC): Configure DNS Sub-Domains
-
-    ```bash
-    euca-modify-property -p cloud.vmstate.instance_subdomain=.${EUCA_DNS_INSTANCE_SUBDOMAIN}
-
-    euca-modify-property -p services.loadbalancing.dns_subdomain=${EUCA_DNS_LOADBALANCER_SUBDOMAIN}
-    ```
-
-5. (CLC): Enable DNS
-
-    ```bash
-    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
-
-    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
-    ```
-
-6. (CLC): Refresh Eucalyptus Administrator credentials
- 
-    As noted above, if the eucarc does not contain the environment variables for the key and 
-    certificate, we must patch it to add the missing variables which reference the previously 
-    downloaded versions of the key and certificate files.
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    ```
-
-7. (CLC): Display Parent DNS Server Sample Configuration (skipped)
-
-    ```bash
-    # TBD
-    ```
-
-8. (CLC): Confirm DNS resolution for Services
-
-    ```bash
-    dig +short compute.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short objectstorage.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short euare.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short tokens.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short autoscaling.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short cloudformation.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-
-    dig +short loadbalancing.${AWS_DEFAULT_REGION}.${EUCA_DNS_PUBLIC_DOMAIN}
-    ```
-
-### Configure Minimal IAM
-
-1. (CLC): Configure Eucalyptus Administrator Password
-
-    ```bash
-    euare-usermodloginprofile -u admin -p password
-    ```
-
-### Configure Support-Related Properties
-
-1. (CLC): Create Eucalyptus Administrator Support Keypair
-
-    ```bash
-    euca-create-keypair admin-support | tee ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/admin-support.pem
-    ```
-
-2. (CLC): Configure Service Instance Login
-
-    ```bash
-    euca-modify-property -p services.database.worker.keyname=admin-support
-
-    euca-modify-property -p services.imaging.worker.keyname=admin-support
-
-    euca-modify-property -p services.loadbalancing.worker.keyname=admin-support
+    euca-describe-instances verbose
     ```
 
 ### Configure SSL Certificates
@@ -1655,7 +2036,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
 2. (ALL) Install Wildcard Host SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    cat << EOF > /etc/pki/tls/private/star.${AWS_DEFAULT_DOMAIN#*.}.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEowIBAAKCAQEApyjRCMhXk96DWLBbjsDiXSmHuCTVNIHMowQqXv1Mvi9W98xF
     VtJYDJz0yhgshbO3DGuYqTr2R451CELmYbBYlhQQMi0tWO4IxwseBJRoxJcAAxx1
@@ -1685,13 +2066,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.key
+    chmod 400 /etc/pki/tls/private/star.${AWS_DEFAULT_DOMAIN#*.}.key
     ```
 
 3. (ALL) Install Wildcard Host SSL Certificate
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    cat << EOF > /etc/pki/tls/certs/star.${AWS_DEFAULT_DOMAIN#*.}.crt
     -----BEGIN CERTIFICATE-----
     MIIFiDCCA3CgAwIBAgIBDjANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1726,13 +2107,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.${EUCA_DNS_PUBLIC_DOMAIN#*.}.crt
+    chmod 444 /etc/pki/tls/certs/star.${AWS_DEFAULT_DOMAIN#*.}.crt
     ```
 
 4. (CLC+UFS+MC) Install Wildcard Site SSL Key
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEowIBAAKCAQEA6h9JgkLLUqZ60dn7DfXOBpd44qrqTAOv+XcUXf6P2LTkSJob
     9KUITWjRpcmY/upLdhtq4rWOKopJGUBVBzRt1zCcnC9tpDUYci2UQlLvFEfJkxkt
@@ -1762,14 +2143,13 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
     ```
 
 5. (CLC+UFS+MC) Install Wildcard Site SSL Certificate
 
-
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     -----BEGIN CERTIFICATE-----
     MIIFuDCCA6CgAwIBAgIBCjANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -1805,166 +2185,1427 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
-### Configure Management Console for SSL
+### Replace Management Console Nginx Implementation with an Alternative which also supports UFS
 
-1. (MW): Confirm Eucalyptus Console service on default port
+In 4.2, the Eucalyptus Management Console pulls in Nginx along with a configuration file which
+only works with the Management Console using self-signed SSL Certificates. We will replace this
+with an alternate configuration which will support both the Mangement Console and User-Facing
+Services with SSL, using SSL Certificates signed by a local Certification Authority. This
+requires disabling the automatic use of Nginx by the Management Console first, and use of a
+later version of Nginx.
+
+1. (MW): Confirm Default Eucalyptus Console is accessible via default Nginx configuration
+
+    Let's confirm the default configuration works before we replace it.
 
     ```bash
-    Browse: http://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN:8888
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
     ```
 
-2. (MC):  4. Stop Eucalyptus Console service
+2. (MC): Disable Default Nginx Implementation
 
     ```bash
-    service eucaconsole stop
+    sed -i -e "/NGINX_FLAGS=/ s/=/=NO/" /etc/sysconfig/eucaconsole
     ```
 
-3. (MC): Install Nginx package
+3. (MC): Restart Eucalyptus Console service
+
+    ```bash
+    service eucaconsole restart
+    ```
+
+4. (UFS+MC): Install Nginx yum repository
+
+    We need a later version of Nginx than is currently in EPEL.
+
+    ```bash
+    cat << EOF > /etc/yum.repos.d/nginx.repo
+    [nginx]
+    name=nginx repo
+    baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/
+    priority=1
+    gpgcheck=0
+    enabled=1
+    EOF
+    ```
+
+5. (UFS+MC): Install Nginx
+
+    This is needed for HTTP and HTTPS support running on standard ports
 
     ```bash
     yum install -y nginx
     ```
 
-4. (MC): Configure Nginx
+6. (UFS+MC): Configure Nginx to support virtual hosts
 
     ```bash
-    \cp /usr/share/doc/eucaconsole-4.*/nginx.conf /etc/nginx/nginx.conf
+    if [ ! -f /etc/nginx/nginx.conf.orig ]; then
+        \cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+    fi
 
-    sed -i -e "s/# \(listen 443 ssl;$\)/\1/" \
-           -e "s/# \(ssl_certificate\)/\1/" \
-           -e "s/\/path\/to\/ssl\/pem_file/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.crt/" \
-           -e "s/\/path\/to\/ssl\/certificate_key/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN.key/" /etc/nginx/nginx.conf
+    mkdir -p /etc/nginx/server.d
+
+    sed -i -e '/include.*conf\.d/a\    include /etc/nginx/server.d/*.conf;' \
+           -e '/tcp_nopush/a\\n    server_names_hash_bucket_size 128;' \
+           /etc/nginx/nginx.conf
     ```
 
-7. (MC): Start Nginx service
+7. (UFS+MC): Start Nginx service
+
+    Confirm Nginx is running via a browser:
+    http://$(hostname)/
 
     ```bash
     chkconfig nginx on
+
     service nginx start
     ```
 
-8. (MC): Configure Eucalyptus Console for SSL
+8. (UFS+MC): Configure Nginx Upstream Servers
+
+    Note this file assumes UFS and MC are co-located on the same host, as is the case in this
+    example. If they are split, or multiple copies of one or both exist, this file should be
+    created by hand to reference the appropriate server entries.
 
     ```bash
-    sed -i -e '/^session.secure =/s/= .*$/= true/' \
-           -e '/^session.secure/a\
-    sslcert=/etc/eucaconsole/console.crt\
-    sslkey=/etc/eucaconsole/console.key' /etc/eucaconsole/console.ini
+    cat << EOF > /etc/nginx/conf.d/upstream.conf
+    #
+    # Upstream servers
+    #
+
+    # Eucalytus User-Facing Services
+    upstream ufs {
+        server localhost:8773 max_fails=3 fail_timeout=30s;
+    }
+
+    # Eucalyptus Console
+    upstream console {
+        server localhost:8888 max_fails=3 fail_timeout=30s;
+    }
+    EOF
     ```
 
-9. (MC): Start Eucalyptus Console service
+9. (UFS+MC): Configure Default Server
+
+    We also need to update or create the default home and error pages. Because we are not
+    using the EPEL re-packaging, we do not get what they added in this area, and must
+    create something similar from scratch.
 
     ```bash
-    service eucaconsole start
+    if [ ! -f /etc/nginx/conf.d/default.conf.orig ]; then
+        \cp /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.orig
+    fi
+
+    cat << EOF > /etc/nginx/conf.d/default.conf
+    #
+    # Default server: http://$(hostname)
+    #
+
+    server {
+        listen       80;
+        server_name  $(hostname);
+
+        root  /usr/share/nginx/html;
+
+        access_log  /var/log/nginx/access.log;
+        error_log   /var/log/nginx/error.log;
+
+        charset  utf-8;
+
+        keepalive_timeout  70;
+
+        location / {
+            index  index.html;
+        }
+
+        error_page  404  /404.html;
+        location = /404.html {
+            root   /usr/share/nginx/html;
+        }
+
+        error_page  500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+
+        location ~ /\.ht {
+            deny  all;
+        }
+    }
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/index.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>Test Page for the Nginx HTTP Server on $(hostname -s)</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+        <body>
+            <h1>Welcome to <strong>nginx</strong> on $(hostname -s)!</h1>
+            <div class=\"content\">
+                <p>This page is used to test the proper operation of the
+                <strong>nginx</strong> HTTP server after it has been
+                installed. If you can read this page, it means that the
+                web server installed at this site is working
+                properly.</p>
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>This is the default <tt>index.html</tt> page that
+                        is distributed with <strong>nginx</strong> on
+                        EPEL.  It is located in
+                        <tt>/usr/share/nginx/html</tt>.</p>
+                        <p>You should now put your content in a location of
+                        your choice and edit the <tt>root</tt> configuration
+                        directive in the <strong>nginx</strong>
+                        configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/404.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>The page is not found</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                h3 {
+                    text-align: center;
+                    background-color: #ff0000;
+                    padding: 0.5em;
+                    color: #fff;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+
+        <body>
+            <h1><strong>nginx error!</strong></h1>
+
+            <div class=\"content\">
+
+                <h3>The page you are looking for is not found.</h3>
+
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>Something has triggered missing webpage on your
+                        website. This is the default 404 error page for
+                        <strong>nginx</strong> that is distributed with
+                        EPEL.  It is located
+                        <tt>/usr/share/nginx/html/404.html</tt></p>
+
+                        <p>You should customize this error page for your own
+                        site or edit the <tt>error_page</tt> directive in
+                        the <strong>nginx</strong> configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
+
+    cat << EOF > /usr/share/nginx/html/50x.html
+    <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+    <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">
+        <head>
+            <title>The page is temporarily unavailable</title>
+            <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+            <style type=\"text/css\">
+                /*<![CDATA[*/
+                body {
+                    background-color: #fff;
+                    color: #000;
+                    font-size: 0.9em;
+                    font-family: sans-serif,helvetica;
+                    margin: 0;
+                    padding: 0;
+                }
+                :link {
+                    color: #c00;
+                }
+                :visited {
+                    color: #c00;
+                }
+                a:hover {
+                    color: #f50;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0.6em 2em 0.4em;
+                    background-color: #294172;
+                    color: #fff;
+                    font-weight: normal;
+                    font-size: 1.75em;
+                    border-bottom: 2px solid #000;
+                }
+                h1 strong {
+                    font-weight: bold;
+                    font-size: 1.5em;
+                }
+                h2 {
+                    text-align: center;
+                    background-color: #3C6EB4;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #fff;
+                    margin: 0;
+                    padding: 0.5em;
+                    border-bottom: 2px solid #294172;
+                }
+                h3 {
+                    text-align: center;
+                    background-color: #ff0000;
+                    padding: 0.5em;
+                    color: #fff;
+                }
+                hr {
+                    display: none;
+                }
+                .content {
+                    padding: 1em 5em;
+                }
+                .alert {
+                    border: 2px solid #000;
+                }
+                img {
+                    border: 2px solid #fff;
+                    padding: 2px;
+                    margin: 2px;
+                }
+                a:hover img {
+                    border: 2px solid #294172;
+                }
+                .logos {
+                    margin: 1em;
+                    text-align: center;
+                }
+                /*]]>*/
+            </style>
+        </head>
+
+        <body>
+            <h1><strong>nginx error!</strong></h1>
+
+            <div class=\"content\">
+
+                <h3>The page you are looking for is temporarily unavailable.  Please try again later.</h3>
+
+                <div class=\"alert\">
+                    <h2>Website Administrator</h2>
+                    <div class=\"content\">
+                        <p>Something has triggered an error on your
+                        website.  This is the default error page for
+                        <strong>nginx</strong> that is distributed with
+                        EPEL.  It is located
+                        <tt>/usr/share/nginx/html/50x.html</tt></p>
+
+                        <p>You should customize this error page for your own
+                        site or edit the <tt>error_page</tt> directive in
+                        the <strong>nginx</strong> configuration file
+                        <tt>/etc/nginx/nginx.conf</tt>.</p>
+
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    EOF
     ```
 
-10. (MC): Confirm Eucalyptus Console service
+10. (UFS+MC): Restart Nginx service
+
+    Confirm Nginx is running via a browser:
+    http://$(hostname)/
 
     ```bash
-    Browse: https://console.$AWS_DEFAULT_REGION.$EUCA_DNS_PUBLIC_DOMAIN
+    service nginx restart
+    ```
+
+11. (UFS): Configure Eucalyptus User-Facing Services Reverse Proxy Server
+
+    This server will proxy all API URLs via standard HTTP and HTTPS ports.
+
+    ```bash
+    cat << EOF > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    #
+    # Eucalyptus User-Facing Services
+    #
+
+    server {
+        listen       80  default_server;
+        listen       443 default_server ssl;
+        server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+
+        access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
+        error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+
+        charset  utf-8;
+
+        ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+
+        keepalive_timeout  70;
+        client_max_body_size 100M;
+        client_body_buffer_size 128K;
+
+        location / {
+            proxy_pass            http://ufs;
+            proxy_redirect        default;
+            proxy_next_upstream   error timeout invalid_header http_500;
+            proxy_connect_timeout 30;
+            proxy_send_timeout    90;
+            proxy_read_timeout    90;
+
+            proxy_http_version    1.1;
+
+            proxy_buffering       on;
+            proxy_buffer_size     128K;
+            proxy_buffers         4 256K;
+            proxy_busy_buffers_size 256K;
+            proxy_temp_file_write_size 512K;
+
+            proxy_set_header      Host \$host;
+            proxy_set_header      X-Real-IP  \$remote_addr;
+            proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header      X-Forwarded-Proto \$scheme;
+        }
+    }
+    EOF
+
+    chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    ```
+
+12. (UFS): Restart Nginx service
+
+    Confirm Eucalyptus User-Facing Services are running via a browser:
+    http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+
+    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
+    if working correctly
+
+    ```bash
+    service nginx restart
+    ```
+
+13. (MC): Configure Eucalyptus Console Reverse Proxy Server
+
+    This server will proxy the console via standard HTTP and HTTPS ports
+
+    Requests which use HTTP are immediately rerouted to use HTTPS
+
+    Once proxy is configured, configure the console to expect HTTPS
+
+    ```bash
+    cat << EOF > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    #
+    # Eucalyptus Console
+    #
+
+    server {
+        listen       80;
+        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        return       301 https://\$server_name\$request_uri;
+    }
+
+    server {
+        listen       443 ssl;
+        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+
+        access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
+        error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+
+        charset  utf-8;
+
+        ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
+        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+
+        keepalive_timeout  70;
+        client_max_body_size 100M;
+        client_body_buffer_size 128K;
+
+        location / {
+            proxy_pass            http://console;
+            proxy_redirect        default;
+            proxy_next_upstream   error timeout invalid_header http_500;
+
+            proxy_connect_timeout 30;
+            proxy_send_timeout    90;
+            proxy_read_timeout    90;
+
+            proxy_buffering       on;
+            proxy_buffer_size     128K;
+            proxy_buffers         4 256K;
+            proxy_busy_buffers_size 256K;
+            proxy_temp_file_write_size 512K;
+
+            proxy_set_header      Host \$host;
+            proxy_set_header      X-Real-IP  \$remote_addr;
+            proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header      X-Forwarded-Proto \$scheme;
+        }
+    }
+    EOF
+
+    chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+
+    sed -i -e "/^session.secure =/s/= .*$/= true/" \
+           -e "/^session.secure/a\
+    sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
+    sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
+    ```
+
+14. (MC): Restart Nginx and Eucalyptus Console services
+
+    Confirm Eucalyptus Console is running via a browser:
+    http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+
+    ```bash
+    service nginx restart
+
+    service eucaconsole restart
+    ```
+
+### Configure AWSCLI
+
+This installs and configures AWS CLI to work with this region directly on the CLC. Apparently this is
+currently an unsupported configuration without the use of Python virtual environments as pip updates
+some of the python modules used by Eucalyptus, and this has not been tested. I haven't found this to
+cause any problems so far, but use at your own risk.
+
+To be safe, you might want to skip the installation of AWS CLI on the CLC+MC, and install it only on
+a separate management workstation, or set this up within a Python virtual environment, either of which
+would be supported configurations.
+
+    ```bash
+    yum install -y python-pip
+
+    pip install --upgrade pip
+    ```
+
+2. (CLC): Install AWSCLI
+
+    ```bash
+    pip install awscli
+    ```
+
+3. (CLC): Configure AWSCLI Command Completion
+
+    ```bash
+    cat << EOF >> /etc/profile.d/aws.sh
+    complete -C '/usr/local/bin/aws_completer' aws
+    EOF
+
+    source /etc/profile.d/aws.sh
+    ```
+
+4. (CLC+MC): Fix Broken Python Dependencies
+
+    When awscli is installed by pip on the same host as the Management Console, it breaks the Console
+    due to updated python dependencies which AWSCLI doesn't appear to need, but which Management Console
+    can't use. We will reverse these changes so that Eucalyptus Console works again as before.
+
+    These broken dependencies may vary over time. To discover what may be broken, run eucaconsole
+    directly on the command line and note any errors.
+
+    ```bash
+    pip uninstall -y python-dateutil
+    yum reinstall -y python-dateutil
+    ```
+
+    Confirm you can restart eucaconsole without it failing immediately, which is the symptom of a
+    broken dependency. On the second restart, confirm the stop is **OK**.
+
+    ```bash
+    service eucaconsole restart
+    sleep 5
+    service eucaconsole restart
+    ```
+
+5. (CLC): Configure AWS CLI with Eucalyptus Region Native Endpoints
+
+    This creates a modified version of the _endpoints.json file which the botocore Python module
+    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region native
+    endpoints.
+
+    We rename the original _endpoints.json file with the .orig extension, so we can diff for
+    changes if we need to update in the future against a new _endpoints.json, then create a
+    symlink with the original name pointing to our new local version.
+
+    ```bash
+    cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local
+    {
+      "_default":[
+        {
+          "uri":"http://{service}.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+              "signatureVersion": "v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "ec2": [
+        {
+          "uri":"http://compute.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints": [
+            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "elasticloadbalancing": [
+       {
+        "uri":"http://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN:8773",
+        "constraints": [
+          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "monitoring":[
+        {
+          "uri":"http://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints": [
+           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "swf":[
+       {
+        "uri":"http://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN:8773",
+        "constraints": [
+         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "iam":[
+        {
+          "uri":"http://euare.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "sdb":[
+        {
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "sts":[
+        {
+          "uri":"http://tokens.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "s3":[
+        {
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        },
+        {
+          "uri":"http://objectstorage.{region}.$AWS_DEFAULT_DOMAIN:8773//",
+          "constraints": [
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        }
+      ],
+      "rds":[
+        {
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "route53":[
+        {
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "waf":[
+        {
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "elasticmapreduce":[
+        {
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "sqs":[
+        {
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "importexport": [
+        {
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "dynamodb": [
+        {
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
+            }
+          }
+        }
+      ]
+    }
+    EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json \
+       /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.orig
+
+    ln -s _endpoints.json.local /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+    ```
+
+6. (CLC): Configure Default AWS credentials
+
+    This configures the Eucalyptus Administrator as the default and an explicit profile.
+
+    This step assumes the AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables are still
+    set to the Eucalyptus Administrator from a prior call to "eval $(clcadmin-assume-system-credentials)".
+
+    ```bash
+    mkdir -p ~/.aws
+
+    cat << EOF > ~/.aws/config
+    #
+    # AWS Config file
+    #
+
+    [default]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    [profile $AWS_DEFAULT_REGION-admin]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    EOF
+
+    cat << EOF > ~/.aws/credentials
+    #
+    # AWS Credentials file
+    #
+
+    [default]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    [$AWS_DEFAULT_REGION-admin]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    EOF
+
+    chmod -R og-rwx ~/.aws
+    ```
+
+7. (CLC): Test AWSCLI against Eucalyptus Native Endpoints
+
+    ```bash
+    aws ec2 describe-key-pairs
+
+    aws ec2 describe-key-pairs --profile=default
+
+    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    ```
+
+8. (CLC): (Optional) Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
+
+    We will use the Helion Eucalyptus Development Root Certification Authority to sign SSL
+    certificates. Certificates issued by this CA are not trusted by default.
+
+    We must add this CA cert to the trusted root certificate authorities used by botocore on all
+    clients where AWSCLI is run.
+
+    This format was constructed by hand to match the existing certificates.
+
+    ```bash
+    cp -a /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+          /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    # Label: "Helion Eucalyptus Development Root Certification Authority"
+    # Serial: 0
+    # MD5 Fingerprint: 95:b3:42:d3:1d:78:05:3a:17:c3:01:47:24:df:ce:12
+    # SHA1 Fingerprint: 75:76:2a:df:a3:97:e8:c8:2f:0a:60:d7:4a:a1:94:ac:8e:a9:e9:3B
+    # SHA256 Fingerprint: 3a:8f:d3:c6:7d:f2:f2:54:5c:50:50:5f:d5:5a:a6:12:73:67:96:b3:6c:9a:5b:91:23:11:81:27:67:0c:a5:fd
+    -----BEGIN CERTIFICATE-----
+    MIIGfDCCBGSgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+    EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+    SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+    bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+    Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTA0MjAyMzI2MzNaFw0y
+    NTA0MTcyMzI2MzNaMIG6MQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+    YTEPMA0GA1UEBwwGR29sZXRhMRgwFgYDVQQKDA9IZXdsZXR0LVBhY2thcmQxJjAk
+    BgNVBAsMHUhlbGlvbiBFdWNhbHlwdHVzIERldmVsb3BtZW50MUMwQQYDVQQDDDpI
+    ZWxpb24gRXVjYWx5cHR1cyBEZXZlbG9wbWVudCBSb290IENlcnRpZmljYXRpb24g
+    QXV0aG9yaXR5MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzTy4eoFV
+    BNQYawVhvzZ2rawfV6+oOOr6bNfg8K+TV3faLBXicN1q2XIMuGh2DGMNe0kPskku
+    Tn1kk1SMatC8FtrwNQZRlZCqYQP2PC3jabOawo4yJU+3AMMvR+j33MSDY4Tm2uuh
+    lwXKzxDgMadpRTxDSbMmBQXqHTAPubIOTM4Nu8LEUiNmTv4tvUJjRxYqTYfbsSUd
+    Ox8cvQKr4k/R/kuxD6iwTwdyZ227oXqSv/cQC+7lcyCuq+7+ergbmz52uzAD0klL
+    GLxeFpNLk+WcL6LV/KlTBPuMmIlT/ZsJ9plHsNB6lVWXsacVSG2jHQhylLu32rvT
+    47D1AXCvIDQeMxzLvJeLQoUM7XXV/oAMZww6b4aXTsFl07avEE7u7I6vNSqiRWtn
+    23DuiD6QExSWiwDUEzj0DxCsU366jiHw7j5fgjg3k7TNIKn3oTYnx8WFJMH7/DPc
+    HwZ7zOYj3hzCASy2ROqV4/K8mniicQHWpfrvgX980EWsrgNlgDbPCBXBqKwCp5I9
+    WDCjx7IDtY3peDfa8+rKzWCE+cwjH7v+1avm16Y/rq4cuP/uUazbT3HtEPbAZHvb
+    qAwace0g57w1Yckk3WtzbaQqI+rkV503HT7DCNDZ+MryuWxSU8+xSHUdKsEmPpr1
+    ejMcYAEjdau1x5+jMgpBMN2opZZfmWoNWRsCAwEAAaOBijCBhzAdBgNVHQ4EFgQU
+    NkKFNpC6OqbkLgVZoFATE+TS21gwHwYDVR0jBBgwFoAUNkKFNpC6OqbkLgVZoFAT
+    E+TS21gwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwEQYJYIZIAYb4QgEB
+    BAQDAgEGMAkGA1UdEQQCMAAwCQYDVR0SBAIwADANBgkqhkiG9w0BAQsFAAOCAgEA
+    OBZU/IohiseYPFFhhvUfKyCvoAlb2tx9jL0UxQifgd02G3wyWOa5q0sRVGynd/qa
+    jjTkw0DN/9gt8dQIUU1XdfJ+KT8sfTd6z4/w/yqU6uJ3EvCTV3+G67W9UOtyJqub
+    sdCYP24v2uZdF4WLU6Gacq2C/oL0yAngXcEdEC8uwo62WKJftN+AiV7YByWyrX4d
+    vaNjxoa/ZF2sXPeY76ZliprgG4xEe9v0SdE7qU8wVlDVc8DtdUkAyosc38HynizI
+    kCxPZKgyn+doBXNwMPeq/yyeWjt7av9MozBSgdUhnpHWbmPTouBc+8p58wiolBap
+    oMHur98tQYDpwTYwPXL9gQ6V22GaKjJmMGZ8S9pNGhUeHzLVyaFiLBeKh1am7HiX
+    wzoERgKZX8Pcs/Rk6/Z0IK1AG7aOHTrE9jrmFNHWDqme0Y7sIRukkd88JgthRRZD
+    zq/GCP6kaAclH4Cm6bgeXw7TvEv2B7ocoBoWhV3cqnNJbujB66H59ItCfG9xG3j8
+    qkU3RQU7V9UDb/2+anPE+w/SukYILKHT9GCqsyC3Afc855ugPhXC7EMMyd+Xp88M
+    Hx6H/MmbW0Pe72Fs27ipgJrEzRXd5FHIzpj2qug9SHEw3d7H7LrqDYs6eA07oL8I
+    Zg+lWqylmGZ/aaG3qEnB1I+q6dUCrKDmxtOk6HAJ6PI=
+    -----END CERTIFICATE-----
+    EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+       /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.orig
+
+    ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
+    ```
+
+9. (CLC): (Optional) Configure AWS CLI with Eucalyptus Region SSL Endpoints
+
+    This creates a modified version of the _endpoints.json file which the botocore Python module
+    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region SSL
+    endpoints.
+
+    For this SSL variant to work, either the improved reverse proxy configuration shown above,
+    or the steps described in Eucalyptus Documentation to configure SSL via the Java KeyStore 
+    method must be in place first.
+
+    ```bash
+    cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl
+    {
+      "_default":[
+        {
+          "uri":"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+              "signatureVersion": "v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "ec2": [
+        {
+          "uri":"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "elasticloadbalancing": [
+       {
+        "uri":"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "monitoring":[
+        {
+          "uri":"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints": [
+           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "swf":[
+       {
+        "uri":"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN",
+        "constraints": [
+         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "iam":[
+        {
+          "uri":"https://euare.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "sdb":[
+        {
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "sts":[
+        {
+          "uri":"https://tokens.{region}.$AWS_DEFAULT_DOMAIN",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "s3":[
+        {
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        },
+        {
+          "uri":"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//",
+          "constraints": [
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        }
+      ],
+      "rds":[
+        {
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "route53":[
+        {
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "waf":[
+        {
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "elasticmapreduce":[
+        {
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "sqs":[
+        {
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "importexport": [
+        {
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "dynamodb": [
+        {
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
+            }
+          }
+        }
+      ]
+    }
+    EOF
+
+    rm /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+
+    ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+    ```
+
+10. (CLC): (Optional) Test AWSCLI against Eucalyptus SSL Endpoints
+
+    ```bash
+    aws ec2 describe-key-pairs
+
+    aws ec2 describe-key-pairs --profile=default
+
+    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
     ```
 
 ### Configure for Demos
 
-There are scripts within this git project which can be used to configure a new Eucalyptus region for use in
-demos. These are useful for any system, as they indicate the type of setup usually needed to prepare any
-system for use by users.
-
-1. (CLC): Initialize Demo Account
-
-    The `euca-demo-01-initialize-account.sh` script can be run with an optional `-a <account>`
-    parameter to create additional accounts. Without this parameter, the default demo account
-    is named "demo", and that will be used here.
-
-    ```bash
-    ~/src/eucalyptus/euca-demo/bin/euca-demo-01-initialize-account.sh
-    ```
-
-2. (CLC): Initiali Demo Account Dependencies.sh
-
-    The `euca-demo-02-initialize-dependencies.sh` script can be run with an optional `-a <account>` 
-    parameter to create dependencies in additional accounts created for demo purposes with the
-    `euca-demo-01-initialize-account.sh` script. Without this parameter, the default demo account
-    is named "demo", and that will be used here.
-
-    ```bash
-    ~/src/eucalyptus/euca-demo/bin/euca-demo-02-initialize-dependencies.sh
-    ```
-
-### Test Inter-Component Connectivity
-
-This section has not yet been confirmed for accuracy. Running this is fine, but there may be
-additonal ports we should add to ensure complete interconnectivity testing.
-
-1. (MW): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8443 || echo 'Connection from MW to CLC:8443 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from MW to CLC:8773 failed!'
-
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from MW to Walrus:8773 failed!'
-    ```
-
-2. (CLC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from CLC to SCA:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from CLC to OSP:8773 failed!'
-    nc -z ${EUCA_CCA_PUBLIC_IP} 8774 || echo 'Connection from CLC to CCA:8774 failed!'
-    ```
-
-3. (UFS): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8773 || echo 'Connection from UFS to CLC:8773 failed!'
-    ```
-
-4. (OSP): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from OSP to CLC:8777 failed!'
-    ```
-
-5. (CC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_NCA1_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA1:8775 failed!'
-    nc -z ${EUCA_NCA2_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA2:8775 failed!'
-    nc -z ${EUCA_NCA3_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA3:8775 failed!'
-    nc -z ${EUCA_NCA4_PRIVATE_IP} 8775 || echo 'Connection from CCA to NCA4:8775 failed!'
-    ```
-
-6. (SC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from SCA to SCA:8773 failed!'
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from SCA to OSP:8773 failed!'
-    nc -z ${EUCA_CLC_PUBLIC_IP} 8777 || echo 'Connection from SCA to CLC:8777 failed!'
-    ```
-
-7. (NC): Verify Connectivity
-
-    ```bash
-    nc -z ${EUCA_OSP_PUBLIC_IP} 8773 || echo 'Connection from NC to OSP:8773 failed!'
-    nc -z ${EUCA_SCA_PUBLIC_IP} 8773 || echo 'Connection from NC to SCA:8773 failed!'
-    ```
-
-8. (Other): Verify Connectivity
-
-  Use additional commands to verify the following:
-
-  * Verify connection from public IP addresses of Eucalyptus instances (metadata) and CC to CLC
-    on TCP port 8773
-  * Verify TCP connectivity between CLC, Walrus, SC and VB on TCP port 8779 (or the first
-    available port in range 8779-8849)
-  * Verify connection between CLC, Walrus, SC, and VB on UDP port 7500
-  * Verify multicast connectivity for IP address 228.7.7.3 between CLC, Walrus, SC, and VB on
-    UDP port 8773
-  * If DNS is enabled, verify connection from an end-user and instance IPs to DNS ports
-  * If you use tgt (iSCSI open source target) for EBS storage, verify connection from NC to SC on
-    TCP port 3260
-  * Test multicast connectivity between each CLC and Walrus, SC, and VMware broker host.
+Continue with the Demo initialization scripts.
 

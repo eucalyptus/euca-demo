@@ -60,7 +60,7 @@ Each host has 2 1TB disks configured as follows:
 - Disk 1, /dev/sda, used for boot (/boot), root (/), and swap, with most space left unreserved.
 - Disk 2, /dev/sdb, is not initially configured.
 
-A manual installation of CentOS 6.6 is done, but additional configuration is also included.
+A manual installation of CentOS 6.7 is done, but additional configuration is also included.
 Local repos are also installed.
 
 Additional disk space allocation is manually performed, as described below.
@@ -111,14 +111,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_ZONEB_PRIVATE_NETMASK=255.255.0.0
     export EUCA_ZONEB_PRIVATE_GATEWAY=10.105.0.1
 
-    export EUCA_CLC_MANAGEMENT_INTERFACE=em1
-    export EUCA_CLC_MANAGEMENT_IP=10.104.10.83
     export EUCA_CLC_PUBLIC_INTERFACE=em1
     export EUCA_CLC_PUBLIC_IP=10.104.10.83
     export EUCA_CLC_PRIVATE_INTERFACE=em2
     export EUCA_CLC_PRIVATE_IP=10.105.10.83
-    export EUCA_CLC_SAN_INTERFACE=em2
-    export EUCA_CLC_SAN_IP=10.105.10.83
 
     export EUCA_UFS_PUBLIC_INTERFACE=em1
     export EUCA_UFS_PUBLIC_IP=10.104.10.83
@@ -156,8 +152,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export EUCA_SCB_PRIVATE_IP=10.105.1.208
 
     export EUCA_NC_PUBLIC_INTERFACE=em1
-    export EUCA_NC_PRIVATE_BRIDGE=br0
     export EUCA_NC_PRIVATE_INTERFACE=em2
+    export EUCA_NC_PRIVATE_BRIDGE=br0
 
     export EUCA_NC1_PUBLIC_IP=10.104.1.190
     export EUCA_NC1_PRIVATE_IP=10.105.1.190
@@ -182,7 +178,7 @@ process, not currently available for this host.
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git qemu-img-rhev nc w3m rsync bind-utils tree screen
+    yum install -y man wget zip unzip git qemu-img-rhev nc lynx rsync bind-utils tree screen
     ```
 
 2. (All) Configure Sudo
@@ -215,8 +211,8 @@ process, not currently available for this host.
 
     if [ ! -r /root/.gitconfig ]; then
         echo -e "[user]" > /root/.gitconfig
-        echo -e "\tname = Administrator" >> /root/.gitconfig
-        echo -e "\temail = admin@eucalyptus.com" >> /root/.gitconfig
+        echo -e "\tname = Eucalyptus Administrator" >> /root/.gitconfig
+        echo -e "\temail = eucalyptus.admin@hpe.com" >> /root/.gitconfig
     fi
     ```
 
@@ -512,7 +508,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     mount /var/lib/eucalyptus/instances
     ```
 
-7. (ALL): Confirm storage
+6. (ALL): Confirm storage
 
     ```bash
     df -h
@@ -522,19 +518,19 @@ ns1.mjc.prc.eucalyptus-systems.com.
     lvscan
     ```
 
-8. (ALL): Disable zero-conf network
+7. (ALL): Disable zero-conf network
 
     ```bash
     sed -i -e '/NOZEROCONF=/d' -e '$a\NOZEROCONF=yes' /etc/sysconfig/network
     ```
 
-9. (NC): Install bridge utilities package
+8. (NC): Install bridge utilities package
 
     ```bash
     yum install -y bridge-utils
     ```
 
-10. (NC): Create Private Bridge
+9. (NC): Create Private Bridge
 
     Move the static IP of the private interface to the private bridge
 
@@ -558,7 +554,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-11. (NC): Convert Private Ethernet Interface to Private Bridge Slave
+10. (NC): Convert Private Ethernet Interface to Private Bridge Slave
 
     ```bash
     sed -i -e "\$aBRIDGE=${EUCA_NC_PRIVATE_BRIDGE}" \
@@ -569,20 +565,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
            -e "/^DNS.=/d" /etc/sysconfig/network-scripts/ifcfg-${EUCA_NC_PRIVATE_INTERFACE}
     ```
 
-12. (ALL): Restart networking
+11. (ALL): Restart networking
 
     ```bash
     service network restart
     ```
 
-13. (ALL): Confirm networking
+12. (ALL): Confirm networking
 
     ```bash
     ip addr | grep " inet "
     netstat -nr
     ```
 
-14. (CLC+UFS+MC): Configure firewall, but disable during installation
+13. (CLC+UFS+MC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -634,7 +630,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     service iptables stop
     ```
 
-15. (OSP): Configure firewall, but disable during installation
+14. (OSP): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -672,7 +668,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     service iptables stop
     ```
 
-16. (CC+SC): Configure firewall, but disable during installation
+15. (CC+SC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -712,7 +708,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     service iptables stop
     ```
 
-17. (NC): Configure firewall, but disable during installation
+16. (NC): Configure firewall, but disable during installation
 
     Ports to open by component
 
@@ -750,7 +746,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     service iptables stop
     ```
 
-18. (ALL): Disable SELinux
+17. (ALL): Disable SELinux
 
     There is a bug in 4.2.0 which prevents NC from starting with SELinux in permissive mode. So
     we must completely disable SELinux.
@@ -761,7 +757,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     setenforce 0
     ```
 
-19. (ALL): Install and Configure the NTP service
+18. (ALL): Install and Configure the NTP service
 
     ```bash
     yum install -y ntp
@@ -775,7 +771,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     hwclock --systohc
     ```
 
-20. (ALL) Install and Configure Mail Relay
+19. (ALL) Install and Configure Mail Relay
 
     Normally, a null relay will use DNS to find the MX records associated with the domain of the
     host, but that is not currently set for the PRC environment. So, we are using the same
@@ -879,7 +875,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     popd
     ```
 
-21. (ALL) Install Email test client and test email
+20. (ALL) Install Email test client and test email
 
     Sending to personal email address on Google Apps - Please update to use your own email address!
 
@@ -891,7 +887,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     echo "test" | mutt -x -s "Test from $(hostname -s) on $(date)" michael.crawford@mjcconsulting.com
     ````
 
-22. (CC/NC): Configure packet forwarding
+21. (CC/NC): Configure packet forwarding
 
     Note that while this is not required on the CC when using EDGE mode, as the CC no longer routes
     traffic, you will get a warning when starting the CC if this routing has not been configured, and
@@ -905,7 +901,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/ipv4/ip_forward
     ```
 
-23. (NC): Configure bridge filtering
+22. (NC): Configure bridge filtering
 
     The normal behavior of libvirt is to disable to the kernel's default behavior where bridge
     traffic is routed through iptables on the host, so that traffic to virtual guests is not
@@ -926,7 +922,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     cat /proc/sys/net/bridge/bridge-nf-call-iptables
     ```
 
-24. (ALL): Configure additional network settings
+23. (ALL): Configure additional network settings
 
     ```bash
     cat << EOF >> /etc/sysctl.conf
@@ -975,17 +971,17 @@ ns1.mjc.prc.eucalyptus-systems.com.
 3. (CLC): Scan for unknown SSH host keys
 
     ```bash
-    ssh-keyscan ${EUCA_CLC_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CLC_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_CLC_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
-    ssh-keyscan ${EUCA_OSP_PUBLIC_IP} 2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_OSP_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_OSP_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
     ssh-keyscan ${EUCA_CCA_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CCA_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CCA_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
     ssh-keyscan ${EUCA_CCB_PUBLIC_IP}  2> /dev/null >> /root/.ssh/known_hosts
-    ssh-keyscan ${EUCA_CCB_PRIVATE_IP}  2> /dev/null >> /root/.ssh/known_hosts
+    ssh-keyscan ${EUCA_CCB_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
 
     ssh-keyscan ${EUCA_NC1_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
     ssh-keyscan ${EUCA_NC2_PRIVATE_IP} 2> /dev/null >> /root/.ssh/known_hosts
@@ -1204,7 +1200,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 9. (CLC+UFS/OSP/SC): (Skip) Configure Eucalyptus Java Memory Allocation
 
     This has proven risky to run, frequently causing failure to start due to incorrect heap size,
-    regardless of value
+    regardless of value, in 4.1, need to retest for 4.2, but appears to set itself automatically.
 
     ```bash
     heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
@@ -1306,10 +1302,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
     * The CC is listening on port 8774
     * The NCs are listening on port 8775
 
-
 ### Register Eucalyptus
 
-1. (CLC): Obtain temporary credentials
+1. (CLC): Assume Eucalyptus Administrator Credentials
 
     ```bash
     eval $(clcadmin-assume-system-credentials)
@@ -1356,7 +1351,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-2. (CLC): Register Walrus as the Object Storage Provider (OSP)
+3. (CLC): Register Walrus as the Object Storage Provider (OSP)
 
     Copy Encryption Keys.
 
@@ -1387,7 +1382,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-3. (CLC): Register Cluster Controller services
+4. (CLC): Register Cluster Controller services
 
     Register the Cluster Controller services.
 
@@ -1413,14 +1408,14 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend
       and objectstorage.
-    * The cluster service should now be listed.
+    * The cluster services should now be listed.
     * The storage services should not yet be listed.
 
     ```bash
     euserv-describe-services
     ```
 
-4. (CLC): Register Storage Controller services
+5. (CLC): Register Storage Controller services
 
     Copy Encryption Keys. This is not needed in this example as each SC is coresident on the same host as the CC.
 
@@ -1452,7 +1447,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-5. (CCA): Register Node Controller host(s) associated with Cluster 1
+6. (CCA): Register Node Controller host(s) associated with Cluster 1
 
     Register the Node Controller services.
 
@@ -1606,58 +1601,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
     ```
 
-7. (CLC): Import Support Keypair
-
-    ```bash
-    cat << EOF > ~/.ssh/support_id_rsa
-    -----BEGIN RSA PRIVATE KEY-----
-    Proc-Type: 4,ENCRYPTED
-    DEK-Info: AES-128-CBC,A7E90718BF61C84826297430F36A3092
-
-    ZaLkWHam/D0edJYg+q/cmu7norygv6uhiTMCyYYWQbqAazdcBT6zvpcxmmCbdoeX
-    0FQ0AhM3rD+1/d1e+2nOU0F2SJ9bjfU3FU/MY+OJ5qH5fO6ChMO6H3+x4bQ2knwB
-    oYItOvy9PnFCG58XycCam+q8wV49BXsGaHZtoykzTa7v77cvCKwl29QQRUCgym8G
-    bXrb90n7V3jEWgHEi3rQZ0/8qGvPU8UDNV+8Jiu16j9GNVShP/30W8uqgT0kj1oS
-    TpIFAYQFLW0HlhAmKnqNqqzd2Jet/ebvD3+Om6yIjg6+tncgRjV2kBiIU2WwjJMC
-    rTHG0KpQzbEMTfFA8OGEKK3yVjwE92Ypu2SiitFnVVZMYMm0aHR2/Tx5chjed7rV
-    gVmPApCjNPOhyQFc+f+KpFsIIOjF7LVRRLRVhnYLujyA+an+BWJjHMhMlQ18Ek9u
-    l6b77LoImQIGXq626YSAe9w3rCkOb6CWqMGDKaagvl92N8Topn9W0NXawfbV7ZTM
-    Unvi2sLTgsurQ/JpuS7BKmq8gmmmzm8IqhzGBEE9a5G4zJ3vTjRo2lZ6hRN6ri50
-    pSHDt6m9b0OU6ZV3FerpjIZWigCkI0VWZPQgPJTF0VKdusU7atG7N1fSCc+GBW39
-    opB/mpWghZvI4MLC/5GKG753A2nDYp1K8rBGwXyb27UmZ/6B920cV6L2fqGvyoRO
-    q8sP7zsqtU6U+nmZOeRGOQW/XLKRYDnqe5NCC/8tkpMXNk9PAQP9We1X7kxfAl6B
-    8WAw+IfSVtBRT76TqwMSqmS3BqAehbeGRZQ+JF33cCxd/8DJcLh8ZHKnlO66m6B9
-    K/e2lN+Y6mJCU7g2VSpK6/QzPwYPA63N/CqRoACZw/nQ3T2CBOLK5i7vU57iLHqq
-    dUHSdwKrylyb3QPSkttnD9MIuByPN2ZXZCNOp5gXWC/s1hbdGeX/voHtJl8a7g1Z
-    1keeDuqW95LMJKhKl0CXFznUHF9wQa3vx8nJVl2K/rXUi5tEw7I/0QD+fER3DTmM
-    SYRwinfayzHEUqUCNVEMg/wPfTPPvem07SHPOV8mlVPwusl2RVbHfVg9tTjiB59c
-    sc5oEDv2DkWkV6DLXmGR8RVdzYVE845tiJdsEuH5rL5wZyhcCeTccG2PV7+EXjsf
-    hxaUqOyZ41izsB0CDg+XwTVKfEg/HO9aqldzn1pSLB2ljVLXdA4PzDpFza2Ey7yy
-    d6zyYqGavQ7RXEicv/drdumJI80OwK+BfGw/ex1yjcAQk3jC69Mh3P4ZwVhYBoz1
-    TuwTh9yAwTe0cgoaBtesY/KjZaOdYEAZ5HwzT+ofN/HO6UgutZfPH08foNo1+6Hj
-    uaSvKENpes/4CviPxX6NuUMyy7VAz6vf+naFzvRB0enB9XmmBnjnT1JTXWPHTIdq
-    1rMI8KCvQ0U27KI5bhjYWQOmON0Ai4qfrbtuhQx2sZuU7fM+bqErERVW9gekloX3
-    eWHtsITbrRT16luUcCgnubIXMcRCO2rAgbwF4z5YpshexZFFnbqgxOAJC58gtPAi
-    dKu/FFZMVwFukKFeyf7WvNleTMu9ziOIs71USXBZpHEiWjsJlcpdkE9KYDX9mLu6
-    -----END RSA PRIVATE KEY-----
-    EOF
-
-    chmod 0600 ~/.ssh/support_id_rsa
-
-    cat << EOF > ~/.ssh/support_id_rsa.pub
-    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTXOsL3dwPJxQ9GCpS4izXtxwq\
-    tzGw5PCTTVqjy54ZkbmgtqJJTEbT9W4vY6QwuNvsoY7clij7u6Gskfcv93YxMW8c\
-    tXIi89lnMAA3VzehAulYOF21+W3sRLe9nPf52js8Mekhl364udTbHMtnpueHyZvG\
-    pTJmc3CxO2xYdCa0f8wKxOEXOzGY2EcwWurQPu+jLHU6C5LPulcYfLsYHz1fFuDp\
-    8tpVXpHONJwpXLKDoe4iAtkxpKtIZEZEeJNIpuIqiVT8L0uRvYH9Za7yj3Tcxh5r\
-    8uE5v925bxkgHk+Hk95YdnfMqJfG8qGtC3tfE6bTOkweLjmiadY+Qz4QBv67\
-     support@hpcloud.com
-    EOF
-
-    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
-    ```
-
-8. (CLC): Confirm initial service status
+7. (CLC): Confirm initial service status
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend, 
       objectstorage and storage.
@@ -1669,13 +1613,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-node-controllers
     ```
 
-9. (CLC): Load Edge Network JSON configuration
+8. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-10. (CLC): Configure Object Storage to use Walrus Backend
+9. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
     euctl objectstorage.providerclient=walrus
@@ -1697,7 +1641,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-11. (CLC): Configure EBS Storage for DAS storage mode
+10. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1729,56 +1673,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-12. (CLC): Install and Initialize the Eucalyptus Service Image
-
-    Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
-
-    ```bash
-    export S3_URL=http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
-    esi-install-image --install-default
-    ```
-
-    (Skip - seems keypair must be in "(eucalyptus)imaging" Account. Set the Worker KeyPair, allowing use of the support KeyPair for Intance debugging.
-
-    ```bash
-    euctl services.imaging.worker.keyname=support
-    euctl services.loadbalancing.worker.keyname=support
-    euctl services.database.worker.keyname=support
-    ```
-
-    (Optional) Adjust Worker Instance Types.
-
-    ```bash
-    euctl services.imaging.worker.instance_type=m1.xlarge
-    euctl services.loadbalancing.worker.instance_type=m1.small
-    euctl services.database.worker.instance_type=m1.small
-    ```
-
-    Start the Imaging Worker Instance.
-
-    ```bash
-    esi-manage-stack -a create imaging
-    ```
-
-    Wait for imaging and loadbalancing services to become **enabled**. The imagingbackend service may at
-    first appear enabled, then switch to **notready** until the imaging worker created by the last statement
-    is stable. Continue to wait until all services are enabled.
-
-    ```bash
-    sleep 20
-    ```
-
-    Optional: Confirm service status.
-
-    * The imaging, imagingbackend, loadbalanging and loadbalancingbackend services should now be in the
-      **enabled** state.
-    * All services should now be listed and in the **enabled** state.
-
-    ```bash
-    euserv-describe-services
-    ```
-
-13. (CLC): Configure DNS
+11. (CLC): Configure DNS
 
     (Skip) Configure Eucalyptus DNS Server
 
@@ -1830,7 +1725,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     $ORIGIN hp-gol01-d8.mjc.prc.eucalyptus-systems.com.
     ;Name           TTL     Type    Value
     @                       SOA     ns1.mjc.prc.eucalyptus-systems.com. root.mjc.prc.eucalyptus-systems.com. (
-                                    2015102901      ; serial
+                                    2015111501      ; serial
                                     1H              ; refresh
                                     10M             ; retry
                                     1D              ; expiry
@@ -1859,12 +1754,19 @@ ns1.mjc.prc.eucalyptus-systems.com.
     console                 A       10.104.10.83
     autoscaling             A       10.104.10.83
     cloudformation          A       10.104.10.83
-    cloudwatch              A       10.104.10.83
+    ec2                     A       10.104.10.83
     compute                 A       10.104.10.83
-    euare                   A       10.104.10.83
+    elasticloadbalancing    A       10.104.10.83
     loadbalancing           A       10.104.10.83
+    iam                     A       10.104.10.83
+    euare                   A       10.104.10.83
+    monitoring              A       10.104.10.83
+    cloudwatch              A       10.104.10.83
+    s3                      A       10.104.10.83
     objectstorage           A       10.104.10.83
+    sts                     A       10.104.10.83
     tokens                  A       10.104.10.83
+    swf                     A       10.104.10.83
     simpleworkflow          A       10.104.10.83
     bootstrap               A       10.104.10.83
     properties              A       10.104.10.83
@@ -1883,18 +1785,25 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     dig +short cloudformation.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-
+    dig +short ec2.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     dig +short compute.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
-    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-
+    dig +short elasticloadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     dig +short loadbalancing.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
+    dig +short iam.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short euare.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short monitoring.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+    dig +short cloudwatch.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+
+    dig +short s3.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     dig +short objectstorage.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
+    dig +short sts.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     dig +short tokens.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
+    dig +short swf.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     dig +short simpleworkflow.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
 
     dig +short bootstrap.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
@@ -1904,7 +1813,162 @@ ns1.mjc.prc.eucalyptus-systems.com.
     dig +short reporting.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-14. (CLC): Confirm service status
+12. (CLC): Update Euca2ools Region to use DNS Names
+
+    This is the first replacement of this file to use DNS names, but as http against the native 8773 port.
+
+    We will replace this file once more once PKI and SSL certificates are configured.
+
+    ```bash
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/AutoScaling/
+    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudFormation/
+    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/compute/
+    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/LoadBalancing/
+    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Euare/
+    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudWatch/
+    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/objectstorage/
+    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Tokens/
+    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/SimpleWorkflow/
+    user = $AWS_DEFAULT_REGION-admin
+
+    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Empyrean/
+    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Properties/
+    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Reporting/
+
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = false
+    EOF
+    ```
+
+13. (CLC): Import Support Keypair
+
+    Create a known and consistent set of KeyPair files.
+
+    ```bash
+    cat << EOF > ~/.ssh/support_id_rsa
+    -----BEGIN RSA PRIVATE KEY-----
+    Proc-Type: 4,ENCRYPTED
+    DEK-Info: AES-128-CBC,A7E90718BF61C84826297430F36A3092
+
+    ZaLkWHam/D0edJYg+q/cmu7norygv6uhiTMCyYYWQbqAazdcBT6zvpcxmmCbdoeX
+    0FQ0AhM3rD+1/d1e+2nOU0F2SJ9bjfU3FU/MY+OJ5qH5fO6ChMO6H3+x4bQ2knwB
+    oYItOvy9PnFCG58XycCam+q8wV49BXsGaHZtoykzTa7v77cvCKwl29QQRUCgym8G
+    bXrb90n7V3jEWgHEi3rQZ0/8qGvPU8UDNV+8Jiu16j9GNVShP/30W8uqgT0kj1oS
+    TpIFAYQFLW0HlhAmKnqNqqzd2Jet/ebvD3+Om6yIjg6+tncgRjV2kBiIU2WwjJMC
+    rTHG0KpQzbEMTfFA8OGEKK3yVjwE92Ypu2SiitFnVVZMYMm0aHR2/Tx5chjed7rV
+    gVmPApCjNPOhyQFc+f+KpFsIIOjF7LVRRLRVhnYLujyA+an+BWJjHMhMlQ18Ek9u
+    l6b77LoImQIGXq626YSAe9w3rCkOb6CWqMGDKaagvl92N8Topn9W0NXawfbV7ZTM
+    Unvi2sLTgsurQ/JpuS7BKmq8gmmmzm8IqhzGBEE9a5G4zJ3vTjRo2lZ6hRN6ri50
+    pSHDt6m9b0OU6ZV3FerpjIZWigCkI0VWZPQgPJTF0VKdusU7atG7N1fSCc+GBW39
+    opB/mpWghZvI4MLC/5GKG753A2nDYp1K8rBGwXyb27UmZ/6B920cV6L2fqGvyoRO
+    q8sP7zsqtU6U+nmZOeRGOQW/XLKRYDnqe5NCC/8tkpMXNk9PAQP9We1X7kxfAl6B
+    8WAw+IfSVtBRT76TqwMSqmS3BqAehbeGRZQ+JF33cCxd/8DJcLh8ZHKnlO66m6B9
+    K/e2lN+Y6mJCU7g2VSpK6/QzPwYPA63N/CqRoACZw/nQ3T2CBOLK5i7vU57iLHqq
+    dUHSdwKrylyb3QPSkttnD9MIuByPN2ZXZCNOp5gXWC/s1hbdGeX/voHtJl8a7g1Z
+    1keeDuqW95LMJKhKl0CXFznUHF9wQa3vx8nJVl2K/rXUi5tEw7I/0QD+fER3DTmM
+    SYRwinfayzHEUqUCNVEMg/wPfTPPvem07SHPOV8mlVPwusl2RVbHfVg9tTjiB59c
+    sc5oEDv2DkWkV6DLXmGR8RVdzYVE845tiJdsEuH5rL5wZyhcCeTccG2PV7+EXjsf
+    hxaUqOyZ41izsB0CDg+XwTVKfEg/HO9aqldzn1pSLB2ljVLXdA4PzDpFza2Ey7yy
+    d6zyYqGavQ7RXEicv/drdumJI80OwK+BfGw/ex1yjcAQk3jC69Mh3P4ZwVhYBoz1
+    TuwTh9yAwTe0cgoaBtesY/KjZaOdYEAZ5HwzT+ofN/HO6UgutZfPH08foNo1+6Hj
+    uaSvKENpes/4CviPxX6NuUMyy7VAz6vf+naFzvRB0enB9XmmBnjnT1JTXWPHTIdq
+    1rMI8KCvQ0U27KI5bhjYWQOmON0Ai4qfrbtuhQx2sZuU7fM+bqErERVW9gekloX3
+    eWHtsITbrRT16luUcCgnubIXMcRCO2rAgbwF4z5YpshexZFFnbqgxOAJC58gtPAi
+    dKu/FFZMVwFukKFeyf7WvNleTMu9ziOIs71USXBZpHEiWjsJlcpdkE9KYDX9mLu6
+    -----END RSA PRIVATE KEY-----
+    EOF
+
+    chmod 0600 ~/.ssh/support_id_rsa
+
+    cat << EOF > ~/.ssh/support_id_rsa.pub
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTXOsL3dwPJxQ9GCpS4izXtxwq\
+    tzGw5PCTTVqjy54ZkbmgtqJJTEbT9W4vY6QwuNvsoY7clij7u6Gskfcv93YxMW8c\
+    tXIi89lnMAA3VzehAulYOF21+W3sRLe9nPf52js8Mekhl364udTbHMtnpueHyZvG\
+    pTJmc3CxO2xYdCa0f8wKxOEXOzGY2EcwWurQPu+jLHU6C5LPulcYfLsYHz1fFuDp\
+    8tpVXpHONJwpXLKDoe4iAtkxpKtIZEZEeJNIpuIqiVT8L0uRvYH9Za7yj3Tcxh5r\
+    8uE5v925bxkgHk+Hk95YdnfMqJfG8qGtC3tfE6bTOkweLjmiadY+Qz4QBv67\
+     support@hpcloud.com
+    EOF
+    ```
+
+    Assume the Imaging Service Role, in order to import the Support KeyPair into the
+    Imaging Service Account.
+
+    ```bash
+    imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
+    eval $(euare-assumerole $imaging_arn)
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+    eval $(euare-releaserole)
+    ```
+
+    Assume the LoadBalancing Service Role, in order to import the Support KeyPair into the
+    LoadBalancing Service Account.
+
+    ```bash
+    loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
+    eval $(euare-assumerole $loadbalancing_arn)
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+    eval $(euare-releaserole)
+    ```
+
+    Re-Assume the Eucalyptus Administrator Credentials
+
+    ```bash
+    eval $(clcadmin-assume-system-credentials)
+    ```
+
+14. (CLC): Install and Initialize the Eucalyptus Service Image
+
+    Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
+
+    ```bash
+    export S3_URL=http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage
+    esi-install-image --install-default
+    ```
+
+    Set the Service Worker KeyPairs, allowing use of the support KeyPair for debugging.
+
+    ```bash
+    euctl services.imaging.worker.keyname=support
+    euctl services.loadbalancing.worker.keyname=support
+    ```
+
+    (Optional) Adjust Worker Instance Types.
+
+    ```bash
+    euctl services.imaging.worker.instance_type=m1.xlarge
+    euctl services.loadbalancing.worker.instance_type=m1.small
+    ```
+
+    Start the Imaging Worker Instance.
+
+    ```bash
+    esi-manage-stack -a create imaging
+    ```
+
+    Wait for imaging and loadbalancing services to become **enabled**. The imagingbackend service may at
+    first appear enabled, then switch to **notready** until the imaging worker created by the last statement
+    is stable. Continue to wait until all services are enabled.
+
+    ```bash
+    sleep 20
+    ```
+
+    Optional: Confirm service status.
+
+    * The imaging, imagingbackend, loadbalanging and loadbalancingbackend services should now be in the
+      **enabled** state.
+    * All services should now be listed and in the **enabled** state.
+
+    ```bash
+    euserv-describe-services
+    ```
+
+15. (CLC): Confirm service status
 
     All services should now be listed and in the **enabled** state.
 
@@ -1912,7 +1976,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-15. (CLC): Confirm apis
+16. (CLC): Confirm apis
 
     ```bash
     euca-describe-regions
@@ -1922,6 +1986,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-node-controllers
 
     euca-describe-instance-types --show-capacity
+
+    euca-describe-instances verbose
     ```
 
 ### Configure SSL Certificates
@@ -2834,7 +2900,360 @@ would be supported configurations.
     service eucaconsole restart
     ```
 
-5. (CLC): Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
+5. (CLC): Configure AWS CLI with Eucalyptus Region Native Endpoints
+
+    This creates a modified version of the _endpoints.json file which the botocore Python module
+    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region native
+    endpoints.
+
+    We rename the original _endpoints.json file with the .orig extension, so we can diff for
+    changes if we need to update in the future against a new _endpoints.json, then create a
+    symlink with the original name pointing to our new local version.
+
+    ```bash
+    cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local
+    {
+      "_default":[
+        {
+          "uri":"http://{service}.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+              "signatureVersion": "v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "ec2": [
+        {
+          "uri":"http://compute.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints": [
+            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "elasticloadbalancing": [
+       {
+        "uri":"http://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN:8773",
+        "constraints": [
+          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "monitoring":[
+        {
+          "uri":"http://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints": [
+           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        }
+      ],
+      "swf":[
+       {
+        "uri":"http://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN:8773",
+        "constraints": [
+         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+        ]
+       }
+      ],
+      "iam":[
+        {
+          "uri":"http://euare.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "sdb":[
+        {
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "sts":[
+        {
+          "uri":"http://tokens.{region}.$AWS_DEFAULT_DOMAIN:8773",
+          "constraints":[
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
+          ]
+        },
+        {
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "s3":[
+        {
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        },
+        {
+          "uri":"http://objectstorage.{region}.$AWS_DEFAULT_DOMAIN:8773//",
+          "constraints": [
+            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        },
+        {
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
+          ]
+        },
+        {
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ],
+          "properties": {
+            "signatureVersion": "s3v4"
+          }
+        }
+      ],
+      "rds":[
+        {
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        }
+      ],
+      "route53":[
+        {
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "waf":[
+        {
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "elasticmapreduce":[
+        {
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
+          ]
+        },
+        {
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "sqs":[
+        {
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
+          ]
+        }
+      ],
+      "importexport": [
+        {
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          }
+        }
+      ],
+      "dynamodb": [
+        {
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
+          ],
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
+            }
+          }
+        }
+      ]
+    }
+    EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json \
+       /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.orig
+
+    ln -s _endpoints.json.local /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+    ```
+
+6. (CLC): Configure Default AWS credentials
+
+    This configures the Eucalyptus Administrator as the default and an explicit profile.
+
+    This step assumes the AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables are still
+    set to the Eucalyptus Administrator from a prior call to "eval $(clcadmin-assume-system-credentials)".
+
+    ```bash
+    mkdir -p ~/.aws
+
+    cat << EOF > ~/.aws/config
+    #
+    # AWS Config file
+    #
+
+    [default]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    [profile $AWS_DEFAULT_REGION-admin]
+    region = $AWS_DEFAULT_REGION
+    output = text
+
+    EOF
+
+    cat << EOF > ~/.aws/credentials
+    #
+    # AWS Credentials file
+    #
+
+    [default]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    [$AWS_DEFAULT_REGION-admin]
+    aws_access_key_id = $AWS_ACCESS_KEY
+    aws_secret_access_key = $AWS_SECRET_KEY
+
+    EOF
+
+    chmod -R og-rwx ~/.aws
+    ```
+
+7. (CLC): Test AWSCLI against Eucalyptus Native Endpoints
+
+    ```bash
+    aws ec2 describe-key-pairs
+
+    aws ec2 describe-key-pairs --profile=default
+
+    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    ```
+
+8. (CLC): (Optional) Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
 
     We will use the Helion Eucalyptus Development Root Certification Authority to sign SSL
     certificates. Certificates issued by this CA are not trusted by default.
@@ -2902,14 +3321,15 @@ would be supported configurations.
     ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
-6. (CLC): Configure AWS CLI to support local Eucalyptus region
+9. (CLC): (Optional) Configure AWS CLI with Eucalyptus Region SSL Endpoints
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
-    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region endpoints.
+    within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region SSL
+    endpoints.
 
-    We rename the original _endpoints.json file with the .orig extension, so we can diff for
-    changes if we need to update in the future against a new _endpoints.json, then create a
-    symlink with the original name pointing to our new SSL version.
+    For this SSL variant to work, either the improved reverse proxy configuration shown above,
+    or the steps described in Eucalyptus Documentation to configure SSL via the Java KeyStore
+    method must be in place first.
 
     ```bash
     cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl
@@ -3195,56 +3615,12 @@ would be supported configurations.
     }
     EOF
 
-    mv /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json \
-       /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.orig
+    rm /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
 
     ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
     ```
 
-7. (CLC): Configure Default AWS credentials
-
-    This configures the Eucalyptus Administrator as the default and an explicit profile.
-
-    This step assumes the AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables are still
-    set to the Eucalyptus Administrator from a prior call to "eval $(clcadmin-assume-system-credentials)".
-
-    ```bash
-    mkdir -p ~/.aws
-
-    cat << EOF > ~/.aws/config
-    #
-    # AWS Config file
-    #
-
-    [default]
-    region = $AWS_DEFAULT_REGION
-    output = text
-
-    [profile $AWS_DEFAULT_REGION-admin]
-    region = $AWS_DEFAULT_REGION
-    output = text
-
-    EOF
-
-    cat << EOF > ~/.aws/credentials
-    #
-    # AWS Credentials file
-    #
-
-    [default]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
-
-    [$AWS_DEFAULT_REGION-admin]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
-
-    EOF
-
-    chmod -R og-rwx ~/.aws
-    ```
-
-8. (CLC): Test AWSCLI
+10. (CLC): (Optional) Test AWSCLI against Eucalyptus SSL Endpoints
 
     ```bash
     aws ec2 describe-key-pairs
