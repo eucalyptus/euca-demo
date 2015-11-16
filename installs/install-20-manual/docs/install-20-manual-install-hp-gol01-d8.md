@@ -2207,7 +2207,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
-### Configure Management Console and Nginx to use Custom SSL Certificates
+### Configure Management Console and Embedded Nginx to use Custom SSL Certificates
 
 The Eucalyptus Management Console installs Nginx along with a configuration file which
 works with the Management Console using self-signed SSL Certificates.
@@ -2237,13 +2237,7 @@ eliminate the untrusted certificate warning.
     sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
     ```
 
-3. (MC): Restart the Management Console service
-
-    ```bash
-    service eucaconsole restart
-    ```
-
-4. (MC): Update the Embedded Nginx to use the custom SSL Certificate
+3. (MC): Update the Embedded Nginx to use the custom SSL Certificate
 
     ```bash
     [ -e /etc/eucaconsole/nginx.conf.orig ] ||
@@ -2254,13 +2248,13 @@ eliminate the untrusted certificate warning.
         /etc/eucaconsole/nginx.conf
     ```
 
-5. (MC): Restart the Nginx service
+4. (MC): Restart the Management Console service
 
     ```bash
-    service nginx restart
+    service eucaconsole restart
     ```
 
-6. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+5. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
 
     At this point, you should no longer get the untrusted certificate warning.
 
@@ -2269,7 +2263,7 @@ eliminate the untrusted certificate warning.
     Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
     ```
 
-### Replace Management Console Default Nginx Implementation with an Alternative which also supports UFS
+### Replace Management Console Embedded Nginx with Alternative which also supports UFS
 
 We will now replace the default Nginx implementation with an alternate configuration which will
 support both the Mangement Console and User-Facing Services with SSL, using SSL Certificates signed
@@ -2817,23 +2811,7 @@ Management Console first, and use of a later version of Nginx.
     chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     ```
 
-14. (UFS): Restart Nginx service
-
-    ```bash
-    service nginx restart
-    ```
-
-15. (MW): Confirm the Nginx service
-
-    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
-    if working correctly
-
-    ```bash
-    Browse: http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
-    Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
-    ```
-
-16. (MC): Configure Eucalyptus Console Reverse Proxy Server
+14. (MC): Configure Eucalyptus Console Reverse Proxy Server
 
     This server will proxy the console via standard HTTP and HTTPS ports
 
@@ -2896,13 +2874,23 @@ Management Console first, and use of a later version of Nginx.
     chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     ```
 
-17. (MC): Restart the Nginx service
+15. (MC): Restart the Nginx service
 
     ```bash
     service nginx restart
     ```
 
-18. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+16. (MW): Confirm the User Facting Services are accessible via HTTPS
+
+    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
+    if working correctly
+
+    ```bash
+    Browse: http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ```
+
+17. (MW): Confirm the Updated Management Console is accessible via HTTPS
 
     At this point, you should no longer get the untrusted certificate warning.
 
@@ -3686,7 +3674,7 @@ would be supported configurations.
     }
     EOF
 
-    rm /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+    rm -f /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
 
     ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
     ```

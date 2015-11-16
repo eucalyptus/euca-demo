@@ -2190,7 +2190,7 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
-### Configure Management Console and Nginx to use Custom SSL Certificates
+### Configure Management Console and Embedded Nginx to use Custom SSL Certificates
 
 The Eucalyptus Management Console installs Nginx along with a configuration file which
 works with the Management Console using self-signed SSL Certificates.
@@ -2220,13 +2220,7 @@ eliminate the untrusted certificate warning.
     sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
     ```
 
-3. (MC): Restart the Management Console service
-
-    ```bash
-    service eucaconsole restart
-    ```
-
-4. (MC): Update the Embedded Nginx to use the custom SSL Certificate
+3. (MC): Update the Embedded Nginx to use the custom SSL Certificate
 
     ```bash
     [ -e /etc/eucaconsole/nginx.conf.orig ] ||
@@ -2237,13 +2231,13 @@ eliminate the untrusted certificate warning.
         /etc/eucaconsole/nginx.conf
     ```
 
-5. (MC): Restart the Nginx service
+4. (MC): Restart the Management Console service
 
     ```bash
-    service nginx restart
+    service eucaconsole restart
     ```
 
-6. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+5. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
 
     At this point, you should no longer get the untrusted certificate warning.
 
@@ -2252,7 +2246,7 @@ eliminate the untrusted certificate warning.
     Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
     ```
 
-### Replace Management Console Default Nginx Implementation with an Alternative which also supports UFS
+### Replace Management Console Embedded Nginx with Alternative which also supports UFS
 
 We will now replace the default Nginx implementation with an alternate configuration which will
 support both the Mangement Console and User-Facing Services with SSL, using SSL Certificates signed
@@ -2800,23 +2794,7 @@ Management Console first, and use of a later version of Nginx.
     chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     ```
 
-14. (UFS): Restart Nginx service
-
-    ```bash
-    service nginx restart
-    ```
-
-15. (MW): Confirm the Nginx service
-
-    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
-    if working correctly
-
-    ```bash
-    Browse: http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
-    Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
-    ```
-
-16. (MC): Configure Eucalyptus Console Reverse Proxy Server
+14. (MC): Configure Eucalyptus Console Reverse Proxy Server
 
     This server will proxy the console via standard HTTP and HTTPS ports
 
@@ -2879,13 +2857,24 @@ Management Console first, and use of a later version of Nginx.
     chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     ```
 
-17. (MC): Restart the Nginx service
+15. (MC): Restart the Nginx service
 
     ```bash
     service nginx restart
     ```
 
-18. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+16. (MW): Confirm the User Facting Services are accessible via HTTPS
+
+    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
+    if working correctly
+
+    ```bash
+    Browse: http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ```
+
+
+17. (MW): Confirm the Updated Management Console is accessible via HTTPS
 
     At this point, you should no longer get the untrusted certificate warning.
 
@@ -2904,6 +2893,10 @@ cause any problems so far, but use at your own risk.
 To be safe, you might want to skip the installation of AWS CLI on the CLC+MC, and install it only on
 a separate management workstation, or set this up within a Python virtual environment, either of which
 would be supported configurations.
+
+1. (CLC): Install and Update Python Pip
+
+    This step assumes the EPEL repo has been configured.
 
     ```bash
     yum install -y python-pip
@@ -2927,7 +2920,7 @@ would be supported configurations.
     source /etc/profile.d/aws.sh
     ```
 
-4. (CLC+MC): Fix Broken Python Dependencies
+4. (MC): (Skip) Fix Broken Python Dependencies
 
     When awscli is installed by pip on the same host as the Management Console, it breaks the Console
     due to updated python dependencies which AWSCLI doesn't appear to need, but which Management Console
@@ -3663,7 +3656,7 @@ would be supported configurations.
     }
     EOF
 
-    rm /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
+    rm -f /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
 
     ln -s _endpoints.json.local.ssl /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json
     ```
