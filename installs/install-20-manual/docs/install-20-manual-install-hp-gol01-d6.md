@@ -144,7 +144,7 @@ process, not currently available for this host.
     Add packages which are used during host preparation, eucalyptus installation or testing.
 
     ```bash
-    yum install -y man wget zip unzip git qemu-img-rhev nc lynx rsync bind-utils tree screen
+    yum install -y man wget zip unzip git qemu-img nc lynx rsync bind-utils tree screen
     ```
 
 2. (All) Configure Sudo
