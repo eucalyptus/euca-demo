@@ -1492,6 +1492,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    chmod 644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
 
     cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
     ; Eucalyptus Region $AWS_DEFAULT_REGION
