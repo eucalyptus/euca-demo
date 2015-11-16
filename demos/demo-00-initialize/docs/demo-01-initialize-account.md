@@ -65,19 +65,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     EOF
     ```
 
-4. Create Demo (demo) Account Administrator Certificate
-
-    This allows the Demo Account Administrator to run certain API commands which still need a
-    certificate.
-
-    ```bash
-    private_key=~/.creds/$REGION/demo/admin/euca2-admin-pk.pem
-    certificate=~/.creds/$REGION/demo/admin/euca2-admin-cert.pem
-
-    euare-usercreatecert --keyout $private_key --out $certificate --as-account demo --region $USER_REGION admin
-    ```
-
-5. Create Demo (demo) Account Administrator Euca2ools Profile
+4. Create Demo (demo) Account Administrator Euca2ools Profile
 
     This allows the Demo Account Administrator to run API commands via Euca2ools.
 
@@ -95,7 +83,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euca-describe-availability-zones verbose --region $REGION-demo-admin@$REGION
     ```
 
-6. Create Demo (demo) Account Administrator AWSCLI Profile
+5. Create Demo (demo) Account Administrator AWSCLI Profile
 
     This allows the Demo Account Administrator to run API commands via AWSCLI.
 
@@ -117,7 +105,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     aws ec2 describe-availability-zones --profile $REGION-demo-admin --region $REGION
     ```
 
-7. Authorize Demo (demo) Account use of Demo Generic Image
+6. Authorize Demo (demo) Account use of Demo Generic Image
 
     Lookup the demo account id and centos generic image id, as these will be different for each environment.
 
@@ -129,7 +117,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euca-modify-image-attribute --launch-permission --add $account_id --region $USER_REGION $image_id
     ```
 
-8. Authorize Demo (demo) Account use of Demo CFN + AWSCLI Image
+7. Authorize Demo (demo) Account use of Demo CFN + AWSCLI Image
 
     Lookup the demo account id and centos cfn + awscli image id, as these will be different for each environment.
 
@@ -141,7 +129,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euca-modify-image-attribute --launch-permission --add $account_id --region $USER_REGION $image_id
     ```
 
-9. List Demo Resources
+8. List Demo Resources
 
     ```bash
     euca-describe-images --region $USER_REGION
@@ -149,7 +137,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euare-accountlist --region $USER_REGION
     ```
 
-10. Display Euca2ools Configuration
+9. Display Euca2ools Configuration
 
     ```bash
     cat /etc/euca2ools/conf.d/$REGION.ini
@@ -159,7 +147,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     cat ~/.euca/$REGION.ini
     ```
 
-11. Display AWSCLI Configuration
+10. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config

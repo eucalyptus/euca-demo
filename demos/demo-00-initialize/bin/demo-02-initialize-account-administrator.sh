@@ -333,7 +333,7 @@ echo "Commands:"
 echo
 echo "euare-usercreate --region $user_region $new_user"
 
-if euare-userlistbypath--region $user_region | grep -s -q ":user/$new_user$"; then
+if euare-userlistbypath --region $user_region | grep -s -q ":user/$new_user$"; then
     echo
     tput rev
     echo "Already Created!"

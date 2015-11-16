@@ -104,9 +104,6 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     account_id=$(euare-accountlist --access-key-id $access_key --secret-key $secret_key \
                                    --region $REGION | grep "^eucalyptus" | cut -f2)
 
-    private_key=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-pk.pem
-    certificate=$HOME/.creds/$REGION/eucalyptus/admin/euca2-admin-cert.pem
-
     cat << EOF > ~/.euca/$REGION.ini
     ; Eucalyptus Region $REGION
 
@@ -114,8 +111,6 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     key-id = $access_key
     secret-key = $secret_key
     account-id = $account_id
-    private-key = $private_key
-    certificate = $certificate
 
     EOF
 
@@ -221,12 +216,12 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     aws s3api create-bucket --bucket sample-templates --acl public-read --profile $PROFILE --region=$REGION
     ```
 
-7. Download Demo Generic Image (CentOS 6.6)
+7. Download Demo Generic Image (CentOS 6)
 
     This is the Generic Cloud Image created by CentOS.
 
     ```bash
-    wget http://cloud.centos.org/centos/6.6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz \
+    wget http://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz \
          -O /var/tmp/CentOS-6-x86_64-GenericCloud.qcow2.xz
 
     xz -v -d /var/tmp/CentOS-6-x86_64-GenericCloud.qcow2.xz
@@ -238,7 +233,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 8. Install Demo Generic Image
 
     ```bash
-    euca-install-image --name centos66 \
+    euca-install-image --name centos6 \
                        --description "Centos 6 Generic Cloud Image" \
                        --bucket images \
                        --arch x86_64 \
@@ -261,7 +256,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 10. Install Demo CFN + AWSCLI Image
 
     ```bash
-    euca-install-image --name centos66-cfn-init \
+    euca-install-image --name centos6-cfn-init \
                        --description "Centos 6 Cloud Image with CloudFormation and AWSCLI" \
                        --bucket images \
                        --arch x86_64 \
