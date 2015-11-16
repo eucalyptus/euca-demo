@@ -1475,7 +1475,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     clusteradmin-copy-keys ${EUCA_NC3_PRIVATE_IP} ${EUCA_NC4_PRIVATE_IP}
     ```
 
-7. (NC): Restart the Node Controller services
+7. (NC): Restart the Node Controller Services
 
     The failure messages due to missing keys should no longer be there on restart.
 
@@ -2207,18 +2207,78 @@ considered insecure, and not used to protect hosts or sites accessible from the 
     chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
     ```
 
-### Replace Management Console Nginx Implementation with an Alternative which also supports UFS
+### Configure Management Console and Nginx to use Custom SSL Certificates
 
-In 4.2, the Eucalyptus Management Console pulls in Nginx along with a configuration file which
-only works with the Management Console using self-signed SSL Certificates. We will replace this
-with an alternate configuration which will support both the Mangement Console and User-Facing
-Services with SSL, using SSL Certificates signed by a local Certification Authority. This
-requires disabling the automatic use of Nginx by the Management Console first, and use of a
-later version of Nginx.
+The Eucalyptus Management Console installs Nginx along with a configuration file which
+works with the Management Console using self-signed SSL Certificates.
 
-1. (MW): Confirm Default Eucalyptus Console is accessible via default Nginx configuration
+We will first update the default configuration to reference the custom SSL Key and Certificate to
+eliminate the untrusted certificate warning.
 
-    Let's confirm the default configuration works before we replace it.
+1. (MW): Confirm the Default Management Console is accessible via default Nginx configuration
+
+    Let's confirm the default configuration works before we update it.
+
+    At this point, you should get an untrusted certificate warning.
+
+    ```bash
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ```
+
+2. (MC): Update the Management Console to use the custom SSL Certificate
+
+    ```bash
+    [ -e /etc/eucaconsole/console.ini.orig ] ||
+    cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
+
+    sed -i -e "/^session.secure/a\
+    sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
+    sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
+    ```
+
+3. (MC): Restart the Management Console service
+
+    ```bash
+    service eucaconsole restart
+    ```
+
+4. (MC): Update the Embedded Nginx to use the custom SSL Certificate
+
+    ```bash
+    [ -e /etc/eucaconsole/nginx.conf.orig ] ||
+    cp -a /etc/eucaconsole/nginx.conf /etc/eucaconsole/nginx.conf.orig
+
+    sed -i -e "s/\/etc\/eucaconsole\/console.crt;/\/etc\/pki\/tls\/certs\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;/" \
+           -e "s/\/etc\/eucaconsole\/console.key;/\/etc\/pki\/tls\/private\/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;/" \
+        /etc/eucaconsole/nginx.conf
+    ```
+
+5. (MC): Restart the Nginx service
+
+    ```bash
+    service nginx restart
+    ```
+
+6. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+
+    At this point, you should no longer get the untrusted certificate warning.
+
+    ```bash
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ```
+
+### Replace Management Console Default Nginx Implementation with an Alternative which also supports UFS
+
+We will now replace the default Nginx implementation with an alternate configuration which will
+support both the Mangement Console and User-Facing Services with SSL, using SSL Certificates signed
+by a local Certification Authority. This requires disabling the automatic use of Nginx by the
+Management Console first, and use of a later version of Nginx.
+
+1. (MW): Confirm Current Eucalyptus Console is accessible via default Nginx configuration
+
+    Let's confirm the current configuration works before we replace it.
 
     ```bash
     Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
@@ -2231,7 +2291,7 @@ later version of Nginx.
     sed -i -e "/NGINX_FLAGS=/ s/=/=NO/" /etc/sysconfig/eucaconsole
     ```
 
-3. (MC): Restart Eucalyptus Console service
+3. (MC): Restart the Eucalyptus Console service
 
     ```bash
     service eucaconsole restart
@@ -2254,7 +2314,7 @@ later version of Nginx.
 
 5. (UFS+MC): Install Nginx
 
-    This is needed for HTTP and HTTPS support running on standard ports
+    This is needed for HTTP and HTTPS support running on standard ports.
 
     ```bash
     yum install -y nginx
@@ -2274,10 +2334,7 @@ later version of Nginx.
            /etc/nginx/nginx.conf
     ```
 
-7. (UFS+MC): Start Nginx service
-
-    Confirm Nginx is running via a browser:
-    http://$(hostname)/
+7. (UFS+MC): Start the Nginx service
 
     ```bash
     chkconfig nginx on
@@ -2285,7 +2342,15 @@ later version of Nginx.
     service nginx start
     ```
 
-8. (UFS+MC): Configure Nginx Upstream Servers
+8. (MW): Confirm the Nginx service
+
+    This should display the default page.
+
+    ```bash
+    Browse: http://$(hostname)/
+    ```
+
+9. (UFS+MC): Configure Nginx Upstream Servers
 
     Note this file assumes UFS and MC are co-located on the same host, as is the case in this
     example. If they are split, or multiple copies of one or both exist, this file should be
@@ -2309,7 +2374,7 @@ later version of Nginx.
     EOF
     ```
 
-9. (UFS+MC): Configure Default Server
+10. (UFS+MC): Configure Default Server
 
     We also need to update or create the default home and error pages. Because we are not
     using the EPEL re-packaging, we do not get what they added in this area, and must
@@ -2675,16 +2740,21 @@ later version of Nginx.
     EOF
     ```
 
-10. (UFS+MC): Restart Nginx service
-
-    Confirm Nginx is running via a browser:
-    http://$(hostname)/
+11. (UFS+MC): Restart Nginx service
 
     ```bash
     service nginx restart
     ```
 
-11. (UFS): Configure Eucalyptus User-Facing Services Reverse Proxy Server
+12. (MW): Confirm the Nginx service
+
+    This should display a new custom page which displays the hostname.
+
+    ```bash
+    Browse: http://$(hostname)/
+    ```
+
+13. (UFS): Configure Eucalyptus User-Facing Services Reverse Proxy Server
 
     This server will proxy all API URLs via standard HTTP and HTTPS ports.
 
@@ -2747,20 +2817,23 @@ later version of Nginx.
     chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     ```
 
-12. (UFS): Restart Nginx service
-
-    Confirm Eucalyptus User-Facing Services are running via a browser:
-    http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-    https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
-    if working correctly
+14. (UFS): Restart Nginx service
 
     ```bash
     service nginx restart
     ```
 
-13. (MC): Configure Eucalyptus Console Reverse Proxy Server
+15. (MW): Confirm the Nginx service
+
+    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
+    if working correctly
+
+    ```bash
+    Browse: http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ```
+
+16. (MC): Configure Eucalyptus Console Reverse Proxy Server
 
     This server will proxy the console via standard HTTP and HTTPS ports
 
@@ -2821,23 +2894,21 @@ later version of Nginx.
     EOF
 
     chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
-
-    sed -i -e "/^session.secure =/s/= .*$/= true/" \
-           -e "/^session.secure/a\
-    sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
-    sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
     ```
 
-14. (MC): Restart Nginx and Eucalyptus Console services
-
-    Confirm Eucalyptus Console is running via a browser:
-    http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-    https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+17. (MC): Restart the Nginx service
 
     ```bash
     service nginx restart
+    ```
 
-    service eucaconsole restart
+18. (MW): Confirm the Updated Management Console is accessible without the Unknown Certificate warning
+
+    At this point, you should no longer get the untrusted certificate warning.
+
+    ```bash
+    Browse: http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    Browse: https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
     ```
 
 ### Configure AWSCLI
