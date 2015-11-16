@@ -913,8 +913,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
         sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
     else
         echo >> /etc/sysctl.conf
-        echo "# Re-enable netfilter on bridges"
-        echo "net.bridge.bridge-nf-call-iptables = 1"
+        echo "# Re-enable netfilter on bridges" >> /etc/sysctl.conf
+        echo "net.bridge.bridge-nf-call-iptables = 1" >> /etc/sysctl.conf
     fi
 
     sysctl -p

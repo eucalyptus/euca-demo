@@ -427,7 +427,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     e2label /dev/var/log log
 
-    echo "LABEL=log               /var/lib/var/log                ext4    defaults        1 1" >> /etc/fstab
+    echo "LABEL=log               /var/log                        ext4    defaults        1 1" >> /etc/fstab
 
     mv /var/log /var/log-save
 
@@ -901,6 +901,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     postmap sender_canonical
 
     chkconfig postfix on
+
     service postfix restart
 
     popd
@@ -944,8 +945,8 @@ ns1.mjc.prc.eucalyptus-systems.com.
         sed -i -e '/^net.bridge.bridge-nf-call-iptables = 0/s/=.*$/= 1/' /etc/sysctl.conf
     else
         echo >> /etc/sysctl.conf
-        echo "# Re-enable netfilter on bridges"
-        echo "net.bridge.bridge-nf-call-iptables = 1"
+        echo "# Re-enable netfilter on bridges" >> /etc/sysctl.conf
+        echo "net.bridge.bridge-nf-call-iptables = 1" >> /etc/sysctl.conf
     fi
 
     sysctl -p
@@ -1042,6 +1043,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     Optional: This second set of packages is required to configure access to the Eucalyptus yum
     repositories which contain subscription-only Eucalyptus software, which requires a license.
 
+    ```bash
     yum install -y http://mirror.mjc.prc.eucalyptus-systems.com/downloads/eucalyptus/licenses/eucalyptus-enterprise-license-1-1.151702164410-Euca_HP_SalesEng.noarch.rpm
     yum install -y http://subscription.eucalyptus.com/eucalyptus-enterprise-release-4.2-1.el6.noarch.rpm
     ```
