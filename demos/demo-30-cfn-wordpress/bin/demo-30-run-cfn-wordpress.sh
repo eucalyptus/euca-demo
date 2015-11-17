@@ -293,7 +293,7 @@ if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
     exit 53
 fi
 
-euca_cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation$/\1/p" /etc/euca2ools/conf.d/$euca_region.ini)
+euca_cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation\/$/\1/p" /etc/euca2ools/conf.d/$euca_region.ini)
 aws_cloudformation_url=https://cloudformation.$aws_region.amazonaws.com
 
 if [ -z $euca_cloudformation_url ]; then
