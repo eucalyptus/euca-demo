@@ -83,15 +83,25 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     export EUCA_PUBLIC_IP_RANGE=10.104.40.1-10.104.40.254
 
+    export EUCA_HOSTS_PRIVATE_NAME=10.105.0.0/20
+    export EUCA_HOSTS_PRIVATE_SUBNET=10.105.0.0
+    export EUCA_HOSTS_PRIVATE_NETMASK=255.255.240.0
+    export EUCA_HOSTS_PRIVATE_GATEWAY=10.105.0.1
+
+    export EUCA_OTHER_PRIVATE_NAME=10.105.44.0/22
+    export EUCA_OTHER_PRIVATE_SUBNET=10.105.44.0
+    export EUCA_OTHER_PRIVATE_NETMASK=255.255.252.0
+    export EUCA_OTHER_PRIVATE_GATEWAY=10.105.44.1
+
     export EUCA_ZONEA=${AWS_DEFAULT_REGION}a
     export EUCA_ZONEA_CC_NAME=${EUCA_ZONEA}-cc
     export EUCA_ZONEA_SC_NAME=${EUCA_ZONEA}-sc
 
     export EUCA_ZONEA_PRIVATE_IP_RANGE=10.105.40.2-10.105.40.254
-    export EUCA_ZONEA_PRIVATE_NAME=10.105.0.0
-    export EUCA_ZONEA_PRIVATE_SUBNET=10.105.0.0
-    export EUCA_ZONEA_PRIVATE_NETMASK=255.255.0.0
-    export EUCA_ZONEA_PRIVATE_GATEWAY=10.105.0.1
+    export EUCA_ZONEA_PRIVATE_NAME=10.105.40.0
+    export EUCA_ZONEA_PRIVATE_SUBNET=10.105.40.0
+    export EUCA_ZONEA_PRIVATE_NETMASK=255.255.255.0
+    export EUCA_ZONEA_PRIVATE_GATEWAY=10.105.40.1
 
     export EUCA_CLC_PUBLIC_INTERFACE=em1
     export EUCA_CLC_PUBLIC_IP=10.104.10.83
@@ -147,7 +157,22 @@ process, not currently available for this host.
     yum install -y man wget zip unzip git qemu-img nc lynx rsync bind-utils tree screen
     ```
 
-2. (All) Configure Sudo
+2. (All) Configure Host Name Resolution
+
+    All hosts must resolve their fully-qualified hostname to the private IP address.
+
+    If the hostname does not resolve to the private IP address, modify /etc/hosts to override
+    this behavior.
+
+    ```bash
+    private_interface=em2 # hard-coding this here; it may vary in other cases
+    private_ip=$(ip addr | sed -n -e "s/^ *inet \([0-9.]*\)\/.* $private_interface$/\1/p")
+
+    echo >> /etc/hosts
+    echo "$private_ip $(hostname)" >> /etc/hosts
+    ```
+
+3. (All) Configure Sudo
 
     Allow members of group `wheel` to sudo with a password.
 
@@ -155,7 +180,7 @@ process, not currently available for this host.
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
-3. (All) Configure root user
+4. (All) Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
     structure, adjusting the default GECOS information so email sent from root on a host
@@ -182,7 +207,7 @@ process, not currently available for this host.
     fi
     ```
 
-4. (All) Configure profile
+5. (All) Configure profile
 
     Adjust global profile with some local useful aliases.
 
@@ -208,7 +233,7 @@ process, not currently available for this host.
     fi
     ```
 
-5. (All) Clone euca-demo git project
+6. (All) Clone euca-demo git project
 
     This is one location where demo scripts live. We will run the demo initialization
     scripts at the completion of the installation.
@@ -1170,6 +1195,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
       ],
       "PublicIps": [
         "${EUCA_PUBLIC_IP_RANGE}"
+      ],
+      "Subnets": [
+        {
+          "Name": "$EUCA_HOSTS_PRIVATE_NAME",
+          "Subnet": "$EUCA_HOSTS_PRIVATE_SUBNET",
+          "Netmask": "$EUCA_HOSTS_PRIVATE_NETMASK",
+          "Gateway": "$EUCA_HOSTS_PRIVATE_GATEWAY"
+        },
+        {
+          "Name": "$EUCA_OTHER_PRIVATE_NAME",
+          "Subnet": "$EUCA_OTHER_PRIVATE_SUBNET",
+          "Netmask": "$EUCA_OTHER_PRIVATE_NETMASK",
+          "Gateway": "$EUCA_OTHER_PRIVATE_GATEWAY"
+        }
       ],
       "Clusters": [
         {
