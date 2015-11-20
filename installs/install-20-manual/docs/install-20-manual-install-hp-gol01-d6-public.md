@@ -1516,16 +1516,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euare-usermodloginprofile --password $EUCA_ADMIN_PASSWORD admin
     ```
 
-4. (CLC): Create Eucalyptus Administrator Certificates
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-
-    euare-usercreatecert --out ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem \
-                         --keyout ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
-    ```
-
-5. (CLC): Generate Eucalyptus Administrator Credentials File
+4. (CLC): Generate Eucalyptus Administrator Credentials File
 
     This is only needed for reference by the AWS_CREDENTIALS_FILE environment variable, which
     itself is only needed when you want to use both Euca2ools and AWSCLI in parallel.
@@ -1544,13 +1535,15 @@ ns1.mjc.prc.eucalyptus-systems.com.
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
 
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+
     cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
     ```
 
-6. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
+5. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
 
     Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
 
@@ -1558,7 +1551,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     account_id=$(euare-userlistbypath | grep "user/admin" | cut -d ":" -f5)
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
-    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
     certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem
 
     mkdir -p ~/.euca
@@ -1571,8 +1563,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     key-id = $access_key
     secret-key = $secret_key
     account-id = $account_id
-    private-key = $private_key
-    certificate = $certificate
 
     EOF
 
@@ -1581,7 +1571,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
     ```
 
-7. (CLC): Confirm initial service status
+6. (CLC): Confirm initial service status
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend,
       objectstorage and storage.
@@ -1593,13 +1583,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-node-controllers
     ```
 
-8. (CLC): Load Edge Network JSON configuration
+7. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-9. (CLC): Configure Object Storage to use Walrus Backend
+8. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
     euctl objectstorage.providerclient=walrus
@@ -1621,7 +1611,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-10. (CLC): Configure EBS Storage for DAS storage mode
+9. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1630,7 +1620,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     euctl ${EUCA_ZONEA}.storage.blockstoragemanager=das
 
-    sleep 10
+    sleep 20
 
     euctl ${EUCA_ZONEA}.storage.dasdevice=eucalyptus
     ```
@@ -1651,7 +1641,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-11. (CLC): Configure DNS
+10. (CLC): Configure DNS
 
     (Skip) Configure Eucalyptus DNS Server
 
@@ -1789,7 +1779,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     dig +short reporting.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-12. (CLC): Update Euca2ools Region to use DNS Names
+11. (CLC): Update Euca2ools Region to use DNS Names
 
     This is the first replacement of this file to use DNS names, but as http against the native port.
 
@@ -1820,7 +1810,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-13. (CLC): Import Support Keypair
+12. (CLC): Import Support Keypair
 
     Create a known and consistent set of KeyPair files.
 
@@ -1897,7 +1887,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     eval $(clcadmin-assume-system-credentials)
     ```
 
-14. (CLC): Install and Initialize the Eucalyptus Service Image
+13. (CLC): Install and Initialize the Eucalyptus Service Image
 
     Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
@@ -1934,7 +1924,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     sleep 20
     ```
 
-15. (CLC): Confirm service status
+14. (CLC): Confirm service status
 
     All services should now be listed and in the **enabled** state.
 
@@ -1942,7 +1932,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-16. (CLC): Confirm apis
+15. (CLC): Confirm apis
 
     ```bash
     euca-describe-regions
@@ -2897,7 +2887,7 @@ would be supported configurations.
 
     ```bash
     cat << EOF >> /etc/profile.d/aws.sh
-    complete -C '/usr/local/bin/aws_completer' aws
+    complete -C '/usr/bin/aws_completer' aws
     EOF
 
     source /etc/profile.d/aws.sh
@@ -3272,11 +3262,11 @@ would be supported configurations.
 7. (CLC): Test AWSCLI against Eucalyptus Native Endpoints
 
     ```bash
-    aws ec2 describe-key-pairs
+    aws ec2 describe-availability-zones
 
-    aws ec2 describe-key-pairs --profile=default
+    aws ec2 describe-availability-zones --profile=default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin
     ```
 
 8. (CLC): (Optional) Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
@@ -3647,11 +3637,11 @@ would be supported configurations.
 10. (CLC): (Optional) Test AWSCLI against Eucalyptus SSL Endpoints
 
     ```bash
-    aws ec2 describe-key-pairs
+    aws ec2 describe-availability-zones
 
-    aws ec2 describe-key-pairs --profile=default
+    aws ec2 describe-availability-zones --profile=default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-availability-zones --profile=$AWS_DEFAULT_REGION-admin
     ```
 
 ### Configure for Demos
