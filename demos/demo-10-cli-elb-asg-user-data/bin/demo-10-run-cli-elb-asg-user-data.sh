@@ -1351,7 +1351,6 @@ if [ -n "$lb_public_ip" ]; then
     echo
     echo "lynx -dump http://$lb_public_name"
     echo "lynx -dump http://$lb_public_name"
-    esac
 fi
 
 run 50
