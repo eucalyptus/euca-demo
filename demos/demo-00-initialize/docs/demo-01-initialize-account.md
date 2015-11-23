@@ -75,8 +75,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     key-id = $access_key
     secret-key = $secret_key
     account-id = $account_id
-    private-key = $private_key
-    certificate = $certificate
 
     EOF
 
