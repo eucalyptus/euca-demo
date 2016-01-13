@@ -264,7 +264,7 @@ fi
 euca_profile=$euca_region-$euca_account-$euca_user
 
 if ! grep -s -q "\[profile $euca_profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($user) User AWSCLI profile!"
+    echo "Could not find Eucalyptus ($euca_region) Region Demo ($euca_account) Account Demo ($euca_user) User AWSCLI profile!"
     echo "Expected to find: [profile $euca_profile] in ~/.aws/config"
     exit 51
 fi
@@ -1017,6 +1017,7 @@ if [ $mode = e -o $mode = b ]; then
     echo "============================================================"
     echo
     echo "Commands:"
+    echo
     echo "aws cloudformation create-stack --stack-name WordPressDemoStack \\"
     echo "                                --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "                                --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \\"
@@ -1028,6 +1029,7 @@ if [ $mode = e -o $mode = b ]; then
     echo "                                --capabilities CAPABILITY_IAM \\"
     echo "                                --profile $euca_profile --region $euca_region"
 
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Created!"

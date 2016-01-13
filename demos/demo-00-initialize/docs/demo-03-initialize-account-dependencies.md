@@ -93,7 +93,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
      demo@hpcloud.com
     EOF
 
-    euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub --region $USER_REGION demo
+    euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \
+                        --region $USER_REGION \
+                        demo
     ```
 
 4. Create Demo (demo) Account Demo (demo-demo) Bucket
