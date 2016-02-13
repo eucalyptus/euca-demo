@@ -1107,6 +1107,7 @@ echo "        proxy_set_header      Host \\\$host;"
 echo "        proxy_set_header      X-Real-IP  \\\$remote_addr;"
 echo "        proxy_set_header      X-Forwarded-For \\\$proxy_add_x_forwarded_for;"
 echo "        proxy_set_header      X-Forwarded-Proto \\\$scheme;"
+echo "        proxy_set_header      Connection \"keep-alive\";"
 echo "    }"
 echo "}"
 echo "EOF"
@@ -1168,6 +1169,7 @@ if [ $choice = y ]; then
     echo ">         proxy_set_header      X-Real-IP  \\\$remote_addr;"
     echo ">         proxy_set_header      X-Forwarded-For \\\$proxy_add_x_forwarded_for;"
     echo ">         proxy_set_header      X-Forwarded-Proto \\\$scheme;"
+    echo ">         proxy_set_header      Connection \"keep-alive\";"
     echo ">     }"
     echo "> }"
     echo "> EOF"
@@ -1222,6 +1224,7 @@ if [ $choice = y ]; then
     echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                                                                                >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;"                                                             >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                                                                              >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    echo "        proxy_set_header      Connection \"keep-alive\";                                                                                >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "    }"                                                                                                                                  >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "}"                                                                                                                                      >> /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
     echo "#"

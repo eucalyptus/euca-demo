@@ -250,6 +250,68 @@ clear
 echo
 echo "================================================================================"
 echo
+echo "$(printf '%2d' $step). Fix console dependencies broken by pip"
+echo "    - pip overwrites a version of a python module required by eucaconsole"
+echo "      so we must revert back to this required version"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "pip uninstall -y python-dateutil"
+echo "yum reinstall -y python-dateutil"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# pip uninstall -y python-dateutil"
+    pip uninstall -y python-dateutil
+    echo "# yum reinstall -y python-dateutil"
+    yum reinstall -y python-dateutil
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure AWS CLI Command Completion"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "cat << EOF >> /etc/profile.d/aws.sh"
+echo "complete -C '/usr/bin/aws_completer' aws"
+echo "EOF"
+echo
+echo "source /etc/profile.d/aws.sh"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# cat << EOF >> /etc/profile.d/aws.sh"
+    echo "> complete -C '/usr/bin/aws_completer' aws"
+    echo "> EOF"
+    echo complete -C '/usr/bin/aws_completer' aws > /etc/profile.d/aws.sh
+
+    echo "# source /etc/profile.d/aws.sh"
+    source /etc/profile.d/aws.sh
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
 echo "$(printf '%2d' $step). Configure AWS CLI to trust local Certificate Authority"
 echo "    - We will use the Helion Eucalyptus Development Root Certification Authority"
 echo "      to sign SSL certificates"

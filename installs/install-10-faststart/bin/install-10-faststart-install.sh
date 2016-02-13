@@ -194,6 +194,7 @@ if [ $choice = y ]; then
     echo
     pushd $HOME &> /dev/null
     echo "# bash <(curl -Ls hphelion.com/eucalyptus-install)"
+    export AWS_DEFAULT_REGION=localhost
     bash <(curl -Ls $faststart_url)
     popd &> /dev/null
 
@@ -206,64 +207,142 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Move Credentials into Demo Directory Structure"
-echo "    - We need to create additional accounts and users, so move"
-echo "      the Eucalyptus Administrator credentials into a more"
+echo "$(printf '%2d' $step). Configure Region"
+echo "    - FastStart creates a \"localhost\" Region by default"
+echo "    - We will switch this to a more \"AWS-like\" Region naming convention"
+echo "    - This is needed to run CloudFormation templates which reference the"
+echo "      Region in Maps"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "euctl region.region_name=$AWS_DEFAULT_REGION"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# euctl region.region_name=$AWS_DEFAULT_REGION"
+    euctl region.region_name=$AWS_DEFAULT_REGION
+
+    next 50
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Convert FastStart Credentials to Demo Conventions"
+echo "    - Demos require additional accounts and users, and in some cases"
+echo "      multiple Eucalyptus and AWS Accounts are used. So we need a more"
 echo "      hierarchical credentials storage directory structure"
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
+echo "cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
+echo "chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
+echo
+echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
+echo "       -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
+echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
+echo "       -e \"/^\\[region/,/^\\user =/p\" \\"
+echo "       -e \"\\\$a\\\\\\\\\" \\"
+echo "       -e \"\\\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION\" \\"
+echo "       -e \"\\\$averify-ssl = false\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
+echo
+echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
+echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
+echo "       -e \"/^\\[user/,/^account-id =/p\" \\"
+echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini"
+echo
+echo "cat <<EOF > ~/.euca/global.ini"
+echo "; Eucalyptus Global"
+echo
+echo "[global]"
+echo "region = $AWS_DEFAULT_REGION"
+echo
+echo "EOF"
+echo
 echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
 echo
-echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+echo "cat <<EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc"
+echo "AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)"
+echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini)"
+echo "EOF"
 echo
-echo "cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-echo
-echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "rm -f ~/.euca/faststart.ini"
 
 run 50
 
 if [ $choice = y ]; then
     echo
+    echo "# cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    echo "# chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
+    chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    pause
+
+    echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
+    echo ">        -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
+    echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
+    echo ">        -e \"/^\\[region/,/^\\user =/p\" \\"
+    echo ">        -e \"\\\$a\\\\\\\\\" \\"
+    echo ">        -e \"\\\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION\" \\"
+    echo ">        -e \"\\\$averify-ssl = false\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
+    sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
+           -e "s/localhost/$AWS_DEFAULT_REGION/" \
+           -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
+           -e "/^\[region/,/^\user =/p" \
+           -e "\$a\\\\" \
+           -e "\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION" \
+           -e "\$averify-ssl = false" faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    pause
+
+    echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
+    echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
+    echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
+    echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini"
+    sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
+           -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
+           -e "/^\[user/,/^account-id =/p" \
+           -e "\$a\\\\" faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini
+    pause
+
+    echo "cat <<EOF > ~/.euca/global.ini"
+    echo "; Eucalyptus Global"
+    echo
+    echo "[global]"
+    echo "region = $AWS_DEFAULT_REGION"
+    echo
+    echo "EOF"
+    # Use echo instead of cat << EOF to better show indentation
+    echo "; Eucalyptus Global"           > ~/.euca/global.ini
+    echo                                >> ~/.euca/global.ini
+    echo "[global]"                     >> ~/.euca/global.ini
+    echo "region = $AWS_DEFAULT_REGION" >> ~/.euca/global.ini
+    echo                                >> ~/.euca/global.ini
+    pause
+
     echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
     mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
     pause
 
-    echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    echo "# cat <<EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc"
+    echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)"
+    echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini)"
+    echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
+    echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)    > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini) >> ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
     pause
 
-    echo "# cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-    pause
-
-    echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-    if grep -s -q "echo WARN:  CloudFormation service URL is not configured" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        # invisibly fix bug in initial faststart which registers CloudFormation but returns a warning in eucarc
-        sed -i -r -e "/echo WARN:  CloudFormation service URL is not configured/d" \
-                  -e "s/(^export )(AWS_AUTO_SCALING_URL)(.*\/services\/)(AutoScaling$)/\1\2\3\4\n\1AWS_CLOUDFORMATION_URL\3CloudFormation/" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        # invisibly fix missing environment variables needed for image import
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    pause
-
-    echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    echo "# rm -f ~/.euca/faststart.ini"
+    rm -f ~/.euca/faststart.ini
 
     next
 fi
