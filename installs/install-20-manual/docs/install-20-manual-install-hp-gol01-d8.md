@@ -181,7 +181,22 @@ process, not currently available for this host.
     yum install -y man wget zip unzip git qemu-img nc lynx rsync bind-utils tree screen
     ```
 
-2. (All) Configure Sudo
+2. (All) Configure Host Name Resolution
+
+    All hosts must resolve their fully-qualified hostname to the private IP address.
+
+    If the hostname does not resolve to the private IP address, modify /etc/hosts to override
+    this behavior.
+
+    ```bash
+    private_interface=em2 # hard-coding this here; it may vary in other cases
+    private_ip=$(ip addr | sed -n -e "s/^ *inet \([0-9.]*\)\/.* $private_interface$/\1/p")
+
+    echo >> /etc/hosts
+    echo "$private_ip $(hostname)" >> /etc/hosts
+    ```
+
+3. (All) Configure Sudo
 
     Allow members of group `wheel` to sudo with a password.
 
@@ -189,7 +204,7 @@ process, not currently available for this host.
     sed -i -e '/^# %wheel\tALL=(ALL)\tALL/s/^# //' /etc/sudoers
     ```
 
-3. (All) Configure root user
+4. (All) Configure root user
 
     Configure the root user with some useful conventions, including a consistent directory
     structure, adjusting the default GECOS information so email sent from root on a host
@@ -216,7 +231,7 @@ process, not currently available for this host.
     fi
     ```
 
-4. (All) Configure profile
+5. (All) Configure profile
 
     Adjust global profile with some local useful aliases.
 
@@ -242,7 +257,7 @@ process, not currently available for this host.
     fi
     ```
 
-5. (All) Clone euca-demo git project
+6. (All) Clone euca-demo git project
 
     This is one location where demo scripts live. We will run the demo initialization
     scripts at the completion of the installation.
@@ -575,7 +590,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     ip addr | grep " inet "
-    netstat -nr
+    ip route
     ```
 
 13. (CLC+UFS+MC): Configure firewall, but disable during installation
@@ -1197,19 +1212,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     EOF
     ```
 
-9. (CLC+UFS/OSP/SC): (Skip) Configure Eucalyptus Java Memory Allocation
-
-    This has proven risky to run, frequently causing failure to start due to incorrect heap size,
-    regardless of value, in 4.1, need to retest for 4.2, but appears to set itself automatically.
-
-    ```bash
-    heap_mem_mb=$(($(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 / 4))
-    sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xms=${heap_mem_mb}M -Xmx=${heap_mem_mb}M\"/" /etc/eucalyptus/eucalyptus.conf
-
-    # Alternate method
-    # sed -i -e "/^CLOUD_OPTS=/s/\"$/ -Xmx=2G\"/" /etc/eucalyptus/eucalyptus.conf
-    ```
-
 10. (MC): (Skip) Configure Management Console with User Facing Services Address
 
     On same host currently, may have to set when CLC and UFS are on different hosts.
@@ -1217,7 +1219,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash
     cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.orig
 
-    sed -i -e "/^ufshost = localhost$/s/localhost/$EUCA_UFS_PUBLIC_IP/" /etc/eucaconsole/console.ini
+    sed -i -e "/^ufshost = localhost$/s/localhost/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/" /etc/eucaconsole/console.ini
     ```
 
 ### Start Eucalyptus
@@ -1501,20 +1503,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ; Eucalyptus Region $AWS_DEFAULT_REGION
 
     [region $AWS_DEFAULT_REGION]
-    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling/
-    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation/
-    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute/
-    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing/
-    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare/
-    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch/
-    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage/
-    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens/
-    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow/
+    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/
     user = $AWS_DEFAULT_REGION-admin
 
-    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Empyrean/
-    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Properties/
-    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Reporting/
+    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/
 
     certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
     verify-ssl = false
@@ -1537,16 +1539,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euare-usermodloginprofile --password $EUCA_ADMIN_PASSWORD admin
     ```
 
-4. (CLC): Create Eucalyptus Administrator Certificates
-
-    ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-
-    euare-usercreatecert --out ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem \
-                         --keyout ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
-    ```
-
-5. (CLC): Generate Eucalyptus Administrator Credentials File
+4. (CLC): Generate Eucalyptus Administrator Credentials File
 
     This is only needed for reference by the AWS_CREDENTIALS_FILE environment variable, which
     itself is only needed when you want to use both Euca2ools and AWSCLI in parallel.
@@ -1565,13 +1558,15 @@ ns1.mjc.prc.eucalyptus-systems.com.
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
 
+    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+
     cat << EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
     AWSAccessKeyId=$access_key
     AWSSecretKey=$secret_key
     EOF
     ```
 
-6. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
+5. (CLC): Initialize Eucalyptus Administrator Euca2ools Profile
 
     Obtain the values we need from the Region's Eucalyptus Administrator eucarc file.
 
@@ -1579,8 +1574,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     account_id=$(euare-userlistbypath | grep "user/admin" | cut -d ":" -f5)
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
-    private_key=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-pk.pem
-    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem
 
     mkdir -p ~/.euca
     chmod 0700 ~/.euca
@@ -1592,8 +1585,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     key-id = $access_key
     secret-key = $secret_key
     account-id = $account_id
-    private-key = $private_key
-    certificate = $certificate
 
     EOF
 
@@ -1602,7 +1593,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euca-describe-availability-zones verbose --region $AWS_DEFAULT_REGION-admin@$AWS_DEFAULT_REGION
     ```
 
-7. (CLC): Confirm initial service status
+6. (CLC): Confirm initial service status
 
     * All services should be in the **enabled** state except for imagingbackend, loadbalancingbackend, 
       objectstorage and storage.
@@ -1614,13 +1605,13 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-node-controllers
     ```
 
-8. (CLC): Load Edge Network JSON configuration
+7. (CLC): Load Edge Network JSON configuration
 
     ```bash
     euctl cloud.network.network_configuration=@/etc/eucalyptus/edge-$(date +%Y-%m-%d).json
     ```
 
-9. (CLC): Configure Object Storage to use Walrus Backend
+8. (CLC): Configure Object Storage to use Walrus Backend
 
     ```bash
     euctl objectstorage.providerclient=walrus
@@ -1642,7 +1633,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-10. (CLC): Configure EBS Storage for DAS storage mode
+9. (CLC): Configure EBS Storage for DAS storage mode
 
     This step assumes additional storage configuration as described above was done,
     and there is an empty volume group named `eucalyptus` on the Storage Controller
@@ -1674,7 +1665,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-11. (CLC): Configure DNS
+10. (CLC): Configure DNS
 
     (Skip) Configure Eucalyptus DNS Server
 
@@ -1814,9 +1805,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
     dig +short reporting.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
     ```
 
-12. (CLC): Update Euca2ools Region to use DNS Names
+11. (CLC): Update Euca2ools Region to use DNS Names
 
-    This is the first replacement of this file to use DNS names, but as http against the native 8773 port.
+    This is the first replacement of this file to use DNS names, but as http against the native port.
 
     We will replace this file once more once PKI and SSL certificates are configured.
 
@@ -1825,27 +1816,27 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ; Eucalyptus Region $AWS_DEFAULT_REGION
 
     [region $AWS_DEFAULT_REGION]
-    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/AutoScaling/
-    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudFormation/
-    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/compute/
-    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/LoadBalancing/
-    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Euare/
-    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudWatch/
-    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/objectstorage/
-    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Tokens/
-    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/SimpleWorkflow/
+    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
     user = $AWS_DEFAULT_REGION-admin
 
-    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Empyrean/
-    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Properties/
-    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Reporting/
+    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
 
     certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
     verify-ssl = false
     EOF
     ```
 
-13. (CLC): Import Support Keypair
+12. (CLC): Import Support Keypair
 
     Create a known and consistent set of KeyPair files.
 
@@ -1922,7 +1913,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     eval $(clcadmin-assume-system-credentials)
     ```
 
-14. (CLC): Install and Initialize the Eucalyptus Service Image
+13. (CLC): Install and Initialize the Eucalyptus Service Image
 
     Install the Eucalyptus Service Image. This Image is used for the Imaging Worker and Load Balancing Worker.
 
@@ -1959,17 +1950,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     sleep 20
     ```
 
-    Optional: Confirm service status.
-
-    * The imaging, imagingbackend, loadbalanging and loadbalancingbackend services should now be in the
-      **enabled** state.
-    * All services should now be listed and in the **enabled** state.
-
-    ```bash
-    euserv-describe-services
-    ```
-
-15. (CLC): Confirm service status
+14. (CLC): Confirm service status
 
     All services should now be listed and in the **enabled** state.
 
@@ -1977,7 +1958,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     euserv-describe-services
     ```
 
-16. (CLC): Confirm apis
+15. (CLC): Confirm apis
 
     ```bash
     euca-describe-regions
@@ -2805,6 +2786,7 @@ Management Console first, and use of a later version of Nginx.
             proxy_set_header      X-Real-IP  \$remote_addr;
             proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header      X-Forwarded-Proto \$scheme;
+            proxy_set_header      Connection "keep-alive";
         }
     }
     EOF
@@ -2881,7 +2863,36 @@ Management Console first, and use of a later version of Nginx.
     service nginx restart
     ```
 
-16. (MW): Confirm the User Facting Services are accessible via HTTPS
+16. (CLC): Update Euca2ools Region to use DNS Names with SSL
+
+    This is the second replacement of this file to use DNS names, now with https against the proxy.
+
+    ```bash
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = https://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    cloudformation-url = https://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ec2-url = https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    elasticloadbalancing-url = https://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    iam-url = https://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    monitoring-url = https://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    s3-url = https://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    sts-url = https://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    swf-url = https://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    user = $AWS_DEFAULT_REGION-admin
+
+    bootstrap-url = https://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    properties-url = https://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    reporting-url = https://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = true
+    EOF
+    ```
+
+17. (MW): Confirm the User Facting Services are accessible via HTTPS
 
     These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
     if working correctly
@@ -2891,7 +2902,7 @@ Management Console first, and use of a later version of Nginx.
     Browse: https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
     ```
 
-17. (MW): Confirm the Updated Management Console is accessible via HTTPS
+18. (MW): Confirm the Updated Management Console is accessible via HTTPS
 
     At this point, you should no longer get the untrusted certificate warning.
 

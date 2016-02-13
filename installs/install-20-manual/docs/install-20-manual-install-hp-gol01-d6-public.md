@@ -586,7 +586,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
 
     ```bash
     ip addr | grep " inet "
-    netstat -nr
+    ip route
     ```
 
 14. (CLC): Configure firewall, but disable during installation
@@ -1480,20 +1480,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ; Eucalyptus Region $AWS_DEFAULT_REGION
 
     [region $AWS_DEFAULT_REGION]
-    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/AutoScaling/
-    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudFormation/
-    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/compute/
-    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/LoadBalancing/
-    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Euare/
-    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/CloudWatch/
-    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/objectstorage/
-    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Tokens/
-    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/SimpleWorkflow/
+    autoscaling-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    cloudformation-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    ec2-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    elasticloadbalancing-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    iam-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    monitoring-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    s3-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    sts-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    swf-url = http://$EUCA_UFS_PUBLIC_IP:8773/
     user = $AWS_DEFAULT_REGION-admin
 
-    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Empyrean/
-    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Properties/
-    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/services/Reporting/
+    bootstrap-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    properties-url = http://$EUCA_UFS_PUBLIC_IP:8773/
+    reporting-url = http://$EUCA_UFS_PUBLIC_IP:8773/
 
     certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
     verify-ssl = false
@@ -1551,7 +1551,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     account_id=$(euare-userlistbypath | grep "user/admin" | cut -d ":" -f5)
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
-    certificate=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-cert.pem
 
     mkdir -p ~/.euca
     chmod 0700 ~/.euca
@@ -1688,9 +1687,9 @@ ns1.mjc.prc.eucalyptus-systems.com.
     Display Parent DNS Server Configuration
 
     ```bash
-    cat /var/named/private/masters/hp-gol01-d8.mjc.prc.eucalyptus-systems.com.zone
+    cat /var/named/private/masters/hp-gol01-d6.mjc.prc.eucalyptus-systems.com.zone
     $TTL 1M
-    $ORIGIN hp-gol01-d8.mjc.prc.eucalyptus-systems.com.
+    $ORIGIN hp-gol01-d6.mjc.prc.eucalyptus-systems.com.
     ;Name           TTL     Type    Value
     @                       SOA     ns1.mjc.prc.eucalyptus-systems.com. root.mjc.prc.eucalyptus-systems.com. (
                                     2015102901      ; serial
@@ -1790,20 +1789,20 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ; Eucalyptus Region $AWS_DEFAULT_REGION
 
     [region $AWS_DEFAULT_REGION]
-    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/AutoScaling/
-    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudFormation/
-    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/compute/
-    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/LoadBalancing/
-    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Euare/
-    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/CloudWatch/
-    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/objectstorage/
-    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Tokens/
-    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/SimpleWorkflow/
+    autoscaling-url = http://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    cloudformation-url = http://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    ec2-url = http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    elasticloadbalancing-url = http://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    iam-url = http://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    monitoring-url = http://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    s3-url = http://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    sts-url = http://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    swf-url = http://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
     user = $AWS_DEFAULT_REGION-admin
 
-    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Empyrean/
-    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Properties/
-    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/services/Reporting/
+    bootstrap-url = http://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    properties-url = http://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
+    reporting-url = http://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8773/
 
     certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
     verify-ssl = false
@@ -2760,6 +2759,7 @@ Management Console first, and use of a later version of Nginx.
             proxy_set_header      X-Real-IP  \$remote_addr;
             proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header      X-Forwarded-Proto \$scheme;
+            proxy_set_header      Connection "keep-alive";
         }
     }
     EOF
@@ -2836,7 +2836,36 @@ Management Console first, and use of a later version of Nginx.
     service nginx restart
     ```
 
-16. (MW): Confirm the User Facting Services are accessible via HTTPS
+16. (CLC): Update Euca2ools Region to use DNS Names with SSL
+
+    This is the second replacement of this file to use DNS names, now with https against the proxy.
+
+    ```bash
+    cat << EOF > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+    ; Eucalyptus Region $AWS_DEFAULT_REGION
+
+    [region $AWS_DEFAULT_REGION]
+    autoscaling-url = https://autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    cloudformation-url = https://cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    ec2-url = https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    elasticloadbalancing-url = https://loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    iam-url = https://euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    monitoring-url = https://cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    s3-url = https://objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    sts-url = https://tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    swf-url = https://simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    user = $AWS_DEFAULT_REGION-admin
+
+    bootstrap-url = https://bootstrap.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    properties-url = https://properties.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+    reporting-url = https://reporting.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN/
+
+    certificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
+    verify-ssl = true
+    EOF
+    ```
+
+17. (MW): Confirm the User Facting Services are accessible via HTTPS
 
     These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
     if working correctly
@@ -2847,7 +2876,7 @@ Management Console first, and use of a later version of Nginx.
     ```
 
 
-17. (MW): Confirm the Updated Management Console is accessible via HTTPS
+18. (MW): Confirm the Updated Management Console is accessible via HTTPS
 
     At this point, you should no longer get the untrusted certificate warning.
 
@@ -3285,6 +3314,8 @@ would be supported configurations.
 
     cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
 
+    # Issuer: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
+    # Subject: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
     # Label: "Helion Eucalyptus Development Root Certification Authority"
     # Serial: 0
     # MD5 Fingerprint: 95:b3:42:d3:1d:78:05:3a:17:c3:01:47:24:df:ce:12
