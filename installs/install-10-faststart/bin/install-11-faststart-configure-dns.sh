@@ -20,9 +20,17 @@ next_default=5
 interactive=1
 speed=100
 showdnsconfig=0
-config=$(hostname -s)
 extended=0
-
+region=${AWS_DEFAULT_REGION#*@}
+domain=${AWS_DEFAULT_DOMAIN:-$(hostname -i).xip.io}
+instance_subdomain=${EUCA_INSTANCE_SUBDOMAIN:-.vm}
+loadbalancer_subdomain=${EUCA_LOADBALANCER_SUBDOMAIN:-lb}
+if [ "$domain" = "$(hostname -i).xip.io" ]; then
+    parent_dns_host=google-public-dns-a.google.com
+else
+    parent_dns_host=ns1.$domain
+fi
+parent_dns_ip=$(host $parent_dns_host | cut -d " " -f4)
 dns_timeout=30
 dns_loadbalancer_ttl=15
 
@@ -30,13 +38,20 @@ dns_loadbalancer_ttl=15
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-d] [-c config] [-e]"
-    echo "  -I         non-interactive"
-    echo "  -s         slower: increase pauses by 25%"
-    echo "  -f         faster: reduce pauses by 25%"
-    echo "  -d         display parent DNS server sample configuration"
-    echo "  -c config  configuration (default: $config)"
-    echo "  -e         extended confirmation of API calls"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-x] [-e]"
+    echo "                             [-r region] [-d domain] [-i instance_subdomain]"
+    echo "                             [-b loadbalancer_subdomain] [-p parent_dns_server]"
+    echo "  -I                         non-interactive"
+    echo "  -s                         slower: increase pauses by 25%"
+    echo "  -f                         faster: reduce pauses by 25%"
+    echo "  -p                         display example parent DNS server configuration"
+    echo "  -e                         extended confirmation of API calls"
+    echo "  -r region                  Eucalyptus Region (default: $region)"
+    echo "  -d domain                  Eucalyptus Domain (default: $domain)"
+    echo "  -i instance_subdomain      Eucalyptus Instance Sub-Domain (default: $instance_subdomain)"
+    echo "  -b loadbalancer_subdomain  Eucalyptus Load Balancer Sub-Domain (default: $loadbalancer_subdomain)"
+    echo "  -p parent_dns_server       Eucalyptus Parent DNS Server (default: $parent_dns_host)"
+
 }
 
 run() {
@@ -119,14 +134,19 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfdc:e? arg; do
+while getopts Isfxer:d:i:b:p: arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    d)  showdnsconfig=1;;
-    c)  config="$OPTARG";;
+    x)  showdnsconfig=1;;
     e)  extended=1;;
+    r)  region="$OPTARG";;
+    d)  domain="$OPTARG";;
+    i)  instance_subdomain="$OPTARG";;
+    b)  loadbalancer_subdomain="$OPTARG";;
+    p)  parent_dns_server="$OPTARG";;
+
     ?)  usage
         exit 1;;
     esac
@@ -137,70 +157,103 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
-    conffile=$confdir/$config.txt
-
-    if [ ! -r $conffile ]; then
-        echo "-c $config invalid: can't find configuration file: $conffile"
-        exit 5
-    fi
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
 else
-    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
-    exit 2
+    case $region in
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
 fi
 
-source $conffile
+if [ -z $domain ]; then
+    echo "-d domain missing!"
+    echo "Could not automatically determine domain, and it was not specified as a parameter"
+    exit 12
+fi
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
-    echo "Could not find Eucalyptus Administrator credentials!"
-    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    sleep 2
+if [ -z $instance_subdomain ]; then
+    echo "-i instance_subdomain missing!"
+    echo "Could not automatically determine instance_subdomain, and it was not specified as a parameter"
+    exit 13
+fi
 
-    if [ -r /root/admin.zip ]; then
-        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-        sleep 2
+if [ -z $loadbalancer_subdomain ]; then
+    echo "-b loadbalancer_subdomain missing!"
+    echo "Could not automatically determine loadbalancer_subdomain, and it was not specified as a parameter"
+    exit 14
+fi
+
+if [ -z $parent_dns_server ]; then
+    echo "-p parent_dns_server missing!"
+    echo "Could not automatically determine parent_dns_server, and it was not specified as a parameter"
+    exit 14
+fi
+
+user_region=$region-admin@$region
+
+convert_faststart=0
+if ! grep -s -q "\[region $region]" /etc/euca2ools/conf.d/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region!"
+    echo "Expected to find: [region $region] in /etc/euca2ools/conf.d/$region.ini"
+    convert_faststart=1
+elif ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator (admin) Euca2ools user!"
+    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
+    convert_faststart=1
+elif [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator credentials!"
+    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/iamrc"
+    convert_faststart=1
+fi
+if [ $convert_faststart = 1 ]; then
+    if [ -r ~/.euca/faststart.ini ]; then
+        # Convert what FastStart creates into the conventions used by the demos
+        cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem
+        chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem
+
+        sed -n -e "1i; Eucalyptus Region $region\n" \
+               -e "s/localhost/$region/" \
+               -e "s/[0-9]*:admin/$region-admin/" \
+               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$region.ini
+
+        sed -n -e "1i; Eucalyptus Region $region\n" \
+               -e "s/[0-9]*:admin/$region-admin/" \
+               -e "/^\[user/,/^account-id =/p" \
+               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/$region.ini
+
+        echo "; Eucalyptus Global"  > ~/.euca/global.ini
+        echo                       >> ~/.euca/global.ini
+        echo "[global]"            >> ~/.euca/global.ini
+        echo "region = $region"    >> ~/.euca/global.ini
+        echo                       >> ~/.euca/global.ini
+
+        mkdir -p ~/.creds/$region/eucalyptus/admin
+
+        echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)    > ~/.creds/$region/eucalyptus/admin/iamrc
+        echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini) >> ~/.creds/$region/eucalyptus/admin/iamrc
+
+        rm -f ~/.euca/faststart.ini
     else
-        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
-        echo "Expected to find: /root/admin.zip"
+        echo "Could not find FastStart Euca2ools credentials file to attempt conversion!"
+        echo "Expected to find: ~/.euca/faststart.ini"
         exit 29
     fi
 fi
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Execute Procedure
 
 start=$(date +%s)
-
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-
-next
-
-echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-pause
-
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-next
-
 
 ((++step))
 clear
@@ -214,19 +267,19 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "euctl system.dns.nameserver=ns1.$region.$domain --region $user_region"
 echo
-echo "euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)"
+echo "euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# euctl system.dns.nameserver=ns1.$region.$domain --region $user_region"
+    euctl system.dns.nameserver=ns1.$region.$region --region $user_region
     echo "#"
-    echo "# euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)"
-    euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)
+    echo "# euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region"
+    euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region
 
     next 50
 fi
@@ -243,19 +296,19 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout"
+echo "euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region"
 echo
-echo "euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl"
+echo "euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout"
-    euca-modify-property -p dns.tcp.timeout_seconds=$dns_timeout
+    echo "# euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region"
+    euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region
     echo "#"
-    echo "# euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl"
-    euca-modify-property -p services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl
+    echo "# euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region"
+    euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region
 
     next 50
 fi
@@ -272,14 +325,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "euctl system.dns.dnsdomain=$region.$domain --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# euctl system.dns.dnsdomain=$region.$domain --region $user_region"
+    euctl system.dns.dnsdomain=$region.$domain --region $user_region
 
     next 50
 fi
@@ -296,19 +349,19 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
+echo "euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region"
 echo
-echo "euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
+echo "euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN"
-    euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
+    echo "# euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region"
+    euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region
     echo "#"
-    echo "# euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN"
-    euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
+    echo "# euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region"
+    euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region
 
     next 50
 fi
@@ -325,114 +378,105 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
+echo "euctl bootstrap.webservices.use_instance_dns=true --region $user_region"
 echo
-echo "euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
+echo "euctl bootstrap.webservices.use_dns_delegation=true --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p bootstrap.webservices.use_instance_dns=true"
-    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
+    echo "# euctl bootstrap.webservices.use_instance_dns=true --region $user_region"
+    euctl bootstrap.webservices.use_instance_dns=true --region $user_region
     echo "#"
-    echo "# euca-modify-property -p bootstrap.webservices.use_dns_delegation=true"
-    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
+    echo "# euctl bootstrap.webservices.use_dns_delegation=true --region $user_region"
+    euctl bootstrap.webservices.use_dns_delegation=true --region $user_region
 
     next 50
 fi
 
 
 ((++step))
+# Construct Eucalyptus Endpoints (assumes AWS-style URLs)
+autoscaling_url=http://autoscaling.$region.$domain:8773/
+bootstrap_url=http://bootstrap.$region.$domain:8773/
+cloudformation_url=http://cloudformation.$region.$domain:8773/
+ec2_url=http://ec2.$region.$domain:8773/
+elasticloadbalancing_url=http://elasticloadbalancing.$region.$domain:8773/
+iam_url=http://iam.$region.$domain:8773/
+monitoring_url=http://monitoring.$region.$domain:8773/
+properties_url=http://properties.$region.$domain:8773/
+reporting_url=http://reporting.$region.$domain:8773/
+s3_url=http://s3.$region.$domain:8773/
+sts_url=http://sts.$region.$domain:8773/
+
 clear
 echo
-echo "================================================================================"
+echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Configure CloudFormation Region"
-echo "    - Technically, this is not purely related to DNS and doesn't belong here"
-echo "    - But, we need to make sure this is run, and this is somewhat related to DNS"
+echo "$(printf '%2d' $step). Update Euca2ools with DNS Region Endpoints"
 echo
-echo "================================================================================"
+echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION"
+echo "cat << EOF > /etc/euca2ools/conf.d/$region.ini"
+echo "; Eucalyptus Region $region"
+echo
+echo "[region $region]"
+echo "autoscaling-url = $autoscaling_url"
+echo "bootstrap-url = $bootstrap_url"
+echo "cloudformation-url = $cloudformation_url"
+echo "ec2-url = $ec2_url"
+echo "elasticloadbalancing-url = $elasticloadbalancing_url"
+echo "iam-url = $iam_url"
+echo "monitoring-url = $monitoring_url"
+echo "properties-url = $properties_url"
+echo "reporting-url = $reporting_url"
+echo "s3-url = $s3_url"
+echo "sts-url = $sts_url"
+echo "user = $region-admin"
+echo
+echo "EOF"
 
 run 50
 
 if [ $choice = y ]; then
-    echo
-    echo "# euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION"
-    euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION
-
-    next 50
-fi
-
-
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Refresh Administrator Credentials"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-echo
-echo "euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-echo
-echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-    pause
-
-    echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-    pause
-
-    echo "# euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-    pause
-
-    echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        # invisibly fix missing environment variables needed for image import
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-        sed -i -e "/WARN: Certificate credentials not present./d" \
-               -e "/WARN: Review authentication.credential_download_generate_certificate and/d" \
-               -e "/WARN: authentication.signing_certificates_limit properties for current/d" \
-               -e "/WARN: certificate download limits./d" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
-    if [ -r /root/eucarc ]; then
-        # invisibly update Faststart credentials location
-        cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc /root/eucarc
-    fi
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    pause
-
-    echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    pause
-
-    next
+    echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
+    echo "> ; Eucalyptus Region $region"
+    echo ">"
+    echo "> [region $region]"
+    echo "> autoscaling-url = $autoscaling_url"
+    echo "> cloudformation-url = $cloudformation_url"
+    echo "> bootstrap-url = $bootstrap_url"
+    echo "> ec2-url = $ec2_url"
+    echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
+    echo "> iam-url = $iam_url"
+    echo "> monitoring-url $monitoring_url"
+    echo "> properties-url $properties_url"
+    echo "> reporting-url $reporting_url"
+    echo "> s3-url = $s3_url"
+    echo "> sts-url = $sts_url"
+    echo "> user = $region-admin"
+    echo ">"
+    echo "> EOF"
+    # Use echo instead of cat << EOF to better show indentation
+    echo "; Eucalyptus Region $region"                               > /etc/euca2ools/conf.d/$region.ini
+    echo                                                            >> /etc/euca2ools/conf.d/$region.ini
+    echo "[region $region]"                                         >> /etc/euca2ools/conf.d/$region.ini
+    echo "autoscaling-url = $autoscaling_url"                       >> /etc/euca2ools/conf.d/$region.ini
+    echo "cloudformation-url = $cloudformation_url"                 >> /etc/euca2ools/conf.d/$region.ini
+    echo "bootstrap-url = $bootstrap_url"                           >> /etc/euca2ools/conf.d/$region.ini
+    echo "ec2-url = $ec2_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+    echo "elasticloadbalancing-url = $elasticloadbalancing_url"     >> /etc/euca2ools/conf.d/$region.ini
+    echo "iam-url = $iam_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+    echo "monitoring-url $monitoring_url"                           >> /etc/euca2ools/conf.d/$region.ini
+    echo "properties-url $properties_url"                           >> /etc/euca2ools/conf.d/$region.ini
+    echo "reporting-url $reporting_url"                             >> /etc/euca2ools/conf.d/$region.ini
+    echo "s3-url = $s3_url"                                         >> /etc/euca2ools/conf.d/$region.ini
+    echo "sts-url = $sts_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+    echo "user = $region-admin"                                     >> /etc/euca2ools/conf.d/$region.ini
+    echo                                                            >> /etc/euca2ools/conf.d/$region.ini
 fi
 
 
@@ -458,20 +502,20 @@ if [ $showdnsconfig = 1 ]; then
     echo "Commands:"
     echo
     echo "# Add these lines to /etc/named.conf on the parent DNS server"
-    echo "         zone \"$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN\" IN"
+    echo "         zone \"$region.$domain\" IN"
     echo "         {"
     echo "                 type master;"
-    echo "                 file \"/etc/named/db.$AWS_DEFAULT_REGION\";"
+    echo "                 file \"/etc/named/db.$aws_default_region\";"
     echo "         };"
     echo "#"
     echo "# Create the zone file on the parent DNS server"
     echo "> ;"
-    echo "> ; DNS zone for $AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    echo "> ; DNS zone for $aws_default_region.$aws_default_domain"
     echo "> ; - Eucalyptus configured to use CLC as DNS server"
     echo ">"
-    echo "# cat << EOF > /etc/named/db.$AWS_DEFAULT_REGION"
+    echo "# cat << EOF > /etc/named/db.$aws_default_region"
     echo "> $TTL 1M"
-    echo "> $ORIGIN $AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+    echo "> $ORIGIN $aws_default_region.$aws_default_domain"
     echo "> @                       SOA     ns1 root ("
     echo ">                                 $(date +%Y%m%d)01      ; Serial"
     echo ">                                 1H              ; Refresh"
@@ -493,17 +537,21 @@ if [ $showdnsconfig = 1 ]; then
     echo "> ns1                     A       $(hostname -i)"
     echo ">"
     echo "> console                 A       $(hostname -i)"
-    echo "> autoscaling             A       $(hostname -i)"
-    echo "> cloudformation          A       $(hostname -i)"
-    echo "> cloudwatch              A       $(hostname -i)"
-    echo "> compute                 A       $(hostname -i)"
-    echo "> euare                   A       $(hostname -i)"
-    echo "> loadbalancing           A       $(hostname -i)"
-    echo "> objectstorage           A       $(hostname -i)"
-    echo "> tokens                  A       $(hostname -i)"
     echo ">"
-    echo "> ${EUCA_DNS_INSTANCE_SUBDOMAIN#.}                   NS      ns1"
-    echo "> ${EUCA_DNS_LOADBALANCER_SUBDOMAIN#.}                      NS      ns1"
+    echo "> autoscaling             A       $(hostname -i)"
+    echo "> bootstrap               A       $(hostname -i)"
+    echo "> cloudformation          A       $(hostname -i)"
+    echo "> ec2                     A       $(hostname -i)"
+    echo "> elasticloadbalancing    A       $(hostname -i)"
+    echo "> iam                     A       $(hostname -i)"
+    echo "> monitoring              A       $(hostname -i)"
+    echo "> properties              A       $(hostname -i)"
+    echo "> reporting               A       $(hostname -i)"
+    echo "> s3                      A       $(hostname -i)"
+    echo "> sts                     A       $(hostname -i)"
+    echo ">"
+    echo "> ${instance_subdomain#.}                   NS      ns1"
+    echo "> ${loadbalancer_subdomain#.}                      NS      ns1"
     echo "> EOF"
 
     next 200
@@ -522,56 +570,74 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short autoscaling.$region.$domain"
 echo
-echo "dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short bootstrap.$region.$domain"
 echo
-echo "dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short cloudformation.$region.$domain"
 echo
-echo "dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short ec2.$region.$domain"
 echo
-echo "dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short elasticloadbalancing.$region.$domain"
 echo
-echo "dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short iam.$region.$domain"
 echo
-echo "dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short monitoring.$region.$domain"
 echo
-echo "dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "dig +short properties.$region.$domain"
+echo
+echo "dig +short reporting.$region.$domain"
+echo
+echo "dig +short s3.$region.$domain"
+echo
+echo "dig +short sts.$region.$domain"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short autoscaling.$region.$domain"
+    dig +short autoscaling.$region.$domain
     pause
 
-    echo "# dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short bootstrap.$region.$domain"
+    dig +short bootstrap.$region.$domain
     pause
 
-    echo "# dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short cloudformation.$region.$domain"
+    dig +short cloudformation.$region.$domain
     pause
 
-    echo "# dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short ec2.$region.$domain"
+    dig +short ec2.$region.$domain
     pause
 
-    echo "# dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short elasticloadbalancing.$region.$domain"
+    dig +short elasticloadbalancing.$region.$domain
     pause
 
-    echo "# dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short iam.$region.$domain"
+    dig +short iam.$region.$domain
     pause
 
-    echo "# dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short monitoring.$region.$domain"
+    dig +short monitoring.$region.$domain
     pause
 
-    echo "# dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-    dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    echo "# dig +short properties.$region.$domain"
+    dig +short properties.$region.$domain
+    pause
+
+    echo "# dig +short reporting.$region.$domain"
+    dig +short reporting.$region.$domain
+    pause
+
+    echo "# dig +short s3.$region.$domain"
+    dig +short s3.$region.$domain
+    pause
+
+    echo "# dig +short sts.$region.$domain"
+    dig +short sts.$region.$domain
 
     next
 fi

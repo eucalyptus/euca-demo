@@ -290,17 +290,11 @@ if [ $choice = y ]; then
     echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
     echo ">        -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
     echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
-    echo ">        -e \"/^\\[region/,/^\\user =/p\" \\"
-    echo ">        -e \"\\\$a\\\\\\\\\" \\"
-    echo ">        -e \"\\\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem\" \\"
-    echo ">        -e \"\\\$averify-ssl = false\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
+    echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
     sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
            -e "s/localhost/$AWS_DEFAULT_REGION/" \
            -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
-           -e "/^\[region/,/^\user =/p" \
-           -e "\$a\\\\" \
-           -e "\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem" \
-           -e "\$averify-ssl = false" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+           -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
     pause
 
     echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
