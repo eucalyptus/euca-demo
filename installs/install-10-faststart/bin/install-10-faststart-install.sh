@@ -431,20 +431,19 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Confirm service status"
-echo "    - Truncating normal output for readability"
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-services | cut -f1-5"
+echo "euserv-describe-services"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-services | cut -f1-5"
-    euca-describe-services | cut -f1-5
+    echo "# euserv-describe-services"
+    euserv-describe-services
 
     next 200
 fi
