@@ -300,7 +300,7 @@ if [ $choice = y ]; then
            -e "/^\[region/,/^\user =/p" \
            -e "\$a\\\\" \
            -e "\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION" \
-           -e "\$averify-ssl = false" faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
+           -e "\$averify-ssl = false" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
     pause
 
     echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
@@ -310,7 +310,7 @@ if [ $choice = y ]; then
     sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
            -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
            -e "/^\[user/,/^account-id =/p" \
-           -e "\$a\\\\" faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini
+           -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini
     pause
 
     echo "cat <<EOF > ~/.euca/global.ini"
