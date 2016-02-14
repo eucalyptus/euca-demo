@@ -25,12 +25,6 @@ region=${AWS_DEFAULT_REGION#*@}
 domain=${AWS_DEFAULT_DOMAIN:-$(hostname -i).xip.io}
 instance_subdomain=${EUCA_INSTANCE_SUBDOMAIN:-.vm}
 loadbalancer_subdomain=${EUCA_LOADBALANCER_SUBDOMAIN:-lb}
-if [ "$domain" = "$(hostname -i).xip.io" ]; then
-    parent_dns_host=google-public-dns-a.google.com
-else
-    parent_dns_host=ns1.$domain
-fi
-parent_dns_ip=$(host $parent_dns_host | cut -d " " -f4)
 dns_timeout=30
 dns_loadbalancer_ttl=15
 
@@ -39,8 +33,8 @@ dns_loadbalancer_ttl=15
 
 usage () {
     echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-x] [-e]"
-    echo "                             [-r region] [-d domain] [-i instance_subdomain]"
-    echo "                             [-b loadbalancer_subdomain] [-p parent_dns_server]"
+    echo "                             [-r region] [-d domain]"
+    echo "                             [-i instance_subdomain] [-b loadbalancer_subdomain]"
     echo "  -I                         non-interactive"
     echo "  -s                         slower: increase pauses by 25%"
     echo "  -f                         faster: reduce pauses by 25%"
@@ -50,8 +44,6 @@ usage () {
     echo "  -d domain                  Eucalyptus Domain (default: $domain)"
     echo "  -i instance_subdomain      Eucalyptus Instance Sub-Domain (default: $instance_subdomain)"
     echo "  -b loadbalancer_subdomain  Eucalyptus Load Balancer Sub-Domain (default: $loadbalancer_subdomain)"
-    echo "  -p parent_dns_server       Eucalyptus Parent DNS Server (default: $parent_dns_host)"
-
 }
 
 run() {
@@ -134,7 +126,7 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfxer:d:i:b:p: arg; do
+while getopts Isfxer:d:i:b:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
@@ -145,8 +137,6 @@ while getopts Isfxer:d:i:b:p: arg; do
     d)  domain="$OPTARG";;
     i)  instance_subdomain="$OPTARG";;
     b)  loadbalancer_subdomain="$OPTARG";;
-    p)  parent_dns_server="$OPTARG";;
-
     ?)  usage
         exit 1;;
     esac
@@ -184,12 +174,6 @@ fi
 if [ -z $loadbalancer_subdomain ]; then
     echo "-b loadbalancer_subdomain missing!"
     echo "Could not automatically determine loadbalancer_subdomain, and it was not specified as a parameter"
-    exit 14
-fi
-
-if [ -z $parent_dns_server ]; then
-    echo "-p parent_dns_server missing!"
-    echo "Could not automatically determine parent_dns_server, and it was not specified as a parameter"
     exit 14
 fi
 

@@ -194,8 +194,12 @@ if [ $choice = y ]; then
     echo
     pushd $HOME &> /dev/null
     echo "# bash <(curl -Ls hphelion.com/eucalyptus-install)"
+    # There's a bug inside FastStart which causes it to break if it's run inside a shell as is the case here
+    # A workaround is to set the region, we save and restore the original region around this
+    save_aws_default_region=$AWS_DEFAULT_REGION
     export AWS_DEFAULT_REGION=localhost
     bash <(curl -Ls $faststart_url)
+    export AWS_DEFAULT_REGION=$save_aws_default_region
     popd &> /dev/null
 
     next 50
@@ -217,14 +221,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl region.region_name=$AWS_DEFAULT_REGION"
+echo "euctl region.region_name=$AWS_DEFAULT_REGION --region localhost"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euctl region.region_name=$AWS_DEFAULT_REGION"
-    euctl region.region_name=$AWS_DEFAULT_REGION
+    echo "# euctl region.region_name=$AWS_DEFAULT_REGION --region localhost"
+    euctl region.region_name=$AWS_DEFAULT_REGION --region localhost
 
     next 50
 fi
@@ -244,16 +248,10 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
-echo "chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
-echo
 echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
 echo "       -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
 echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
-echo "       -e \"/^\\[region/,/^\\user =/p\" \\"
-echo "       -e \"\\\$a\\\\\\\\\" \\"
-echo "       -e \"\\\$acertificate = /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION\" \\"
-echo "       -e \"\\\$averify-ssl = false\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
+echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
 echo
 echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
 echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
@@ -281,12 +279,6 @@ run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
-    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
-    echo "# chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem"
-    chmod 0644 /usr/share/euca2ools/certs/cert-$AWS_DEFAULT_REGION.pem
-    pause
-
     echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
     echo ">        -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
     echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
