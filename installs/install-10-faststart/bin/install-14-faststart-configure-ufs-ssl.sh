@@ -24,20 +24,23 @@ next_default=5
 
 interactive=1
 speed=100
-config=$(hostname -s)
 password=N0t5ecret
+region=${AWS_DEFAULT_REGION#*@}
+domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 cacerts_password=changeit
 export_password=N0t5ecret2
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "               [-r region] [-d domain]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
-    echo "  -c config    configuration (default: $config)"
     echo "  -p password  password for PKCS#12 archive (default: $password)"
+    echo "  -r region    Eucalyptus Region (default: $region)"
+    echo "  -d domain    Eucalyptus Domain (default: $domain)"
 }
 
 run() {
@@ -120,13 +123,17 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfc:p:? arg; do
+while getopts Isfp:r:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
     c)  config="$OPTARG";;
     p)  password="$OPTARG";;
+    r)  region="$OPTARG"
+        [ -z $domain ] &&
+        domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
+    d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -138,42 +145,43 @@ shift $(($OPTIND - 1))
 #  4. Validate environment
 
 if nc -z $(hostname) 443 &> /dev/null; then
-    echo "A server program is running on port 443, which most often means the proxy script may have been run"
-    echo "This script is incompatible with the proxy on the same host - exiting"
+    echo "A server program is running on port 443, which most often means Eucalyptus Console has been installed on this host"
+    echo "This script is incompatible with the default installation of Eucalyptus Console, which has the embedded Nginx proxy"
+    echo "which works only with the Console - exiting."
     exit 5
 fi
 
-if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
-    conffile=$confdir/$config.txt
-
-    if [ ! -r $conffile ]; then
-        echo "-c $config invalid: can't find configuration file: $conffile"
-        exit 5
-    fi
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
 else
-    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
-    exit 2
+    case $region in
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
 fi
 
-source $conffile
-
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
-    echo "Could not find Eucalyptus Administrator credentials!"
-    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    sleep 2
-
-    if [ -r /root/admin.zip ]; then
-        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-        sleep 2
-    else
-        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
-        echo "Expected to find: /root/admin.zip"
-        exit 29
-    fi
+if [ -z $domain ]; then
+    echo "-d domain missing!"
+    echo "Could not automatically determine domain, and it was not specified as a parameter"
+    exit 12
 fi
+
+user_region=$region-admin@$region
+
+if ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator Euca2ools user!"
+    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
+    exit 50
+fi
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Execute Procedure
@@ -194,8 +202,8 @@ echo
 echo "Commands:"
 echo
 echo "openssl pkcs12 -export -name ufs \\"
-echo "               -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \\"
-echo "               -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \\"
+echo "               -inkey /etc/pki/tls/private/star.$region.$domain.key \\"
+echo "               -in /etc/pki/tls/certs/star.$region.$domain.crt \\"
 echo "               -out /var/tmp/ufs.p12 \\"
 echo "               -password pass:$password"
 echo
@@ -215,13 +223,13 @@ else
     if [ $choice = y ]; then
         echo
         echo "# openssl pkcs12 -export -name ufs \\"
-        echo ">              -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \\"
-        echo ">              -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \\"
+        echo ">              -inkey /etc/pki/tls/private/star.$region.$domain.key \\"
+        echo ">              -in /etc/pki/tls/certs/star.$region.$domain.crt \\"
         echo ">              -out /var/tmp/ufs.p12 \\"
         echo ">              -password pass:$password"
         openssl pkcs12 -export -name ufs \
-                       -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
-                       -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \
+                       -inkey /etc/pki/tls/private/star.$region.$domain.key \
+                       -in /etc/pki/tls/certs/star.$region.$domain.crt \
                        -out /var/tmp/ufs.p12 \
                        -password pass:$password
         echo "#"
@@ -262,10 +270,10 @@ echo "keytool -list \\"
 echo "        -keystore /var/lib/eucalyptus/keys/euca.p12 -storetype pkcs12 \\"
 echo "        -storepass eucalyptus"
 echo
-echo "euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
-echo "euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
+echo "euctl bootstrap.webservices.ssl.server_alias=ufs"
+echo "euctl bootstrap.webservices.ssl.server_password=$password"
 echo
-echo "euca-modify-property -p bootstrap.webservices.port=443"
+echo "euctl bootstrap.webservices.port=443"
 echo
 echo "service eucalyptus-cloud restart"
 
@@ -307,13 +315,13 @@ else
         pause
 
         echo "# euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs"
-        euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs
-        echo "# euca-modify-property -p bootstrap.webservices.ssl.server_password=$password"
-        euca-modify-property -p bootstrap.webservices.ssl.server_password=$password
+        euctl bootstrap.webservices.ssl.server_alias=ufs
+        echo "# euctl bootstrap.webservices.ssl.server_password=$password"
+        euctl bootstrap.webservices.ssl.server_password=$password
         pause
 
-        echo "# euca-modify-property -p bootstrap.webservices.port=443"
-        euca-modify-property -p bootstrap.webservices.port=443
+        echo "# euctl bootstrap.webservices.port=443"
+        euctl bootstrap.webservices.port=443
         pause
 
         echo "# service eucalyptus-cloud restart"
@@ -325,84 +333,115 @@ fi
 
 
 ((++step))
+# Construct Eucalyptus Endpoints (assumes AWS-style URLs)
+autoscaling_url=https://autoscaling.$region.$domain/
+bootstrap_url=https://bootstrap.$region.$domain/
+cloudformation_url=https://cloudformation.$region.$domain/
+ec2_url=https://ec2.$region.$domain/
+elasticloadbalancing_url=https://elasticloadbalancing.$region.$domain/
+iam_url=https://iam.$region.$domain/
+monitoring_url=https://monitoring.$region.$domain/
+properties_url=https://properties.$region.$domain/
+reporting_url=https://reporting.$region.$domain/
+s3_url=https://s3.$region.$domain/
+sts_url=https://sts.$region.$domain/
+
 clear
 echo
 echo "============================================================"
 echo
-echo " $(printf '%2d' $step). Refresh Administrator Credentials"
-echo "    - Wait for services to become available after restart"
+echo "$(printf '%2d' $step). Configure Euca2ools Region for HTTPS Endpoints"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+echo "cat << EOF > /etc/euca2ools/conf.d/$region.ini"
+echo "; Eucalyptus Region $region"
 echo
-echo "euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
+echo "[region $region]"
+echo "autoscaling-url = $autoscaling_url"
+echo "bootstrap-url = $bootstrap_url"
+echo "cloudformation-url = $cloudformation_url"
+echo "ec2-url = $ec2_url"
+echo "elasticloadbalancing-url = $elasticloadbalancing_url"
+echo "iam-url = $iam_url"
+echo "monitoring-url = $monitoring_url"
+echo "properties-url = $properties_url"
+echo "reporting-url = $reporting_url"
+echo "s3-url = $s3_url"
+echo "sts-url = $sts_url"
+echo "user = $region-admin"
 echo
-echo "unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
+echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem"
+echo "verify-ssl = true"
+echo "EOF"
 echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
+echo "cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem"
+echo "chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem"
 
-run 50
-
-if [ $choice = y ]; then
+if  grep -s -q "ec2-url = $ec2_url" /etc/euca2ools/conf.d/$region.ini; then
     echo
-    while true; do
-        echo -n "Testing services... "
-        if curl -s https://$(hostname -i)/services/User-API | grep -s -q 404; then
-            echo " Started"
-            break
-        else
-            echo " Not yet running"
-            echo -n "Waiting another 15 seconds..."
-            sleep 15
-            echo " Done"
-        fi
-    done
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
 
-    echo
-    echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-    pause
+    next 50
 
-    echo "# rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-    pause
+else
+    run 50
 
-    echo "# euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip"
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-    pause
+    if [ $choice = y ]; then
+        echo
+        echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
+        echo "> ; Eucalyptus Region $region"
+        echo ">"
+        echo "> [region $region]"
+        echo "> autoscaling-url = $autoscaling_url"
+        echo "> cloudformation-url = $cloudformation_url"
+        echo "> bootstrap-url = $bootstrap_url"
+        echo "> ec2-url = $ec2_url"
+        echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
+        echo "> iam-url = $iam_url"
+        echo "> monitoring-url = $monitoring_url"
+        echo "> properties-url = $properties_url"
+        echo "> reporting-url = $reporting_url"
+        echo "> s3-url = $s3_url"
+        echo "> sts-url = $sts_url"
+        echo "> user = $region-admin"
+        echo ">"
+        echo "> certificate = /usr/share/euca2ools/certs/cert-$region.pem"
+        echo "> verify-ssl = true"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "; Eucalyptus Region $region"                                > /etc/euca2ools/conf.d/$region.ini
+        echo                                                             >> /etc/euca2ools/conf.d/$region.ini
+        echo "[region $region]"                                          >> /etc/euca2ools/conf.d/$region.ini
+        echo "autoscaling-url = $autoscaling_url"                        >> /etc/euca2ools/conf.d/$region.ini
+        echo "cloudformation-url = $cloudformation_url"                  >> /etc/euca2ools/conf.d/$region.ini
+        echo "bootstrap-url = $bootstrap_url"                            >> /etc/euca2ools/conf.d/$region.ini
+        echo "ec2-url = $ec2_url"                                        >> /etc/euca2ools/conf.d/$region.ini
+        echo "elasticloadbalancing-url = $elasticloadbalancing_url"      >> /etc/euca2ools/conf.d/$region.ini
+        echo "iam-url = $iam_url"                                        >> /etc/euca2ools/conf.d/$region.ini
+        echo "monitoring-url = $monitoring_url"                          >> /etc/euca2ools/conf.d/$region.ini
+        echo "properties-url = $properties_url"                          >> /etc/euca2ools/conf.d/$region.ini
+        echo "reporting-url = $reporting_url"                            >> /etc/euca2ools/conf.d/$region.ini
+        echo "s3-url = $s3_url"                                          >> /etc/euca2ools/conf.d/$region.ini
+        echo "sts-url = $sts_url"                                        >> /etc/euca2ools/conf.d/$region.ini
+        echo "user = $region-admin"                                      >> /etc/euca2ools/conf.d/$region.ini
+        echo                                                             >> /etc/euca2ools/conf.d/$region.ini
+        echo                                                             >> /etc/euca2ools/conf.d/$region.ini
+        echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem" >> /etc/euca2ools/conf.d/$region.ini
+        echo "verify-ssl = false"                                        >> /etc/euca2ools/conf.d/$region.ini
+        pause
 
-    echo "# unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/"
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        # invisibly fix missing environment variables needed for image import
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-        sed -i -e "/WARN: Certificate credentials not present./d" \
-               -e "/WARN: Review authentication.credential_download_generate_certificate and/d" \
-               -e "/WARN: authentication.signing_certificates_limit properties for current/d" \
-               -e "/WARN: certificate download limits./d" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+        echo "# cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem"
+        cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem
+        echo "# chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem"
+        chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem
+
+        next
     fi
-    if [ -r /root/eucarc ]; then
-        # invisibly update Faststart credentials location
-        cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc /root/eucarc
-    fi
-    pause
-
-    echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    pause
-
-    echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    pause
-
-    next
 fi
 
 end=$(date +%s)

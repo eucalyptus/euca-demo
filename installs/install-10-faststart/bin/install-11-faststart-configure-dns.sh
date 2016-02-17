@@ -566,8 +566,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Configure Euca2ools for New Region"
-echo "    - We must construct a new Region configuration, but"
+echo "$(printf '%2d' $step). Configure Euca2ools Region for HTTP Endpoints"
+echo "    - We must configure a new Region configuration, but"
 echo "      can re-use the User configuration with a change to"
 echo "      the Region name"
 echo "    - Restore the original \"localhost\" Region saved in a"
