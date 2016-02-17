@@ -23,7 +23,6 @@ next_default=5
 
 interactive=1
 speed=100
-config=$(hostname -s)
 password=
 cacerts_password=changeit
 region=${AWS_DEFAULT_REGION#*@}
@@ -34,6 +33,7 @@ domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/e
 
 usage () {
     echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "               [-r region] [-d domain]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"

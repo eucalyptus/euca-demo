@@ -152,13 +152,13 @@ sleep 1
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Install w3m"
+echo "$(printf '%2d' $step). Install lynx"
 echo
 echo "============================================================"
 echo
-if ! rpm -q --quiet w3m; then
-    echo "# yum install -y w3m"
-    yum install -y w3m
+if ! rpm -q --quiet lynx; then
+    echo "# yum install -y lynx"
+    yum install -y lynx
 fi
 sleep 1
 
