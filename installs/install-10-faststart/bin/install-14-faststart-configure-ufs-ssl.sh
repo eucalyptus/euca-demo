@@ -398,8 +398,8 @@ else
         echo ">"
         echo "> [region $region]"
         echo "> autoscaling-url = $autoscaling_url"
-        echo "> cloudformation-url = $cloudformation_url"
         echo "> bootstrap-url = $bootstrap_url"
+        echo "> cloudformation-url = $cloudformation_url"
         echo "> ec2-url = $ec2_url"
         echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
         echo "> iam-url = $iam_url"
@@ -418,8 +418,8 @@ else
         echo                                                             >> /etc/euca2ools/conf.d/$region.ini
         echo "[region $region]"                                          >> /etc/euca2ools/conf.d/$region.ini
         echo "autoscaling-url = $autoscaling_url"                        >> /etc/euca2ools/conf.d/$region.ini
-        echo "cloudformation-url = $cloudformation_url"                  >> /etc/euca2ools/conf.d/$region.ini
         echo "bootstrap-url = $bootstrap_url"                            >> /etc/euca2ools/conf.d/$region.ini
+        echo "cloudformation-url = $cloudformation_url"                  >> /etc/euca2ools/conf.d/$region.ini
         echo "ec2-url = $ec2_url"                                        >> /etc/euca2ools/conf.d/$region.ini
         echo "elasticloadbalancing-url = $elasticloadbalancing_url"      >> /etc/euca2ools/conf.d/$region.ini
         echo "iam-url = $iam_url"                                        >> /etc/euca2ools/conf.d/$region.ini
