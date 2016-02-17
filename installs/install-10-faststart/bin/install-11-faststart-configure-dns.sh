@@ -1002,8 +1002,8 @@ echo
 echo "Commands:"
 echo
 echo "echo \"export AWS_DEFAULT_REGION=$region\" >> ~/.bash_profile"
-echo "echo \"export AWS_DEFAULT_PROFILE=\$region-admin\" >> ~/.bash_profile"
-echo "echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$region/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
+echo "echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
 
 if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
     echo
