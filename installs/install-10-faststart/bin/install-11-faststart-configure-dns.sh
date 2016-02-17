@@ -177,54 +177,15 @@ if [ -z $loadbalancer_subdomain ]; then
     exit 14
 fi
 
-user_region=$region-admin@$region
+if ! grep -s -q "\[user localhost-admin]" ~/.euca/localhost.ini; then
+    echo "Could not find Eucalyptus (localhost) Region Eucalyptus Administrator (admin) Euca2ools user!"
+    echo "Expected to find: [user localhost-admin] in ~/.euca/localhost.ini"
 
-convert_faststart=0
-if ! grep -s -q "\[region $region]" /etc/euca2ools/conf.d/$region.ini; then
-    echo "Could not find Eucalyptus ($region) Region!"
-    echo "Expected to find: [region $region] in /etc/euca2ools/conf.d/$region.ini"
-    convert_faststart=1
-elif ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
-    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator (admin) Euca2ools user!"
-    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
-    convert_faststart=1
-elif [ ! -r ~/.creds/$region/eucalyptus/admin/iamrc ]; then
-    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator credentials!"
-    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/iamrc"
-    convert_faststart=1
-fi
-if [ $convert_faststart = 1 ]; then
-    if [ -r ~/.euca/faststart.ini ]; then
-        # Convert what FastStart creates into the conventions used by the demos
-        cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem
-        chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem
-
-        sed -n -e "1i; Eucalyptus Region $region\n" \
-               -e "s/localhost/$region/" \
-               -e "s/[0-9]*:admin/$region-admin/" \
-               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$region.ini
-
-        sed -n -e "1i; Eucalyptus Region $region\n" \
-               -e "s/[0-9]*:admin/$region-admin/" \
-               -e "/^\[user/,/^account-id =/p" \
-               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/$region.ini
-
-        echo "; Eucalyptus Global"  > ~/.euca/global.ini
-        echo                       >> ~/.euca/global.ini
-        echo "[global]"            >> ~/.euca/global.ini
-        echo "region = $region"    >> ~/.euca/global.ini
-        echo                       >> ~/.euca/global.ini
-
-        mkdir -p ~/.creds/$region/eucalyptus/admin
-
-        echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)    > ~/.creds/$region/eucalyptus/admin/iamrc
-        echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini) >> ~/.creds/$region/eucalyptus/admin/iamrc
-
-        rm -f ~/.euca/faststart.ini
-    else
-        echo "Could not find FastStart Euca2ools credentials file to attempt conversion!"
-        echo "Expected to find: ~/.euca/faststart.ini"
-        exit 29
+    # See if FastStart credentials are still present. If so we will convert them below.
+    if ! grep -s -q "\[user [0-9]*:admin]" ~/.euca/faststart.ini; then
+        echo "Could not find Eucalyptus (localhost) Region Eucalyptus Administrator (admin) Euca2ools user!"
+        echo "Expected to find: [user [0-9]*:admin] in ~/.euca/faststart.ini"
+        exit 25
     fi
 fi
 
@@ -244,6 +205,159 @@ clear
 echo
 echo "================================================================================"
 echo
+echo "$(printf '%2d' $step). Convert FastStart Credentials to Demo Conventions"
+echo "    - This section splits the \"localhost\" Region configuration file created"
+echo "      by FastStart into a convention which allows for multiple named Regions"
+echo "    - We preserve the original \"localhost\" Region configuration file installed"
+echo "      with Eucalyptus, so that we can restore this later once a specific Region"
+echo "      is configured."
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
+echo
+echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
+echo
+echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+echo "       -e \"/^\\[user/,/^account-id =/p\" \\"
+echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
+echo
+echo "cat <<EOF > ~/.euca/global.ini"
+echo "; Eucalyptus Global"
+echo
+echo "[global]"
+echo "default-region = localhost"
+echo
+echo "EOF"
+echo
+echo "mkdir -p ~/.creds/localhost/eucalyptus/admin"
+echo
+echo "cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
+echo "AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.in 2> /dev/null)"
+echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
+echo "EOF"
+echo
+echo "rm -f ~/.euca/faststart.ini"
+ 
+if [ ! -r ~/.euca/faststart.ini ]; then
+    echo
+    tput rev
+    echo "Already Converted!"
+    tput sgr0
+ 
+    next 50
+ 
+else
+    run 50
+ 
+    if [ $choice = y ]; then
+        echo
+        echo "# cp -f /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
+        cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save
+        pause
+
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini
+        pause
+ 
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
+        echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[user/,/^account-id =/p" \
+               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
+        pause
+ 
+        echo "cat <<EOF > ~/.euca/global.ini"
+        echo "; Eucalyptus Global"
+        echo
+        echo "[global]"
+        echo "default-region = localhost"
+        echo
+        echo "EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "; Eucalyptus Global"         > ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        echo "[global]"                   >> ~/.euca/global.ini
+        echo "default-region = localhost" >> ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        pause
+ 
+        echo "# mkdir -p ~/.creds/localhost/eucalyptus/admin"
+        mkdir -p ~/.creds/localhost/eucalyptus/admin
+        pause
+ 
+        echo "# cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
+        echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
+        echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)    > ~/.creds/localhost/eucalyptus/admin/iamrc
+        echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null) >> ~/.creds/localhost/eucalyptus/admin/iamrc
+        pause
+ 
+        echo "# rm -f ~/.euca/faststart.ini"
+        rm -f ~/.euca/faststart.ini
+ 
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure Region"
+echo "    - FastStart creates a \"localhost\" Region by default"
+echo "    - We will switch this to a more \"AWS-like\" Region naming convention"
+echo "    - This is needed to run CloudFormation templates which reference the"
+echo "      Region in Maps"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "euctl region.region_name=$region --region localhost"
+
+if [ "$(euctl -n region.region_name --region localhost)" = "$region" ]; then
+    echo
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl region.region_name=$region --region localhost"
+        euctl region.region_name=$region --region localhost
+
+        next 50
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
 echo "$(printf '%2d' $step). Configure Eucalyptus DNS Server"
 echo "    - Instances will use the Cloud Controller's DNS Server directly"
 echo
@@ -251,21 +365,32 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl system.dns.nameserver=ns1.$region.$domain --region $user_region"
+echo "euctl system.dns.nameserver=ns1.$region.$domain --region localhost"
 echo
-echo "euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region"
+echo "euctl system.dns.nameserveraddress=$(hostname -i) --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n system.dns.nameserver --region localhost | head -1)" = "ns1.$region.$domain" -a \
+     "$(euctl -n system.dns.nameserveraddress --region localhost)" = "$(hostname -i)" ]; then
     echo
-    echo "# euctl system.dns.nameserver=ns1.$region.$domain --region $user_region"
-    euctl system.dns.nameserver=ns1.$region.$region --region $user_region
-    echo "#"
-    echo "# euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region"
-    euctl system.dns.nameserveraddress=$(hostname -i) --region $user_region
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
 
     next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl system.dns.nameserver=ns1.$region.$domain --region localhost"
+        euctl system.dns.nameserver=ns1.$region.$domain --region localhost
+        echo "#"
+        echo "# euctl system.dns.nameserveraddress=$(hostname -i) --region localhost"
+        euctl system.dns.nameserveraddress=$(hostname -i) --region localhost
+
+        next 50
+    fi
 fi
 
 
@@ -280,21 +405,32 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region"
+echo "euctl dns.tcp.timeout_seconds=$dns_timeout --region localhost"
 echo
-echo "euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region"
+echo "euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n dns.tcp.timeout_seconds --region localhost)" = "$dns_timeout" -a \
+     "$(euctl -n services.loadbalancing.dns_ttl --region localhost)" = "$dns_loadbalancer_ttl" ]; then
     echo
-    echo "# euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region"
-    euctl dns.tcp.timeout_seconds=$dns_timeout --region $user_region
-    echo "#"
-    echo "# euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region"
-    euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region $user_region
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
 
     next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl dns.tcp.timeout_seconds=$dns_timeout --region localhost"
+        euctl dns.tcp.timeout_seconds=$dns_timeout --region localhost
+        echo "#"
+        echo "# euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region localhost"
+        euctl services.loadbalancing.dns_ttl=$dns_loadbalancer_ttl --region localhost
+
+        next 50
+    fi
 fi
 
 
@@ -309,16 +445,26 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl system.dns.dnsdomain=$region.$domain --region $user_region"
+echo "euctl system.dns.dnsdomain=$region.$domain --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n system.dns.dnsdomain --region localhost)" = "$region.$domain" ]; then
     echo
-    echo "# euctl system.dns.dnsdomain=$region.$domain --region $user_region"
-    euctl system.dns.dnsdomain=$region.$domain --region $user_region
-
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
+ 
     next 50
+ 
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl system.dns.dnsdomain=$region.$domain --region localhost"
+        euctl system.dns.dnsdomain=$region.$domain --region localhost
+
+        next 50
+    fi
 fi
 
 
@@ -333,21 +479,32 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region"
+echo "euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region localhost"
 echo
-echo "euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region"
+echo "euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n cloud.vmstate.instance_subdomain --region localhost)" = "$instance_subdomain" -a \
+     "$(euctl -n services.loadbalancing.dns_subdomain --region localhost)" = "$loadbalancer_subdomain" ]; then
     echo
-    echo "# euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region"
-    euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region $user_region
-    echo "#"
-    echo "# euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region"
-    euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region $user_region
-
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
+ 
     next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region localhost"
+        euctl cloud.vmstate.instance_subdomain=$instance_subdomain --region localhost
+        echo "#"
+        echo "# euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region localhost"
+        euctl services.loadbalancing.dns_subdomain=$loadbalancer_subdomain --region localhost
+
+        next 50
+    fi
 fi
 
 
@@ -362,21 +519,32 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euctl bootstrap.webservices.use_instance_dns=true --region $user_region"
+echo "euctl bootstrap.webservices.use_instance_dns=true --region localhost"
 echo
-echo "euctl bootstrap.webservices.use_dns_delegation=true --region $user_region"
+echo "euctl bootstrap.webservices.use_dns_delegation=true --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n bootstrap.webservices.use_instance_dns --region localhost)" = "true" -a \
+     "$(euctl -n bootstrap.webservices.use_dns_delegation --region localhost)" = "true" ]; then
     echo
-    echo "# euctl bootstrap.webservices.use_instance_dns=true --region $user_region"
-    euctl bootstrap.webservices.use_instance_dns=true --region $user_region
-    echo "#"
-    echo "# euctl bootstrap.webservices.use_dns_delegation=true --region $user_region"
-    euctl bootstrap.webservices.use_dns_delegation=true --region $user_region
-
+    tput rev
+    echo "Already Enabled!"
+    tput sgr0
+ 
     next 50
+ 
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl bootstrap.webservices.use_instance_dns=true --region localhost"
+        euctl bootstrap.webservices.use_instance_dns=true --region localhost
+        echo "#"
+        echo "# euctl bootstrap.webservices.use_dns_delegation=true --region localhost"
+        euctl bootstrap.webservices.use_dns_delegation=true --region localhost
+
+        next 50
+    fi
 fi
 
 
@@ -398,11 +566,21 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Update Euca2ools with DNS Region Endpoints"
+echo "$(printf '%2d' $step). Configure Euca2ools for New Region"
+echo "    - We must construct a new Region configuration, but"
+echo "      can re-use the User configuration with a change to"
+echo "      the Region name"
+echo "    - Restore the original \"localhost\" Region saved in a"
+echo "      prior step, as the modified \"localhost\" Region created"
+echo "      by FastStart no longer works after changing DNS properties"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
+echo
+echo "mv /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.faststart"
+echo "mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini"
+echo "sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini"
 echo
 echo "cat << EOF > /etc/euca2ools/conf.d/$region.ini"
 echo "; Eucalyptus Region $region"
@@ -422,45 +600,87 @@ echo "sts-url = $sts_url"
 echo "user = $region-admin"
 echo
 echo "EOF"
+echo 
+echo "sed -e \"s/localhost/$region/g\" ~/.euca/localhost.ini > ~/.euca/$region.ini"
+echo 
+echo "sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
+echo
+echo "mkdir -p ~/.creds/$region/eucalyptus/admin"
+echo "cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/$region/eucalyptus/admin"
 
-run 50
+if  grep -s -q "ec2-url = $ec2_url" /etc/euca2ools/conf.d/$region.ini; then
+    echo
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
+ 
+    next 50
+ 
+else
+    run 50
 
-if [ $choice = y ]; then
-    echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
-    echo "> ; Eucalyptus Region $region"
-    echo ">"
-    echo "> [region $region]"
-    echo "> autoscaling-url = $autoscaling_url"
-    echo "> cloudformation-url = $cloudformation_url"
-    echo "> bootstrap-url = $bootstrap_url"
-    echo "> ec2-url = $ec2_url"
-    echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
-    echo "> iam-url = $iam_url"
-    echo "> monitoring-url $monitoring_url"
-    echo "> properties-url $properties_url"
-    echo "> reporting-url $reporting_url"
-    echo "> s3-url = $s3_url"
-    echo "> sts-url = $sts_url"
-    echo "> user = $region-admin"
-    echo ">"
-    echo "> EOF"
-    # Use echo instead of cat << EOF to better show indentation
-    echo "; Eucalyptus Region $region"                               > /etc/euca2ools/conf.d/$region.ini
-    echo                                                            >> /etc/euca2ools/conf.d/$region.ini
-    echo "[region $region]"                                         >> /etc/euca2ools/conf.d/$region.ini
-    echo "autoscaling-url = $autoscaling_url"                       >> /etc/euca2ools/conf.d/$region.ini
-    echo "cloudformation-url = $cloudformation_url"                 >> /etc/euca2ools/conf.d/$region.ini
-    echo "bootstrap-url = $bootstrap_url"                           >> /etc/euca2ools/conf.d/$region.ini
-    echo "ec2-url = $ec2_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-    echo "elasticloadbalancing-url = $elasticloadbalancing_url"     >> /etc/euca2ools/conf.d/$region.ini
-    echo "iam-url = $iam_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-    echo "monitoring-url $monitoring_url"                           >> /etc/euca2ools/conf.d/$region.ini
-    echo "properties-url $properties_url"                           >> /etc/euca2ools/conf.d/$region.ini
-    echo "reporting-url $reporting_url"                             >> /etc/euca2ools/conf.d/$region.ini
-    echo "s3-url = $s3_url"                                         >> /etc/euca2ools/conf.d/$region.ini
-    echo "sts-url = $sts_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-    echo "user = $region-admin"                                     >> /etc/euca2ools/conf.d/$region.ini
-    echo                                                            >> /etc/euca2ools/conf.d/$region.ini
+    if [ $choice = y ]; then
+        echo
+        echo "# mv /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.faststart"
+        mv /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.faststart
+        echo "# mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini"
+        mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini
+        echo "# sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini"
+        sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
+        echo "> ; Eucalyptus Region $region"
+        echo ">"
+        echo "> [region $region]"
+        echo "> autoscaling-url = $autoscaling_url"
+        echo "> cloudformation-url = $cloudformation_url"
+        echo "> bootstrap-url = $bootstrap_url"
+        echo "> ec2-url = $ec2_url"
+        echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
+        echo "> iam-url = $iam_url"
+        echo "> monitoring-url = $monitoring_url"
+        echo "> properties-url = $properties_url"
+        echo "> reporting-url = $reporting_url"
+        echo "> s3-url = $s3_url"
+        echo "> sts-url = $sts_url"
+        echo "> user = $region-admin"
+        echo ">"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "; Eucalyptus Region $region"                               > /etc/euca2ools/conf.d/$region.ini
+        echo                                                            >> /etc/euca2ools/conf.d/$region.ini
+        echo "[region $region]"                                         >> /etc/euca2ools/conf.d/$region.ini
+        echo "autoscaling-url = $autoscaling_url"                       >> /etc/euca2ools/conf.d/$region.ini
+        echo "cloudformation-url = $cloudformation_url"                 >> /etc/euca2ools/conf.d/$region.ini
+        echo "bootstrap-url = $bootstrap_url"                           >> /etc/euca2ools/conf.d/$region.ini
+        echo "ec2-url = $ec2_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+        echo "elasticloadbalancing-url = $elasticloadbalancing_url"     >> /etc/euca2ools/conf.d/$region.ini
+        echo "iam-url = $iam_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+        echo "monitoring-url = $monitoring_url"                         >> /etc/euca2ools/conf.d/$region.ini
+        echo "properties-url = $properties_url"                         >> /etc/euca2ools/conf.d/$region.ini
+        echo "reporting-url = $reporting_url"                           >> /etc/euca2ools/conf.d/$region.ini
+        echo "s3-url = $s3_url"                                         >> /etc/euca2ools/conf.d/$region.ini
+        echo "sts-url = $sts_url"                                       >> /etc/euca2ools/conf.d/$region.ini
+        echo "user = $region-admin"                                     >> /etc/euca2ools/conf.d/$region.ini
+        echo                                                            >> /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# sed -e \"s/localhost/$region/g\" ~/.euca/localhost.ini > ~/.euca/$region.ini"
+        sed -e "s/localhost/$region/g" ~/.euca/localhost.ini > ~/.euca/$region.ini
+        pause
+
+        echo "# sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
+        sed -i -e "s/localhost/$region/g" ~/.euca/global.ini
+        pause
+
+        echo "# mkdir -p ~/.creds/$region/eucalyptus/admin"
+        mkdir -p ~/.creds/$region/eucalyptus/admin
+        echo "# cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/$region/eucalyptus/admin"
+        cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/$region/eucalyptus/admin
+
+        next
+    fi
 fi
 
 
@@ -639,124 +859,177 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-describe-regions"
+echo "euca-describe-regions --region localhost"
+echo
+echo "euca-describe-regions --region $region-admin@$region"
 if [ $extended = 1 ]; then
     echo
-    echo "euca-describe-availability-zones"
+    echo "euca-describe-availability-zones --region $region-admin@$region"
     echo
-    echo "euca-describe-keypairs"
+    echo "euca-describe-keypairs --region $region-admin@$region"
     echo
-    echo "euca-describe-images"
+    echo "euca-describe-images --region $region-admin@$region"
     echo
-    echo "euca-describe-instance-types"
+    echo "euca-describe-instance-types --region $region-admin@$region"
     echo
-    echo "euca-describe-instances"
+    echo "euca-describe-instances --region $region-admin@$region"
     echo
-    echo "euca-describe-instance-status"
+    echo "euca-describe-instance-status --region $region-admin@$region"
     echo
-    echo "euca-describe-groups"
+    echo "euca-describe-groups --region $region-admin@$region"
     echo
-    echo "euca-describe-volumes"
+    echo "euca-describe-volumes --region $region-admin@$region"
     echo
-    echo "euca-describe-snapshots"
+    echo "euca-describe-snapshots --region $region-admin@$region"
 fi
 echo
-echo "eulb-describe-lbs"
+echo "eulb-describe-lbs --region $region-admin@$region"
 echo
-echo "euform-describe-stacks"
+echo "euform-describe-stacks --region $region-admin@$region"
 echo
-echo "euscale-describe-auto-scaling-groups"
+echo "euscale-describe-auto-scaling-groups --region $region-admin@$region"
 if [ $extended = 1 ]; then
     echo
-    echo "euscale-describe-launch-configs"
+    echo "euscale-describe-launch-configs --region $region-admin@$region"
     echo
-    echo "euscale-describe-auto-scaling-instances"
+    echo "euscale-describe-auto-scaling-instances --region $region-admin@$region"
     echo
-    echo "euscale-describe-policies"
+    echo "euscale-describe-policies --region $region-admin@$region"
 fi
 echo
-echo "euwatch-describe-alarms"
+echo "euwatch-describe-alarms --region $region-admin@$region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-regions"
-    euca-describe-regions
+    echo "# euca-describe-regions --region localhost"
+    euca-describe-regions --region localhost
+    echo "#"
+    echo "# euca-describe-regions --region $region-admin@$region"
+    euca-describe-regions --region $region-admin@$region
     pause
 
     if [ $extended = 1 ]; then
-        echo "# euca-describe-availability-zones"
-        euca-describe-availability-zones
+        echo "# euca-describe-availability-zones --region $region-admin@$region"
+        euca-describe-availability-zones --region $region-admin@$region
         pause
 
-        echo "# euca-describe-keypairs"
-        euca-describe-keypairs
+        echo "# euca-describe-keypairs --region $region-admin@$region"
+        euca-describe-keypairs --region $region-admin@$region
         pause
 
-        echo "# euca-describe-images"
-        euca-describe-images
+        echo "# euca-describe-images --region $region-admin@$region"
+        euca-describe-images --region $region-admin@$region
         pause
 
-        echo "# euca-describe-instance-types"
-        euca-describe-instance-types
+        echo "# euca-describe-instance-types --region $region-admin@$region"
+        euca-describe-instance-types --region $region-admin@$region
         pause
 
-        echo "# euca-describe-instances"
-        euca-describe-instances
+        echo "# euca-describe-instances --region $region-admin@$region"
+        euca-describe-instances --region $region-admin@$region
         pause
 
-        echo "# euca-describe-instance-status"
-        euca-describe-instance-status
+        echo "# euca-describe-instance-status --region $region-admin@$region"
+        euca-describe-instance-status --region $region-admin@$region
         pause
 
-        echo "# euca-describe-groups"
-        euca-describe-groups
+        echo "# euca-describe-groups --region $region-admin@$region"
+        euca-describe-groups --region $region-admin@$region
         pause
 
-        echo "# euca-describe-volumes"
-        euca-describe-volumes
+        echo "# euca-describe-volumes --region $region-admin@$region"
+        euca-describe-volumes --region $region-admin@$region
         pause
 
-        echo "# euca-describe-snapshots"
-        euca-describe-snapshots
+        echo "# euca-describe-snapshots --region $region-admin@$region"
+        euca-describe-snapshots --region $region-admin@$region
         pause
     fi
 
     echo
-    echo "# eulb-describe-lbs"
-    eulb-describe-lbs
+    echo "# eulb-describe-lbs --region $region-admin@$region"
+    eulb-describe-lbs --region $region-admin@$region
     pause
 
     echo
-    echo "# euform-describe-stacks"
-    euform-describe-stacks
+    echo "# euform-describe-stacks --region $region-admin@$region"
+    euform-describe-stacks --region $region-admin@$region
     pause
 
     echo
-    echo "# euscale-describe-auto-scaling-groups"
-    euscale-describe-auto-scaling-groups
+    echo "# euscale-describe-auto-scaling-groups --region $region-admin@$region"
+    euscale-describe-auto-scaling-groups --region $region-admin@$region
     pause
 
     if [ $extended = 1 ]; then
-        echo "# euscale-describe-launch-configs"
-        euscale-describe-launch-configs
+        echo "# euscale-describe-launch-configs --region $region-admin@$region"
+        euscale-describe-launch-configs --region $region-admin@$region
         pause
 
-        echo "# euscale-describe-auto-scaling-instances"
-        euscale-describe-auto-scaling-instances
+        echo "# euscale-describe-auto-scaling-instances --region $region-admin@$region"
+        euscale-describe-auto-scaling-instances --region $region-admin@$region
         pause
 
-        echo "# euscale-describe-policies"
-        euscale-describe-policies
+        echo "# euscale-describe-policies --region $region-admin@$region"
+        euscale-describe-policies --region $region-admin@$region
         pause
     fi
 
     echo
-    echo "# euwatch-describe-alarms"
-    euwatch-describe-alarms
+    echo "# euwatch-describe-alarms --region $region-admin@$region"
+    euwatch-describe-alarms --region $region-admin@$region
 
     next
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Configure Bash to use Eucalyptus Administrator Credentials"
+echo "    - While it is possible to use the \"user@region\" convention when setting"
+echo "      AWS_DEFAULT_REGION to work with Euca2ools, this breaks AWSCLI which doesn't"
+echo "      understand that change to this environment variable format."
+echo "    - By setting the variables defined below, both Euca2ools and AWSCLI"
+echo "      can be used interchangably."
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "echo \"export AWS_DEFAULT_REGION=$region\" >> ~/.bash_profile"
+echo "echo \"export AWS_DEFAULT_PROFILE=\$region-admin\" >> ~/.bash_profile"
+echo "echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$region/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+
+if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
+    echo
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
+ 
+    next 50
+ 
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# echo \"export AWS_DEFAULT_REGION=$region\" >> ~/.bash_profile"
+        echo >> ~/.bash_profile
+        echo "export AWS_DEFAULT_REGION=$region" >> ~/.bash_profile
+        echo "#"
+        echo "# echo \"export AWS_DEFAULT_PROFILE=\$region-admin\" >> ~/.bash_profile"
+        echo "export AWS_DEFAULT_PROFILE=$region-admin" >> ~/.bash_profile
+        echo "#"
+        echo "# echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/$region/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+        echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/$region/eucalyptus/admin/iamrc" >> ~/.bash_profile
+
+        next
+    fi
 fi
 
 

@@ -188,49 +188,42 @@ echo "Commands:"
 echo
 echo "bash <(curl -Ls hphelion.com/eucalyptus-install)"
 
-run 50
-
-if [ $choice = y ]; then
+if [ -d /var/lib/eucalyptus ]; then
     echo
-    pushd $HOME &> /dev/null
-    echo "# bash <(curl -Ls hphelion.com/eucalyptus-install)"
-    # There's a bug inside FastStart which causes it to break if it's run inside a shell as is the case here
-    # A workaround is to set the region, we save and restore the original region around this
-    save_aws_default_region=$AWS_DEFAULT_REGION
-    export AWS_DEFAULT_REGION=localhost
-    bash <(curl -Ls $faststart_url)
-    export AWS_DEFAULT_REGION=$save_aws_default_region
-    popd &> /dev/null
+    tput rev
+    echo "Already Installed!"
+    tput sgr0
 
     next 50
-fi
 
+else
+    run 50
 
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Configure Region"
-echo "    - FastStart creates a \"localhost\" Region by default"
-echo "    - We will switch this to a more \"AWS-like\" Region naming convention"
-echo "    - This is needed to run CloudFormation templates which reference the"
-echo "      Region in Maps"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "euctl region.region_name=$AWS_DEFAULT_REGION --region localhost"
+    if [ $choice = y ]; then
+        echo
+        pushd $HOME &> /dev/null
 
-run 50
+        echo "# bash <(curl -Ls hphelion.com/eucalyptus-install)"
 
-if [ $choice = y ]; then
-    echo
-    echo "# euctl region.region_name=$AWS_DEFAULT_REGION --region localhost"
-    euctl region.region_name=$AWS_DEFAULT_REGION --region localhost
+        # There's a bug inside FastStart which causes it to break if it's run inside a shell as is the case here
+        # A workaround is to set the region, we save and restore the original region around this
+        if [ -n "$AWS_DEFAULT_REGION" ]; then
+            save_aws_default_region=$AWS_DEFAULT_REGION
+        fi  
 
-    next 50
+        export AWS_DEFAULT_REGION=localhost
+        bash <(curl -Ls $faststart_url)
+        unset AWS_DEFAULT_REGION
+
+        if [ -n "$save_aws_default_region" ]; then
+            export AWS_DEFAULT_REGION=$save_aws_default_region
+            unset save_aws_default_region
+        fi
+
+        popd &> /dev/null
+
+        next 50
+    fi
 fi
 
 
@@ -240,150 +233,112 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Convert FastStart Credentials to Demo Conventions"
-echo "    - Demos require additional accounts and users, and in some cases"
-echo "      multiple Eucalyptus and AWS Accounts are used. So we need a more"
-echo "      hierarchical credentials storage directory structure"
+echo "    - This section splits the \"localhost\" Region configuration file created"
+echo "      by FastStart into a convention which allows for multiple named Regions"
+echo "    - We preserve the original \"localhost\" Region configuration file installed"
+echo "      with Eucalyptus, so that we can restore this later once a specific Region"
+echo "      is configured."
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
-echo "       -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
-echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
-echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
+echo "cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
 echo
-echo "sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
-echo "       -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
+echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
+echo
+echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
 echo "       -e \"/^\\[user/,/^account-id =/p\" \\"
-echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini"
+echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
 echo
 echo "cat <<EOF > ~/.euca/global.ini"
 echo "; Eucalyptus Global"
 echo
 echo "[global]"
-echo "region = $AWS_DEFAULT_REGION"
+echo "default-region = localhost"
 echo
 echo "EOF"
 echo
-echo "mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
+echo "mkdir -p ~/.creds/localhost/eucalyptus/admin"
 echo
-echo "cat <<EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc"
-echo "AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)"
-echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini)"
+echo "cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
+echo "AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
+echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
 echo "EOF"
 echo
 echo "rm -f ~/.euca/faststart.ini"
 
-run 50
-
-if [ $choice = y ]; then
+if [ ! -r ~/.euca/faststart.ini ]; then
     echo
-    echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
-    echo ">        -e \"s/localhost/$AWS_DEFAULT_REGION/\" \\"
-    echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
-    echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini"
-    sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
-           -e "s/localhost/$AWS_DEFAULT_REGION/" \
-           -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
-           -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/$AWS_DEFAULT_REGION.ini
-    pause
+    tput rev
+    echo "Already Converted!"
+    tput sgr0
 
-    echo "# sed -n -e \"1i; Eucalyptus Region $AWS_DEFAULT_REGION\\n\" \\"
-    echo ">        -e \"s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/\" \\"
-    echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
-    echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini"
-    sed -n -e "1i; Eucalyptus Region $AWS_DEFAULT_REGION\n" \
-           -e "s/[0-9]*:admin/$AWS_DEFAULT_REGION-admin/" \
-           -e "/^\[user/,/^account-id =/p" \
-           -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/$AWS_DEFAULT_REGION.ini
-    pause
+    next 50
 
-    echo "cat <<EOF > ~/.euca/global.ini"
-    echo "; Eucalyptus Global"
-    echo
-    echo "[global]"
-    echo "region = $AWS_DEFAULT_REGION"
-    echo
-    echo "EOF"
-    # Use echo instead of cat << EOF to better show indentation
-    echo "; Eucalyptus Global"           > ~/.euca/global.ini
-    echo                                >> ~/.euca/global.ini
-    echo "[global]"                     >> ~/.euca/global.ini
-    echo "region = $AWS_DEFAULT_REGION" >> ~/.euca/global.ini
-    echo                                >> ~/.euca/global.ini
-    pause
+else
+    run 50
 
-    echo "# mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin"
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-    pause
-
-    echo "# cat <<EOF > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc"
-    echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)"
-    echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini)"
-    echo "> EOF"
-    # Use echo instead of cat << EOF to better show indentation
-    echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini)    > ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
-    echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini) >> ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
-    pause
-
-    echo "# rm -f ~/.euca/faststart.ini"
-    rm -f ~/.euca/faststart.ini
-
-    next
-fi
-
-
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Configure Bash to use Eucalyptus Administrator Credentials"
-echo "    - While it is possible to use the \"user@region\" convention when setting AWS_DEFAULT_REGION"
-echo "      to work with Euca2ools, this breaks AWSCLI which doesn't understand that change to this"
-echo "      environment variable format."
-echo "    - By setting the variables needed for Euca2ools explicitly, both Euca2ools and AWSCLI"
-echo "      can be used interchangably."
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
-    echo "echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
-    echo
-fi
-if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
-    echo "echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
-    echo
-fi
-if ! grep -s -q "^export AWS_CREDENTIAL_FILE=" ~/.bash_profile; then
-    echo "echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
-    echo
-fi
-
-run 50
-
-if [ $choice = y ]; then
-    echo
-    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
-        echo "# echo \"export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION\" >> ~/.bash_profile"
-        echo >> ~/.bash_profile
-        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
+    if [ $choice = y ]; then
+        echo
+        echo "# cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
+        cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save
         pause
-    fi
-    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
-        echo "# echo \"export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin\" >> ~/.bash_profile"
-        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
-        pause
-    fi
-    if ! grep -s -q "^export AWS_CREDENTIAL_FILE=" ~/.bash_profile; then
-        echo "# echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
-        echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc" >> ~/.bash_profile
-    fi
 
-    next
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
+        echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[user/,/^account-id =/p" \
+               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
+        pause
+
+        echo "cat <<EOF > ~/.euca/global.ini"
+        echo "; Eucalyptus Global"
+        echo
+        echo "[global]"
+        echo "default-region = localhost"
+        echo
+        echo "EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "; Eucalyptus Global"         > ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        echo "[global]"                   >> ~/.euca/global.ini
+        echo "default-region = localhost" >> ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        pause
+
+        echo "# mkdir -p ~/.creds/localhost/eucalyptus/admin"
+        mkdir -p ~/.creds/localhost/eucalyptus/admin
+        pause
+
+        echo "# cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
+        echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
+        echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)    > ~/.creds/localhost/eucalyptus/admin/iamrc
+        echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null) >> ~/.creds/localhost/eucalyptus/admin/iamrc
+        pause
+
+        echo "# rm -f ~/.euca/faststart.ini"
+        rm -f ~/.euca/faststart.ini
+
+        next
+    fi
 fi
 
 
@@ -398,14 +353,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-describe-addresses verbose"
+echo "euca-describe-addresses verbose --region localhost"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-addresses verbose"
-    euca-describe-addresses verbose
+    echo "# euca-describe-addresses verbose --region localhost"
+    euca-describe-addresses verbose --region localhost
 
     next
 fi
@@ -422,14 +377,14 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euserv-describe-services"
+echo "euserv-describe-services --region localhost"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euserv-describe-services"
-    euserv-describe-services
+    echo "# euserv-describe-services --region localhost"
+    euserv-describe-services --region localhost
 
     next 200
 fi
