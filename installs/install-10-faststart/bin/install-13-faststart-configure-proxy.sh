@@ -20,7 +20,7 @@ next_default=5
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
+domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
 
 #  2. Define functions
@@ -122,7 +122,7 @@ while getopts Isfr:d:? arg; do
     f)  ((speed > 0)) && ((speed=speed-25));;
     r)  region="$OPTARG"
         [ -z $domain ] &&
-        domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
+        domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
     d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
@@ -472,15 +472,15 @@ echo "Commands:"
 echo
 echo "yum install -y nginx"
 
-un 50
+run 50
 
-f [ $choice = y ]; then
-   echo
-   echo "# yum install -y nginx"
-   yum install -y nginx
+if [ $choice = y ]; then
+    echo
+    echo "# yum install -y nginx"
+    yum install -y nginx
 
-   next 50
-i
+    next 50
+fi
 
 
 ((++step))

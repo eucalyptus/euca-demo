@@ -26,7 +26,7 @@ speed=100
 password=
 cacerts_password=changeit
 region=${AWS_DEFAULT_REGION#*@}
-domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
+domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
 
 #  2. Define functions
@@ -130,7 +130,7 @@ while getopts Isfp:r:d:? arg; do
     p)  password="$OPTARG";;
     r)  region="$OPTARG"
         [ -z $domain ] &&
-        domain=$(sed -n -e 's/ec2-url = http:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
+        domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
     d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;

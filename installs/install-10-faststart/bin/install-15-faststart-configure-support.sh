@@ -20,21 +20,24 @@ next_default=5
 
 interactive=1
 speed=100
-config=$(hostname -s)
 password=
 unique=0
+region=${AWS_DEFAULT_REGION#*@}
+domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-p password] [-u]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password] [-u]"
+    echo "               [-r region] [-d domain]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
-    echo "  -c config    configuration (default: $config)"
     echo "  -p password  support private key password (default: none)"
     echo "  -u           create unique support key pair"
+    echo "  -r region    Eucalyptus Region (default: $region)"
+    echo "  -d domain    Eucalyptus Domain (default: $domain)"
 }
 
 run() {
@@ -117,14 +120,17 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfc:p:u? arg; do
+while getopts Isfp:ur:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    c)  config="$OPTARG";;
     p)  password="$OPTARG";;
     u)  unique=1;;
+    r)  region="$OPTARG"
+        [ -z $domain ] &&
+        domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
+    d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -135,36 +141,30 @@ shift $(($OPTIND - 1))
 
 #  4. Validate environment
 
-if [[ $config =~ ^([a-zA-Z0-9_-]*)$ ]]; then
-    conffile=$confdir/$config.txt
-
-    if [ ! -r $conffile ]; then
-        echo "-c $config invalid: can't find configuration file: $conffile"
-        exit 5
-    fi
+if [ -z $region ]; then
+    echo "-r region missing!"
+    echo "Could not automatically determine region, and it was not specified as a parameter"
+    exit 10
 else
-    echo "-c $config illegal: must consist of a-z, A-Z, 0-9, '-' or '_' characters"
-    exit 2
+    case $region in
+      us-east-1|us-west-1|us-west-2|sa-east-1|eu-west-1|eu-central-1|ap-northeast-1|ap-southeast-1|ap-southeast-2)
+        echo "-r $region invalid: This script can not be run against AWS regions"
+        exit 11;;
+    esac
 fi
 
-source $conffile
+if [ -z $domain ]; then
+    echo "-d domain missing!"
+    echo "Could not automatically determine domain, and it was not specified as a parameter"
+    exit 12
+fi
 
-if [ ! -r ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc ]; then
-    echo "Could not find Eucalyptus Administrator credentials!"
-    echo "Expected to find: ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-    sleep 2
+user_region=$region-admin@$region
 
-    if [ -r /root/admin.zip ]; then
-        echo "Moving Faststart Eucalyptus Administrator credentials to appropriate creds directory"
-        mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
-        cp -a /root/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
-        unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
-        sleep 2
-    else
-        echo "Could not convert FastStart Eucalyptus Administrator credentials!"
-        echo "Expected to find: /root/admin.zip"
-        exit 29
-    fi
+if ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator Euca2ools user!"
+    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
+    exit 50
 fi
 
 
@@ -173,57 +173,17 @@ fi
 start=$(date +%s)
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo " $(printf '%2d' $step). Use Eucalyptus Administrator credentials"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-echo
-echo "source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-
-next
-
-echo
-echo "# cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-pause
-
-echo "# source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc"
-source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-next
-
-
-((++step))
-clear
-echo
-echo "================================================================================"
-echo
-if [ "$unique" = 1 ]; then
-    echo "$(printf '%2d' $step). Create Eucalyptus Administrator Support Keypair"
-else
-    echo "$(printf '%2d' $step). Import Eucalyptus Administrator Support Keypair"
-fi
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-if [ "$unique" = 1 ]; then
-    echo "euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
-    echo "ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub"
+if [ "$unique" = 0 ]; then
+    clear
     echo
-    echo "chmod 0600 ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
+    echo "================================================================================"
     echo
-    echo "ln -s $AWS_DEFAULT_REGION-support_id_rsa ~/.ssh/support_id_rsa"
-    echo "ln -s $AWS_DEFAULT_REGION-support_id_rsa.pub ~/.ssh/support_id_rsa.pub"
-else
+    echo "$(printf '%2d' $step). Configure Support Keypair"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
     echo "cat << EOF > ~/.ssh/support_id_rsa"
     cat $keysdir/support_id_rsa
     echo "EOF"
@@ -233,42 +193,20 @@ else
     echo "cat << EOF > ~/.ssh/support_id_rsa.pub"
     cat $keysdir/support_id_rsa.pub
     echo "EOF"
-    echo
-    echo "euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
-fi
 
-if euca-describe-keypairs | cut -f2 | grep -s -q "^support$" && [ -r ~/.ssh/support_id_rsa ]; then
-    echo
-    tput rev
-    echo "Already Imported or Created!"
-    tput sgr0
-
-    next 50
-
-else
-    euca-delete-keypair support &> /dev/null
-    rm -f ~/.ssh/support_id_rsa
-    rm -f ~/.ssh/support_id_rsa.pub
-
-    run 50
-
-    if [ $choice = y ]; then
+    if [ -r ~/.ssh/support_id_rsa -a -r ~/.ssh/support_id_rsa.pub ]; then
         echo
-        if [ "$unique" = 1 ]; then
-            echo "# euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
-            euca-create-keypair support | tee ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa
-            echo "# ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub"
-            ssh-keygen -y -f ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa > ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa.pub
-            echo "#"
-            echo "# chmod 0600 ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa"
-            chmod 0600 ~/.ssh/$AWS_DEFAULT_REGION-support_id_rsa
-            pause
+        tput rev
+        echo "Already Created!"
+        tput sgr0
 
-            echo "# ln -s $AWS_DEFAULT_REGION-support_id_rsa ~/.ssh/support_id_rsa"
-            ln -s $AWS_DEFAULT_REGION-support_id_rsa ~/.ssh/support_id_rsa
-            echo "# ln -s $AWS_DEFAULT_REGION-support_id_rsa.pub ~/.ssh/support_id_rsa.pub"
-            ln -s $AWS_DEFAULT_REGION-support_id_rsa.pub ~/.ssh/support_id_rsa.pub
-        else
+        next 50
+
+    else
+        run 50
+
+        if [ $choice = y ]; then
+            echo
             echo "# cat << EOF > ~/.ssh/support_id_rsa"
             cat $keysdir/support_id_rsa | sed -e 's/^/> /'
             echo "> EOF"
@@ -282,10 +220,175 @@ else
             cat $keysdir/support_id_rsa.pub | sed -e 's/^/> /'
             echo "> EOF"
             cp $keysdir/support_id_rsa.pub ~/.ssh/support_id_rsa.pub
+
+            next
+        fi
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+if [ "$unique" = 1 ]; then
+    echo "$(printf '%2d' $step). Create Imaging Service Support Keypair"
+else
+    echo "$(printf '%2d' $step). Import Imaging Service Support Keypair"
+fi
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
+echo "eval $(euare-assumerole $imaging_arn)"
+echo
+if [ "$unique" = 1 ]; then
+    echo "euca-create-keypair support | tee ~/.ssh/$region-imaging-support_id_rsa"
+    echo "ssh-keygen -y -f ~/.ssh/$region-imaging-support_id_rsa > ~/.ssh/$region-imaging-support_id_rsa.pub"
+    echo
+    echo "chmod 0600 ~/.ssh/$region-imaging-support_id_rsa"
+    echo
+    echo "ln -s $region-imaging-support_id_rsa ~/.ssh/imaging-support_id_rsa"
+    echo "ln -s $region-imaging-support_id_rsa.pub ~/.ssh/imaging-support_id_rsa.pub"
+else
+    echo "euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
+fi
+echo
+echo "eval $(euare-releaserole)"
+
+imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
+eval $(euare-assumerole $imaging_arn)
+imaging_keypairs=$(euca-describe-keypairs | cut -f2 | grep "^support$")
+eval $(euare-releaserole)
+
+if [ "$imaging_keypairs" = "support" ]; then
+    echo
+    tput rev
+    if [ "$unique" = 1 ]; then
+        echo "Already Created!"
+    else
+        echo "Already Imported!"
+    fi
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
+        imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
+        echo "# eval $(euare-assumerole $imaging_arn)"
+        eval $(euare-assumerole $imaging_arn)
+        echo "#"
+        if [ "$unique" = 1 ]; then
+            echo "# euca-create-keypair support | tee ~/.ssh/$region-imaging-support_id_rsa"
+            euca-create-keypair support | tee ~/.ssh/$region-imaging-support_id_rsa
+            echo "# ssh-keygen -y -f ~/.ssh/$region-imaging-support_id_rsa > ~/.ssh/$region-imaging-support_id_rsa.pub"
+            ssh-keygen -y -f ~/.ssh/$region-imaging-support_id_rsa > ~/.ssh/$region-imaging-support_id_rsa.pub
             echo "#"
+            echo "# chmod 0600 ~/.ssh/$region-imaging-support_id_rsa"
+            chmod 0600 ~/.ssh/$region-imaging-support_id_rsa
+            echo "#"
+            echo "# ln -s $region-imaging-support_id_rsa ~/.ssh/imaging-support_id_rsa"
+            ln -s $region-imaging-support_id_rsa ~/.ssh/imaging-support_id_rsa
+            echo "# ln -s $region-imaging-support_id_rsa.pub ~/.ssh/imaging-support_id_rsa.pub"
+            ln -s $region-imaging-support_id_rsa.pub ~/.ssh/imaging-support_id_rsa.pub
+        else
             echo "# euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
             euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
         fi
+        echo "#"
+        echo "# eval $(euare-releaserole)"
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+if [ "$unique" = 1 ]; then
+    echo "$(printf '%2d' $step). Create LoadBalancing Service Support Keypair"
+else
+    echo "$(printf '%2d' $step). Import LoadBalancing Service Support Keypair"
+fi
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
+echo "eval $(euare-assumerole $loadbalancing_arn)"
+echo
+if [ "$unique" = 1 ]; then
+    echo "euca-create-keypair support | tee ~/.ssh/$region-loadbalancing-support_id_rsa"
+    echo "ssh-keygen -y -f ~/.ssh/$region-loadbalancing-support_id_rsa > ~/.ssh/$region-loadbalancing-support_id_rsa.pub"
+    echo
+    echo "chmod 0600 ~/.ssh/$region-loadbalancing-support_id_rsa"
+    echo
+    echo "ln -s $region-loadbalancing-support_id_rsa ~/.ssh/loadbalancing-support_id_rsa"
+    echo "ln -s $region-loadbalancing-support_id_rsa.pub ~/.ssh/loadbalancing-support_id_rsa.pub"
+else
+    echo "euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
+fi
+echo
+echo "eval $(euare-releaserole)"
+
+loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
+eval $(euare-assumerole $loadbalancing_arn)
+loadbalancing_keypairs=$(euca-describe-keypairs | cut -f2 | grep "^support$")
+eval $(euare-releaserole)
+
+if [ "$loadbalancing_keypairs" = "support" ]; then
+    echo
+    tput rev
+    if [ "$unique" = 1 ]; then
+        echo "Already Created!"
+    else
+        echo "Already Imported!"
+    fi
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
+        loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
+        echo "# eval $(euare-assumerole $loadbalancing_arn)"
+        eval $(euare-assumerole $loadbalancing_arn)
+        echo "#"
+        if [ "$unique" = 1 ]; then
+            echo "# euca-create-keypair support | tee ~/.ssh/$region-loadbalancing-support_id_rsa"
+            euca-create-keypair support | tee ~/.ssh/$region-loadbalancing-support_id_rsa
+            echo "# ssh-keygen -y -f ~/.ssh/$region-loadbalancing-support_id_rsa > ~/.ssh/$region-loadbalancing-support_id_rsa.pub"
+            ssh-keygen -y -f ~/.ssh/$region-loadbalancing-support_id_rsa > ~/.ssh/$region-loadbalancing-support_id_rsa.pub
+            echo "#"
+            echo "# chmod 0600 ~/.ssh/$region-loadbalancing-support_id_rsa"
+            chmod 0600 ~/.ssh/$region-loadbalancing-support_id_rsa
+            echo "#"
+            echo "# ln -s $region-loadbalancing-support_id_rsa ~/.ssh/loadbalancing-support_id_rsa"
+            ln -s $region-loadbalancing-support_id_rsa ~/.ssh/loadbalancing-support_id_rsa
+            echo "# ln -s $region-loadbalancing-support_id_rsa.pub ~/.ssh/loadbalancing-support_id_rsa.pub"
+            ln -s $region-loadbalancing-support_id_rsa.pub ~/.ssh/loadbalancing-support_id_rsa.pub
+        else
+            echo "# euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
+            euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+        fi
+        echo "#"
+        echo "# eval $(euare-releaserole)"
 
         next
     fi
@@ -303,24 +406,19 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "euca-modify-property -p services.database.worker.keyname=support"
+echo "euctl services.imaging.worker.keyname=support --region localhost"
 echo
-echo "euca-modify-property -p services.imaging.worker.keyname=support"
-echo
-echo "euca-modify-property -p services.loadbalancing.worker.keyname=support"
+echo "euctl services.loadbalancing.worker.keyname=support --region localhost"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-modify-property -p services.database.worker.keyname=support"
-    euca-modify-property -p services.database.worker.keyname=support
+    echo "# euctl services.imaging.worker.keyname=support --region localhost"
+    euctl services.imaging.worker.keyname=support --region localhost
     echo "#"
-    echo "# euca-modify-property -p services.imaging.worker.keyname=support"
-    euca-modify-property -p services.imaging.worker.keyname=support
-    echo "#"
-    echo "# euca-modify-property -p services.loadbalancing.worker.keyname=support"
-    euca-modify-property -p services.loadbalancing.worker.keyname=support
+    echo "# euctl services.loadbalancing.worker.keyname=support --region localhost"
+    euctl services.loadbalancing.worker.keyname=support --region localhost
 
     next 50
 fi
