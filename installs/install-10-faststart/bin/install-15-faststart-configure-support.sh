@@ -242,8 +242,8 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
-echo "eval $(euare-assumerole $imaging_arn)"
+echo "imaging_arn=\$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
+echo "eval \$(euare-assumerole \$imaging_arn)"
 echo
 if [ "$unique" = 1 ]; then
     echo "euca-create-keypair support | tee ~/.ssh/$region-imaging-support_id_rsa"
@@ -257,7 +257,7 @@ else
     echo "euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
 fi
 echo
-echo "eval $(euare-releaserole)"
+echo "eval \$(euare-releaserole)"
 
 imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
 eval $(euare-assumerole $imaging_arn)
@@ -281,9 +281,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
+        echo "# imaging_arn=\$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')"
         imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
-        echo "# eval $(euare-assumerole $imaging_arn)"
+        echo "# eval \$(euare-assumerole \$imaging_arn)"
         eval $(euare-assumerole $imaging_arn)
         echo "#"
         if [ "$unique" = 1 ]; then
@@ -304,7 +304,8 @@ else
             euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
         fi
         echo "#"
-        echo "# eval $(euare-releaserole)"
+        echo "# eval \$(euare-releaserole)"
+        eval $(euare-releaserole)
 
         next
     fi
@@ -326,8 +327,8 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
-echo "eval $(euare-assumerole $loadbalancing_arn)"
+echo "loadbalancing_arn=\$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
+echo "eval \$(euare-assumerole \$loadbalancing_arn)"
 echo
 if [ "$unique" = 1 ]; then
     echo "euca-create-keypair support | tee ~/.ssh/$region-loadbalancing-support_id_rsa"
@@ -341,7 +342,7 @@ else
     echo "euca-import-keypair -f ~/.ssh/support_id_rsa.pub support"
 fi
 echo
-echo "eval $(euare-releaserole)"
+echo "eval \$(euare-releaserole)"
 
 loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
 eval $(euare-assumerole $loadbalancing_arn)
@@ -365,9 +366,9 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
+        echo "# loadbalancing_arn=\$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')"
         loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
-        echo "# eval $(euare-assumerole $loadbalancing_arn)"
+        echo "# eval \$(euare-assumerole \$loadbalancing_arn)"
         eval $(euare-assumerole $loadbalancing_arn)
         echo "#"
         if [ "$unique" = 1 ]; then
@@ -388,7 +389,8 @@ else
             euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
         fi
         echo "#"
-        echo "# eval $(euare-releaserole)"
+        echo "# eval \$(euare-releaserole)"
+        eval $(euare-releaserole)
 
         next
     fi
@@ -410,17 +412,28 @@ echo "euctl services.imaging.worker.keyname=support --region localhost"
 echo
 echo "euctl services.loadbalancing.worker.keyname=support --region localhost"
 
-run 50
-
-if [ $choice = y ]; then
+if [ "$(euctl -n services.imaging.worker.keyname --region localhost)" = "support" -a \
+     "$(euctl -n services.loadbalancing.worker.keyname --region localhost)" = "support" ]; then
     echo
-    echo "# euctl services.imaging.worker.keyname=support --region localhost"
-    euctl services.imaging.worker.keyname=support --region localhost
-    echo "#"
-    echo "# euctl services.loadbalancing.worker.keyname=support --region localhost"
-    euctl services.loadbalancing.worker.keyname=support --region localhost
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
 
     next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euctl services.imaging.worker.keyname=support --region localhost"
+        euctl services.imaging.worker.keyname=support --region localhost
+        echo "#"
+        echo "# euctl services.loadbalancing.worker.keyname=support --region localhost"
+        euctl services.loadbalancing.worker.keyname=support --region localhost
+
+        next 50
+    fi
 fi
 
 end=$(date +%s)
