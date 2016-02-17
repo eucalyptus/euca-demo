@@ -395,7 +395,7 @@ if [ ! -r cacert.pem.orig ]; then
     echo
 fi
 if [ -r cacert.pem.local ]; then
-    echo "rm cacert.pem"
+    echo "rm -f cacert.pem"
     echo "ln -s cacert.pem.local cacert.pem"
     echo
 fi
@@ -525,8 +525,8 @@ else
             echo "#"
         fi
         if [ -r cacert.pem.local ]; then
-            echo "# rm cacert.pem"
-            rm cacert.pem
+            echo "# rm -f cacert.pem"
+            rm -f cacert.pem
             echo "# ln -s cacert.pem.local cacert.pem"
             ln -s cacert.pem.local cacert.pem
             echo "#"
@@ -773,19 +773,19 @@ else
         echo "      ]"                                                                             >> _endpoints.json.local.ssl
         echo "    }"                                                                               >> _endpoints.json.local.ssl
         echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"waf\":[                                                                          >> _endpoints.json.local.ssl
-        echo "    {                                                                                >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://waf.amazonaws.com\",                                         >> _endpoints.json.local.ssl
-        echo "      \"properties\": {                                                              >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {                                                       >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\"                                                >> _endpoints.json.local.ssl
-        echo "        }                                                                            >> _endpoints.json.local.ssl
-        echo "      },                                                                             >> _endpoints.json.local.ssl
-        echo "      \"constraints\": [                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notStartsWith\", \"cn-\"]                                     >> _endpoints.json.local.ssl
-        echo "      ]                                                                              >> _endpoints.json.local.ssl
-        echo "    }                                                                                >> _endpoints.json.local.ssl
-        echo "  ],                                                                                 >> _endpoints.json.local.ssl
+        echo "  \"waf\":["                                                                         >> _endpoints.json.local.ssl
+        echo "    {"                                                                               >> _endpoints.json.local.ssl
+        echo "      \"uri\":\"https://waf.amazonaws.com\","                                        >> _endpoints.json.local.ssl
+        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
+        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
+        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
+        echo "        }"                                                                           >> _endpoints.json.local.ssl
+        echo "      },"                                                                            >> _endpoints.json.local.ssl
+        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
+        echo "        [\"region\", \"notStartsWith\", \"cn-\"]"                                    >> _endpoints.json.local.ssl
+        echo "      ]"                                                                             >> _endpoints.json.local.ssl
+        echo "    }"                                                                               >> _endpoints.json.local.ssl
+        echo "  ],"                                                                                >> _endpoints.json.local.ssl
         echo "  \"elasticmapreduce\":["                                                            >> _endpoints.json.local.ssl
         echo "    {"                                                                               >> _endpoints.json.local.ssl
         echo "      \"uri\":\"https://elasticmapreduce.{region}.amazonaws.com.cn\","               >> _endpoints.json.local.ssl

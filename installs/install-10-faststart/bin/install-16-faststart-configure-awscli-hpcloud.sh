@@ -377,7 +377,7 @@ if [ ! -r cacert.pem.orig ]; then
     echo
 fi
 if [ -r cacert.pem.local ]; then
-    echo "rm cacert.pem"
+    echo "rm -f cacert.pem"
     echo "ln -s cacert.pem.local cacert.pem"
     echo
 fi
@@ -471,8 +471,8 @@ else
             echo "#"
         fi
         if [ -r cacert.pem.local ]; then
-            echo "# rm cacert.pem"
-            rm cacert.pem
+            echo "# rm -f cacert.pem"
+            rm -f cacert.pem
             echo "# ln -s cacert.pem.local cacert.pem"
             ln -s cacert.pem.local cacert.pem
             echo "#"
@@ -548,7 +548,7 @@ if [ ! -r cacert.pem.orig ]; then
     echo
 fi
 if [ -r cacert.pem.local ]; then
-    echo "rm cacert.pem"
+    echo "rm -f cacert.pem"
     echo "ln -s cacert.pem.local cacert.pem"
     echo
 fi
@@ -654,8 +654,8 @@ else
             echo "#"
         fi
         if [ -r cacert.pem.local ]; then
-            echo "# rm cacert.pem"
-            rm cacert.pem
+            echo "# rm -f cacert.pem"
+            rm -f cacert.pem
             echo "# ln -s cacert.pem.local cacert.pem"
             ln -s cacert.pem.local cacert.pem
             echo "#"
@@ -732,7 +732,7 @@ if [ ! -r cacert.pem.orig ]; then
     echo
 fi
 if [ -r cacert.pem.local ]; then
-    echo "rm cacert.pem"
+    echo "rm -f cacert.pem"
     echo "ln -s cacert.pem.local cacert.pem"
     echo
 fi
@@ -840,8 +840,8 @@ else
             echo "#"
         fi
         if [ -r cacert.pem.local ]; then
-            echo "# rm cacert.pem"
-            rm cacert.pem
+            echo "# rm -f cacert.pem"
+            rm -f cacert.pem
             echo "# ln -s cacert.pem.local cacert.pem"
             ln -s cacert.pem.local cacert.pem
             echo "#"
