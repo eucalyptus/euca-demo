@@ -19,10 +19,10 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 showdnsconfig=0
-extended=0
 region=${AWS_DEFAULT_REGION#*@}
-domain=${AWS_DEFAULT_DOMAIN:-$(hostname -i).xip.io}
+domain=${AWS_DEFAULT_DOMAIN}
 instance_subdomain=${EUCA_INSTANCE_SUBDOMAIN:-.vm}
 loadbalancer_subdomain=${EUCA_LOADBALANCER_SUBDOMAIN:-lb}
 dns_timeout=30
@@ -32,14 +32,14 @@ dns_loadbalancer_ttl=15
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-x] [-e]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-e]"
     echo "                             [-r region] [-d domain]"
     echo "                             [-i instance_subdomain] [-b loadbalancer_subdomain]"
     echo "  -I                         non-interactive"
     echo "  -s                         slower: increase pauses by 25%"
     echo "  -f                         faster: reduce pauses by 25%"
-    echo "  -p                         display example parent DNS server configuration"
-    echo "  -e                         extended confirmation of API calls"
+    echo "  -v                         verbose"
+    echo "  -e                         display example parent DNS server configuration"
     echo "  -r region                  Eucalyptus Region (default: $region)"
     echo "  -d domain                  Eucalyptus Domain (default: $domain)"
     echo "  -i instance_subdomain      Eucalyptus Instance Sub-Domain (default: $instance_subdomain)"
@@ -126,13 +126,13 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfxer:d:i:b:? arg; do
+while getopts Isfver:d:i:b:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
-    x)  showdnsconfig=1;;
-    e)  extended=1;;
+    v)  verbose=1;;
+    e)  showdnsconfig=1;;
     r)  region="$OPTARG";;
     d)  domain="$OPTARG";;
     i)  instance_subdomain="$OPTARG";;
@@ -169,6 +169,10 @@ if [ -z $instance_subdomain ]; then
     echo "-i instance_subdomain missing!"
     echo "Could not automatically determine instance_subdomain, and it was not specified as a parameter"
     exit 13
+elif [ ! "${instance_subdomain:0:1}" = "." ]; then
+    echo "-i instance_subdomain invalid!"
+    echo "instance_subdomain must begin with a \".\" (period)."
+    exit 130
 fi
 
 if [ -z $loadbalancer_subdomain ]; then
@@ -180,6 +184,7 @@ fi
 if ! grep -s -q "\[user localhost-admin]" ~/.euca/localhost.ini; then
     echo "Could not find Eucalyptus (localhost) Region Eucalyptus Administrator (admin) Euca2ools user!"
     echo "Expected to find: [user localhost-admin] in ~/.euca/localhost.ini"
+    sleep 2
 
     # See if FastStart credentials are still present. If so we will convert them below.
     if ! grep -s -q "\[user [0-9]*:admin]" ~/.euca/faststart.ini; then
@@ -608,7 +613,7 @@ echo
 echo "mkdir -p ~/.creds/$region/eucalyptus/admin"
 echo "cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/$region/eucalyptus/admin"
 
-if  grep -s -q "ec2-url = $ec2_url" /etc/euca2ools/conf.d/$region.ini; then
+if [ -r /etc/euca2ools/conf.d/$region.ini ]; then
     echo
     tput rev
     echo "Already Configured!"
@@ -763,87 +768,89 @@ fi
 
     
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm DNS resolution for Services"
-echo "    - Confirm service URLS in eucarc resolve"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "dig +short autoscaling.$region.$domain"
-echo
-echo "dig +short bootstrap.$region.$domain"
-echo
-echo "dig +short cloudformation.$region.$domain"
-echo
-echo "dig +short ec2.$region.$domain"
-echo
-echo "dig +short elasticloadbalancing.$region.$domain"
-echo
-echo "dig +short iam.$region.$domain"
-echo
-echo "dig +short monitoring.$region.$domain"
-echo
-echo "dig +short properties.$region.$domain"
-echo
-echo "dig +short reporting.$region.$domain"
-echo
-echo "dig +short s3.$region.$domain"
-echo
-echo "dig +short sts.$region.$domain"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# dig +short autoscaling.$region.$domain"
-    dig +short autoscaling.$region.$domain
-    pause
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm DNS resolution for Services"
+    echo "    - Confirm service URLS in euca2ools Region configuration resolve"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "dig +short autoscaling.$region.$domain"
+    echo
+    echo "dig +short bootstrap.$region.$domain"
+    echo
+    echo "dig +short cloudformation.$region.$domain"
+    echo
+    echo "dig +short ec2.$region.$domain"
+    echo
+    echo "dig +short elasticloadbalancing.$region.$domain"
+    echo
+    echo "dig +short iam.$region.$domain"
+    echo
+    echo "dig +short monitoring.$region.$domain"
+    echo
+    echo "dig +short properties.$region.$domain"
+    echo
+    echo "dig +short reporting.$region.$domain"
+    echo
+    echo "dig +short s3.$region.$domain"
+    echo
+    echo "dig +short sts.$region.$domain"
 
-    echo "# dig +short bootstrap.$region.$domain"
-    dig +short bootstrap.$region.$domain
-    pause
+    run 50
 
-    echo "# dig +short cloudformation.$region.$domain"
-    dig +short cloudformation.$region.$domain
-    pause
+    if [ $choice = y ]; then
+        echo
+        echo "# dig +short autoscaling.$region.$domain"
+        dig +short autoscaling.$region.$domain
+        pause
 
-    echo "# dig +short ec2.$region.$domain"
-    dig +short ec2.$region.$domain
-    pause
+        echo "# dig +short bootstrap.$region.$domain"
+        dig +short bootstrap.$region.$domain
+        pause
 
-    echo "# dig +short elasticloadbalancing.$region.$domain"
-    dig +short elasticloadbalancing.$region.$domain
-    pause
+        echo "# dig +short cloudformation.$region.$domain"
+        dig +short cloudformation.$region.$domain
+        pause
 
-    echo "# dig +short iam.$region.$domain"
-    dig +short iam.$region.$domain
-    pause
+        echo "# dig +short ec2.$region.$domain"
+        dig +short ec2.$region.$domain
+        pause
 
-    echo "# dig +short monitoring.$region.$domain"
-    dig +short monitoring.$region.$domain
-    pause
+        echo "# dig +short elasticloadbalancing.$region.$domain"
+        dig +short elasticloadbalancing.$region.$domain
+        pause
 
-    echo "# dig +short properties.$region.$domain"
-    dig +short properties.$region.$domain
-    pause
+        echo "# dig +short iam.$region.$domain"
+        dig +short iam.$region.$domain
+        pause
 
-    echo "# dig +short reporting.$region.$domain"
-    dig +short reporting.$region.$domain
-    pause
+        echo "# dig +short monitoring.$region.$domain"
+        dig +short monitoring.$region.$domain
+        pause
 
-    echo "# dig +short s3.$region.$domain"
-    dig +short s3.$region.$domain
-    pause
+        echo "# dig +short properties.$region.$domain"
+        dig +short properties.$region.$domain
+        pause
 
-    echo "# dig +short sts.$region.$domain"
-    dig +short sts.$region.$domain
+        echo "# dig +short reporting.$region.$domain"
+        dig +short reporting.$region.$domain
+        pause
 
-    next
+        echo "# dig +short s3.$region.$domain"
+        dig +short s3.$region.$domain
+        pause
+
+        echo "# dig +short sts.$region.$domain"
+        dig +short sts.$region.$domain
+    
+        next
+    fi
 fi
 
 
@@ -862,9 +869,9 @@ echo
 echo "euca-describe-regions --region localhost"
 echo
 echo "euca-describe-regions --region $region-admin@$region"
-if [ $extended = 1 ]; then
+if [ $verbose = 1 ]; then
     echo
-    echo "euca-describe-availability-zones --region $region-admin@$region"
+    echo "euca-describe-availability-zones verbose --region $region-admin@$region"
     echo
     echo "euca-describe-keypairs --region $region-admin@$region"
     echo
@@ -888,7 +895,7 @@ echo
 echo "euform-describe-stacks --region $region-admin@$region"
 echo
 echo "euscale-describe-auto-scaling-groups --region $region-admin@$region"
-if [ $extended = 1 ]; then
+if [ $verbose = 1 ]; then
     echo
     echo "euscale-describe-launch-configs --region $region-admin@$region"
     echo
@@ -910,9 +917,9 @@ if [ $choice = y ]; then
     euca-describe-regions --region $region-admin@$region
     pause
 
-    if [ $extended = 1 ]; then
-        echo "# euca-describe-availability-zones --region $region-admin@$region"
-        euca-describe-availability-zones --region $region-admin@$region
+    if [ $verbose = 1 ]; then
+        echo "# euca-describe-availability-zones verbose --region $region-admin@$region"
+        euca-describe-availability-zones verbose --region $region-admin@$region
         pause
 
         echo "# euca-describe-keypairs --region $region-admin@$region"
@@ -963,7 +970,7 @@ if [ $choice = y ]; then
     euscale-describe-auto-scaling-groups --region $region-admin@$region
     pause
 
-    if [ $extended = 1 ]; then
+    if [ $verbose = 1 ]; then
         echo "# euscale-describe-launch-configs --region $region-admin@$region"
         euscale-describe-launch-configs --region $region-admin@$region
         pause
@@ -1029,6 +1036,44 @@ else
         echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc" >> ~/.bash_profile
 
         next
+    fi
+fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini
+
+        next 200
     fi
 fi
 
