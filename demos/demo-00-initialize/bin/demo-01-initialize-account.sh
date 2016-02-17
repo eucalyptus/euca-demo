@@ -45,20 +45,21 @@ next_default=5
 interactive=1
 speed=100
 region=${AWS_DEFAULT_REGION#*@}
-account=demo
+account=${AWS_ACCOUNT_NAME:-demo}
 password=${account}123
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "               [-r region] [-a account]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
+    echo "  -p password  password for Demo Account Administrator (default: $password)"
     echo "  -r region    Eucalyptus Region (default: $region)"
     echo "  -a account   Eucalyptus Account to create for use in demos (default: $account)"
-    echo "  -p password  password for Demo Account Administrator (default: $password)"
 }
 
 run() {
@@ -141,14 +142,14 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:p:? arg; do
+while getopts Isfp:r:a:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    p)  password="$OPTARG";;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
-    p)  password="$OPTARG";;
     ?)  usage
         exit 1;;
     esac
@@ -180,53 +181,35 @@ fi
 if [ -z $password ]; then
     echo "-p password missing!"
     echo "Password must be specified as a parameter"
-    exit 16
+    exit 18
+fi
+
+user_region=$region-admin@$region
+
+if ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator Euca2ools user!"
+    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
+    exit 50
 fi
 
 profile=$region-admin
-profile_region=$profile@$region
 
-if ! grep -s -q "\[user $profile]" ~/.euca/$region.ini; then
-    echo "Could not find $region Eucalyptus Account Administrator Euca2ools user!"
-    echo "Expected to find: [user $profile] in ~/.euca/$region.ini"
-    exit 20
+if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
+    exit 51
 fi
 
-if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
-    echo "Could not find $region Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"
-    exit 22
-fi
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 
 #  5. Prepare Eucalyptus for Demos
 
 start=$(date +%s)
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
 
 ((++step))
 clear
@@ -239,9 +222,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-accountcreate -a $account"
+echo "euare-accountcreate --region $user_region $account"
 
-if euare-accountlist | grep -s -q "^$account"; then
+if euare-accountlist --region $user_region | grep -s -q "^$account"; then
     echo
     tput rev
     echo "Already Created!"
@@ -254,8 +237,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-accountcreate -a $account"
-        euare-accountcreate -a $account
+        echo "# euare-accountcreate --region $user_region $account"
+        euare-accountcreate --region $user_region $account
 
         next
     fi
@@ -274,9 +257,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usermodloginprofile -u admin -p $password --as-account $account"
+echo "euare-usermodloginprofile --password $password --as-account $account \\"
+echo "                          --region $user_region \\"
+echo "                          admin"
 
-if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
+if euare-usergetloginprofile --as-account $account --region $user_region admin &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -285,13 +270,16 @@ if euare-usergetloginprofile -u admin --as-account $account &> /dev/null; then
     next 50
 
 else
-
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usermodloginprofile -u admin -p $password --as-account $account"
-        euare-usermodloginprofile -u admin -p $password --as-account $account
+        echo "# euare-usermodloginprofile --password $password --as-account $account \\"
+        echo ">                           --region $user_region \\"
+        echo ">                           admin"
+        euare-usermodloginprofile --password $password --as-account $account \
+                                  --region $user_region \
+                                  admin
 
         next
     fi
@@ -303,7 +291,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Demo ($account) Account Administrator Credentials"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator Access Key"
 echo "    - This allows the Demo Account Administrator to run API commands"
 echo
 echo "============================================================"
@@ -312,20 +300,19 @@ echo "Commands:"
 echo
 echo "mkdir -p ~/.creds/$region/$account/admin"
 echo
-echo "rm -f ~/.creds/$region/$account/admin.zip"
+echo "euare-useraddkey --as-account demo --region $user_region admin"
 echo
-echo "sudo euca-get-credentials -u admin -a $account \\"
-echo "                          ~/.creds/$region/$account/admin.zip"
+echo "cat << EOF > ~/.creds/$region/$account/admin/iamrc"
+echo "AWSAccessKeyId=$access_key"
+echo "AWSSecretKey=$secret_key"
+echo "EOF"
 echo
-echo "unzip -uo ~/.creds/$region/$account/admin.zip \\"
-echo "       -d ~/.creds/$region/$account/admin/"
-echo
-echo "cat ~/.creds/$region/$account/admin/eucarc"
+echo "chmod 0600 ~/.creds/$region/$account/admin/iamrc"
 
-if [ -r ~/.creds/$region/$account/admin/eucarc ]; then
+if [ -r ~/.creds/$region/$account/admin/iamrc ]; then
     echo
     tput rev
-    echo "Already Downloaded!"
+    echo "Already Created!"
     tput sgr0
 
     next 50
@@ -339,30 +326,21 @@ else
         mkdir -p ~/.creds/$region/$account/admin
         pause
 
-        echo "# rm -f ~/.creds/$region/$account/admin.zip"
-        rm -f ~/.creds/$region/$account/admin.zip
+        echo "# euare-useraddkey --as-account demo --region $user_region admin"
+        result=$(euare-useraddkey --as-account demo --region $user_region admin) && echo $result
+        read access_key secret_key <<< $result
         pause
 
-        echo "# sudo euca-get-credentials -u admin -a $account \\"
-        echo ">                           ~/.creds/$region/$account/admin.zip"
-        sudo euca-get-credentials -u admin -a $account \
-                                  ~/.creds/$region/$account/admin.zip
-        pause
-
-        echo "# unzip -uo ~/.creds/$region/$account/admin.zip \\"
-        echo ">        -d ~/.creds/$region/$account/admin/"
-        unzip -uo ~/.creds/$region/$account/admin.zip \
-               -d ~/.creds/$region/$account/admin/
-        if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$region/$account/admin/eucarc; then
-            # invisibly fix missing environment variables needed for image import
-            pk_pem=$(ls -1 ~/.creds/$region/$account/admin/euca2-admin-*-pk.pem | tail -1)
-            cert_pem=$(ls -1 ~/.creds/$region/$account/admin/euca2-admin-*-cert.pem | tail -1)
-            sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$region/$account/admin/eucarc
-        fi
-        pause
-
-        echo "# cat ~/.creds/$region/$account/admin/eucarc"
-        cat ~/.creds/$region/$account/admin/eucarc
+        echo "# cat << EOF > ~/.creds/$region/$account/admin/iamrc"
+        echo "> AWSAccessKeyId=$access_key"
+        echo "> AWSSecretKey=$secret_key"
+        echo "> EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "AWSAccessKeyId=$access_key"  > ~/.creds/$region/$account/admin/iamrc
+        echo "AWSSecretKey=$secret_key"   >> ~/.creds/$region/$account/admin/iamrc
+        echo "#"
+        echo "# chmod 0600 ~/.creds/$region/$account/admin/iamrc"
+        chmod 0600 ~/.creds/$region/$account/admin/iamrc
 
         next
     fi
@@ -370,12 +348,11 @@ fi
 
 
 ((++step))
-# Obtain all values we need from eucarc
-account_id=$(sed -n -e "s/export EC2_ACCOUNT_NUMBER='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
-private_key=$HOME/.creds/$region/$account/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/$account/admin/eucarc)
-certificate=$HOME/.creds/$region/$account/admin/$(sed -n -e "s/export EC2_CERT=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+# Obtain some values from iamrc
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$region/$account/admin/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$region/$account/admin/iamrc)
+# Obtain other value direct
+account_id=$(euare-accountlist --region $user_region | grep ^$account | cut -f2)
 
 clear
 echo
@@ -390,11 +367,9 @@ echo "Commands:"
 echo
 echo "cat << EOF >> ~/.euca/$region.ini"
 echo "[user $region-$account-admin]"
-echo "account-id = $account_id"
 echo "key-id = $access_key"
 echo "secret-key = $secret_key"
-echo "private-key = $private_key"
-echo "certificate = $certificate"
+echo "account-id = $account_id"
 echo
 echo "EOF"
 echo
@@ -417,20 +392,16 @@ else
         echo
         echo "# cat << EOF >> ~/.euca/$region.ini"
         echo "> [user $region-$account-admin]"
-        echo "> account-id = $account_id"
         echo "> key-id = $access_key"
         echo "> secret-key = $secret_key"
-        echo "> private-key = $private_key"
-        echo "> certificate = $certificate"
+        echo "> account-id = $account_id"
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
         echo "[user $region-$account-admin]" >> ~/.euca/$region.ini
-        echo "account-id = $account_id"      >> ~/.euca/$region.ini
         echo "key-id = $access_key"          >> ~/.euca/$region.ini
         echo "secret-key = $secret_key"      >> ~/.euca/$region.ini
-        echo "private-key = $private_key"    >> ~/.euca/$region.ini
-        echo "certificate = $certificate"    >> ~/.euca/$region.ini
+        echo "account-id = $account_id"      >> ~/.euca/$region.ini
         echo                                 >> ~/.euca/$region.ini
         pause
 
@@ -443,9 +414,9 @@ fi
 
 
 ((++step))
-# Obtain all values we need from eucarc
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/$account/admin/eucarc)
+# Obtain all values we need from iamrc
+access_key=$(sed -n -e "s/AWSAccessKeyId=\(.*\)$/\1/p" ~/.creds/$region/$account/admin/iamrc)
+secret_key=$(sed -n -e "s/AWSSecretKey=\(.*\)$/\1/p" ~/.creds/$region/$account/admin/iamrc)
 
 clear
 echo
@@ -524,8 +495,9 @@ fi
 
 
 ((++step))
-account_id=$(euare-accountlist | grep "^$account" | cut -f2)
-generic_image_id=$(euca-describe-images | grep $generic_image.raw.manifest.xml | cut -f2)
+account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
+generic_image_id=$(euca-describe-images --filter manifest-location=images/$generic_image.raw.manifest.xml \
+                                        --region $user_region | cut -f2)
 
 clear
 echo
@@ -537,9 +509,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-image-attribute -l -a $account_id $generic_image_id"
+echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
+echo "                            --region $user_region \\"
+echo "                            $generic_image_id"
 
-if euca-describe-images -x $account_id | grep -s -q $generic_image_id; then
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $generic_image_id; then
     echo
     tput rev
     echo "Already Authorized!"
@@ -552,8 +526,12 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-image-attribute -l -a $account_id $generic_image_id"
-        euca-modify-image-attribute -l -a $account_id $generic_image_id
+        echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
+        echo ">                             --region $user_region \\"
+        echo ">                             $generic_image_id"
+        euca-modify-image-attribute --launch-permission --add $account_id \
+                                    --region $user_region \
+                                    $generic_image_id
 
         next
     fi
@@ -561,8 +539,9 @@ fi
 
 
 ((++step))
-account_id=$(euare-accountlist | grep "^$account" | cut -f2)
-cfn_awscli_image_id=$(euca-describe-images --filter "manifest-location=images/$cfn_awscli_image.raw.manifest.xml" | cut -f2)
+account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
+cfn_awscli_image_id=$(euca-describe-images --filter "manifest-location=images/$cfn_awscli_image.raw.manifest.xml" \
+                                           --region $user_region | cut -f2)
 
 clear
 echo
@@ -574,9 +553,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-modify-image-attribute -l -a $account_id $cfn_awscli_image_id"
+echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
+echo "                            --region $user_region \\"
+echo "                            $cfn_awscli_image_id"
 
-if euca-describe-images -x $account_id | grep -s -q $cfn_awscli_image_id; then
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $cfn_awscli_image_id; then
     echo
     tput rev
     echo "Already Authorized!"
@@ -589,8 +570,12 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-image-attribute -l -a $account_id $cfn_awscli_image_id"
-        euca-modify-image-attribute -l -a $account_id $cfn_awscli_image_id
+        echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
+        echo ">                             --region $user_region \\"
+        echo ">                             $cfn_awscli_image_id"
+        euca-modify-image-attribute --launch-permission --add $account_id \
+                                    --region $user_region \
+                                    $cfn_awscli_image_id
 
         next
     fi
@@ -608,20 +593,20 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-images"
+echo "euca-describe-images --region $user_region"
 echo
-echo "euare-accountlist"
+echo "euare-accountlist --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-images"
-    euca-describe-images
+    echo "# euca-describe-images --region $user_region"
+    euca-describe-images --region $user_region
     pause
 
-    echo "# euare-accountlist"
-    euare-accountlist
+    echo "# euare-accountlist --region $user_region"
+    euare-accountlist --region $user_region
 
     next 200
 fi

@@ -25,7 +25,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     export DOMAIN=mjc.prc.eucalyptus-systems.com
-    export REGION=hp-gol01-d8
+    export REGION=hp-gol01-d6
     export USER=admin
 
     export USER_REGION=$REGION-$USER@$REGION
@@ -41,19 +41,17 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     We will programatically construct the service endpoint URLs, assuming the SSL reverse proxy is in place.
 
     ```bash
-    autoscaling_url=https://autoscaling.$REGION.$DOMAIN/services/AutoScaling/
-    cloudformation_url=https://cloudformation.$REGION.$DOMAIN/services/CloudFormation/
-    ec2_url=https://compute.$REGION.$DOMAIN/services/compute/
-    elasticloadbalancing_url=https://loadbalancing.$REGION.$DOMAIN/services/LoadBalancing/
-    iam_url=https://euare.$REGION.$DOMAIN/services/Euare/
-    monitoring_url=https://cloudwatch.$REGION.$DOMAIN/services/CloudWatch/
-    s3_url=https://objectstorage.$REGION.$DOMAIN/services/objectstorage/
-    sts_url=https://tokens.$REGION.$DOMAIN/services/Tokens/
-    swf_url=https://simpleworkflow.$REGION.$DOMAIN/services/SimpleWorkflow/
-
-    bootstrap_url=https://bootstrap.$REGION.$DOMAIN/services/Empyrean/
-    properties_url=https://properties.$REGION.$DOMAIN/services/Properties/
-    reporting_url=https://reporting.$REGION.$DOMAIN/services/Reporting/
+    autoscaling_url=https://autoscaling.$REGION.$DOMAIN/
+    bootstrap_url=https://bootstrap.$REGION.$DOMAIN/
+    cloudformation_url=https://cloudformation.$REGION.$DOMAIN/
+    ec2_url=https://ec2.$REGION.$DOMAIN/services/compute/
+    elasticloadbalancing_url=https://elasticloadbalancing.$REGION.$DOMAIN/
+    iam_url=https://iam.$REGION.$DOMAIN/
+    monitoring_url=https://monitoring.$REGION.$DOMAIN/
+    properties_url=https://properties.$REGION.$DOMAIN/
+    reporting_url=https://reporting.$REGION.$DOMAIN/
+    s3_url=https://s3.$REGION.$DOMAIN/
+    sts_url=https://sts.$REGION.$DOMAIN/
 
     mkdir -p ~/.euca
     chmod 0700 ~/.euca
@@ -71,19 +69,18 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 
     [region $REGION]
     autoscaling-url = $autoscaling_url
+    bootstrap-url = $bootstrap_url
     cloudformation-url = $cloudformation_url
     ec2-url = $ec2_url
     elasticloadbalancing-url = $elasticloadbalancing_url
     iam-url = $iam_url
     monitoring-url = $monitoring_url
+    properties-url = $properties_url
+    reporting-url = $reporting_url
     s3-url = $s3_url
     sts-url = $sts_url
     swf-url = $swf_url
     user = $REGION-admin
-
-    bootstrap-url = $bootstrap_url
-    properties-url = $properties_url
-    reporting-url = $reporting_url
 
     certificate = /usr/share/euca2ools/certs/cert-$REGION.pem
     verify-ssl = true
@@ -160,7 +157,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     aws ec2 describe-availability-zones --profile $PROFILE --region $REGION
     ```
 
-5. Import Eucalyptus Administrator Demo Keypair
+5. Configure Demo Keypair
 
     ```bash
     cat << EOF > ~/.ssh/demo_id_rsa
@@ -204,19 +201,26 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     vaYlq+3EkLG/UgME843rOzUqgwSnlCSDS27HnbtAF0iqaU5tmZYpw3ex7yCT\
      demo@hpcloud.com
     EOF
-
-    euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub --region $USER_REGION demo
     ```
 
-6. Create sample-templates Bucket
+6. Import Eucalyptus Administrator Demo Keypair
+
+    ```bash
+    euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \
+                        --region $USER_REGION \
+                        demo
+    ```
+
+7. Create sample-templates Bucket
 
     This bucket is intended for Sample CloudFormation Templates.
 
     ```bash
-    aws s3api create-bucket --bucket sample-templates --acl public-read --profile $PROFILE --region=$REGION
+    aws s3api create-bucket --bucket sample-templates --acl public-read
+                            --profile $PROFILE --region=$REGION
     ```
 
-7. Download Demo Generic Image (CentOS 6)
+8. Download Demo Generic Image (CentOS 6)
 
     This is the Generic Cloud Image created by CentOS.
 
@@ -230,7 +234,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                                      /var/tmp/CentOS-6-x86_64-GenericCloud.raw
     ```
 
-8. Install Demo Generic Image
+9. Install Demo Generic Image
 
     ```bash
     euca-install-image --name centos6 \
@@ -242,7 +246,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                        --region $USER_REGION
     ```
 
-9. Download Demo CFN + AWSCLI Image (CentOS 6.6)
+10. Download Demo CFN + AWSCLI Image (CentOS 6.6)
 
     This is a Generic Cloud Image modified to add CFN tools and AWSCLI.
 
@@ -253,7 +257,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     xz -v -d /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw.xz
     ```
 
-10. Install Demo CFN + AWSCLI Image
+11. Install Demo CFN + AWSCLI Image
 
     ```bash
     euca-install-image --name centos6-cfn-init \
@@ -265,16 +269,18 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                        --region $USER_REGION
     ```
 
-11. Modify an Instance Type
+12. Modify an Instance Type
 
     Change the m1.small instance type to use 1GB memory and 8GB disk, as the default CentOS
     cloud image requires this additional memory and disk to run.
 
     ```bash
-    euca-modify-instance-type -c 1 -d 8 -m 1024 m1.small
+    euca-modify-instance-type --cpus 1 --memory 1024 --disk 8 \
+                              --region $USER_REGION \
+                              m1.small
     ```
 
-12. List Demo Resources
+13. List Demo Resources
 
     ```bash
     euca-describe-keypairs --region $USER_REGION
@@ -284,7 +290,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     euca-describe-instance-types --region $USER_REGION
     ```
 
-13. Display Euca2ools Configuration
+14. Display Euca2ools Configuration
 
     ```bash
     cat /etc/euca2ools/conf.d/$REGION.ini
@@ -294,7 +300,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     cat ~/.euca/$REGION.ini
     ```
 
-14. Display AWSCLI Configuration
+15. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config

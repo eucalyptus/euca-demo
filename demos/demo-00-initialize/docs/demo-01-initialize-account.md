@@ -27,7 +27,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Adjust the variables in this section to your environment.
 
     ```bash
-    export REGION=hp-gol01-d8
+    export REGION=hp-gol01-d6
     export USER=admin
 
     export USER_REGION=$REGION-$USER@$REGION

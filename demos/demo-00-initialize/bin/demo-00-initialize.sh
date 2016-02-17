@@ -2,9 +2,10 @@
 #
 # This script initializes a Management Workstation and its associated Eucalyptus Region for Demos,
 # including:
-# - Initializes Euca2ools with the Region Endpoints
-# - Initializes Euca2ools for the Eucalyptus Account Administrator
-# - Initialize AWSCLI for the Eucalyptus Account Administrator
+# - TBD: Confirm Euca2ools Region Configuration
+# - TBD: Confirm Euca2ools User Configuration for the Eucalyptus Account Administrator
+# - TBD: Confirm AWSCLI Region Configuration
+# - TBD: Confirm AWSCLI User Configuration for the Eucalyptus Account Administrator
 # - Imports the Demo Keypair into the Eucalyptus Account
 # - Creates the sample-templates Bucket in the Eucalyptus Account
 # - Downloads a CentOS 6.6 Generic image
@@ -38,12 +39,12 @@ external_mirror=cloud.centos.org
 internal_mirror=mirror.mjc.prc.eucalyptus-systems.com
 
 generic_image=CentOS-6-x86_64-GenericCloud
-external_generic_image_url=http://$external_mirror/centos/6.6/images/$generic_image.qcow2.xz
-internal_generic_image_url=http://$internal_mirror/centos/6.6/images/$generic_image.qcow2.xz
+external_generic_image_url=http://$external_mirror/centos/6.7/images/$generic_image.qcow2.xz
+internal_generic_image_url=http://$internal_mirror/centos/6.7/images/$generic_image.qcow2.xz
 
 cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
-internal_cfn_awscli_image_url=http://$internal_mirror/centos/6.6/images/$cfn_awscli_image.raw.xz
+internal_cfn_awscli_image_url=http://$internal_mirror/centos/6.7/images/$cfn_awscli_image.raw.xz
 
 step=0
 speed_max=400
@@ -56,13 +57,14 @@ speed=100
 native=0
 local=0
 region=${AWS_DEFAULT_REGION#*@}
-domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc 2>/dev/null)
+domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
 
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l] [-r region ] [-d domain]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l]"
+    echo "             [-r region] [-d domain]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
@@ -161,7 +163,7 @@ while getopts Isfnlr:d:? arg; do
     l)  local=1;;
     r)  region="$OPTARG"
         [ -z $domain ] &&
-        domain=$(sed -n -e "s/export EC2_URL=http:\/\/compute\.$region\.\(.*\):8773\/$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc 2>/dev/null);;
+        domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
     d)  domain="$OPTARG";;
     ?)  usage
         exit 1;;
@@ -191,14 +193,27 @@ if [ -z $domain ]; then
     exit 12
 fi
 
-profile=$region-admin
-profile_region=$profile@$region
+user_region=$region-admin@$region
 
-if [ ! -r ~/.creds/$region/eucalyptus/admin/eucarc ]; then
-    echo "Could not find $region Eucalyptus Account Administrator credentials!"
-    echo "Expected to find: ~/.creds/$region/eucalyptus/admin/eucarc"
-    exit 22
+if ! grep -s -q "\[user $region-admin]" ~/.euca/$region.ini; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator Euca2ools user!"
+    echo "Expected to find: [user $region-admin] in ~/.euca/$region.ini"
+    exit 50
 fi
+
+profile=$region-admin
+
+if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWSCLI profile!"
+    echo "Expected to find: [profile $profile] in ~/.aws/config"
+    exit 51
+fi
+
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
 
 if [ $local = 1 ]; then
     generic_image_url=$internal_generic_image_url
@@ -235,471 +250,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Use Eucalyptus Administrator credentials"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "export AWS_DEFAULT_REGION=$profile_region"
-echo "unset AWS_CREDENTIAL_FILE"
-
-next
-
-echo
-echo "# export AWS_DEFAULT_REGION=$profile_region"
-export AWS_DEFAULT_REGION=$profile_region
-echo "# unset AWS_CREDENTIAL_FILE"
-unset AWS_CREDENTIAL_FILE
-
-next
-
-
-((++step))
-# Construct Eucalyptus Endpoints (assumes AWS-style URLs)
-if [ $native = 0 ]; then
-    autoscaling_url=https://autoscaling.$region.$domain/services/AutoScaling
-    cloudformation_url=https://cloudformation.$region.$domain/services/CloudFormation
-    ec2_url=https://compute.$region.$domain/services/compute
-    elasticloadbalancing_url=https://loadbalancing.$region.$domain/services/LoadBalancing
-    iam_url=https://euare.$region.$domain/services/Euare
-    monitoring_url=https://cloudwatch.$region.$domain/services/CloudWatch
-    s3_url=https://objectstorage.$region.$domain/services/objectstorage
-    sts_url=https://tokens.$region.$domain/services/Tokens
-    swf_url=https://simpleworkflow.$region.$domain/services/SimpleWorkflow
-else
-    autoscaling_url=http://autoscaling.$region.$domain:8773/services/AutoScaling
-    cloudformation_url=http://cloudformation.$region.$domain:8773/services/CloudFormation
-    ec2_url=http://compute.$region.$domain:8773/services/compute
-    elasticloadbalancing_url=http://loadbalancing.$region.$domain:8773/services/LoadBalancing
-    iam_url=http://euare.$region.$domain:8773/services/Euare
-    monitoring_url=http://cloudwatch.$region.$domain:8773/services/CloudWatch
-    s3_url=http://objectstorage.$region.$domain:8773/services/objectstorage
-    sts_url=http://tokens.$region.$domain:8773/services/Tokens
-    swf_url=http://simpleworkflow.$region.$domain:8773/services/SimpleWorkflow
-fi
-# Or, alternatively, obtain all values we need from eucarc
-#autoscaling_url=$(sed -n -e "s/export AWS_AUTO_SCALING_URL=\(.*\)$/\1services\/AutoScaling/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#cloudformation_url=$(sed -n -e "s/export AWS_CLOUDFORMATION_URL=\(.*\)$/\1services\/CloudFormation/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#ec2_url=$(sed -n -e "s/export EC2_URL=\(.*\)$/\1services\/compute/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#elasticloadbalancing_url=$(sed -n -e "s/export AWS_ELB_URL=\(.*\)$/\1services\/LoadBalancing/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#iam_url=$(sed -n -e "s/export AWS_IAM_URL=\(.*\)$/\1services\/Euare/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#monitoring_url=$(sed -n -e "s/export AWS_CLOUDWATCH_URL=\(.*\)$/\1services\/CloudWatch/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#s3_url=$(sed -n -e "s/export S3_URL=\(.*\)$/\1services\/objectstorage/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#sts_url=$(sed -n -e "s/export TOKEN_URL=\(.*\)$/\1services\/Tokens/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#swf_url=$(sed -n -e "s/export AWS_SIMPLEWORKFLOW_URL=\(.*\)$/\1services\/SimpleWorkflow/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-#if [ $native = 0 ]; then
-#    autoscaling_url=${autoscaling_url/http:/https:} && autoscaling_url=${autoscaling_url/:8773/}
-#    cloudformation_url=${cloudformation_url/http:/https:} && cloudformation_url=${cloudformation_url/:8773/}
-#    ec2_url=${ec2_url/http:/https:} && ec2_url=${ec2_url/:8773/}
-#    elasticloadbalancing_url=${elasticloadbalancing_url/http:/https:} && elasticloadbalancing_url=${elasticloadbalancing_url/:8773/}
-#    iam_url=${iam_url/http:/https:} && iam_url=${iam_url/:8773/}
-#    monitoring_url=${monitoring_url/http:/https:} && monitoring_url=${monitoring_url/:8773/}
-#    s3_url=${s3_url/http:/https:} && s3_url=${s3_url/:8773/}
-#    sts_url=${sts_url/http:/https:} && sts_url=${sts_url/:8773/}
-#    swf_url=${swf_url/http:/https:} && swf_url=${swf_url/:8773/}
-#fi
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Initialize Euca2ools with Eucalyptus Region Endpoints"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-if [ ! -r ~/.euca/global.ini ]; then
-    echo "cat << EOF > ~/.euca/global.ini"
-    echo "; Eucalyptus Global"
-    echo
-    echo "[global]"
-    echo "region = $region"
-    echo
-    echo "EOF"
-    echo
-fi
-echo "cat << EOF > /etc/euca2ools/conf.d/$region.ini"
-echo "; Eucalyptus Region $region"
-echo
-echo "[region $region]"
-echo "autoscaling-url = $autoscaling_url"
-echo "cloudformation-url = $cloudformation_url"
-echo "ec2-url = $ec2_url"
-echo "elasticloadbalancing-url = $elasticloadbalancing_url"
-echo "iam-url = $iam_url"
-echo "monitoring-url = $monitoring_url"
-echo "s3-url = $s3_url"
-echo "sts-url = $sts_url"
-echo "swf-url = $swf_url"
-echo "user = $region-admin"
-echo
-echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem"
-echo "verify-ssl = false"
-echo
-echo "EOF"
-echo
-echo "cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem"
-echo "chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem"
-
-if [ -r /etc/euca2ools/conf.d/$region.ini ]; then
-    echo
-    tput rev
-    echo "Already Initialized!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        mkdir -p ~/.euca
-        chmod 0700 ~/.euca
-        echo
-        if [ ! -r ~/.euca/global.ini ]; then
-            echo "# cat << EOF > ~/.euca/global.ini"
-            echo "> ; Eucalyptus Global"
-            echo ">"
-            echo "> [global]"
-            echo "> region = $region"
-            echo ">"
-            echo "> EOF"
-            # Use echo instead of cat << EOF to better show indentation
-            echo "; Eucalyptus Global"  > ~/.euca/global.ini
-            echo                       >> ~/.euca/global.ini
-            echo "[global]"            >> ~/.euca/global.ini
-            echo "region = $region"    >> ~/.euca/global.ini
-            echo                       >> ~/.euca/global.ini
-            pause
-        fi
-        echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
-        echo "> ; Eucalyptus Region $region"
-        echo ">"
-        echo "> [region $region]"
-        echo "> autoscaling-url = $autoscaling_url"
-        echo "> cloudformation-url = $cloudformation_url"
-        echo "> ec2-url = $ec2_url"
-        echo "> elasticloadbalancing-url = $elasticloadbalancing_url"
-        echo "> iam-url = $iam_url"
-        echo "> monitoring-url $monitoring_url"
-        echo "> s3-url = $s3_url"
-        echo "> sts-url = $sts_url"
-        echo "> swf-url = $swf_url"
-        echo "> user = $region-admin"
-        echo ">"
-        echo "> certificate = /usr/share/euca2ools/certs/cert-$region.pem"
-        echo "> verify-ssl = false"
-        echo ">"
-        echo "> EOF"
-        # Use echo instead of cat << EOF to better show indentation
-        echo "; Eucalyptus Region $region"                               > /etc/euca2ools/conf.d/$region.ini
-        echo                                                            >> /etc/euca2ools/conf.d/$region.ini
-        echo "[region $region]"                                         >> /etc/euca2ools/conf.d/$region.ini
-        echo "autoscaling-url = $autoscaling_url"                       >> /etc/euca2ools/conf.d/$region.ini
-        echo "cloudformation-url = $cloudformation_url"                 >> /etc/euca2ools/conf.d/$region.ini
-        echo "ec2-url = $ec2_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-        echo "elasticloadbalancing-url = $elasticloadbalancing_url"     >> /etc/euca2ools/conf.d/$region.ini
-        echo "iam-url = $iam_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-        echo "monitoring-url $monitoring_url"                           >> /etc/euca2ools/conf.d/$region.ini
-        echo "s3-url = $s3_url"                                         >> /etc/euca2ools/conf.d/$region.ini
-        echo "sts-url = $sts_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-        echo "swf-url = $swf_url"                                       >> /etc/euca2ools/conf.d/$region.ini
-        echo "user = admin"                                             >> /etc/euca2ools/conf.d/$region.ini
-        echo                                                            >> /etc/euca2ools/conf.d/$region.ini
-        echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem">> /etc/euca2ools/conf.d/$region.ini
-        echo "verify-ssl = false"                                       >> /etc/euca2ools/conf.d/$region.ini
-        echo                                                            >> /etc/euca2ools/conf.d/$region.ini
-        pause
-
-        echo "# cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem"
-        cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem
-        echo "# chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem"
-        chmod 0644 /usr/share/euca2ools/certs/cert-$region.pem
-
-        next
-    fi
-fi
-
-
-((++step))
-# Obtain all values we need from eucarc
-account_id=$(sed -n -e "s/export EC2_ACCOUNT_NUMBER='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-private_key=$HOME/.creds/$region/eucalyptus/admin/$(sed -n -e "s/export EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-certificate=$HOME/.creds/$region/eucalyptus/admin/$(sed -n -e "s/export EC2_CERT=\${EUCA_KEY_DIR}\/\(.*\)$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Initialize Eucalyptus Administrator Euca2ools Profile"
-echo "    - This allows the Eucalyptus Administrator to run API commands via Euca2ools"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat << EOF > ~/.euca/$region.ini"
-echo "; Eucalyptus Region $region"
-echo
-echo "[user $region-admin]"
-echo "account-id = $account_id"
-echo "key-id = $access_key"
-echo "secret-key = $secret_key"
-echo "private-key = $private_key"
-echo "certificate = $certificate"
-echo
-echo "EOF"
-echo
-echo "euca-describe-availability-zones verbose"
-echo
-echo "euca-describe-availability-zones verbose --region $region"
-echo
-echo "euca-describe-availability-zones verbose --region $region-admin@$region"
-
-if [ -r ~/.euca/$region.ini ] && grep -s -q "$secret_key" ~/.euca/$region.ini; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        mkdir -p ~/.euca
-        chmod 0700 ~/.euca
-        echo
-        echo "# cat << EOF > ~/.euca/$region.ini"
-        echo "> ; Eucalyptus Region $region"
-        echo ">"
-        echo "> [user $region-admin]"
-        echo "> account-id = $account_id"
-        echo "> key-id = $access_key"
-        echo "> secret-key = $secret_key"
-        echo "> private-key = $private_key"
-        echo "> certificate = $certificate"
-        echo ">"
-        echo "> EOF"
-        # Use echo instead of cat << EOF to better show indentation
-        echo "; Eucalyptus Region $region"  > ~/.euca/$region.ini
-        echo                               >> ~/.euca/$region.ini
-        echo "[user $region-admin]"        >> ~/.euca/$region.ini
-        echo "account-id = $account_id"    >> ~/.euca/$region.ini
-        echo "key-id = $access_key"        >> ~/.euca/$region.ini
-        echo "secret-key = $secret_key"    >> ~/.euca/$region.ini
-        echo "private-key = $private_key"  >> ~/.euca/$region.ini
-        echo "certificate = $certificate"  >> ~/.euca/$region.ini
-        echo                               >> ~/.euca/$region.ini
-        pause
-
-        echo "# euca-describe-availability-zones verbose"
-        euca-describe-availability-zones verbose
-        pause
-
-        echo "# euca-describe-availability-zones verbose --region $region"
-        euca-describe-availability-zones verbose --region $region
-        pause
-
-        echo "# euca-describe-availability-zones verbose --region $region-admin@$region"
-        euca-describe-availability-zones verbose --region $region-admin@$region
-
-        next
-    fi
-fi
-
-
-((++step))
-# Obtain all values we need from eucarc
-access_key=$(sed -n -e "s/export AWS_ACCESS_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-secret_key=$(sed -n -e "s/export AWS_SECRET_KEY='\(.*\)'$/\1/p" ~/.creds/$region/eucalyptus/admin/eucarc)
-
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Create Eucalyptus Administrator AWSCLI Profile"
-echo "    - This allows the Eucalyptus Administrator to run AWSCLI commands"
-echo "    - This assumes the AWSCLI was previously installed and configured"
-echo "      to support this region"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-if [ ! -r ~/.aws/config ]; then
-    echo "cat << EOF > ~/.aws/config"
-    echo "#"
-    echo "# AWS Config file"
-    echo "#"
-    echo
-    echo "EOF"
-    echo
-fi
-if ! grep -s -q "\[default]" ~/.aws/config; then
-    echo "cat << EOF >> ~/.aws/config"
-    echo "[default]"
-    echo "region = $region"
-    echo "output = text"
-    echo
-    echo "EOF"
-    echo
-fi
-echo "cat << EOF >> ~/.aws/config"
-echo "[profile $region-admin]"
-echo "region = $region"
-echo "output = text"
-echo
-echo "EOF"
-echo
-if [ ! -r ~/.aws/credentials ]; then
-    echo "cat << EOF > ~/.aws/credentials"
-    echo "#"
-    echo "# AWS Credentials file"
-    echo "#"
-    echo
-    echo "EOF"
-    echo
-fi
-if ! grep -s -q "\[default]" ~/.aws/credentials; then
-    echo "cat << EOF > ~/.aws/credentials"
-    echo "[default]"
-    echo "aws_access_key_id = $access_key"
-    echo "aws_secret_access_key = $secret_key"
-    echo
-    echo "EOF"
-    echo
-fi
-echo "cat << EOF > ~/.aws/credentials"
-echo "[$region-admin]"
-echo "aws_access_key_id = $access_key"
-echo "aws_secret_access_key = $secret_key"
-echo
-echo "EOF"
-echo
-echo "aws ec2 describe-availability-zones --profile default --region $region"
-echo
-echo "aws ec2 describe-availability-zones --profile $region-admin --region $region"
-
-if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-admin]" ~/.aws/config; then
-    echo
-    tput rev
-    echo "Already Created!"
-    tput sgr0
-
-    next 50
-
-else
-    run 50
-
-    if [ $choice = y ]; then
-        mkdir -p ~/.aws
-        chmod 0700 ~/.aws
-        echo
-        if [ ! -r ~/.aws/config ]; then
-            echo "# cat << EOF > ~/.aws/config"
-            echo "> #"
-            echo "> # AWS Config file"
-            echo "> #"
-            echo ">"
-            echo "> EOF"
-            # Use echo instead of cat << EOF to better show indentation
-            echo "#"                  > ~/.aws/config
-            echo "# AWS Config file" >> ~/.aws/config
-            echo "#"                 >> ~/.aws/config
-            echo                     >> ~/.aws/config
-            echo "#"
-        fi
-        if ! grep -s -q "\[default]" ~/.aws/config; then
-            echo "# cat << EOF >> ~/.aws/config"
-            echo "> [default]"
-            echo "> region = $region"
-            echo "> output = text"
-            echo ">"
-            echo "> EOF"
-            # Use echo instead of cat << EOF to better show indentation
-            echo "[default]"               >> ~/.aws/config
-            echo "region = $region"        >> ~/.aws/config
-            echo "output = text"           >> ~/.aws/config
-            echo                           >> ~/.aws/config
-            echo "#"
-        fi
-        echo "# cat << EOF > ~/.aws/config"
-        echo "> [profile $region-admin]"
-        echo "> region = $region"
-        echo "> output = text"
-        echo ">"
-        echo "> EOF"
-        # Use echo instead of cat << EOF to better show indentation
-        echo "[profile $region-admin]" >> ~/.aws/config
-        echo "region = $region"        >> ~/.aws/config
-        echo "output = text"           >> ~/.aws/config
-        echo                           >> ~/.aws/config
-        pause
-
-        if [ ! -r ~/.aws/credentials ]; then
-            echo "# cat << EOF > ~/.aws/credentials"
-            echo "> #"
-            echo "> # AWS Credentials file"
-            echo "> #"
-            echo ">"
-            echo "> EOF"
-            # Use echo instead of cat << EOF to better show indentation
-            echo "#"                       > ~/.aws/credentials
-            echo "# AWS Credentials file" >> ~/.aws/credentials
-            echo "#"                      >> ~/.aws/credentials
-            echo                          >> ~/.aws/credentials
-            echo "#"
-        fi
-        if ! grep -s -q "\[default]" ~/.aws/credentials; then
-            echo "# cat << EOF > ~/.aws/credentials"
-            echo "> [default]"
-            echo "> aws_access_key_id = $access_key"
-            echo "> aws_secret_access_key = $secret_key"
-            echo ">"
-            echo "> EOF"
-            # Use echo instead of cat << EOF to better show indentation
-            echo "[default]"                           >> ~/.aws/credentials
-            echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
-            echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-            echo                                       >> ~/.aws/credentials
-            echo "#"
-        fi
-        echo "# cat << EOF > ~/.aws/credentials"
-        echo "> [$region-admin]"
-        echo "> aws_access_key_id = $access_key"
-        echo "> aws_secret_access_key = $secret_key"
-        echo ">"
-        echo "> EOF"
-        # Use echo instead of cat << EOF to better show indentation
-        echo "[$region-admin]"                     >> ~/.aws/credentials
-        echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
-        echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
-        echo                                       >> ~/.aws/credentials
-        pause
-
-        echo "# aws ec2 describe-availability-zones --profile default --region $region"
-        aws ec2 describe-availability-zones --profile default --region $region
-        echo "#"
-        echo "# aws ec2 describe-availability-zones --profile $region-admin --region $region"
-        aws ec2 describe-availability-zones --profile $region-admin --region $region
-
-        next
-    fi
-fi
-
-
-((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Import Eucalyptus Administrator Demo Keypair"
+echo "$(printf '%2d' $step). Configure Demo Keypair"
 echo
 echo "============================================================"
 echo
@@ -714,22 +265,16 @@ echo
 echo "cat << EOF > ~/.ssh/demo_id_rsa.pub"
 cat $keysdir/demo_id_rsa.pub
 echo "EOF"
-echo
-echo "euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo"
 
-if euca-describe-keypairs | cut -f2 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
+if [ -r ~/.ssh/demo_id_rsa -a -r ~/.ssh/demo_id_rsa.pub ]; then
     echo
     tput rev
-    echo "Already Imported!"
+    echo "Already Congigured!"
     tput sgr0
 
     next 50
 
 else
-    euca-delete-keypair demo &> /dev/null
-    rm -f ~/.ssh/demo_id_rsa
-    rm -f ~/.ssh/demo_id_rsa.pub
-
     run 50
 
     if [ $choice = y ]; then
@@ -747,9 +292,46 @@ else
         cat $keysdir/demo_id_rsa.pub | sed -e 's/^/> /'
         echo "> EOF"
         cp $keysdir/demo_id_rsa.pub ~/.ssh/demo_id_rsa.pub
-        echo "#"
-        echo "# euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo"
-        euca-import-keypair -f ~/.ssh/demo_id_rsa.pub demo
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Import Eucalyptus Administrator Demo Keypair"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \\"
+echo "                    --region $user_region \\"
+echo "                    demo"
+
+if euca-describe-keypairs --region $user_region | cut -f2 | grep -s -q "^demo$"; then
+    echo
+    tput rev
+    echo "Already Imported!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \\"
+        echo ">                     --region $user_region \\"
+        echo ">                     demo"
+        euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \
+                            --region $user_region \
+                            demo
 
         next
     fi
@@ -768,10 +350,11 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region"
+echo "aws s3api create-bucket --bucket sample-templates --acl public-read \\"
+echo "                        --profile $profile --region=$region"
 
 # work around pipe bug
-if aws s3 ls --profile $region-admin --region=$region 2> /dev/null | grep -s -q " sample-templates$"; then
+if aws s3 ls --profile $profile --region=$region 2> /dev/null | grep -s -q " sample-templates$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -784,8 +367,10 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region"
-        aws s3api create-bucket --bucket sample-templates --acl public-read --profile $region-admin --region=$region
+        echo "# aws s3api create-bucket --bucket sample-templates --acl public-read \\"
+        echo ">                         --profile $profile --region=$region"
+        aws s3api create-bucket --bucket sample-templates --acl public-read \
+                                --profile $profile --region=$region
 
         next
     fi
@@ -851,7 +436,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${generic_image_file%%.*}.raw --virtualization-type hvm"
+echo "euca-install-image --name centos6 \\"
+echo "                   --description \"Centos 6 Generic Cloud Image\" \\"
+echo "                   --bucket images \\"
+echo "                   --arch x86_64 \\"
+echo "                   --image $tmpdir/${generic_image_file%%.*}.raw \\"
+echo "                   --virtualization-type hvm \\"
+echo "                   --region $user_region"
 
 if euca-describe-images | grep -s -q "${generic_image_file%%.*}.raw.manifest.xml"; then
     echo
@@ -866,8 +457,20 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${generic_image_file%%.*}.raw --virtualization-type hvm"
-        euca-install-image -n centos66 -b images -r x86_64 -i $tmpdir/${generic_image_file%%.*}.raw --virtualization-type hvm
+        echo "# euca-install-image --name centos6 \\"
+        echo ">                    --description \"Centos 6 Generic Cloud Image\" \\"
+        echo ">                    --bucket images \\"
+        echo ">                    --arch x86_64 \\"
+        echo ">                    --image $tmpdir/${generic_image_file%%.*}.raw \\"
+        echo ">                    --virtualization-type hvm \\"
+        echo ">                    --region $user_region"
+        euca-install-image --name centos6 \
+                           --description "Centos 6 Generic Cloud Image" \
+                           --bucket images \
+                           --arch x86_64 \
+                           --image $tmpdir/${generic_image_file%%.*}.raw \
+                           --virtualization-type hvm \
+                           --region $user_region
 
         next
     fi
@@ -927,7 +530,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-install-image -n centos66-cfn-init -b images -r x86_64 -i $tmpdir/${cfn_awscli_image_file%%.*}.raw --virtualization-type hvm"
+echo "euca-install-image --name centos6-cfn-init \\"
+echo "                   --description \"Centos 6 Cloud Image with CloudFormation and AWSCLI\" \\"
+echo "                   --bucket images \\"
+echo "                   --arch x86_64 \\"
+echo "                   --image $tmpdir/${cfn_awscli_image_file%%.*}.raw \\"
+echo "                   --virtualization-type hvm \\"
+echo "                   --region $user_region"
 
 if euca-describe-images | grep -s -q "${cfn_awscli_image_file%%.*}.raw.manifest.xml"; then
     echo
@@ -942,8 +551,20 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-install-image -n centos66-cfn-init -b images -r x86_64 -i $tmpdir/${cfn_awscli_image_file%%.*}.raw --virtualization-type hvm"
-        euca-install-image -n centos66-cfn-init -b images -r x86_64 -i $tmpdir/${cfn_awscli_image_file%%.*}.raw --virtualization-type hvm
+        echo "# euca-install-image --name centos6-cfn-init \\"
+        echo ">                    --description \"Centos 6 Cloud Image with CloudFormation and AWSCLI\" \\"
+        echo ">                    --bucket images \\"
+        echo ">                    --arch x86_64 \\"
+        echo ">                    --image $tmpdir/${cfn_awscli_image_file%%.*}.raw \\"
+        echo ">                    --virtualization-type hvm \\"
+        echo ">                    --region $user_region"
+        euca-install-image --name centos6-cfn-init \
+                           --description "Centos 6 Cloud Image with CloudFormation and AWSCLI" \
+                           --bucket images \
+                           --arch x86_64 \
+                           --image $tmpdir/${cfn_awscli_image_file%%.*}.raw \
+                           --virtualization-type hvm \
+                           --region $user_region
 
         next
     fi
@@ -951,7 +572,7 @@ fi
 
 
 ((++step))
-result=$(euca-describe-instance-types | grep "m1.small" | tr -s '[:blank:]' ':' | cut -d: -f3,4,5)
+result=$(euca-describe-instance-types --region $user_region | grep "m1.small" | tr -s '[:blank:]' ':' | cut -d: -f3,4,5)
 cpu=${result%%:*}
 temp=${result%:*} && memory=${temp#*:}
 disk=${result##*:}
@@ -963,16 +584,18 @@ echo
 echo "$(printf '%2d' $step). Modify Instance Types"
 echo "    - Change the m1.small instance type:"
 echo "      - to use 1 GB memory instead of the 256 MB default"
-echo "      - to use 10 GB disk instead of the 5 GB default"
+echo "      - to use 8 GB disk instead of the 5 GB default"
 echo "    - We need to increase this to use the CentOS image"
 echo
 echo "============================================================"
 echo 
 echo "Commands:"
 echo 
-echo "euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small"
+echo "euca-modify-instance-type --cpus 1 --memory 1024 --disk 8 \\"
+echo "                          --region $user_region \\"
+echo "                          m1.small"
 
-if [ "$memory" = 1024 -a "$disk" = 10 ]; then
+if [ "$memory" = 1024 -a "$disk" = 8 ]; then
     echo
     tput rev
     echo "Already Modified!"
@@ -985,8 +608,12 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small"
-        euca-modify-instance-type -c 1 -d 10 -m 1024 m1.small
+        echo "# euca-modify-instance-type --cpus 1 --memory 1024 --disk 8 \\"
+        echo ">                           --region $user_region \\"
+        echo ">                           m1.small"
+        euca-modify-instance-type --cpus 1 --memory 1024 --disk 8 \
+                                  --region $user_region \
+                                  m1.small
 
         next
     fi
@@ -1004,26 +631,26 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euca-describe-keypairs"
+echo "euca-describe-keypairs --region $user_region"
 echo
-echo "euca-describe-images"
+echo "euca-describe-images --region $user_region"
 echo
-echo "euca-describe-instance-types"
+echo "euca-describe-instance-types --region $user_region"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# euca-describe-keypairs"
-    euca-describe-keypairs
+    echo "# euca-describe-keypairs --region $user_region"
+    euca-describe-keypairs --region $user_region
     pause
 
-    echo "# euca-describe-images"
-    euca-describe-images
+    echo "# euca-describe-images --region $user_region"
+    euca-describe-images --region $user_region
     pause
 
-    echo "# euca-describe-instance-types"
-    euca-describe-instance-types
+    echo "# euca-describe-instance-types --region $user_region"
+    euca-describe-instance-types --region $user_region
 
     next 200
 fi
