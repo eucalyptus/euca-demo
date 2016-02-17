@@ -1018,15 +1018,15 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# echo \"export AWS_DEFAULT_REGION=$region\" >> ~/.bash_profile"
         echo >> ~/.bash_profile
+        echo "# echo \"export AWS_DEFAULT_REGION=$region\" >> ~/.bash_profile"
         echo "export AWS_DEFAULT_REGION=$region" >> ~/.bash_profile
         echo "#"
         echo "# echo \"export AWS_DEFAULT_PROFILE=\$region-admin\" >> ~/.bash_profile"
-        echo "export AWS_DEFAULT_PROFILE=$region-admin" >> ~/.bash_profile
+        echo "export AWS_DEFAULT_PROFILE=\$region-admin" >> ~/.bash_profile
         echo "#"
-        echo "# echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/$region/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
-        echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/$region/eucalyptus/admin/iamrc" >> ~/.bash_profile
+        echo "# echo \"export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$region/eucalyptus/admin/iamrc\" >> ~/.bash_profile"
+        echo "export AWS_CREDENTIAL_FILE=\$HOME/.creds/\$region/eucalyptus/admin/iamrc" >> ~/.bash_profile
 
         next
     fi
