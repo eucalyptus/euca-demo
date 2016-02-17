@@ -223,6 +223,14 @@ echo "Commands:"
 echo
 echo "cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
 echo
+echo "cat <<EOF > ~/.euca/global.ini"
+echo "; Eucalyptus Global"
+echo
+echo "[global]"
+echo "default-region = localhost"
+echo
+echo "EOF"
+echo
 echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
 echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
 echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
@@ -232,14 +240,6 @@ echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
 echo "       -e \"/^\\[user/,/^account-id =/p\" \\"
 echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
 echo
-echo "cat <<EOF > ~/.euca/global.ini"
-echo "; Eucalyptus Global"
-echo
-echo "[global]"
-echo "default-region = localhost"
-echo
-echo "EOF"
-echo
 echo "mkdir -p ~/.creds/localhost/eucalyptus/admin"
 echo
 echo "cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
@@ -248,42 +248,24 @@ echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /de
 echo "EOF"
 echo
 echo "rm -f ~/.euca/faststart.ini"
- 
+
 if [ ! -r ~/.euca/faststart.ini ]; then
     echo
     tput rev
     echo "Already Converted!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
- 
+
     if [ $choice = y ]; then
         echo
         echo "# cp -f /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
         cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save
         pause
 
-        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
-        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
-        echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
-        sed -n -e "1i; Eucalyptus Region localhost\n" \
-               -e "s/[0-9]*:admin/localhost-admin/" \
-               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini
-        pause
- 
-        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
-        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
-        echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
-        echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
-        sed -n -e "1i; Eucalyptus Region localhost\n" \
-               -e "s/[0-9]*:admin/localhost-admin/" \
-               -e "/^\[user/,/^account-id =/p" \
-               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
-        pause
- 
         echo "cat <<EOF > ~/.euca/global.ini"
         echo "; Eucalyptus Global"
         echo
@@ -298,11 +280,28 @@ else
         echo "default-region = localhost" >> ~/.euca/global.ini
         echo                              >> ~/.euca/global.ini
         pause
- 
+
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
+        echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
+        echo ">        -e \"/^\\[user/,/^account-id =/p\" \\"
+        echo ">        -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
+        sed -n -e "1i; Eucalyptus Region localhost\n" \
+               -e "s/[0-9]*:admin/localhost-admin/" \
+               -e "/^\[user/,/^account-id =/p" \
+               -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
+        pause
+
         echo "# mkdir -p ~/.creds/localhost/eucalyptus/admin"
         mkdir -p ~/.creds/localhost/eucalyptus/admin
-        pause
- 
+        echo "#"
         echo "# cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
         echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
         echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
@@ -311,11 +310,52 @@ else
         echo AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)    > ~/.creds/localhost/eucalyptus/admin/iamrc
         echo AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null) >> ~/.creds/localhost/eucalyptus/admin/iamrc
         pause
- 
+
         echo "# rm -f ~/.euca/faststart.ini"
         rm -f ~/.euca/faststart.ini
- 
+
         next
+    fi
+fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The localhost Region should be the default."
+    echo "    - The localhost Region should be configured with FastStart"
+    echo "      xip.io DNS HTTP URLs."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+
+        next 200
     fi
 fi
 
@@ -326,10 +366,10 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Region"
-echo "    - FastStart creates a \"localhost\" Region by default"
-echo "    - We will switch this to a more \"AWS-like\" Region naming convention"
+echo "    - FastStart creates a localhost Region by default."
+echo "    - We will switch this to a more \"AWS-like\" Region naming convention."
 echo "    - This is needed to run CloudFormation templates which reference the"
-echo "      Region in Maps"
+echo "      Region in Maps."
 echo
 echo "================================================================================"
 echo
@@ -457,9 +497,9 @@ if [ "$(euctl -n system.dns.dnsdomain --region localhost)" = "$region.$domain" ]
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -494,7 +534,7 @@ if [ "$(euctl -n cloud.vmstate.instance_subdomain --region localhost)" = "$insta
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
 
 else
@@ -534,9 +574,9 @@ if [ "$(euctl -n bootstrap.webservices.use_instance_dns --region localhost)" = "
     tput rev
     echo "Already Enabled!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -605,9 +645,9 @@ echo "sts-url = $sts_url"
 echo "user = $region-admin"
 echo
 echo "EOF"
-echo 
+echo
 echo "sed -e \"s/localhost/$region/g\" ~/.euca/localhost.ini > ~/.euca/$region.ini"
-echo 
+echo
 echo "sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
 echo
 echo "mkdir -p ~/.creds/$region/eucalyptus/admin"
@@ -618,9 +658,9 @@ if [ -r /etc/euca2ools/conf.d/$region.ini ]; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -690,83 +730,60 @@ fi
 
 
 ((++step))
-if [ $showdnsconfig = 1 ]; then
+if [ $verbose = 1 ]; then
     clear
     echo
-    echo "================================================================================"
+    echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display Parent DNS Server Configuration"
-    echo "    - This is an example of what changes need to be made on the"
-    echo "      parent DNS server which will delgate DNS to Eucalyptus"
-    echo "      for Eucalyptus DNS names used for instances, ELBs and"
-    echo "      services"
-    echo "    - You should make these changes to the parent DNS server"
-    echo "      manually, once, outside of creating and running demos"
-    echo "    - Instances will use the Cloud Controller's DNS Server directly"
-    echo "    - This configuration is based on the BIND configuration"
-    echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTP URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
     echo
-    echo "================================================================================"
+    echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "# Add these lines to /etc/named.conf on the parent DNS server"
-    echo "         zone \"$region.$domain\" IN"
-    echo "         {"
-    echo "                 type master;"
-    echo "                 file \"/etc/named/db.$aws_default_region\";"
-    echo "         };"
-    echo "#"
-    echo "# Create the zone file on the parent DNS server"
-    echo "> ;"
-    echo "> ; DNS zone for $aws_default_region.$aws_default_domain"
-    echo "> ; - Eucalyptus configured to use CLC as DNS server"
-    echo ">"
-    echo "# cat << EOF > /etc/named/db.$aws_default_region"
-    echo "> $TTL 1M"
-    echo "> $ORIGIN $aws_default_region.$aws_default_domain"
-    echo "> @                       SOA     ns1 root ("
-    echo ">                                 $(date +%Y%m%d)01      ; Serial"
-    echo ">                                 1H              ; Refresh"
-    echo ">                                 10M             ; Retry"
-    echo ">                                 1D              ; Expire"
-    echo ">                                 1H )            ; Negative Cache TTL"
-    echo ">"
-    echo ">                         NS      ns1"
-    echo ">"
-    echo "> ns1                     A       $(hostname -i)"
-    echo ">"
-    echo "> clc                     A       $(hostname -i)"
-    echo "> ufs                     A       $(hostname -i)"
-    echo "> mc                      A       $(hostname -i)"
-    echo "> osp                     A       $(hostname -i)"
-    echo "> walrus                  A       $(hostname -i)"
-    echo "> cc                      A       $(hostname -i)"
-    echo "> sc                      A       $(hostname -i)"
-    echo "> ns1                     A       $(hostname -i)"
-    echo ">"
-    echo "> console                 A       $(hostname -i)"
-    echo ">"
-    echo "> autoscaling             A       $(hostname -i)"
-    echo "> bootstrap               A       $(hostname -i)"
-    echo "> cloudformation          A       $(hostname -i)"
-    echo "> ec2                     A       $(hostname -i)"
-    echo "> elasticloadbalancing    A       $(hostname -i)"
-    echo "> iam                     A       $(hostname -i)"
-    echo "> monitoring              A       $(hostname -i)"
-    echo "> properties              A       $(hostname -i)"
-    echo "> reporting               A       $(hostname -i)"
-    echo "> s3                      A       $(hostname -i)"
-    echo "> sts                     A       $(hostname -i)"
-    echo ">"
-    echo "> ${instance_subdomain#.}                   NS      ns1"
-    echo "> ${loadbalancer_subdomain#.}                      NS      ns1"
-    echo "> EOF"
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
 
-    next 200
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+
+        next 200
+    fi
 fi
 
-    
+
 ((++step))
 if [ $verbose = 1 ]; then
     clear
@@ -848,7 +865,7 @@ if [ $verbose = 1 ]; then
 
         echo "# dig +short sts.$region.$domain"
         dig +short sts.$region.$domain
-    
+
         next
     fi
 fi
@@ -1017,9 +1034,9 @@ if grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -1041,42 +1058,87 @@ fi
 
 
 ((++step))
-if [ $verbose = 1 ]; then
+if [ $showdnsconfig = 1 ]; then
     clear
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
-    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "$(printf '%2d' $step). Display Parent DNS Server Configuration"
+    echo "    - This is an example of what changes need to be made on the"
+    echo "      parent DNS server which will delgate DNS to Eucalyptus"
+    echo "      for Eucalyptus DNS names used for instances, ELBs and"
+    echo "      services"
+    echo "    - You should make these changes to the parent DNS server"
+    echo "      manually, once, outside of creating and running demos"
+    echo "    - Instances will use the Cloud Controller's DNS Server directly"
+    echo "    - This configuration is based on the BIND configuration"
+    echo "      conventions used on the cs.prc.eucalyptus-systems.com DNS server"
     echo
-    echo "============================================================"
+    echo "================================================================================"
     echo
     echo "Commands:"
     echo
-    echo "cat /etc/euca2ools/conf.d/$region.ini"
-    echo
-    echo "cat ~/.euca/global.ini"
-    echo
-    echo "cat ~/.euca/$region.ini"
+    echo "# Add these lines to /etc/named.conf on the parent DNS server"
+    echo "         zone \"$region.$domain\" IN"
+    echo "         {"
+    echo "                 type master;"
+    echo "                 file \"/etc/named/db.$aws_default_region\";"
+    echo "         };"
+    echo "#"
+    echo "# Create the zone file on the parent DNS server"
+    echo "> ;"
+    echo "> ; DNS zone for $aws_default_region.$aws_default_domain"
+    echo "> ; - Eucalyptus configured to use CLC as DNS server"
+    echo ">"
+    echo "# cat << EOF > /etc/named/db.$aws_default_region"
+    echo "> $TTL 1M"
+    echo "> $ORIGIN $aws_default_region.$aws_default_domain"
+    echo "> @                       SOA     ns1 root ("
+    echo ">                                 $(date +%Y%m%d)01      ; Serial"
+    echo ">                                 1H              ; Refresh"
+    echo ">                                 10M             ; Retry"
+    echo ">                                 1D              ; Expire"
+    echo ">                                 1H )            ; Negative Cache TTL"
+    echo ">"
+    echo ">                         NS      ufs"
+    echo ">"
+    echo "> clc                     A       $(hostname -i)"
+    echo "> ufs                     A       $(hostname -i)"
+    echo "> mc                      A       $(hostname -i)"
+    echo "> osp                     A       $(hostname -i)"
+    echo "> walrus                  A       $(hostname -i)"
+    echo "> cc                      A       $(hostname -i)"
+    echo "> cca                     A       $(hostname -i)"
+    echo "> sc                      A       $(hostname -i)"
+    echo "> sca                     A       $(hostname -i)"
+    echo "> nc1                     A       $(hostname -i)"
+    echo ">"
+    echo "> console                 A       $(hostname -i)"
+    echo ">"
+    echo "> autoscaling             A       $(hostname -i)"
+    echo "> bootstrap               A       $(hostname -i)"
+    echo "> cloudformation          A       $(hostname -i)"
+    echo "> ec2                     A       $(hostname -i)"
+    echo "> compute                 CNAME   ec2"
+    echo "> elasticloadbalancing    A       $(hostname -i)"
+    echo "> loadbalancing           CNAME   elasticloadbalancing"
+    echo "> iam                     A       $(hostname -i)"
+    echo "> euare                   CNAME   iam"
+    echo "> monitoring              A       $(hostname -i)"
+    echo "> cloudwatch              CNAME   monitoring"
+    echo "> properties              A       $(hostname -i)"
+    echo "> reporting               A       $(hostname -i)"
+    echo "> s3                      A       $(hostname -i)"
+    echo "> objectstorage           A       s3"
+    echo "> sts                     A       $(hostname -i)"
+    echo "> tokens                  A       tokens"
+    echo ">"
+    echo "> ${instance_subdomain#.}                   NS      ufs"
+    echo "> ${loadbalancer_subdomain#.}                      NS      ufs"
+    echo "> EOF"
 
-    run 50
-
-    if [ $choice = y ]; then
-        echo
-        echo "# cat /etc/euca2ools/conf.d/$region.ini"
-        cat /etc/euca2ools/conf.d/$region.ini
-        pause
-
-        echo "# cat ~/.euca/global.ini"
-        cat ~/.euca/global.ini
-        pause
-
-        echo "# cat ~/.euca/$region.ini"
-        cat ~/.euca/$region.ini
-
-        next 200
-    fi
+    next 200
 fi
-
 
 end=$(date +%s)
 

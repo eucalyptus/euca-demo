@@ -23,6 +23,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
@@ -30,11 +31,12 @@ domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v]"
     echo "             [-r region] [-d domain]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
+    echo "  -v         verbose"
     echo "  -r region  Eucalyptus Region (default: $region)"
     echo "  -d domain  Eucalyptus Domain (default: $domain)"
 }
@@ -119,11 +121,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:d:? arg; do
+while getopts Isfvr:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     r)  region="$OPTARG"
         [ -z $domain ] &&
         domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
@@ -189,27 +192,27 @@ echo
 echo "yum install -y python-pip"
 echo
 echo "pip install --upgrade pip"
- 
+
 if hash pip 2>/dev/null; then
     echo
     tput rev
     echo "Already Installed!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
- 
+
     if [ $choice = y ]; then
         echo
         echo "# yum install -y python-pip"
         yum install -y python-pip
         pause
- 
+
         echo "# pip install --upgrade pip"
         pip install --upgrade pip
- 
+
         next 50
     fi
 fi
@@ -227,23 +230,23 @@ echo
 echo "Commands:"
 echo
 echo "pip install awscli"
- 
+
 if hash aws 2>/dev/null; then
     echo
     tput rev
     echo "Already Installed!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
- 
+
     if [ $choice = y ]; then
         echo
         echo "# pip install awscli"
         pip install awscli
- 
+
         next 50
     fi
 fi
@@ -264,20 +267,20 @@ echo "Commands:"
 echo
 echo "pip uninstall -y python-dateutil"
 echo "yum reinstall -y python-dateutil"
- 
+
 run 50
- 
+
 if [ $choice = y ]; then
     echo
     echo "# pip uninstall -y python-dateutil"
     pip uninstall -y python-dateutil
     echo "# yum reinstall -y python-dateutil"
     yum reinstall -y python-dateutil
- 
+
     next 50
 fi
- 
- 
+
+
 ((++step))
 clear
 echo
@@ -294,28 +297,28 @@ echo "complete -C '/usr/bin/aws_completer' aws"
 echo "EOF"
 echo
 echo "source /etc/profile.d/aws.sh"
- 
+
 if [ -r /etc/profile.d/aws.sh ]; then
     echo
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
- 
+
     if [ $choice = y ]; then
         echo
         echo "# cat << EOF >> /etc/profile.d/aws.sh"
         echo "> complete -C '/usr/bin/aws_completer' aws"
         echo "> EOF"
         echo complete -C '/usr/bin/aws_completer' aws > /etc/profile.d/aws.sh
- 
+
         echo "# source /etc/profile.d/aws.sh"
         source /etc/profile.d/aws.sh
- 
+
         next 50
     fi
 fi
@@ -388,9 +391,9 @@ if grep -q -s "8F:41:5C:6C:29:D9:EA:DD:FE:A4:4C:8D:90:17:73:C1" /usr/lib/python2
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -559,9 +562,9 @@ if grep -q -s "DD:45:88:0B:59:38:B9:12:4B:66:CA:F3:76:58:F6:5A" /usr/lib/python2
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -743,9 +746,9 @@ if grep -q -s "95:A3:20:FD:C8:5C:D9:3A:E6:DD:6A:91:40:E2:3A:78" /usr/lib/python2
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -880,7 +883,7 @@ echo "    .... too long to list ...."
 echo "EOF"
 echo
 echo "mv _endpoints.json _endpoints.json.orig"
-echo 
+echo
 echo "ln -s _endoints.json.local.ssl _endpoints.json"
 
 if grep -q -s "$region" /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl; then
@@ -888,9 +891,9 @@ if grep -q -s "$region" /usr/lib/python2.6/site-packages/botocore/data/_endpoint
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -1174,7 +1177,7 @@ else
 
         echo "# mv _endpoints.json _endpoints.json.orig"
         mv _endpoints.json _endpoints.json.orig
-        echo "#" 
+        echo "#"
         echo "# ln -s _endpoints.json.local.ssl _endpoints.json"
         ln -s _endpoints.json.local.ssl _endpoints.json
         echo "#"
@@ -1201,7 +1204,7 @@ echo
 echo "Commands:"
 echo
 echo "mkdir -p ~/.aws"
-echo 
+echo
 echo "cat << EOF > ~/.aws/config"
 echo "#"
 echo "# AWS Config file"
@@ -1239,9 +1242,9 @@ if grep -q -s "$region-admin" ~/.aws/credentials; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -1318,37 +1321,72 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Test AWS CLI"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "aws ec2 describe-key-pairs"
-echo
-echo "aws ec2 describe-key-pairs --profile=default"
-echo
-echo "aws ec2 describe-key-pairs --profile=$region-admin"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# aws ec2 describe-key-pairs"
-    aws ec2 describe-key-pairs
-    echo "#"
-    echo "# aws ec2 describe-key-pairs --profile=default"
-    aws ec2 describe-key-pairs --profile=default
-    echo "#"
-    echo "# aws ec2 describe-key-pairs --profile=$region-admin"
-    aws ec2 describe-key-pairs --profile=$region-admin
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
 
-    next 50
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+
+        next 200
+    fi
 fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm AWS CLI"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "aws ec2 describe-key-pairs"
+    echo
+    echo "aws ec2 describe-key-pairs --profile=default"
+    echo
+    echo "aws ec2 describe-key-pairs --profile=$region-admin"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# aws ec2 describe-key-pairs"
+        aws ec2 describe-key-pairs
+        echo "#"
+        echo "# aws ec2 describe-key-pairs --profile=default"
+        aws ec2 describe-key-pairs --profile=defaults
+        echo "#"
+        echo "# aws ec2 describe-key-pairs --profile=$region-admin"
+        aws ec2 describe-key-pairs --profile=$region-admin
+
+        next 50
+    fi
+fi
+
 
 end=$(date +%s)
 

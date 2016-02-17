@@ -17,25 +17,25 @@
 # - Creates the demo User Login Profile
 # - Creates the demo User Access Key
 # - Configures Euca2ools for the demo User
-# - Configures AWSCLI for the demo User
+# - Configures AWS CLI for the demo User
 # - Creates a developer User (named "developer"), an an example User within the Developers Group
 # - Adds the developer User to the Developers Group
 # - Creates the developer User Login Profile
 # - Creates the developer User Access Key
 # - Configures Euca2ools for the developer User
-# - Configures AWSCLI for the developer User
+# - Configures AWS CLI for the developer User
 # - Creates a user User (named "user"), as an example User within the Users Group
 # - Adds the user User to the Users Group
 # - Creates the user User Login Profile
 # - Creates the user User Access Key
 # - Configures Euca2ools for the user User
-# - Configures AWSCLI for the user User
+# - Configures AWS CLI for the user User
 # - Lists Demo Account Resources
 # - Displays Euca2ools Configuration
-# - Displays AWSCLI Configuration
+# - Displays AWS CLI Configuration
 #
 # This is a variant of the demo-03-initialize-account-dependencies.sh script which primarily uses
-# the AWSCLI.
+# the AWS CLI
 #
 # The demo-00-initialize.sh and demo-01-initialize-account.sh scripts should both be run by the
 # Eucalyptus Administrator prior to running this script against Eucalyptus, as those scripts create
@@ -234,9 +234,9 @@ fi
 profile=$region-$account-$user
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User AWSCLI profile!"
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User AWS CLI profile!"
     echo "Expected to find: [profile $profile] in ~/.aws/config"
-    exit 20
+    exit 51
 fi
 
 mkdir -p $tmpdir/$account
@@ -354,7 +354,7 @@ echo "============================================================"
 echo
 echo "$(printf '%2d' $step). Create Demo ($account) Account Demo (demo-$account) Bucket"
 echo "    - This Bucket is intended for Demos which need to store Objects in S3"
-echo "    - We must use the AWSCLI as euca2ools does not currently have S3 commands"
+echo "    - We must use the AWS CLI as euca2ools does not currently have S3 commands"
 echo
 echo "============================================================"
 echo
@@ -1023,8 +1023,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User AWSCLI Profile"
-echo "    - This allows the Demo Account Demo User to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Demo ($user_demo) User AWS CLI Profile"
+echo "    - This allows the Demo Account Demo User to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -1343,8 +1343,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User AWSCLI Profile"
-echo "    - This allows the Demo Account Developer User to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Developer ($user_developer) User AWS CLI Profile"
+echo "    - This allows the Demo Account Developer User to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -1663,8 +1663,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User AWSCLI Profile"
-echo "    - This allows the Demo Account User User to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account User ($user_user) User AWS CLI Profile"
+echo "    - This allows the Demo Account User User to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -1826,31 +1826,62 @@ if [ $verbose = 1 ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo "    - The $federation Federation should be configured with"
+    echo "      AWS HTTPS URLs and Federated Identity Users."
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
-    echo "cat /etc/euca2ools/conf.d/$region.ini"
-    echo
     echo "cat ~/.euca/global.ini"
     echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$federation.ini"
+    echo
     echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+    echo
+    echo "cat ~/.euca/$federation.ini"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# cat /etc/euca2ools/conf.d/$region.ini"
-        cat /etc/euca2ools/conf.d/$region.ini
-        pause
-
         echo "# cat ~/.euca/global.ini"
         cat ~/.euca/global.ini
         pause
 
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini 
+        pause
+
         echo "# cat ~/.euca/$region.ini"
-        cat ~/.euca/$region.ini
+        cat ~/.euca/$region.ini 
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$federation.ini"
+        cat ~/.euca/$federation.ini 2>/dev/null
 
         next 200
     fi
@@ -1863,7 +1894,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
     echo
     echo "============================================================"
     echo

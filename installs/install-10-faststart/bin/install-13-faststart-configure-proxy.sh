@@ -19,6 +19,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
 
@@ -26,11 +27,12 @@ domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v]"
     echo "             [-r region] [-d domain]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
+    echo "  -v         verbose"
     echo "  -r region  Eucalyptus Region (default: $region)"
     echo "  -d domain  Eucalyptus Domain (default: $domain)"
 }
@@ -115,11 +117,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:d:? arg; do
+while getopts Isfvr:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     r)  region="$OPTARG"
         [ -z $domain ] &&
         domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null);;
@@ -169,7 +172,7 @@ if ! which lynx > /dev/null; then
       *)
         echo "- yum install -y lynx";;
     esac
- 
+
     exit 98
 fi
 
@@ -190,6 +193,9 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure Eucalyptus Console to use custom SSL Certificate"
+echo "    - At this point, we will reference the UFS FQDN URL, but must continue to"
+echo "      use port 8773 until we complete replacement of the SSL proxy with a version"
+echo "      that works with both the Console and UFS."
 echo
 echo "================================================================================"
 echo
@@ -205,7 +211,7 @@ echo "sed -i -e \"/^session.secure/a\\"
 echo "sslcert=/etc/pki/tls/certs/star.$region.$domain.crt\\\\"
 echo "sslkey=/etc/pki/tls/private/star.$region.$domain.key\" /etc/eucaconsole/console.ini"
 
-if grep -s -q "ufs.$region.$domain" /etc/eucaconsole/console.ini; then
+if grep -s -q "ufshost = ufs.$region.$domain" /etc/eucaconsole/console.ini; then
     echo
     tput rev
     echo "Already Configured!"
@@ -245,7 +251,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Configure Embedded Nginx to use custom SSL Certificate"
+echo "$(printf '%2d' $step). Configure Embedded Nginx Proxy to use custom SSL Certificate"
 echo
 echo "================================================================================"
 echo
@@ -264,12 +270,12 @@ if grep -s -q "star.$region.$domain.crt" /etc/eucaconsole/nginx.conf; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run
- 
+
     if [ $choice = y ]; then
         echo
         if [ ! -f /etc/eucaconsole/nginx.conf.faststart ]; then
@@ -295,7 +301,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
+echo "$(printf '%2d' $step). Restart Eucalyptus Console"
 echo
 echo "================================================================================"
 echo
@@ -315,30 +321,36 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Eucalyptus Console is accessible with custom SSL Certificate"
-echo "    - Browse: https://console.$region.$domain/ in a separate browser for a"
-echo "      comprehensive check."
-echo "    - This script uses a text-mode brower to dump the headers."
-echo "    - Confirm no SSL configuration errors."
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "lynx --dump --head https://console.$region.$domain/"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# lynx --dump --head https://console.$region.$domain/"
-    lynx --dump --head https://console.$region.$domain/
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Eucalyptus Console via Embedded Nginx Proxy"
+    echo "    - This script uses a text mode browser to directly dump short content or"
+    echo "      dump only the headers of long content. This is usually enough to detect"
+    echo "      configuration problems."
+    echo "    - For a more comprehensive test, open the following URLs in a GUI Browser:"
+    echo "      - https://console.$region.$domain/"
+    echo "    - Confirm no SSL configuration errors. A GUI Browser should show the trusted"
+    echo "      lock icon, assuming you have configured your workstation to trust the"
+    echo "      Root CA which issued the SSL Certificate."
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "lynx --dump --head https://console.$region.$domain/"
 
-    next 50
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# lynx --dump --head https://console.$region.$domain/"
+        lynx --dump --head https://console.$region.$domain/
+
+        next 50
+    fi
 fi
 
 
@@ -347,10 +359,10 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Disable Embedded Nginx service"
-echo "    - We will disable the embedded Nginx server which is started with the Console"
-echo "      by default, so we can replace it with a new configuration which proxies"
-echo "      SSL for both the Console and User-Facing Services."
+echo "$(printf '%2d' $step). Disable Embedded Nginx Proxy"
+echo "    - We will disable the Embedded Nginx Proxy which is started with the Eucalyptus"
+echo "      Console by default, so we can replace it with a new Separate Nginx Proxy"
+echo "      which works with both the Console and User-Facing Services."
 echo
 echo "================================================================================"
 echo
@@ -384,8 +396,8 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Restart Eucalyptus Console service"
-echo "    - You should see the Embedded Nginx service stop, but not restart"
+echo "$(printf '%2d' $step). Restart Eucalyptus Console"
+echo "    - You should see the Embedded Nginx Proxy stop, but not restart"
 echo
 echo "================================================================================"
 echo
@@ -509,9 +521,9 @@ if grep -s -q "/etc/nginx/server.d/*.conf" /etc/nginx.conf; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -598,7 +610,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Start Separate Nginx service"
+echo "$(printf '%2d' $step). Start Separate Nginx Proxy"
 echo
 echo "================================================================================"
 echo
@@ -624,29 +636,34 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Separate Nginx service"
-echo "    - Browse: http://$(hostname)/ in a separate browser for a comprehensive"
-echo "      check."
-echo "    - This script uses a text-mode brower."
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "lynx --dump http://$(hostname)/"
- 
-run 50
- 
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# lynx --dump http://$(hostname)/"
-    lynx --dump http://$(hostname)/
- 
-    next 50
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Separate Nginx Proxy"
+    echo "    - This script uses a text mode browser to directly dump short content or"
+    echo "      dump only the headers of long content. This is usually enough to detect"
+    echo "      configuration problems."
+    echo "    - For a more comprehensive test, open the following URL in a GUI Browser:"
+    echo "      - http://$(hostname)/"
+    echo "    - Confirm the basic Nginx test page is working."
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "lynx --dump http://$(hostname)/"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# lynx --dump http://$(hostname)/"
+        lynx --dump http://$(hostname)/
+
+        next 50
+    fi
 fi
 
 
@@ -677,14 +694,14 @@ echo "    server localhost:8888 max_fails=3 fail_timeout=30s;"
 echo "}"
 echo "EOF"
 
-if grep -s -q "upstream ufs" /etc/nginx/conf.d/upstream.conf; then
+if [ -r /etc/nginx/conf.d/upstream.conf ]; then
     echo
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -730,7 +747,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Configure Default Server"
+echo "$(printf '%2d' $step). Configure Nginx Default Server"
 echo "    - We also need to update or create the default home and error pages"
 echo "    - We will not display the default home and error pages due to length"
 echo
@@ -797,9 +814,9 @@ if grep -s -q "$(hostname)" /etc/nginx/conf.d/default.conf; then
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run 50
 
@@ -1228,7 +1245,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Restart Separate Nginx service"
+echo "$(printf '%2d' $step). Restart Separate Nginx Proxy"
 echo
 echo "================================================================================"
 echo
@@ -1248,29 +1265,34 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Separate Nginx service"
-echo "    - Browse: http://$(hostname)/ in a separate browser for a comprehensive"
-echo "      check."
-echo "    - This script uses a text-mode brower."
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "lynx --dump http://$(hostname)/"
- 
-run 50
- 
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# lynx --dump http://$(hostname)/"
-    lynx --dump http://$(hostname)/
- 
-    next 50
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Separate Nginx Proxy"
+    echo "    - This script uses a text mode browser to directly dump short content or"
+    echo "      dump only the headers of long content. This is usually enough to detect"
+    echo "      configuration problems."
+    echo "    - For a more comprehensive test, open the following URLs in a GUI Browser:"
+    echo "      - http://$(hostname)/"
+    echo "    - Confirm an updated Nginx test page showing the hostname is working."
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "lynx --dump http://$(hostname)/"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# lynx --dump http://$(hostname)/"
+        lynx --dump http://$(hostname)/
+
+        next 50
+    fi
 fi
 
 
@@ -1341,17 +1363,17 @@ echo "        proxy_set_header      Connection \"keep-alive\";"
 echo "    }"
 echo "}"
 echo "EOF"
-echo 
+echo
 echo "chmod 644 /etc/nginx/server.d/ufs.$region.$domain.conf"
 
-if grep -s -q "ec2.$region.$domain" /etc/nginx/server.d/ufs.$region.$domain.conf; then
+if [ -r /etc/nginx/server.d/ufs.$region.$domain.conf ]; then
     echo
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run
 
@@ -1469,7 +1491,7 @@ else
         echo "#"
         echo "# chmod 644 /etc/nginx/server.d/ufs.$region.$domain.conf"
         chmod 644 /etc/nginx/server.d/ufs.$region.$domain.conf
-    
+
         next
     fi
 fi
@@ -1483,7 +1505,6 @@ echo
 echo "$(printf '%2d' $step). Configure Eucalyptus Console Reverse Proxy Server"
 echo "    - This server will proxy the console via standard HTTP and HTTPS ports"
 echo "    - Requests which use HTTP are immediately rerouted to use HTTPS"
-echo "    - Once proxy is configured, configure the console to expect HTTPS"
 echo
 echo "================================================================================"
 echo
@@ -1541,20 +1562,15 @@ echo "}"
 echo "EOF"
 echo
 echo "chmod 644 /etc/nginx/server.d/console.$region.$domain.conf"
-echo
-echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
-echo "       -e \"/^session.secure/a\\"
-echo "sslcert=/etc/pki/tls/certs/star.$region.$domain.crt\\\\"
-echo "sslkey=/etc/pki/tls/private/star.$region.$domain.key\" /etc/eucaconsole/console.ini"
 
-if grep -s -q "console.$region.$domain" /etc/nginx/server.d/console.$region.$domain.conf; then
+if [ -r /etc/nginx/server.d/console.$region.$domain.conf ]; then
     echo
     tput rev
     echo "Already Configured!"
     tput sgr0
- 
+
     next 50
- 
+
 else
     run
 
@@ -1663,16 +1679,6 @@ else
         echo "#"
         echo "# chmod 644 /etc/nginx/server.d/console.$region.$domain.conf"
         chmod 644 /etc/nginx/server.d/console.$region.$domain.conf
-        pause
-
-        echo "sed -i -e \"/^session.secure =/s/= .*\$/= true/\" \\"
-        echo "       -e \"/^session.secure/a\\"
-        echo "sslcert=/etc/pki/tls/certs/star.$region.$domain.crt\\\\"
-        echo "sslkey=/etc/pki/tls/private/star.$region.$domain.key\" /etc/eucaconsole/console.ini"
-        sed -i -e "/^session.secure =/s/= .*$/= true/" \
-               -e "/^session.secure/a\
-sslcert=/etc/pki/tls/certs/star.$region.$domain.crt\\
-sslkey=/etc/pki/tls/private/star.$region.$domain.key" /etc/eucaconsole/console.ini
 
         next
     fi
@@ -1684,31 +1690,33 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Restart Separate Nginx service"
-echo "    - Confirm Eucalyptus Console is running via a browser:"
-echo "      http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
-echo "      https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN"
+echo "$(printf '%2d' $step). Configure Eucalyptus Console to access UFS via Separate Nginx Proxy"
+echo "    - We can now reference UFS via HTTPS using standard SSL port 443."
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "service nginx restart"
-echo
-echo "service eucaconsole restart"
+echo "sed -i -e \"/^ufsport = 8773\$/s/8773/443/\" /etc/eucaconsole/console.ini"
 
-run 50
-
-if [ $choice = y ]; then
+if grep -s -q "ufsport = 443" /etc/eucaconsole/console.ini; then
     echo
-    echo "# service nginx restart"
-    service nginx restart
-    pause
-
-    echo "# service eucaconsole restart"
-    service eucaconsole restart
+    tput rev
+    echo "Already Configured!"
+    tput sgr0
 
     next 50
+
+else
+    run
+
+    if [ $choice = y ]; then
+        echo
+        echo "# sed -i -e \"/^ufsport = 8773\$/s/8773/443/\" /etc/eucaconsole/console.ini"
+        sed -i -e "/^ufsport = 8773$/s/8773/443/" /etc/eucaconsole/console.ini
+
+        next
+    fi
 fi
 
 
@@ -1717,33 +1725,70 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Confirm Separate Nginx service"
-echo "    - Browse: https://compute.$region.$domain/ in a separate browser for a"
-echo "      comprehensive"
-echo "    - Browse: https://console.$region.$domain/ in a separate browser for a"
-echo "      comprehensive"
-echo "    - This script uses a text-mode brower."
+echo "$(printf '%2d' $step). Restart Eucalyptus Console and Separate Nginx Proxy"
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "lynx --dump https://compute.$region.$domain/"
+echo "service eucaconsole restart"
 echo
-echo "lynx --dump --head https://console.$region.$domain/"
- 
+echo "service nginx restart"
+
 run 50
- 
+
 if [ $choice = y ]; then
     echo
-    echo "# lynx --dump https://compute.$region.$domain/"
-    lynx --dump https://compute.$region.$domain/
+    echo "# service eucaconsole restart"
+    service eucaconsole restart
     pause
- 
-    echo "# lynx --dump --head https://console.$region.$domain/"
-    lynx --dump --head https://console.$region.$domain/
+
+    echo "# service nginx restart"
+    service nginx restart
 
     next 50
+fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Eucalyptus UFS and Console via Separate Nginx Proxy"
+    echo "    - This script uses a text mode browser to directly dump short content or"
+    echo "      dump only the headers of long content. This is usually enough to detect"
+    echo "      configuration problems."
+    echo "    - For a more comprehensive test, open the following URLs in a GUI Browser:"
+    echo "      - https://compute.$region.$domain/    (403 Error expected and correct)"
+    echo "      - https://console.$region.$domain/"
+    echo "    - Confirm no SSL configuration errors. A GUI Browser should show the trusted"
+    echo "      lock icon, assuming you have configured your workstation to trust the"
+    echo "      Root CA which issued the SSL Certificate. The compute URL should return"
+    echo "      a 403:Forbidden error, as we are not passing credentials"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "lynx --dump https://compute.$region.$domain/"
+    echo
+    echo "lynx --dump --head https://console.$region.$domain/"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# lynx --dump https://compute.$region.$domain/"
+        lynx --dump https://compute.$region.$domain/
+        pause
+
+        echo "# lynx --dump --head https://console.$region.$domain/"
+        lynx --dump --head https://console.$region.$domain/
+
+        next 50
+    fi
 fi
 
 
@@ -1858,6 +1903,62 @@ else
         next
     fi
 fi
+
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+
+        next 200
+    fi
+fi
+
 
 end=$(date +%s)
 

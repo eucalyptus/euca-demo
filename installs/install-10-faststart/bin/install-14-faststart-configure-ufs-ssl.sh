@@ -24,6 +24,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 password=N0t5ecret
 region=${AWS_DEFAULT_REGION#*@}
 domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc/euca2ools/conf.d/$region.ini 2>/dev/null)
@@ -33,11 +34,12 @@ export_password=N0t5ecret2
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-p password]"
     echo "               [-r region] [-d domain]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
+    echo "  -v           verbose"
     echo "  -p password  password for PKCS#12 archive (default: $password)"
     echo "  -r region    Eucalyptus Region (default: $region)"
     echo "  -d domain    Eucalyptus Domain (default: $domain)"
@@ -123,11 +125,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfp:r:d:? arg; do
+while getopts Isfvp:r:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     c)  config="$OPTARG";;
     p)  password="$OPTARG";;
     r)  region="$OPTARG"

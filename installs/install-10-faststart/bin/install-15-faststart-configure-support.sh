@@ -20,6 +20,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 password=
 unique=0
 region=${AWS_DEFAULT_REGION#*@}
@@ -29,11 +30,12 @@ domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password] [-u]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-p password] [-u]"
     echo "               [-r region] [-d domain]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
+    echo "  -v           verbose"
     echo "  -p password  support private key password (default: none)"
     echo "  -u           create unique support key pair"
     echo "  -r region    Eucalyptus Region (default: $region)"
@@ -120,11 +122,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfp:ur:d:? arg; do
+while getopts Isfvp:ur:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     p)  password="$OPTARG";;
     u)  unique=1;;
     r)  region="$OPTARG"

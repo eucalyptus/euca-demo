@@ -54,6 +54,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 native=0
 local=0
 region=${AWS_DEFAULT_REGION#*@}
@@ -63,11 +64,12 @@ domain=$(sed -n -e 's/ec2-url = http.*:\/\/ec2\.[^.]*\.\([^:\/]*\).*$/\1/p' /etc
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-n] [-l]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-n] [-l]"
     echo "             [-r region] [-d domain]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
+    echo "  -v         verbose"
     echo "  -n         use native service endpoints in euca2ools.ini"
     echo "  -l         use local mirror for Demo CentOS image"
     echo "  -r region  Eucalyptus Region (default: $region)"
@@ -154,11 +156,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfnlr:d:? arg; do
+while getopts Isfvnlr:d:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     n)  native=1;;
     l)  local=1;;
     r)  region="$OPTARG"
@@ -621,104 +624,141 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List Demo Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-keypairs --region $user_region"
-echo
-echo "euca-describe-images --region $user_region"
-echo
-echo "euca-describe-instance-types --region $user_region"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-keypairs --region $user_region"
-    euca-describe-keypairs --region $user_region
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List Demo Resources"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-keypairs --region $user_region"
+    echo
+    echo "euca-describe-images --region $user_region"
+    echo
+    echo "euca-describe-instance-types --region $user_region"
 
-    echo "# euca-describe-images --region $user_region"
-    euca-describe-images --region $user_region
-    pause
+    run 50
 
-    echo "# euca-describe-instance-types --region $user_region"
-    euca-describe-instance-types --region $user_region
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-keypairs --region $user_region"
+        euca-describe-keypairs --region $user_region
+        pause
 
-    next 200
+        echo "# euca-describe-images --region $user_region"
+        euca-describe-images --region $user_region
+        pause
+
+        echo "# euca-describe-instance-types --region $user_region"
+        euca-describe-instance-types --region $user_region
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat /etc/euca2ools/conf.d/$region.ini"
-echo
-echo "cat ~/.euca/global.ini"
-echo
-echo "cat ~/.euca/$region.ini"
- 
-run 50
- 
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat /etc/euca2ools/conf.d/$region.ini"
-    cat /etc/euca2ools/conf.d/$region.ini
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo "    - The $federation Federation should be configured with"
+    echo "      AWS HTTPS URLs and Federated Identity Users."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$federation.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+    echo
+    echo "cat ~/.euca/$federation.ini"
 
-    echo "# cat ~/.euca/global.ini"
-    cat ~/.euca/global.ini
-    pause
+    run 50
 
-    echo "# cat ~/.euca/$region.ini"
-    cat ~/.euca/$region.ini
- 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini 
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini 
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$federation.ini"
+        cat ~/.euca/$federation.ini 2>/dev/null
+
+        next 200
+    fi
 fi
- 
- 
+
+
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display AWSCLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.aws/config"
-echo
-echo "cat ~/.aws/credentials"
- 
-run 50
- 
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat ~/.aws/config"
-    cat ~/.aws/config
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
  
-    echo "# cat ~/.aws/credentials"
-    cat ~/.aws/credentials
+    run 50
  
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+ 
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+ 
+        next 200
+    fi
 fi
 
 

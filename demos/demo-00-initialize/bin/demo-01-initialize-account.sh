@@ -6,9 +6,9 @@
 # - Creates the Demo Account Administrator Login Profile
 # - Downloads the Demo Account Administrator Credentials
 # - Configures Euca2ools for the Demo Account Administrator
-# - Configures AWSCLI for the Demo Account Administrator
+# - Configures AWS CLI for the Demo Account Administrator
 # - Authorizes use of the CentOS 6.6 Generic image by the Demo Account
-# - Authorizes use of the CentOS 6.6 CFN + AWSCLI image by the Demo Account
+# - Authorizes use of the CentOS 6.6 CFN + AWS CLI image by the Demo Account
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
 # running this script, as this script references images it installs.
@@ -44,6 +44,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=${AWS_ACCOUNT_NAME:-demo}
 password=${account}123
@@ -52,11 +53,12 @@ password=${account}123
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-p password]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-p password]"
     echo "               [-r region] [-a account]"
     echo "  -I           non-interactive"
     echo "  -s           slower: increase pauses by 25%"
     echo "  -f           faster: reduce pauses by 25%"
+    echo "  -v           verbose"
     echo "  -p password  password for Demo Account Administrator (default: $password)"
     echo "  -r region    Eucalyptus Region (default: $region)"
     echo "  -a account   Eucalyptus Account to create for use in demos (default: $account)"
@@ -142,11 +144,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfp:r:a:? arg; do
+while getopts Isfvp:r:a:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     p)  password="$OPTARG";;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
@@ -195,7 +198,7 @@ fi
 profile=$region-admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWSCLI profile!"
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWS CLI profile!"
     echo "Expected to find: [profile $profile] in ~/.aws/config"
     exit 51
 fi
@@ -422,8 +425,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator AWSCLI Profile"
-echo "    - This allows the Demo Account Administrator to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator AWS CLI Profile"
+echo "    - This allows the Demo Account Administrator to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -547,7 +550,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CFN + AWSCLI Image"
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CFN + AWS CLI Image"
 echo
 echo "============================================================"
 echo
@@ -583,98 +586,135 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). List Demo Resources"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-images --region $user_region"
-echo
-echo "euare-accountlist --region $user_region"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-images --region $user_region"
-    euca-describe-images --region $user_region
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). List Demo Resources"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-images --region $user_region"
+    echo
+    echo "euare-accountlist --region $user_region"
 
-    echo "# euare-accountlist --region $user_region"
-    euare-accountlist --region $user_region
+    run 50
 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-images --region $user_region"
+        euca-describe-images --region $user_region
+        pause
+
+        echo "# euare-accountlist --region $user_region"
+        euare-accountlist --region $user_region
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat /etc/euca2ools/conf.d/$region.ini"
-echo
-echo "cat ~/.euca/global.ini"
-echo
-echo "cat ~/.euca/$region.ini"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat /etc/euca2ools/conf.d/$region.ini"
-    cat /etc/euca2ools/conf.d/$region.ini
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo "    - The $federation Federation should be configured with"
+    echo "      AWS HTTPS URLs and Federated Identity Users."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$federation.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+    echo
+    echo "cat ~/.euca/$federation.ini"
 
-    echo "# cat ~/.euca/global.ini"
-    cat ~/.euca/global.ini
-    pause
+    run 50
 
-    echo "# cat ~/.euca/$region.ini"
-    cat ~/.euca/$region.ini
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
 
-    next 200
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$federation.ini"
+        cat ~/.euca/$federation.ini 2>/dev/null
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display AWSCLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.aws/config"
-echo
-echo "cat ~/.aws/credentials"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat ~/.aws/config"
-    cat ~/.aws/config
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
 
-    echo "# cat ~/.aws/credentials"
-    cat ~/.aws/credentials
+    run 50
 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+
+        next 200
+    fi
 fi
 
 

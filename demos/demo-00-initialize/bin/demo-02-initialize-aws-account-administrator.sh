@@ -9,17 +9,17 @@
 # - Creates the administrator User Login Profile
 # - Creates the administrator User Access Key
 # - Configures Euca2ools for the administrator User
-# - Configures AWSCLI for the administrator User
+# - Configures AWS CLI for the administrator User
 # - Lists AWS Account Resources
 # - Displays Euca2ools Configuration
-# - Displays AWSCLI Configuration
+# - Displays AWS CLI Configuration
 #
 # The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
 # to running this script.
 #
 # Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
 # to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
-# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
+# into a standard Euca2ools and AWS CLI storage onvention. This is optional, but required for the
 # next script to be run.
 #
 # Then this script should be run by the AWS Account Administrator as many times as needed to
@@ -541,8 +541,8 @@ else
             echo ">"
             echo "> EOF"
             # Use echo instead of cat << EOF to better show indentation
-            echo "; AWS"                > ~/.euca/$federation.ini
-            echo                       >> ~/.euca/$federation.ini
+            echo "; AWS"  > ~/.euca/$federation.ini
+            echo         >> ~/.euca/$federation.ini
             pause
         fi
         echo "# cat << EOF >> ~/.euca/$federation.ini"
@@ -553,9 +553,9 @@ else
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
         echo "[user $federation-$account-$new_user]" >> ~/.euca/$federation.ini
-        echo "key-id = $access_key"              >> ~/.euca/$federation.ini
-        echo "secret-key = $secret_key"          >> ~/.euca/$federation.ini
-        echo                                     >> ~/.euca/$federation.ini
+        echo "key-id = $access_key"                  >> ~/.euca/$federation.ini
+        echo "secret-key = $secret_key"              >> ~/.euca/$federation.ini
+        echo                                         >> ~/.euca/$federation.ini
         pause
 
         echo "# euca-describe-availability-zones --region=$federation-$account-$new_user@$region"
@@ -575,8 +575,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User AWSCLI Profile"
-echo "    - This allows the AWS Account Administrator User to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User AWS CLI Profile"
+echo "    - This allows the AWS Account Administrator User to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -653,9 +653,9 @@ else
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
         echo "[profile $account-$new_user]" >> ~/.aws/config
-        echo "region = $region"         >> ~/.aws/config
-        echo "output = text"            >> ~/.aws/config
-        echo                            >> ~/.aws/config
+        echo "region = $region"             >> ~/.aws/config
+        echo "output = text"                >> ~/.aws/config
+        echo                                >> ~/.aws/config
         pause
 
         if [ ! -r ~/.aws/credentials ]; then
@@ -679,7 +679,7 @@ else
         echo ">"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "[$account-$new_user]"                    >> ~/.aws/credentials
+        echo "[$account-$new_user]"                >> ~/.aws/credentials
         echo "aws_access_key_id = $access_key"     >> ~/.aws/credentials
         echo "aws_secret_access_key = $secret_key" >> ~/.aws/credentials
         echo                                       >> ~/.aws/credentials
@@ -744,14 +744,29 @@ if [ $verbose = 1 ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo "    - The $federation Federation should be configured with"
+    echo "      AWS HTTPS URLs and Federated Identity Users."
     echo
     echo "============================================================"
     echo
     echo "Commands:"
     echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
     echo "cat /etc/euca2ools/conf.d/$federation.ini"
     echo
-    echo "cat ~/.euca/global.ini"
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
     echo
     echo "cat ~/.euca/$federation.ini"
 
@@ -759,16 +774,32 @@ if [ $verbose = 1 ]; then
 
     if [ $choice = y ]; then
         echo
-        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
-        cat /etc/euca2ools/conf.d/$federation.ini
-        pause
-
         echo "# cat ~/.euca/global.ini"
         cat ~/.euca/global.ini
         pause
 
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini 
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini 
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+        pause
+
         echo "# cat ~/.euca/$federation.ini"
-        cat ~/.euca/$federation.ini
+        cat ~/.euca/$federation.ini 2>/dev/null
 
         next 200
     fi
@@ -781,7 +812,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
     echo
     echo "============================================================"
     echo

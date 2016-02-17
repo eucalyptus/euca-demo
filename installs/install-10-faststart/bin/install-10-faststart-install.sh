@@ -26,6 +26,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 config=$(hostname -s)
 local=0
 
@@ -33,10 +34,11 @@ local=0
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-c config] [-l]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-c config] [-l]"
     echo "  -I         non-interactive"
     echo "  -s         slower: increase pauses by 25%"
     echo "  -f         faster: reduce pauses by 25%"
+    echo "  -v         verbose"
     echo "  -c config  configuration (default: $config)"
     echo "  -l         Use local mirror for Faststart script (uses local yum repos)"
 }
@@ -121,11 +123,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfc:l? arg; do
+while getopts Isfvc:l? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     c)  config="$OPTARG";;
     l)  local=1;;
     ?)  usage
@@ -209,7 +212,7 @@ else
         # A workaround is to set the region, we save and restore the original region around this
         if [ -n "$AWS_DEFAULT_REGION" ]; then
             save_aws_default_region=$AWS_DEFAULT_REGION
-        fi  
+        fi
 
         export AWS_DEFAULT_REGION=localhost
         bash <(curl -Ls $faststart_url)
@@ -245,6 +248,14 @@ echo "Commands:"
 echo
 echo "cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save"
 echo
+echo "cat <<EOF > ~/.euca/global.ini"
+echo "; Eucalyptus Global"
+echo
+echo "[global]"
+echo "default-region = localhost"
+echo
+echo "EOF"
+echo
 echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
 echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
 echo "       -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
@@ -253,14 +264,6 @@ echo "sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
 echo "       -e \"s/[0-9]*:admin/localhost-admin/\" \\"
 echo "       -e \"/^\\[user/,/^account-id =/p\" \\"
 echo "       -e \"\\\$a\\\\\\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini"
-echo
-echo "cat <<EOF > ~/.euca/global.ini"
-echo "; Eucalyptus Global"
-echo
-echo "[global]"
-echo "default-region = localhost"
-echo
-echo "EOF"
 echo
 echo "mkdir -p ~/.creds/localhost/eucalyptus/admin"
 echo
@@ -288,6 +291,21 @@ else
         cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save
         pause
 
+        echo "cat <<EOF > ~/.euca/global.ini"
+        echo "; Eucalyptus Global"
+        echo
+        echo "[global]"
+        echo "default-region = localhost"
+        echo
+        echo "EOF"
+        # Use echo instead of cat << EOF to better show indentation
+        echo "; Eucalyptus Global"         > ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        echo "[global]"                   >> ~/.euca/global.ini
+        echo "default-region = localhost" >> ~/.euca/global.ini
+        echo                              >> ~/.euca/global.ini
+        pause
+
         echo "# sed -n -e \"1i; Eucalyptus Region localhost\\n\" \\"
         echo ">        -e \"s/[0-9]*:admin/localhost-admin/\" \\"
         echo ">        -e \"/^\\[region/,/^\\user =/p\" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini"
@@ -306,25 +324,9 @@ else
                -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
         pause
 
-        echo "cat <<EOF > ~/.euca/global.ini"
-        echo "; Eucalyptus Global"
-        echo
-        echo "[global]"
-        echo "default-region = localhost"
-        echo
-        echo "EOF"
-        # Use echo instead of cat << EOF to better show indentation
-        echo "; Eucalyptus Global"         > ~/.euca/global.ini
-        echo                              >> ~/.euca/global.ini
-        echo "[global]"                   >> ~/.euca/global.ini
-        echo "default-region = localhost" >> ~/.euca/global.ini
-        echo                              >> ~/.euca/global.ini
-        pause
-
         echo "# mkdir -p ~/.creds/localhost/eucalyptus/admin"
         mkdir -p ~/.creds/localhost/eucalyptus/admin
-        pause
-
+        echo "#"
         echo "# cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
         echo "> AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
         echo "> AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
@@ -343,52 +345,96 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm Public IP addresses"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "euca-describe-addresses verbose --region localhost"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euca-describe-addresses verbose --region localhost"
-    euca-describe-addresses verbose --region localhost
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The localhost Region should be the default."
+    echo "    - The localhost Region should be configured with FastStart"
+    echo "      xip.io DNS HTTP URLs."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
 
-    next
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "================================================================================"
-echo
-echo "$(printf '%2d' $step). Confirm service status"
-echo
-echo "================================================================================"
-echo
-echo "Commands:"
-echo
-echo "euserv-describe-services --region localhost"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# euserv-describe-services --region localhost"
-    euserv-describe-services --region localhost
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Eucalyptus Services"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euserv-describe-services --region localhost"
 
-    next 200
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euserv-describe-services --region localhost"
+        euserv-describe-services --region localhost
+
+        next 200
+    fi
 fi
 
+
+((++step))
+if [ $verbose = 1 ]; then
+    clear
+    echo
+    echo "================================================================================"
+    echo
+    echo "$(printf '%2d' $step). Confirm Eucalyptus Public Addresses"
+    echo
+    echo "================================================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "euca-describe-addresses verbose --region localhost"
+
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-describe-addresses verbose --region localhost"
+        euca-describe-addresses verbose --region localhost
+
+        next
+    fi
+fi
 
 end=$(date +%s)
 

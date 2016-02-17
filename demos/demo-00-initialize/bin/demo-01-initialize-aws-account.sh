@@ -2,13 +2,13 @@
 #
 # This script initializes a Management Workstation for Demos which also use AWS, including:
 # - Configures Euca2ools for the AWS Account Administrator
-# - Configures AWSCLI for the AWS Account Administrator
+# - Configures AWS CLI for the AWS Account Administrator
 #
 # The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
 # to running this script.
 #
 # This script should be run by the AWS Account Administrator next, to move the Credentials obtained
-# during manual AWS Account creation into the Euca2ools and AWSCLI configuration file in a
+# during manual AWS Account creation into the Euca2ools and AWS CLI configuration file in a
 # standard way.
 #
 # Then the demo-02-initialize-aws-account-administrator.sh script should be run by the AWS Account
@@ -38,6 +38,7 @@ next_default=5
 
 interactive=1
 speed=100
+verbose=0
 region=${AWS_DEFAULT_REGION#*@}
 account=euca
 access_key=${AWS_ACCESS_KEY}
@@ -47,10 +48,11 @@ secret_key=${AWS_SECRET_KEY}
 #  2. Define functions
 
 usage () {
-    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-r region ] [-a account] [-A access_key] [-S secret_key]"
+    echo "Usage: ${BASH_SOURCE##*/} [-I [-s | -f]] [-v] [-r region ] [-a account] [-A access_key] [-S secret_key]"
     echo "  -I             non-interactive"
     echo "  -s             slower: increase pauses by 25%"
     echo "  -f             faster: reduce pauses by 25%"
+    echo "  -v             verbose"
     echo "  -r region      AWS Region (default: $region)"
     echo "  -a account     AWS Account name to use in demos (default: $account)"
     echo "  -A access_key  AWS Account-level access-key (default: $access_key)"
@@ -137,11 +139,12 @@ next() {
 
 #  3. Parse command line options
 
-while getopts Isfr:a:A:S:? arg; do
+while getopts Isfvr:a:A:S:? arg; do
     case $arg in
     I)  interactive=0;;
     s)  ((speed < speed_max)) && ((speed=speed+25));;
     f)  ((speed > 0)) && ((speed=speed-25));;
+    v)  verbose=1;;
     r)  region="$OPTARG";;
     a)  account="$OPTARG";;
     A)  access_key="$OPTARG";;
@@ -290,8 +293,8 @@ else
             echo ">"
             echo "> EOF"
             # Use echo instead of cat << EOF to better show indentation
-            echo "; AWS"                > ~/.euca/$federation.ini
-            echo                       >> ~/.euca/$federation.ini
+            echo "; AWS"  > ~/.euca/$federation.ini
+            echo         >> ~/.euca/$federation.ini
             pause
         fi
         echo "# cat << EOF >> ~/.euca/$federation.ini"
@@ -320,8 +323,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator AWSCLI Profile"
-echo "    - This allows the AWS Account Administrator to run AWSCLI commands"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator AWS CLI Profile"
+echo "    - This allows the AWS Account Administrator to run AWS CLI commands"
 echo
 echo "============================================================"
 echo
@@ -439,68 +442,103 @@ fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat /etc/euca2ools/conf.d/$federation.ini"
-echo
-echo "cat ~/.euca/global.ini"
-echo
-echo "cat ~/.euca/$federation.ini"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat /etc/euca2ools/conf.d/$federation.ini"
-    cat /etc/euca2ools/conf.d/$federation.ini
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display Euca2ools Configuration"
+    echo "    - The $region Region should be the default."
+    echo "    - The $region Region should be configured with Custom"
+    echo "      DNS HTTPS URLs. It can be used from other hosts."
+    echo "    - The localhost Region should be configured with direct"
+    echo "      URLs. It can be used only from this host."
+    echo "    - The $federation Federation should be configured with"
+    echo "      AWS HTTPS URLs and Federated Identity Users."
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.euca/global.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$region.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/localhost.ini"
+    echo
+    echo "cat /etc/euca2ools/conf.d/$federation.ini"
+    echo
+    echo "cat ~/.euca/$region.ini"
+    echo
+    echo "cat ~/.euca/localhost.ini"
+    echo
+    echo "cat ~/.euca/$federation.ini"
 
-    echo "# cat ~/.euca/global.ini"
-    cat ~/.euca/global.ini
-    pause
+    run 50
 
-    echo "# cat ~/.euca/$federation.ini"
-    cat ~/.euca/$federation.ini
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.euca/global.ini"
+        cat ~/.euca/global.ini
+        pause
 
-    next 200
+        echo "# cat /etc/euca2ools/conf.d/$region.ini"
+        cat /etc/euca2ools/conf.d/$region.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
+        cat /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
+        cat /etc/euca2ools/conf.d/$federation.ini 
+        pause
+
+        echo "# cat ~/.euca/$region.ini"
+        cat ~/.euca/$region.ini 
+        pause
+
+        echo "# cat ~/.euca/localhost.ini"
+        cat ~/.euca/localhost.ini
+        pause
+
+        echo "# cat ~/.euca/$federation.ini"
+        cat ~/.euca/$federation.ini 2>/dev/null
+
+        next 200
+    fi
 fi
 
 
 ((++step))
-clear
-echo
-echo "============================================================"
-echo
-echo "$(printf '%2d' $step). Display AWSCLI Configuration"
-echo
-echo "============================================================"
-echo
-echo "Commands:"
-echo
-echo "cat ~/.aws/config"
-echo
-echo "cat ~/.aws/credentials"
-
-run 50
-
-if [ $choice = y ]; then
+if [ $verbose = 1 ]; then
+    clear
     echo
-    echo "# cat ~/.aws/config"
-    cat ~/.aws/config
-    pause
+    echo "============================================================"
+    echo
+    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo
+    echo "============================================================"
+    echo
+    echo "Commands:"
+    echo
+    echo "cat ~/.aws/config"
+    echo
+    echo "cat ~/.aws/credentials"
 
-    echo "# cat ~/.aws/credentials"
-    cat ~/.aws/credentials
+    run 50
 
-    next 200
+    if [ $choice = y ]; then
+        echo
+        echo "# cat ~/.aws/config"
+        cat ~/.aws/config
+        pause
+
+        echo "# cat ~/.aws/credentials"
+        cat ~/.aws/credentials
+
+        next 200
+    fi
 fi
 
 
