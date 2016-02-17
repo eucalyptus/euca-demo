@@ -185,7 +185,7 @@ if ! grep -s -q "\[user localhost-admin]" ~/.euca/localhost.ini; then
     if ! grep -s -q "\[user [0-9]*:admin]" ~/.euca/faststart.ini; then
         echo "Could not find Eucalyptus (localhost) Region Eucalyptus Administrator (admin) Euca2ools user!"
         echo "Expected to find: [user [0-9]*:admin] in ~/.euca/faststart.ini"
-        exit 25
+        exit 50
     fi
 fi
 
