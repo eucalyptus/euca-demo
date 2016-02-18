@@ -1892,7 +1892,7 @@ else
         echo                                                             >> /etc/euca2ools/conf.d/$region.ini
         echo                                                             >> /etc/euca2ools/conf.d/$region.ini
         echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem" >> /etc/euca2ools/conf.d/$region.ini
-        echo "verify-ssl = false"                                        >> /etc/euca2ools/conf.d/$region.ini
+        echo "verify-ssl = true"                                         >> /etc/euca2ools/conf.d/$region.ini
         pause
 
         echo "# cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-$region.pem"
