@@ -1831,8 +1831,6 @@ if [ $verbose = 1 ]; then
     echo "      DNS HTTPS URLs. It can be used from other hosts."
     echo "    - The localhost Region should be configured with direct"
     echo "      URLs. It can be used only from this host."
-    echo "    - The $federation Federation should be configured with"
-    echo "      AWS HTTPS URLs and Federated Identity Users."
     echo
     echo "============================================================"
     echo
@@ -1844,13 +1842,9 @@ if [ $verbose = 1 ]; then
     echo
     echo "cat /etc/euca2ools/conf.d/localhost.ini"
     echo
-    echo "cat /etc/euca2ools/conf.d/$federation.ini"
-    echo
     echo "cat ~/.euca/$region.ini"
     echo
     echo "cat ~/.euca/localhost.ini"
-    echo
-    echo "cat ~/.euca/$federation.ini"
 
     run 50
 
@@ -1868,20 +1862,12 @@ if [ $verbose = 1 ]; then
         cat /etc/euca2ools/conf.d/localhost.ini
         pause
 
-        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
-        cat /etc/euca2ools/conf.d/$federation.ini 
-        pause
-
         echo "# cat ~/.euca/$region.ini"
         cat ~/.euca/$region.ini 
         pause
 
         echo "# cat ~/.euca/localhost.ini"
         cat ~/.euca/localhost.ini
-        pause
-
-        echo "# cat ~/.euca/$federation.ini"
-        cat ~/.euca/$federation.ini 2>/dev/null
 
         next 200
     fi
