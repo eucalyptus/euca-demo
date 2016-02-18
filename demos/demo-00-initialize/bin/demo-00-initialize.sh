@@ -40,12 +40,12 @@ external_mirror=cloud.centos.org
 internal_mirror=mirror.mjc.prc.eucalyptus-systems.com
 
 generic_image=CentOS-6-x86_64-GenericCloud
-external_generic_image_url=http://$external_mirror/centos/6.7/images/$generic_image.qcow2.xz
-internal_generic_image_url=http://$internal_mirror/centos/6.7/images/$generic_image.qcow2.xz
+external_generic_image_url=http://$external_mirror/centos/6/images/$generic_image.qcow2.xz
+internal_generic_image_url=http://$internal_mirror/centos/6/images/$generic_image.qcow2.xz
 
 cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
-internal_cfn_awscli_image_url=http://$internal_mirror/centos/6.7/images/$cfn_awscli_image.raw.xz
+internal_cfn_awscli_image_url=http://$internal_mirror/centos/6/images/$cfn_awscli_image.raw.xz
 
 step=0
 speed_max=400
@@ -386,7 +386,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Demo Generic Image (CentOS 6.6)"
+echo "$(printf '%2d' $step). Download Demo Generic Image (CentOS 6)"
 echo "    - Decompress and convert image to raw format"
 echo
 echo "============================================================"
@@ -486,7 +486,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Demo CFN + AWSCLI Image (CentOS 6.6)"
+echo "$(printf '%2d' $step). Download Demo CFN + AWSCLI Image (CentOS 6)"
 echo "    - Decompress to raw format"
 echo
 echo "============================================================"

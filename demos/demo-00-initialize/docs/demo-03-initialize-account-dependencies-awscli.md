@@ -1,14 +1,14 @@
-# Demo Initialize: Initialize Demo Account Dependencies (via AWSCLI)
+# Demo Initialize: Initialize Demo Account Dependencies (via AWS CLI)
 
 This document describes the manual procedure to initialize additional dependencies within the demo
-account, using the AWSCLI whenever possible.
+account, using the AWS CLI whenever possible.
 
 ### Prerequisites
 
 This variant must be run by root on the Eucalyptus CLC host.
 
 It assumes the environment was installed via FastStart and the additional scripts needed to
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done.
 
@@ -30,14 +30,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Adjust the variables in this section to your environment.
 
     ```bash
-    export REGION=hp-gol01-d8
+    export REGION=hp-gol01-d6
     export ACCOUNT=demo
     export USER=admin
 
     export PROFILE=$REGION-$ACCOUNT-$USER
     ```
 
-This script also assumes you have additionally configured AWSCLI tools with appropriate region entries.
+This script also assumes you have additionally configured AWS CLI tools with appropriate region entries.
 
 ### Initialize Demo Account Dependencies
 
@@ -49,7 +49,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     aws ec2 describe-images --profile $PROFILE --region $REGION
     ```
 
-3. Import Demo (demo) Account Administrator Demo Keypair
+3. Configure Demo Keypair
 
     ```bash
     cat << EOF > ~/.ssh/demo_id_rsa
@@ -93,19 +93,23 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     lN9/vp/T+iQ9jgHvs1WcqF4PRTJLaUd3Dy+yv9Bu37vWZNCngmJwvKifKUcb\
      demo@hpcloud.com
     EOF
+    ```
 
+4. Import Demo (demo) Account Administrator Demo Keypair
+
+    ```bash
     aws ec2 import-key-pair --key-name=demo \
                             --public-key-material file://~/.ssh/demo_id_rsa.pub \
                             --profile $PROFILE --region $REGION
     ```
 
-4. Create Demo (demo) Account Demo (demo-demo) Bucket
+5. Create Demo (demo) Account Demo (demo-demo) Bucket
 
     ```bash
     aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION
     ```
 
-5. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
+6. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
 
     This Role is intended for Demos which need Administrator access to Resources.
 
@@ -134,7 +138,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                                          --profile $PROFILE --region $REGION
     ```
 
-6. Create Demo (demo) Account Demos (Demos) Role Policy
+7. Create Demo (demo) Account Demos (Demos) Role Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -191,7 +195,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                             --profile $PROFILE --region $REGION
     ```
 
-7. Create Demo (demo) Account Demos (Demos) Group
+8. Create Demo (demo) Account Demos (Demos) Group
 
     This Group is intended for Demos which have Administrator access to Resources.
 
@@ -200,7 +204,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                          --profile $PROFILE --region $REGION
     ```
 
-8. Create Demo (demo) Account Demos (Demos) Group Policy
+9. Create Demo (demo) Account Demos (Demos) Group Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -225,7 +229,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                              --profile $PROFILE --region $REGION
     ```
 
-9. Create Demo (demo) Account Developers (Developers) Group
+10. Create Demo (demo) Account Developers (Developers) Group
 
     This Group is intended for Developers who can modify Resources.
 
@@ -234,7 +238,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                          --profile $PROFILE --region $REGION
     ```
 
-10. Create Demo (demo) Account Developers (Developers) Group Policy
+11. Create Demo (demo) Account Developers (Developers) Group Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -257,7 +261,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                              --profile $PROFILE --region $REGION
     ```
 
-11. Create Demo (demo) Account Users (Users) Group
+12. Create Demo (demo) Account Users (Users) Group
 
     This Group is intended for Users who can view but not modify Resources.
 
@@ -266,7 +270,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                          --profile $PROFILE --region $REGION
     ```
 
-12. Create Demo (demo) Account Users (Users) Group Policy
+13. Create Demo (demo) Account Users (Users) Group Policy
 
     This Policy provides ReadOnly access to all resources.
 
@@ -313,21 +317,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                              --profile $PROFILE --region $REGION
     ```
 
-13. Create Demo (demo) Account Demo (demo) User
+14. Create Demo (demo) Account Demo (demo) User
 
     ```bash
     aws iam create-user --user-name demo \
                         --profile $PROFILE --region $REGION
     ```
 
-14. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
+15. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
 
     ```bash
     aws iam add-user-to-group --group-name Demos --user-name demo \
                               --profile $PROFILE --region $REGION
     ```
 
-15. Create Demo (demo) Account Demo (demo) User Login Profile
+16. Create Demo (demo) Account Demo (demo) User Login Profile
 
     This allows the Demo Account Demo User to login to the console.
 
@@ -336,7 +340,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                                  --profile $PROFILE --region $REGION
     ```
 
-16. Create Demo (demo) Account Demo (demo) User Access Key
+17. Create Demo (demo) Account Demo (demo) User Access Key
 
     This allows the Demo Account Demo User to run API commands.
 
@@ -354,7 +358,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     EOF
     ```
 
-17. Create Demo (demo) Account Demo (demo) User Euca2ools Profile
+18. Create Demo (demo) Account Demo (demo) User Euca2ools Profile
 
     This allows the Demo Account Demo User to run API commands via Euca2ools.
 
@@ -369,9 +373,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-demo@$REGION
     ```
 
-18. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
+19. Create Demo (demo) Account Demo (demo) User AWS CLI Profile
 
-    This allows the Demo Account Demo User to run AWSCLI commands.
+    This allows the Demo Account Demo User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -391,21 +395,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION
     ```
 
-19. Create Demo (demo) Account Developer (developer) User
+20. Create Demo (demo) Account Developer (developer) User
 
     ```bash
     aws iam create-user --user-name developer \
                         --profile $PROFILE --region $REGION
     ```
 
-20. Add Demo (demo) Account Developer (developer) User to Developers (Developers) Group
+21. Add Demo (demo) Account Developer (developer) User to Developers (Developers) Group
 
     ```bash
     aws iam add-user-to-group --group-name Developers --user-name developer \
                               --profile $PROFILE --region $REGION
     ```
 
-21. Create Demo (demo) Account Developer (developer) User Login Profile
+22. Create Demo (demo) Account Developer (developer) User Login Profile
 
     This allows the Demo Account Developer User to login to the console.
 
@@ -414,7 +418,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                                  --profile $PROFILE --region $REGION
     ```
 
-22. Create Demo (demo) Account Developer (developer) User Access Key
+23. Create Demo (demo) Account Developer (developer) User Access Key
 
     This allows the Demo Account Developer User to run API commands.
 
@@ -432,7 +436,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     EOF
     ```
 
-23. Create Demo (demo) Account Developer (developer) User Euca2ools Profile
+24. Create Demo (demo) Account Developer (developer) User Euca2ools Profile
 
     This allows the Demo Account Developer User to run API commands via Euca2ools.
 
@@ -447,9 +451,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-developer@$REGION
     ```
 
-24. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
+25. Create Demo (demo) Account Developer (developer) User AWS CLI Profile
 
-    This allows the Demo Account Developer User to run AWSCLI commands.
+    This allows the Demo Account Developer User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -469,21 +473,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION
     ```
 
-25. Create Demo (demo) Account User (user) User
+26. Create Demo (demo) Account User (user) User
 
     ```bash
     aws iam create-user --user-name user \
                         --profile $PROFILE --region $REGION
     ```
 
-26. Add Demo (demo) Account User (user) User to Users (Users) Group
+27. Add Demo (demo) Account User (user) User to Users (Users) Group
 
     ```bash
     aws iam add-user-to-group --group-name Users --user-name user \
                               --profile $PROFILE --region $REGION
     ```
 
-27. Create Demo (demo) Account User (user) User Login Profile
+28. Create Demo (demo) Account User (user) User Login Profile
 
     This allows the Demo Account User User to login to the console.
 
@@ -492,7 +496,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
                                  --profile $PROFILE --region $REGION
     ```
 
-28. Create Demo (demo) Account User (user) User Access Key
+29. Create Demo (demo) Account User (user) User Access Key
 
     This allows the Demo Account User User to run API commands.
 
@@ -510,7 +514,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     EOF
     ```
 
-29. Create Demo (demo) Account User (user) User Euca2ools Profile
+30. Create Demo (demo) Account User (user) User Euca2ools Profile
 
     This allows the Demo Account User User to run API commands via Euca2ools.
 
@@ -525,9 +529,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-user@$REGION
     ```
 
-30. Create Demo (demo) Account User (user) User AWSCLI Profile
+31. Create Demo (demo) Account User (user) User AWS CLI Profile
 
-    This allows the Demo Account Demo User to run AWSCLI commands.
+    This allows the Demo Account Demo User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -547,7 +551,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION
     ```
 
-31. List Demo Resources
+32. List Demo Resources
 
     ```bash
     aws ec2 describe-images
@@ -567,17 +571,17 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     aws iam get-group --group-name Users --profile $PROFILE --region $REGION
     ```
 
-32. Display Euca2ools Configuration
+33. Display Euca2ools Configuration
 
     ```bash
-    cat /etc/euca2ools/conf.d/$REGION.ini
-
     cat ~/.euca/global.ini
+
+    cat /etc/euca2ools/conf.d/$REGION.ini
 
     cat ~/.euca/$REGION.ini
     ```
 
-33. Display AWSCLI Configuration
+34. Display AWS CLI Configuration
 
     ```bash
     cat ~/.aws/config

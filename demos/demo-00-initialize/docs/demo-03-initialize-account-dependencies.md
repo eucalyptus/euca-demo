@@ -8,7 +8,7 @@ demo account.
 This variant must be run by root on the Eucalyptus CLC host.
 
 It assumes the environment was installed via FastStart and the additional scripts needed to
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done.
 
@@ -48,7 +48,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euca-describe-images --all --region $USER_REGION
     ```
 
-3. Import Demo (demo) Account Administrator Demo Keypair
+3. Configure Demo Keypair
 
     ```bash
     cat << EOF > ~/.ssh/demo_id_rsa
@@ -92,13 +92,17 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     lN9/vp/T+iQ9jgHvs1WcqF4PRTJLaUd3Dy+yv9Bu37vWZNCngmJwvKifKUcb\
      demo@hpcloud.com
     EOF
+    ```
 
+4. Import Demo (demo) Account Administrator Demo Keypair
+
+    ```bash
     euca-import-keypair --public-key-file ~/.ssh/demo_id_rsa.pub \
                         --region $USER_REGION \
                         demo
     ```
 
-4. Create Demo (demo) Account Demo (demo-demo) Bucket
+5. Create Demo (demo) Account Demo (demo-demo) Bucket
 
     We must use a non-Euca2ools method, as Euca2ools does not currently support S3.
 
@@ -106,7 +110,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION
     ```
 
-5. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
+6. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
 
     This Role is intended for Demos which need Administrator access to Resources.
 
@@ -131,7 +135,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-instanceprofileaddrole --role-name Demos --region $USER_REGION Demos
     ```
 
-6. Create Demo (demo) Account Demos (Demos) Role Policy
+7. Create Demo (demo) Account Demos (Demos) Role Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -189,7 +193,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
                            Demos
     ```
 
-7. Create Demo (demo) Account Demos (Demos) Group
+8. Create Demo (demo) Account Demos (Demos) Group
 
     This Group is intended for Demos which have Administrator access to Resources.
 
@@ -197,7 +201,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-groupcreate --region $USER_REGION Demos
     ```
 
-8. Create Demo (demo) Account Demos (Demos) Group Policy
+9. Create Demo (demo) Account Demos (Demos) Group Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -223,7 +227,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
                             Demos
     ```
 
-9. Create Demo (demo) Account Developers (Developers) Group
+10. Create Demo (demo) Account Developers (Developers) Group
 
     This Group is intended for Developers who can modify Resources.
 
@@ -231,7 +235,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-groupcreate --region $USER_REGION Developers
     ```
 
-10. Create Demo (demo) Account Developers (Developers) Group Policy
+11. Create Demo (demo) Account Developers (Developers) Group Policy
 
     This Policy provides full access to all resources, except users and groups.
 
@@ -255,7 +259,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
                             Developers
     ```
 
-11. Create Demo (demo) Account Users (Users) Group
+12. Create Demo (demo) Account Users (Users) Group
 
     This Group is intended for Users who can view but not modify Resources.
 
@@ -263,7 +267,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-groupcreate --region $USER_REGION Users
     ```
 
-12. Create Demo (demo) Account Users (Users) Group Policy
+13. Create Demo (demo) Account Users (Users) Group Policy
 
     This Policy provides ReadOnly access to all Resources.
 
@@ -311,19 +315,19 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
                             Users
     ```
 
-13. Create Demo (demo) Account Demo (demo) User
+14. Create Demo (demo) Account Demo (demo) User
 
     ```bash
     euare-usercreate --region $USER_REGION demo
     ```
 
-14. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
+15. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
 
     ```bash
     euare-groupadduser --user-name demo --region $USER_REGION Demos
     ```
 
-15. Create Demo (demo) Account Demo (demo) User Login Profile
+16. Create Demo (demo) Account Demo (demo) User Login Profile
 
     This allows the Demo Account Demo User to login to the console.
 
@@ -331,7 +335,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-useraddloginprofile --password demo123-demo --region $USER_REGION demo
     ```
 
-16. Create Demo (demo) Account Demo (demo) User Access Key
+17. Create Demo (demo) Account Demo (demo) User Access Key
 
     This allows the Demo Account Demo User to run API commands.
 
@@ -347,7 +351,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     EOF
     ```
 
-17. Create Demo (demo) Account Demo (demo) User Euca2ools Profile
+18. Create Demo (demo) Account Demo (demo) User Euca2ools Profile
 
     This allows the Demo Account Demo User to run API commands via Euca2ools.
 
@@ -362,9 +366,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euca-describe-availability-zones --region $REGION-demo-demo@$REGION
     ```
 
-18. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
+19. Create Demo (demo) Account Demo (demo) User AWS CLI Profile
 
-    This allows the Demo Account Demo User to run AWSCLI commands.
+    This allows the Demo Account Demo User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -384,20 +388,20 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION
     ```
 
-19. Create Demo (demo) Account Developer (developer) User
+20. Create Demo (demo) Account Developer (developer) User
 
     ```bash
     euare-usercreate --region $USER_REGION developer
     ```
 
-20. Add Demo (demo) Account Developer (developer) to Developers (Developers) Group
+21. Add Demo (demo) Account Developer (developer) to Developers (Developers) Group
 
     ```bash
     euare-groupadduser --user-name developer --region $USER_REGION Developers
     ```
 
 
-21. Create Demo (demo) Account Developer (developer) User Login Profile
+22. Create Demo (demo) Account Developer (developer) User Login Profile
 
     This allows the Demo Account Developer User to login to the console.
 
@@ -405,7 +409,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-useraddloginprofile --password demo123-developer --region $USER_REGION developer
     ```
 
-22. Create Demo (demo) Account Developer (developer) User Access Key
+23. Create Demo (demo) Account Developer (developer) User Access Key
 
     This allows the Demo Account Developer User to run API commands.
 
@@ -421,7 +425,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     EOF
     ```
 
-23. Create Demo (demo) Account Developer (developer) User Euca2ools Profile
+24. Create Demo (demo) Account Developer (developer) User Euca2ools Profile
 
     This allows the Demo Account Developer User to run API commands via Euca2ools.
 
@@ -436,9 +440,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euca-describe-availability-zones --region $REGION-demo-developer@$REGION
     ```
 
-24. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
+25. Create Demo (demo) Account Developer (developer) User AWS CLI Profile
 
-    This allows the Demo Account Developer User to run AWSCLI commands.
+    This allows the Demo Account Developer User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -458,19 +462,19 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION
     ```
 
-25. Create Demo (demo) Account User (user) User
+26. Create Demo (demo) Account User (user) User
 
     ```bash
     euare-usercreate --region $USER_REGION user
     ```
 
-26. Add Demo (demo) Account User (user) to Users (Users) Group
+27. Add Demo (demo) Account User (user) to Users (Users) Group
 
     ```bash
     euare-groupadduser --user-name user --region $USER_REGION Users
     ```
 
-27. Create Demo (demo) Account User (user) User Login Profile
+28. Create Demo (demo) Account User (user) User Login Profile
 
     This allows the Demo Account User User to login to the console.
 
@@ -478,7 +482,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-useraddloginprofile --password demo123-user --region $USER_REGION user
     ```
 
-28. Create Demo (demo) Account User (user) User Access Key
+29. Create Demo (demo) Account User (user) User Access Key
 
     This allows the Demo Account User User to run API commands.
 
@@ -494,7 +498,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     EOF
     ```
 
-29. Create Demo (demo) Account User (user) User Euca2ools Profile
+30. Create Demo (demo) Account User (user) User Euca2ools Profile
 
     This allows the Demo Account User User to run API commands via Euca2ools.
 
@@ -509,9 +513,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euca-describe-availability-zones --region $REGION-demo-user@$REGION
     ```
 
-30. Create Demo (demo) Account User (user) User AWSCLI Profile
+31. Create Demo (demo) Account User (user) User AWS CLI Profile
 
-    This allows the Demo Account Demo User to run AWSCLI commands.
+    This allows the Demo Account Demo User to run AWS CLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -531,7 +535,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION
     ```
 
-31. List Demo Resources
+32. List Demo Resources
 
     ```bash
     euca-describe-images --region $USER_REGION
@@ -551,17 +555,17 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     euare-grouplistusers --region $USER_REGION Users
     ```
 
-32. Display Euca2ools Configuration
+33. Display Euca2ools Configuration
 
     ```bash
-    cat /etc/euca2ools/conf.d/$REGION.ini
-
     cat ~/.euca/global.ini
+
+    cat /etc/euca2ools/conf.d/$REGION.ini
 
     cat ~/.euca/$REGION.ini
     ```
 
-33. Display AWSCLI Configuration
+34. Display AWS CLI Configuration
 
     ```bash
     cat ~/.aws/config

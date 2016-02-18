@@ -7,7 +7,7 @@ This document describes the manual procedure to initialize a new Eucalyptus Regi
 This variant must be run by root on the Eucalyptus CLC host. 
  
 It assumes the environment was installed via FastStart and the additional scripts needed to 
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as 
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as 
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done. 
 
@@ -60,7 +60,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     ; Eucalyptus Global
 
     [global]
-    region = $REGION
+    default-region = $REGION
 
     EOF
 
@@ -79,7 +79,6 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     reporting-url = $reporting_url
     s3-url = $s3_url
     sts-url = $sts_url
-    swf-url = $swf_url
     user = $REGION-admin
 
     certificate = /usr/share/euca2ools/certs/cert-$REGION.pem
@@ -114,9 +113,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     euca-describe-availability-zones verbose --region $USER_REGION
     ```
 
-4. Create Eucalyptus Administrator AWSCLI Profile
+4. Create Eucalyptus Administrator AWS CLI Profile
 
-    This allows the Eucalyptus Administrator to run API commands via AWSCLI.
+    This allows the Eucalyptus Administrator to run API commands via AWS CLI.
 
     ```bash
     mkdir -p ~/.aws
@@ -246,9 +245,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                        --region $USER_REGION
     ```
 
-10. Download Demo CFN + AWSCLI Image (CentOS 6.6)
+10. Download Demo CFN + AWS CLI Image (CentOS 6.6)
 
-    This is a Generic Cloud Image modified to add CFN tools and AWSCLI.
+    This is a Generic Cloud Image modified to add CFN tools and AWS CLI.
 
     ```bash
     wget http://images-euca.s3-website-us-east-1.amazonaws.com/CentOS-6-x86_64-CFN-AWSCLI.raw.xz \
@@ -257,11 +256,11 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     xz -v -d /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw.xz
     ```
 
-11. Install Demo CFN + AWSCLI Image
+11. Install Demo CFN + AWS CLI Image
 
     ```bash
     euca-install-image --name centos6-cfn-init \
-                       --description "Centos 6 Cloud Image with CloudFormation and AWSCLI" \
+                       --description "Centos 6 Cloud Image with CloudFormation and AWS CLI" \
                        --bucket images \
                        --arch x86_64 \
                        --image /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw \
@@ -269,7 +268,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                        --region $USER_REGION
     ```
 
-12. Modify an Instance Type
+12. Modify Instance Types
 
     Change the m1.small instance type to use 1GB memory and 8GB disk, as the default CentOS
     cloud image requires this additional memory and disk to run.
@@ -293,14 +292,14 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 14. Display Euca2ools Configuration
 
     ```bash
-    cat /etc/euca2ools/conf.d/$REGION.ini
-
     cat ~/.euca/global.ini
+
+    cat /etc/euca2ools/conf.d/$REGION.ini
 
     cat ~/.euca/$REGION.ini
     ```
 
-15. Display AWSCLI Configuration
+15. Display AWS CLI Configuration
 
     ```bash
     cat ~/.aws/config

@@ -8,7 +8,7 @@ Region for demos.
 This variant must be run by root on the Eucalyptus CLC host.
 
 It assumes the environment was installed via FastStart and the additional scripts needed to
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done.
 
@@ -46,7 +46,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This allows the Demo Account Administrator to login to the console.
 
     ```bash
-    euare-usermodloginprofile -p demo123 --as-account demo --region $USER_REGION admin
+    euare-usermodloginprofile --password demo123 --as-account demo \
+                              --region $USER_REGION \
+                              admin
     ```
 
 3. Create Demo (demo) Account Administrator Access Key
@@ -81,9 +83,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euca-describe-availability-zones verbose --region $REGION-demo-admin@$REGION
     ```
 
-5. Create Demo (demo) Account Administrator AWSCLI Profile
+5. Create Demo (demo) Account Administrator AWS CLI Profile
 
-    This allows the Demo Account Administrator to run API commands via AWSCLI.
+    This allows the Demo Account Administrator to run API commands via AWS CLI.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -115,7 +117,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     euca-modify-image-attribute --launch-permission --add $account_id --region $USER_REGION $image_id
     ```
 
-7. Authorize Demo (demo) Account use of Demo CFN + AWSCLI Image
+7. Authorize Demo (demo) Account use of Demo CFN + AWS CLI Image
 
     Lookup the demo account id and centos cfn + awscli image id, as these will be different for each environment.
 
@@ -138,14 +140,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 9. Display Euca2ools Configuration
 
     ```bash
-    cat /etc/euca2ools/conf.d/$REGION.ini
-
     cat ~/.euca/global.ini
+
+    cat /etc/euca2ools/conf.d/$REGION.ini
 
     cat ~/.euca/$REGION.ini
     ```
 
-10. Display AWSCLI Configuration
+10. Display AWS CLI Configuration
 
     ```bash
     cat ~/.aws/config
