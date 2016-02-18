@@ -5,8 +5,8 @@ This document describes the manual procedure to install Eucalyptus via the FastS
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the REGION, and **mjc.prc.eucalyptus-systems.com** as the DOMAIN.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -27,13 +27,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
 
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+    export INSTANCE_SUBDOMAIN=.vm
+    export LOADBALANCER_SUBDOMAIN=lb
 
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export PUBLIC_IP_FIRST=10.104.45.1
+    export PUBLIC_IP_LAST=10.104.45.126
     ```
 
 ### Install Eucalyptus via Faststart
@@ -50,76 +51,109 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     * Whats the gateway for this host?                        <enter>
     * Whats the netmask for this host?                        <enter>
     * Whats the subnet for this host?                         <enter>
-    * Whats the first address of your available IP range?     ${EUCA_PUBLIC_IP_RANGE%-*} (first IP address)
-    * Whats the last address of your available IP range?      ${EUCA_PUBLIC_IP_RANGE#*-} (last IP address)
+    * Whats the first address of your available IP range?     ${PUBLIC_IP_FIRST}
+    * Whats the last address of your available IP range?      ${PUBLIC_IP_LAST}
     * Install additional services? [Y/n]                       <enter>
 
    This first set of packages is required to configure access to the Eucalyptus yum repositories
    which contain open source Eucalyptus software, and their dependencies.
 
     ```bash
-    bash <(curl -Ls eucalyptus.com/install)
+    bash <(curl -Ls hphelion.com/eucalyptus-install)
     ```
 
-2. Move Credentials into Demo Directory Structure
+2. Convert FastStart Credentials to Demo Conventions
 
-    We need to create additional accounts and users on this host, and also need to consolidate
-    credentials from multiple regions onto a single management host in some environments, so
-    move the Eucalyptus Administrator credentials into a more hierarchical credentials storage
-    directory structure which supports these needs.
+    This section splits the "localhost" Region configuration file created by FastStart into a convention
+    which allows for multiple named Regions.
 
-    Logic below also tests for a common problem and fixes it if found.
-
-    Logic below also handles the case where additional credentials downloads do not include the
-    pk/cert from the original download, and have a warning in the eucarc to this effect. We 
-    preserve the original files and re-add them the the eucarc.
+    We preserve the original "localhost" Region configuration file installed with Eucalyptus, so that we
+    can restore this later once a specific Region is configured.
 
     ```bash
-    if ! grep -s -q "^export AWS_DEFAULT_REGION=" ~/.bash_profile; then
-        echo "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> ~/.bash_profile
-    fi
-    if ! grep -s -q "^export AWS_DEFAULT_PROFILE=" ~/.bash_profile; then
-        echo "export AWS_DEFAULT_PROFILE=\$AWS_DEFAULT_REGION-admin" >> ~/.bash_profile
-    fi
+    cp -a /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.save
 
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+    cat <<EOF > ~/.euca/global.ini
+    ; Eucalyptus Global
 
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
- 
-    cp -a ~/admin.zip ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    [global]
+    default-region = localhost
 
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip \
-           -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+    EOF
 
-    if grep -s -q "echo WARN:  CloudFormation service URL is not configured" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        sed -i -r -e "/echo WARN:  CloudFormation service URL is not configured/d" \
-                  -e "s/(^export )(AWS_AUTO_SCALING_URL)(.*\/services\/)(AutoScaling$)/\1\2\3\4\n\1AWS_CLOUDFORMATION_URL\3CloudFormation/" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
+    sed -n -e "1i; Eucalyptus Region localhost\n" \
+           -e "s/[0-9]*:admin/localhost-admin/" \
+           -e "/^\[region/,/^\user =/p" ~/.euca/faststart.ini > /etc/euca2ools/conf.d/localhost.ini
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
+    sed -n -e "1i; Eucalyptus Region localhost\n" \
+           -e "s/[0-9]*:admin/localhost-admin/" \
+           -e "/^\[user/,/^account-id =/p" \
+           -e "\$a\\\\" ~/.euca/faststart.ini > ~/.euca/localhost.ini
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    mkdir -p ~/.creds/localhost/eucalyptus/admin
 
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc
+    AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)
+    AWSSecretKey=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)
+    EOF
+
+    rm -f ~/.euca/faststart.ini
     ```
 
-3. Confirm Public IP addresses
+3. Display Euca2ools Configuration
 
-    Simple test to confirm Eucalyptus is working.
+    This is an example of the configuration which results from the split logic in the last step.
 
+    * The localhost Region should be the default.
+    * The localhost Region should be configured with FastStart xip.io DNS HTTP URLs.
+    * The localhost Region should have the single Eucalyptus Administrator User.
+
+    ~/.euca/global.ini
     ```bash
-    euca-describe-addresses verbose
+    ; Eucalyptus Global
+
+    [global]
+    default-region = localhost
     ```
 
-4. Confirm service status
+    /etc/euca2ools/conf.d/localhost.ini
+    ```bash
+    ; Eucalyptus Region localhost
 
-    Truncate normal long output for readability
+    [region localhost]
+    autoscaling-url = http://autoscaling.10.104.10.74.xip.io:8773/
+    bootstrap-url = http://bootstrap.10.104.10.74.xip.io:8773/
+    cloudformation-url = http://cloudformation.10.104.10.74.xip.io:8773/
+    ec2-url = http://ec2.10.104.10.74.xip.io:8773/
+    elasticloadbalancing-url = http://elasticloadbalancing.10.104.10.74.xip.io:8773/
+    iam-url = http://iam.10.104.10.74.xip.io:8773/
+    monitoring-url = http://monitoring.10.104.10.74.xip.io:8773/
+    properties-url = http://properties.10.104.10.74.xip.io:8773/
+    reporting-url = http://reporting.10.104.10.74.xip.io:8773/
+    s3-url = http://s3.10.104.10.74.xip.io:8773/
+    sts-url = http://sts.10.104.10.74.xip.io:8773/
+    user = localhost-admin
+    ```
+
+    ~/.euca/localhost.ini
+    ```bash
+    ; Eucalyptus Region localhost
+
+    [user localhost-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
+    ```
+    
+4. Confirm Eucalyptus Services
 
     ```bash
-    euca-describe-services | cut -f1-5
+    euserv-describe-services --region localhost
+    ```
+
+5. Confirm Eucalyptus Public Addresses
+
+    ```bash
+    euca-describe-addresses verbose --region localhost
     ```
 
