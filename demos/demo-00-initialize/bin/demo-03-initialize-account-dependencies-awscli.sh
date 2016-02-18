@@ -2,6 +2,8 @@
 #
 # This script initializes a Management Workstation and it's associated Eucalyptus Region with
 # dependencies used in demos, including:
+# - Confirms the Demo Images are available to the Demo Account
+# - Configures the Demo Keypair
 # - Imports the Demo Keypair
 # - Creates the Demo Bucket (named "demo-{account}")
 # - Creates the Demos Role (named "Demos"), and associated Instance Profile (named "Demos")
@@ -283,7 +285,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Import Demo ($account) Account Administrator Demo Keypair"
+echo "$(printf '%2d' $step). Configure Demo Keypair"
 echo
 echo "============================================================"
 echo
@@ -298,24 +300,16 @@ echo
 echo "cat << EOF > ~/.ssh/demo_id_rsa.pub"
 cat $keysdir/demo_id_rsa.pub
 echo "EOF"
-echo
-echo "aws ec2 import-key-pair --key-name=demo \\"
-echo "                        --public-key-material file://~/.ssh/demo_id_rsa.pub \\"
-echo "                        --profile $profile --region $region"
 
-if aws ec2 describe-key-pairs --profile $profile --region $region | cut -f3 | grep -s -q "^demo$" && [ -r ~/.ssh/demo_id_rsa ]; then
+if [ -r ~/.ssh/demo_id_rsa -a -r ~/.ssh/demo_id_rsa.pub ]; then
     echo
     tput rev
-    echo "Already Imported!"
+    echo "Already Configured!"
     tput sgr0
 
     next 50
 
 else
-    aws ec2 delete-key-pair --key-name demo --profile $profile --region $region &> /dev/null
-    rm -f ~/.ssh/demo_id_rsa
-    rm -f ~/.ssh/demo_id_rsa.pub
-
     run 50
 
     if [ $choice = y ]; then
@@ -333,8 +327,40 @@ else
         cat $keysdir/demo_id_rsa.pub | sed -e 's/^/> /'
         echo "> EOF"
         cp $keysdir/demo_id_rsa.pub ~/.ssh/demo_id_rsa.pub
-        pause
 
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Import Demo ($account) Account Administrator Demo Keypair"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "aws ec2 import-key-pair --key-name=demo \\"
+echo "                        --public-key-material file://~/.ssh/demo_id_rsa.pub \\"
+echo "                        --profile $profile --region $region"
+
+if aws ec2 describe-key-pairs --profile $profile --region $region | cut -f3 | grep -s -q "^demo$"; then
+    echo
+    tput rev
+    echo "Already Imported!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
         echo "# aws ec2 import-key-pair --key-name=demo \\"
         echo ">                         --public-key-material file://~/.ssh/demo_id_rsa.pub \\"
         echo ">                         --profile $profile --region $region"

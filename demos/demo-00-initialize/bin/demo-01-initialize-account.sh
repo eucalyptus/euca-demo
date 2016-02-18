@@ -7,8 +7,8 @@
 # - Downloads the Demo Account Administrator Credentials
 # - Configures Euca2ools for the Demo Account Administrator
 # - Configures AWS CLI for the Demo Account Administrator
-# - Authorizes use of the CentOS 6.6 Generic image by the Demo Account
-# - Authorizes use of the CentOS 6.6 CFN + AWS CLI image by the Demo Account
+# - Authorizes use of the CentOS 6 Generic image by the Demo Account
+# - Authorizes use of the CentOS 6 CFN + AWS CLI image by the Demo Account
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
 # running this script, as this script references images it installs.

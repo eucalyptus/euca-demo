@@ -6,12 +6,13 @@
 # - TBD: Confirm Euca2ools User Configuration for the Eucalyptus Account Administrator
 # - TBD: Confirm AWSCLI Region Configuration
 # - TBD: Confirm AWSCLI User Configuration for the Eucalyptus Account Administrator
-# - Imports the Demo Keypair into the Eucalyptus Account
-# - Creates the sample-templates Bucket in the Eucalyptus Account
-# - Downloads a CentOS 6.6 Generic image
-# - Installs the CentOS 6.6 Generic image
-# - Downloads a CentOS 6.6 with cfn-init and awscli image
-# - Installs the CentOS 6.6 with cfn-init and awscli image
+# - Creates the Demo Keypair
+# - Imports the Demo Keypair
+# - Creates the sample-templates Bucket
+# - Downloads a CentOS 6 Generic image
+# - Installs the CentOS 6 Generic image
+# - Downloads a CentOS 6 with cfn-init and awscli image
+# - Installs the CentOS 6 with cfn-init and awscli image
 #
 # This script should be run by the Eucalyptus Administrator once after installation.
 #
