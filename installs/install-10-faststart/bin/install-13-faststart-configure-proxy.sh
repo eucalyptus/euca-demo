@@ -1890,7 +1890,6 @@ else
         echo "sts-url = $sts_url"                                        >> /etc/euca2ools/conf.d/$region.ini
         echo "user = $region-admin"                                      >> /etc/euca2ools/conf.d/$region.ini
         echo                                                             >> /etc/euca2ools/conf.d/$region.ini
-        echo                                                             >> /etc/euca2ools/conf.d/$region.ini
         echo "certificate = /usr/share/euca2ools/certs/cert-$region.pem" >> /etc/euca2ools/conf.d/$region.ini
         echo "verify-ssl = true"                                         >> /etc/euca2ools/conf.d/$region.ini
         pause
