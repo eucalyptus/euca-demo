@@ -8,8 +8,8 @@ certificate, along with a key and wildcard SSL certificate used to protect UFS a
 This variant is meant to be run as root
 
 This procedure is based on the hp-pal20a-1 demo environment running on host dl580gen8a
-in the Palo Alto EBC. It uses **hp-pal20a-1** as the AWS_DEFAULT_REGION, and **hpccc.com** as the
-AWS_DEFAULT_DOMAIN.
+in the Palo Alto EBC. It uses **hp-pal20a-1** as the **REGION**, and **hpccc.com** as the
+**DOMAIN**.
 
 This is using the following host in the HP Palo Alto EBC:
 - dl580gen8a.hpccc.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -30,13 +30,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-pal20a-1
-    export AWS_DEFAULT_DOMAIN=hpccc.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=172.0.1.64-172.0.1.254
+    export DOMAIN=hpccc.com
+    export REGION=hp-pal20a-1
     ```
 
 ### Configure Eucalyptus PKI to use the HP EBC PKI Infrastructure
@@ -107,7 +102,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     password="<secure_key_passphrase>"
 
-    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure
+    cat << EOF > /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key.secure
     -----BEGIN RSA PRIVATE KEY-----
     Proc-Type: 4,ENCRYPTED
     DEK-Info: DES-EDE3-CBC,045B86B30263BA0B
@@ -140,11 +135,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    openssl rsa -in $certsdir/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key.secure \
-                -out /tmp/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
+    openssl rsa -in $certsdir/star.${REGION}.${DOMAIN}.key.secure \
+                -out /tmp/star.${REGION}.${DOMAIN}.key \
                 -passin pass:$password
 
-    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key
     ```
 
 3. Install Wildcard SSL Certificate
@@ -152,7 +147,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
    This wildcard certificate, signed by the HP EBC Root CA, protects all UFS and MC URLs.
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt
     -----BEGIN CERTIFICATE-----
     MIIFeTCCBGGgAwIBAgIKHMDJeAADAAAAcDANBgkqhkiG9w0BAQUFADBEMRMwEQYK
     CZImiZPyLGQBGRYDY29tMRUwEwYKCZImiZPyLGQBGRYFaHBjY2MxFjAUBgNVBAMT
@@ -187,6 +182,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt
     ```
 

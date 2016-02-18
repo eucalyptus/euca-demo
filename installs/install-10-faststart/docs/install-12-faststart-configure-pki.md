@@ -8,8 +8,8 @@ certificate, along with a key and wildcard SSL certificate used to protect UFS a
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -30,15 +30,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-    export EUCA_DNS_PARENT_HOST=ns1.$AWS_DEFAULT_DOMAIN
-    export EUCA_DNS_PARENT_IP=10.104.10.80
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
     ```
 
 ### Configure Eucalyptus PKI to use the Helion Eucalyptus Development PKI Infrastructure
@@ -121,7 +114,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This key is insecure, and should not be used to protect sites exposed to the Internet.
 
     ```bash
-    cat << EOF > /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+    cat << EOF > /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key
     -----BEGIN RSA PRIVATE KEY-----
     MIIEowIBAAKCAQEA1ZvMKQTPRJJGNSQvoA1VuIbtuPpKr5m13j3GO6sdLI3LnR9N
     Xw0HwgQ9cFm8ooISrC3LtlQsk7MAlxa1JRB+fU9PimBxV8CNewNpcgj0O8aDxku8
@@ -151,7 +144,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     -----END RSA PRIVATE KEY-----
     EOF
 
-    chmod 400 /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key
+    chmod 400 /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key
     ```
 
 5. Install Wildcard SSL Certificate
@@ -160,7 +153,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     protects all UFS and MC URLs.
 
     ```bash
-    cat << EOF > /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
+    cat << EOF > /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt
     -----BEGIN CERTIFICATE-----
     MIIFuDCCA6CgAwIBAgIBATANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
     EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
@@ -196,6 +189,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     -----END CERTIFICATE-----
     EOF
 
-    chmod 444 /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt
+    chmod 444 /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt
     ```
 

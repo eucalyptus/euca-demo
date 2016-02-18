@@ -160,7 +160,6 @@ ns1.mjc.prc.eucalyptus-systems.com.
     s3-url = http://s3.${REGION}.${DOMAIN}:8773/
     sts-url = http://sts.${REGION}.${DOMAIN}:8773/
     user = ${REGION}-admin
-
     EOF
 
     sed -e "s/localhost/${REGION}/g" ~/.euca/localhost.ini > ~/.euca/${REGION}.ini
@@ -336,7 +335,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     ```bash 
     export AWS_DEFAULT_REGION=${REGION}
     export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-admin
-    export AWS_CREDENTIAL_FILE=\$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    export AWS_CREDENTIAL_FILE=$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
     ```
 
 13. Display Parent DNS Server Configuration
