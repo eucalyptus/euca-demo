@@ -6,8 +6,8 @@ has been installed via the FastStart installer.
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -28,48 +28,67 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
     ```
 
 ### Configure Eucalyptus Proxy
 
-1. Configure Eucalyptus Console Configuration file
+1. Configure Eucalyptus Console to use custom SSL Certificate
 
-    This step uses sed to automate the edits, then displays the results.
+    At this point, we will reference the UFS FQDN URL, but must continue to use port 8773 until we
+    complete replacement of the SSL proxy with a version that works with both the Console and UFS.
 
     ```bash
-    sed -i -e "/^clchost = localhost$/s/localhost/$(hostname -i)/" \
-           -e "/# since eucalyptus allows for different services to be located on different/d" \
-           -e "/# physical hosts, you may override the above host and port for each service./d" \
-           -e "/# The service list is \[ec2, autoscale, cloudwatch, elb, iam, sts, s3\]./d" \
-           -e "/For each service, you can specify a different host and\/or port, for example;/d" \
-           -e "/#elb.host=10.20.30.40/d" \
-           -e "/#elb.port=443/d" \
-           -e "/# set this value to allow object storage downloads to work. Using 'localhost' will generate URLs/d" \
-           -e "/# that won't work from client's browsers./d" \
-           -e "/#s3.host=<your host IP or name>/d" /etc/eucaconsole/console.ini
+    sed -i -e "/^ufshost = localhost$/s/localhost/ufs.${REGION}.${DOMAIN}/" /etc/eucaconsole/console.ini
 
-    more /etc/eucaconsole/console.ini
+    sed -i -e "/^session.secure/a\
+    sslcert=/etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt\
+    sslkey=/etc/pki/tls/private/star.${REGION}.${DOMAIN}.key" /etc/eucaconsole/console.ini
     ```
 
-2. Restart Eucalyptus Console service
-
-    Confirm Eucalyptus Console is running on the normal port via a browser:
-    http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN:8888/
+2. Configure Embedded Nginx Proxy to use custom SSL Certificate
 
     ```bash
-    chkconfig eucaconsole on
+    sed -i -e "s/\/etc\/eucaconsole\/console.crt;/\/etc\/pki\/tls\/certs\/star.${REGION}.${DOMAIN}.crt;/" \
+           -e "s/\/etc\/eucaconsole\/console.key;/\/etc\/pki\/tls\/private\/star.${REGION}.${DOMAIN}.key;/" \
+        /etc/eucaconsole/nginx.conf
+    ```
 
+3. Restart Eucalyptus Console service
+
+    ```bash
     service eucaconsole restart
     ```
 
-3. Install Nginx yum repository
+4. Confirm Eucalyptus Console via Embedded Nginx Proxy
+
+    Open the following URL in a Browser:
+
+    * https://console.${REGION}.${DOMAIN}/
+
+    Confirm no SSL configuration errors. The Browser should show the trusted lock icon, assuming you have
+    configured your workstation to trust the Root CA which issued the SSL Certificate.
+
+5. Disable Embedded Nginx Proxy
+
+    We will disable the Embedded Nginx Proxy which is started with the Eucalyptus Console by default,
+    so we can replace it with a new Separate Nginx Proxy which works with both the Console and
+    User-Facing Services.
+
+    ```bash
+    sed -i -e "/NGINX_FLAGS=/ s/=/=NO/" /etc/sysconfig/eucaconsole
+    ```
+
+6. Restart Eucalyptus Console
+
+    You should see the Embedded Nginx Proxy stop, but not restart
+
+    ```bash
+    service eucaconsole restart
+    ```
+
+7. Install Nginx yum repository
 
     We need a later version of Nginx than is currently in EPEL.
 
@@ -84,15 +103,13 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     EOF
     ```
 
-4. Install Nginx
-
-    This is needed for HTTP and HTTPS support running on standard ports
+8. Install Nginx
 
     ```bash
     yum install -y nginx
     ```
 
-5. Configure Nginx to support virtual hosts
+9. Configure Nginx to support virtual hosts
 
     ```bash
     if [ ! -f /etc/nginx/nginx.conf.orig ]; then
@@ -106,10 +123,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
            /etc/nginx/nginx.conf
     ```
 
-6. Start Nginx service
-
-    Confirm Nginx is running via a browser:
-    http://$(hostname)/
+10. Start Separate Nginx Proxy
 
     ```bash
     chkconfig nginx on
@@ -117,7 +131,15 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     service nginx start
     ```
 
-7.  Configure Nginx Upstream Servers
+11. Confirm Separate Nginx Proxy
+
+    Open the following URL in a Browser:
+
+    * http://$(hostname)/
+
+    Confirm the basic Nginx test page is working.
+
+12. Configure Nginx Upstream Servers
 
     ```bash
     cat << EOF > /etc/nginx/conf.d/upstream.conf
@@ -137,7 +159,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     EOF
     ```
 
-8. Configure Default Server
+13. Configure Nginx Default Server
 
     We also need to update or create the default home and error pages. Because we are not 
     using the EPEL re-packaging, we do not get what they added in this area, and must
@@ -503,21 +525,26 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     EOF
     ```
 
-9. Restart Nginx service
-
-    Confirm Nginx is running via a browser:
-    http://$(hostname)/
+14. Restart Separate Nginx Proxy
 
     ```bash
     service nginx restart
     ```
 
-10. Configure Eucalyptus User-Facing Services Reverse Proxy Server
+15. Confirm Separate Nginx Proxy
+
+    Open the following URL in a Browser:
+
+    * http://$(hostname)/
+
+    Confirm an updated Nginx test page showing the hostname is working.
+
+16. Configure Eucalyptus User-Facing Services Reverse Proxy Server
 
     This server will proxy all API URLs via standard HTTP and HTTPS ports.
 
     ```bash
-    cat << EOF > /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    cat << EOF > /etc/nginx/server.d/ufs.${REGION}.${DOMAIN}.conf
     #
     # Eucalyptus User-Facing Services
     #
@@ -525,24 +552,24 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     server {
         listen       80  default_server;
         listen       443 default_server ssl;
-        server_name  ec2.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  s3.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  iam.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  sts.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  monitoring.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  elasticloadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        server_name  swf.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN simpleworkflow.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  ec2.${REGION}.${DOMAIN} compute.${REGION}.${DOMAIN};
+        server_name  s3.${REGION}.${DOMAIN} objectstorage.${REGION}.${DOMAIN};
+        server_name  iam.${REGION}.${DOMAIN} euare.${REGION}.${DOMAIN};
+        server_name  sts.${REGION}.${DOMAIN} tokens.${REGION}.${DOMAIN};
+        server_name  autoscaling.${REGION}.${DOMAIN};
+        server_name  cloudformation.${REGION}.${DOMAIN};
+        server_name  monitoring.${REGION}.${DOMAIN} cloudwatch.${REGION}.${DOMAIN};
+        server_name  elasticloadbalancing.${REGION}.${DOMAIN} loadbalancing.${REGION}.${DOMAIN};
+        server_name  swf.${REGION}.${DOMAIN} simpleworkflow.${REGION}.${DOMAIN};
 
-        access_log  /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
-        error_log   /var/log/nginx/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+        access_log  /var/log/nginx/ufs.${REGION}.${DOMAIN}-access.log;
+        error_log   /var/log/nginx/ufs.${REGION}.${DOMAIN}-error.log;
 
         charset  utf-8;
 
         ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
-        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
-        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+        ssl_certificate      /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key;
 
         keepalive_timeout  70;
         client_max_body_size 100M;
@@ -568,58 +595,44 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
             proxy_set_header      X-Real-IP  \$remote_addr;
             proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header      X-Forwarded-Proto \$scheme;
+            proxy_set_header      Connection "keep-alive";
         }
     }
     EOF
 
-    chmod 644 /etc/nginx/server.d/ufs.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    chmod 644 /etc/nginx/server.d/ufs.${REGION}.${DOMAIN}.conf
     ```
 
-11. Restart Nginx service
-
-    Confirm Eucalyptus User-Facing Services are running via a browser:
-    http://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-    https://compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    These should respond with a 403 (Forbidden) error, indicating the AWSAccessKeyId is missing,
-    if working correctly
-
-    ```bash
-    service nginx restart
-    ```
-
-12. Configure Eucalyptus Console Reverse Proxy Server
+17. Configure Eucalyptus Console Reverse Proxy Server
 
     This server will proxy the console via standard HTTP and HTTPS ports
 
     Requests which use HTTP are immediately rerouted to use HTTPS
 
-    Once proxy is configured, configure the console to expect HTTPS
-
     ```bash
-    cat << EOF > /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
+    cat << EOF > /etc/nginx/server.d/console.${REGION}.${DOMAIN}.conf
     #
     # Eucalyptus Console
     #
 
     server {
         listen       80;
-        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
-        return       301 https://\$server_name\$request_uri;
+        server_name  console.${REGION}.${DOMAIN};
+        return       301 https://$server_name$request_uri;
     }
 
     server {
         listen       443 ssl;
-        server_name  console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN;
+        server_name  console.${REGION}.${DOMAIN};
 
-        access_log  /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-access.log;
-        error_log   /var/log/nginx/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN-error.log;
+        access_log  /var/log/nginx/console.${REGION}.${DOMAIN}-access.log;
+        error_log   /var/log/nginx/console.${REGION}.${DOMAIN}-error.log;
 
         charset  utf-8;
 
         ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;
-        ssl_certificate      /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt;
-        ssl_certificate_key  /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key;
+        ssl_certificate      /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt;
+        ssl_certificate_key  /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key;
 
         keepalive_timeout  70;
         client_max_body_size 100M;
@@ -648,23 +661,151 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     }
     EOF
 
-    chmod 644 /etc/nginx/server.d/console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.conf
-
-    sed -i -e "/^session.secure =/s/= .*$/= true/" \
-           -e "/^session.secure/a\
-    sslcert=/etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt\\
-    sslkey=/etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key" /etc/eucaconsole/console.ini
+    chmod 644 /etc/nginx/server.d/console.${REGION}.${DOMAIN}.conf
     ```
 
-13. Restart Nginx and Eucalyptus Console services
+18. Configure Eucalyptus Console to access UFS via Separate Nginx Proxy
 
-    Confirm Eucalyptus Console is running via a browser:
-    http://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-    https://console.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    We can now reference UFS via HTTPS using standard SSL port 443.
 
     ```bash
-    service nginx restart
+    sed -i -e "/^ufsport = 8773$/s/8773/443/" /etc/eucaconsole/console.ini
+    ```
 
+19. Restart Eucalyptus Console and Separate Nginx Proxy
+
+    ```bash
     service eucaconsole restart
+
+    service nginx restart
+    ```
+
+20. Confirm Eucalyptus UFS and Console via Separate Nginx Proxy
+
+    Open the following URLs in a Browser:
+
+    * https://compute.${REGION}.${DOMAIN}/
+    * https://console.${REGION}.${DOMAIN}/
+
+    Confirm no SSL configuration errors. The Browser should show the trusted lock icon, assuming
+    you have configured your workstation to trust the Root CA which issued the SSL Certificate.
+
+    The compute URL should return a 403:Forbidden error, as we are not passing credentials.
+
+21. Configure Euca2ools Region with HTTPS Endpoints
+
+    We can now switch to HTTPS via the Separate Nginx Proxy. Note we copy the cloud certificate
+    from the default location to the same directory used for other cloud certificates, giving
+    it a similar name. This allows us to centralize multiple regions onto a single management
+    workstation.
+
+    ```bash
+    cat << EOF > /etc/euca2ools/conf.d/${REGION}.ini
+    ; Eucalyptus Region ${REGION}
+
+    [region ${REGION}]
+    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}:8773/
+    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}:8773/
+    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}:8773/
+    ec2-url = https://ec2.${REGION}.${DOMAIN}:8773/
+    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}:8773/
+    iam-url = https://iam.${REGION}.${DOMAIN}:8773/
+    monitoring-url = https://monitoring.${REGION}.${DOMAIN}:8773/
+    properties-url = https://properties.${REGION}.${DOMAIN}:8773/
+    reporting-url = https://reporting.${REGION}.${DOMAIN}:8773/
+    s3-url = https://s3.${REGION}.${DOMAIN}:8773/
+    sts-url = https://sts.${REGION}.${DOMAIN}:8773/
+    user = ${REGION}-admin
+
+    certificate = /usr/share/euca2ools/certs/cert-${REGION}.pem
+    verify-ssl = true
+    EOF
+
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-${REGION}.pem
+    chmod 0644 /usr/share/euca2ools/certs/cert-${REGION}.pem
+    ```
+
+22. Display Euca2ools Configuration
+
+    This is an example of the configuration which should result from the logic in the last step.
+
+    * The ${REGION} Region should still be the default.
+    * The ${REGION} Region should be configured with Custom DNS HTTPS URLs. It can be used from
+      other hosts.
+    * The localhost Region should still be configured with the default direct URLs. It can only
+      be used from the FastStart host.
+    * The ${REGION} and localhost Regions should each have the same single Eucalyptus Administrator
+      User.
+
+    ~/.euca/global.ini
+    ```bash
+    ; Eucalyptus Global
+
+    [global]
+    default-region = ${REGION}
+    ```
+
+    /etc/euca2ools/conf.d/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [region ${REGION}]
+    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}/
+    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}/
+    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}/
+    ec2-url = https://ec2.${REGION}.${DOMAIN}/
+    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}/
+    iam-url = https://iam.${REGION}.${DOMAIN}/
+    monitoring-url = https://monitoring.${REGION}.${DOMAIN}/
+    properties-url = https://properties.${REGION}.${DOMAIN}/
+    reporting-url = https://reporting.${REGION}.${DOMAIN}/
+    s3-url = https://s3.${REGION}.${DOMAIN}/
+    sts-url = https://sts.${REGION}.${DOMAIN}/
+    user = ${REGION}-admin
+
+    certificate = /usr/share/euca2ools/certs/cert-${REGION}.pem
+    verify-ssl = true
+    ```
+
+    /etc/euca2ools/conf.d/localhost.ini
+    ```bash
+    ; Eucalyptus (all user services on localhost)
+
+    [region localhost]
+    autoscaling-url = http://127.0.0.1:8773/services/AutoScaling/
+    cloudformation-url = http://127.0.0.1:8773/services/CloudFormation/
+    ec2-url = http://127.0.0.1:8773/services/compute/
+    elasticloadbalancing-url = http://127.0.0.1:8773/services/LoadBalancing/
+    iam-url = http://127.0.0.1:8773/services/Euare/
+    monitoring-url = http://127.0.0.1:8773/services/CloudWatch/
+    s3-url = http://127.0.0.1:8773/services/objectstorage/
+    sts-url = http://127.0.0.1:8773/services/Tokens/
+    user = localhost-admin
+
+    bootstrap-url = http://127.0.0.1:8773/services/Empyrean/
+    properties-url = http://127.0.0.1:8773/services/Properties/
+    reporting-url = http://127.0.0.1:8773/services/Reporting/
+
+    certificate = /var/lib/eucalyptus/keys/cloud-cert.pem
+    ```
+
+    ~/.euca/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [user ${REGION}-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
+    ```
+
+    ~/.euca/localhost.ini
+    ```bash
+    ; Eucalyptus Region localhost
+
+    [user localhost-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
     ```
 
