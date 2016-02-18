@@ -306,8 +306,8 @@ echo
 echo "euare-useraddkey --as-account demo --region $user_region admin"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/admin/iamrc"
-echo "AWSAccessKeyId=$access_key"
-echo "AWSSecretKey=$secret_key"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 echo
 echo "chmod 0600 ~/.creds/$region/$account/admin/iamrc"

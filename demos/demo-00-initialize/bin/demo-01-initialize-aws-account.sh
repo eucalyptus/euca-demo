@@ -211,8 +211,8 @@ echo
 echo "mkdir -p ~/.creds/$federation/$account/admin"
 echo
 echo "cat << EOF >> ~/.creds/$federation/$account/admin/iamrc"
-echo "AWSAccessKeyId=$access_key"
-echo "AWSSecretKey=$secret_key"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 
 if [ -r ~/.creds/$federation/$account/admin/iamrc ]; then

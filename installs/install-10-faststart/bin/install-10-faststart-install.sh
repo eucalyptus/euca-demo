@@ -268,8 +268,8 @@ echo
 echo "mkdir -p ~/.creds/localhost/eucalyptus/admin"
 echo
 echo "cat <<EOF > ~/.creds/localhost/eucalyptus/admin/iamrc"
-echo "AWSAccessKeyId=$(sed -n -e 's/key-id = //p' ~/.euca/faststart.ini 2> /dev/null)"
-echo "AWSSecretKey=$(sed -n -e 's/secret-key = //p' ~/.euca/faststart.ini 2> /dev/null)"
+echo "AWSAccessKeyId=<generated_access_key>"
+echo "AWSSecretKey=<generated_secret_key>"
 echo "EOF"
 echo
 echo "rm -f ~/.euca/faststart.ini"
