@@ -627,6 +627,8 @@ echo "mv /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini
 echo "mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini"
 echo "sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini"
 echo
+echo "sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
+echo
 echo "cat << EOF > /etc/euca2ools/conf.d/$region.ini"
 echo "; Eucalyptus Region $region"
 echo
@@ -647,8 +649,6 @@ echo
 echo "EOF"
 echo
 echo "sed -e \"s/localhost/$region/g\" ~/.euca/localhost.ini > ~/.euca/$region.ini"
-echo
-echo "sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
 echo
 echo "mkdir -p ~/.creds/$region/eucalyptus/admin"
 echo "cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/$region/eucalyptus/admin"
@@ -672,6 +672,10 @@ else
         mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini
         echo "# sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini"
         sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini
+        pause
+
+        echo "# sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
+        sed -i -e "s/localhost/$region/g" ~/.euca/global.ini
         pause
 
         echo "# cat << EOF > /etc/euca2ools/conf.d/$region.ini"
@@ -713,10 +717,6 @@ else
 
         echo "# sed -e \"s/localhost/$region/g\" ~/.euca/localhost.ini > ~/.euca/$region.ini"
         sed -e "s/localhost/$region/g" ~/.euca/localhost.ini > ~/.euca/$region.ini
-        pause
-
-        echo "# sed -i -e \"s/localhost/$region/g\" ~/.euca/global.ini"
-        sed -i -e "s/localhost/$region/g" ~/.euca/global.ini
         pause
 
         echo "# mkdir -p ~/.creds/$region/eucalyptus/admin"
