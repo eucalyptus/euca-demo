@@ -5,7 +5,7 @@ This document describes the manual procedure to install Eucalyptus via the FastS
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the REGION, and **mjc.prc.eucalyptus-systems.com** as the DOMAIN.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
 Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
@@ -27,12 +27,6 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export DOMAIN=mjc.prc.eucalyptus-systems.com
-    export REGION=hp-gol01-f1
-
-    export INSTANCE_SUBDOMAIN=.vm
-    export LOADBALANCER_SUBDOMAIN=lb
-
     export PUBLIC_IP_FIRST=10.104.45.1
     export PUBLIC_IP_LAST=10.104.45.126
     ```

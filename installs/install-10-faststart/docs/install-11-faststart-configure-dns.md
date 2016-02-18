@@ -6,8 +6,8 @@ via the FastStart installer.
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -32,13 +32,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
 
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export INSTANCE_SUBDOMAIN=.vm
+    export LOADBALANCER_SUBDOMAIN=lb
     ```
 
 ### Initialize External DNS
@@ -55,54 +53,38 @@ above are changed, expected results below should also be updated to match.
 **A Records**
 
 ```bash
-dig +short ${AWS_DEFAULT_DOMAIN}
+dig +short ${DOMAIN}
 10.104.10.80
 
-dig +short ns1.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+dig +short clc.${REGION}.${DOMAIN}
 10.104.10.74
 
-dig +short clc.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+dig +short ufs.${REGION}.${DOMAIN}
 10.104.10.74
 
-dig +short ufs.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-10.104.10.74
-
-dig +short console.${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+dig +short console.${REGION}.${DOMAIN}
 10.104.10.74
 ```
 
 **NS Records**
 
 ```bash
-dig +short -t NS ${AWS_DEFAULT_DOMAIN}
+dig +short -t NS ${DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
 
-dig +short -t NS ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
+dig +short -t NS ${REGION}.${DOMAIN}
 ns1.mjc.prc.eucalyptus-systems.com.
-```
-
-**MX records**
-
-Note: Mail was not completely setup on the initial installation, as there is no mail relay
-currently in place in the EBC.
-
-```bash
-dig +short -t MX ${AWS_DEFAULT_REGION}.${AWS_DEFAULT_DOMAIN}
-smtp.mjc.prc.eucalyptus-systems.com.
 ```
 
 ### Configure Eucalyptus DNS
 
-1. Use Eucalyptus Administrator credentials
+1. Configure Region
 
-    Eucalyptus Administrator credentials should have been moved from the default location
-    where they are downloaded to the hierarchical directory structure used for all demos,
-    in the location shown below, as part of the prior faststart manual install procedure.
+    FastStart creates a "localhost" Region by default. We will switch this to a more "AWS-like" Region
+    naming convention. This is needed to run CloudFormation templates which reference the Region in Maps.
 
     ```bash
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    euctl region.region_name=${REGION} --region localhost
     ```
 
 2. Configure Eucalyptus DNS Server
@@ -110,9 +92,9 @@ smtp.mjc.prc.eucalyptus-systems.com.
     Instances will use the Cloud Controller DNS Server directly
 
     ```bash
-    euca-modify-property -p system.dns.nameserver=ns1.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    euctl system.dns.nameserver=ufs.${REGION}.${DOMAIN} --region localhost
 
-    euca-modify-property -p system.dns.nameserveraddress=$(hostname -i)
+    euctl system.dns.nameserveraddress=$(hostname -i) --region localhost
     ```
 
 3. Configure DNS Timeout and TTL
@@ -120,74 +102,244 @@ smtp.mjc.prc.eucalyptus-systems.com.
     Optional step, to show how these values can be adjusted if needed.
 
     ```bash
-    euca-modify-property -p dns.tcp.timeout_seconds=30
+    euctl dns.tcp.timeout_seconds=30 --region localhost
 
-    euca-modify-property -p services.loadbalancing.dns_ttl=15
+    euctl services.loadbalancing.dns_ttl=15 --region localhost
     ```
 
 4. Configure DNS Domain
 
     ```bash
-    euca-modify-property -p system.dns.dnsdomain=$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
+    euctl system.dns.dnsdomain=${REGION}.${DOMAIN} --region localhost
     ```
 
 5. Configure DNS Sub-Domains
 
     ```bash
-    euca-modify-property -p cloud.vmstate.instance_subdomain=$EUCA_DNS_INSTANCE_SUBDOMAIN
+    euctl cloud.vmstate.instance_subdomain=${INSTANCE_SUBDOMAIN} --region localhost
 
-    euca-modify-property -p services.loadbalancing.dns_subdomain=$EUCA_DNS_LOADBALANCER_SUBDOMAIN
+    euctl services.loadbalancing.dns_subdomain=${LOADBALANCER_SUBDOMAIN} --region localhost
     ```
 
 6. Enable DNS
 
     ```bash
-    euca-modify-property -p bootstrap.webservices.use_instance_dns=true
+    euctl bootstrap.webservices.use_instance_dns=true --region localhost
 
-    euca-modify-property -p bootstrap.webservices.use_dns_delegation=true
+    euctl bootstrap.webservices.use_dns_delegation=true --region localhost
     ```
 
-7. Configure CloudFormation Region
+7. Configure Euca2ools Region with HTTP Endpoints
 
-    Technically, this is not purely related to DNS and does not belong here. But, we need to make
-    sure this is run, and this is somewhat related to DNS, so this is the best location to run
-    this.
+    We must configure a new Region configuration, but can re-use the User configuration with a
+    change to the Region name.
+
+    We restore the original "localhost" Region saved in a prior step, as the modified "localhost"
+    Region created by FastStart no longer works after changing DNS properties.
 
     ```bash
-    euca-modify-property -p cloudformation.region=$AWS_DEFAULT_REGION
+    mv /etc/euca2ools/conf.d/localhost.ini /etc/euca2ools/conf.d/localhost.ini.faststart
+    mv /etc/euca2ools/conf.d/localhost.ini.save /etc/euca2ools/conf.d/localhost.ini
+    sed -i -e '/^user =/d;/^sts-url =/auser = localhost-admin' /etc/euca2ools/conf.d/localhost.ini
+
+    sed -i -e "s/localhost/${REGION}/g" ~/.euca/global.ini
+
+    cat << EOF > /etc/euca2ools/conf.d/${REGION}.ini
+    ; Eucalyptus Region ${REGION}
+
+    [region ${REGION}]
+    autoscaling-url = http://autoscaling.${REGION}.${DOMAIN}:8773/
+    bootstrap-url = http://bootstrap.${REGION}.${DOMAIN}:8773/
+    cloudformation-url = http://cloudformation.${REGION}.${DOMAIN}:8773/
+    ec2-url = http://ec2.${REGION}.${DOMAIN}:8773/
+    elasticloadbalancing-url = http://elasticloadbalancing.${REGION}.${DOMAIN}:8773/
+    iam-url = http://iam.${REGION}.${DOMAIN}:8773/
+    monitoring-url = http://monitoring.${REGION}.${DOMAIN}:8773/
+    properties-url = http://properties.${REGION}.${DOMAIN}:8773/
+    reporting-url = http://reporting.${REGION}.${DOMAIN}:8773/
+    s3-url = http://s3.${REGION}.${DOMAIN}:8773/
+    sts-url = http://sts.${REGION}.${DOMAIN}:8773/
+    user = ${REGION}-admin
+
+    EOF
+
+    sed -e "s/localhost/${REGION}/g" ~/.euca/localhost.ini > ~/.euca/${REGION}.ini
+
+    mkdir -p ~/.creds/${REGION}/eucalyptus/admin
+    cp -a ~/.creds/localhost/eucalyptus/admin/iamrc ~/.creds/${REGION}/eucalyptus/admin
     ```
 
-8. Refresh Administrator Credentials
+8. Display Euca2ools Configuration
+
+    This is an example of the configuration which should result from the logic in the last step.
+
+    * The ${REGION} Region should now be the default.
+    * The ${REGION} Region should be configured with Custom DNS HTTP URLs. It can be used from
+      other hosts.
+    * The localhost Region should again be configured with the default direct URLs. It can only
+      be used from the FastStart host.
+    * The ${REGION} and localhost Regions should each have the same single Eucalyptus Administrator
+      User.
+
+    ~/.euca/global.ini
+    ```bash
+    ; Eucalyptus Global
+
+    [global]
+    default-region = ${REGION}
+    ```
+
+    /etc/euca2ools/conf.d/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [region ${REGION}]
+    autoscaling-url = http://autoscaling.${REGION}.${DOMAIN}:8773/
+    bootstrap-url = http://bootstrap.${REGION}.${DOMAIN}:8773/
+    cloudformation-url = http://cloudformation.${REGION}.${DOMAIN}:8773/
+    ec2-url = http://ec2.${REGION}.${DOMAIN}:8773/
+    elasticloadbalancing-url = http://elasticloadbalancing.${REGION}.${DOMAIN}:8773/
+    iam-url = http://iam.${REGION}.${DOMAIN}:8773/
+    monitoring-url = http://monitoring.${REGION}.${DOMAIN}:8773/
+    properties-url = http://properties.${REGION}.${DOMAIN}:8773/
+    reporting-url = http://reporting.${REGION}.${DOMAIN}:8773/
+    s3-url = http://s3.${REGION}.${DOMAIN}:8773/
+    sts-url = http://sts.${REGION}.${DOMAIN}:8773/
+    user = ${REGION}-admin
+    ```
+
+    /etc/euca2ools/conf.d/localhost.ini
+    ```bash
+    ; Eucalyptus (all user services on localhost)
+
+    [region localhost]
+    autoscaling-url = http://127.0.0.1:8773/services/AutoScaling/
+    cloudformation-url = http://127.0.0.1:8773/services/CloudFormation/
+    ec2-url = http://127.0.0.1:8773/services/compute/
+    elasticloadbalancing-url = http://127.0.0.1:8773/services/LoadBalancing/
+    iam-url = http://127.0.0.1:8773/services/Euare/
+    monitoring-url = http://127.0.0.1:8773/services/CloudWatch/
+    s3-url = http://127.0.0.1:8773/services/objectstorage/
+    sts-url = http://127.0.0.1:8773/services/Tokens/
+    user = localhost-admin
+
+    bootstrap-url = http://127.0.0.1:8773/services/Empyrean/
+    properties-url = http://127.0.0.1:8773/services/Properties/
+    reporting-url = http://127.0.0.1:8773/services/Reporting/
+
+    certificate = /var/lib/eucalyptus/keys/cloud-cert.pem
+    ```
+
+    ~/.euca/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [user ${REGION}-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
+    ```
+
+    ~/.euca/localhost.ini
+    ```bash
+    ; Eucalyptus Region localhost
+
+    [user localhost-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
+    ```
+
+9. Confirm DNS resolution for Services
+
+    Confirm service URLS in euca2ools Region configuration resolve to the IP address of the
+    FastStart Host.
 
     ```bash
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+    dig +short autoscaling.${REGION}.${DOMAIN}
 
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    dig +short bootstrap.${REGION}.${DOMAIN}
 
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    dig +short cloudformation.${REGION}.${DOMAIN}
 
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+    dig +short ec2.${REGION}.${DOMAIN}
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-        sed -i -e "/WARN: Certificate credentials not present./d" \
-               -e "/WARN: Review authentication.credential_download_generate_certificate and/d" \
-               -e "/WARN: authentication.signing_certificates_limit properties for current/d" \
-               -e "/WARN: certificate download limits./d" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
+    dig +short elasticloadbalancing.${REGION}.${DOMAIN}
 
-    if [ -r /root/eucarc ]; then
-        cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc /root/eucarc
-    fi
+    dig +short iam.${REGION}.${DOMAIN}
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    dig +short monitoring.${REGION}.${DOMAIN}
 
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    dig +short properties.${REGION}.${DOMAIN}
+
+    dig +short reporting.${REGION}.${DOMAIN}
+
+    dig +short s3.${REGION}.${DOMAIN}
+
+    dig +short sts.${REGION}.${DOMAIN}
     ```
 
-9. Display Parent DNS Server Configuration
+10. Confirm API commands work with new URLs
+
+    Confirm service describe commands still work
+
+    ```bash
+    euca-describe-regions --region localhost
+
+    euca-describe-regions --region ${REGION}-admin@${REGION}
+
+    euca-describe-availability-zones verbose --region ${REGION}-admin@${REGION}
+
+    euca-describe-keypairs --region ${REGION}-admin@${REGION}
+
+    euca-describe-images --region ${REGION}-admin@${REGION}
+
+    euca-describe-instance-types --region ${REGION}-admin@${REGION}
+
+    euca-describe-instances --region ${REGION}-admin@${REGION}
+
+    euca-describe-instance-status --region ${REGION}-admin@${REGION}
+
+    euca-describe-groups --region ${REGION}-admin@${REGION}
+
+    euca-describe-volumes --region ${REGION}-admin@${REGION}
+
+    euca-describe-snapshots --region ${REGION}-admin@${REGION}
+
+    eulb-describe-lbs --region ${REGION}-admin@${REGION}
+
+    euform-describe-stacks --region ${REGION}-admin@${REGION}
+
+    euscale-describe-auto-scaling-groups --region ${REGION}-admin@${REGION}
+
+    euscale-describe-launch-configs --region ${REGION}-admin@${REGION}
+
+    euscale-describe-auto-scaling-instances --region ${REGION}-admin@${REGION}
+
+    euscale-describe-policies --region ${REGION}-admin@${REGION}
+
+    euwatch-describe-alarms --region ${REGION}-admin@${REGION}
+    ```
+
+12. Configure Bash to use Eucalyptus Administrator Credentials by default
+
+    While it is possible to use the "--region USER@REGION" parameter as shown above with Euca2ools
+    to explicitly specify the User and Region, this adds a lot of typing.
+
+    While Euca2ools accepts a "USER@REGION" value in the AWS_DEFAULT_REGION environment variable
+    to avoid having to pass these values on every command, this breaks AWS CLI which cannot handle
+    this extension to the variable format.
+
+    By setting the variables defined below, both Euca2ools and AWS CLI can be used interchangably.
+
+    Add these lines to your ~/.bash_profile:
+    ```bash 
+    export AWS_DEFAULT_REGION=${REGION}
+    export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_REGION-admin
+    export AWS_CREDENTIAL_FILE=\$HOME/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/iamrc
+    ```
+
+13. Display Parent DNS Server Configuration
 
     This is an example of the changes which need to be made on the parent DNS server which will
     delegate DNS to Eucalyptus for Eucalyptus DNS names used for instances, ELBs and services.
@@ -196,7 +348,8 @@ smtp.mjc.prc.eucalyptus-systems.com.
     once. You should then be able to re-install configured regions as needed without having
     to repeat these changes.
 
-    To avoid ambiguity, the files below are verbatim for the hp-gol01-f1 region.
+    To avoid ambiguity, unlike other examples on this page which reference ${REGION} and ${DOMAIN},
+    the exammples below are verbatim for the hp-gol01-f1 region.
 
     Add these lines to /etc/named.conf on the parent DNS server"
 
@@ -214,101 +367,49 @@ smtp.mjc.prc.eucalyptus-systems.com.
     ;
     ; DNS zone for hp-gol01-f1.mjc.prc.eucalyptus-systems.com
     ;
-    $TTL 1M
+    $TTL 1H
     $ORIGIN hp-gol01-f1.mjc.prc.eucalyptus-systems.com.
     @                       SOA     ns1 root (
-                                    2015042101      ; Serial
+                                    2016011801      ; Serial
                                     1H              ; Refresh
                                     10M             ; Retry
                                     1D              ; Expire
                                     1H )            ; Negative Cache TTL
 
-                            NS      ns1
-
-    ns1                     A       10.104.10.74
+                            NS      ufs
 
     clc                     A       10.104.10.74
     ufs                     A       10.104.10.74
-    mc                      A       10.104.10.74
+    mc                      CNAME   ufs
     osp                     A       10.104.10.74
-    walrus                  A       10.104.10.74
-    cc                      A       10.104.10.74
-    sc                      A       10.104.10.74
+    walrus                  CNAME   osp
+    cca                     A       10.104.10.74
+    cc                      CNAME   cca
+    sca                     A       10.104.10.74
+    sc                      CNAME   sca
     ns1                     A       10.104.10.74
 
     console                 A       10.104.10.74
+
     autoscaling             A       10.104.10.74
+    bootstrap               A       10.104.10.74
     cloudformation          A       10.104.10.74
-    cloudwatch              A       10.104.10.74
-    compute                 A       10.104.10.74
-    euare                   A       10.104.10.74
-    loadbalancing           A       10.104.10.74
-    objectstorage           A       10.104.10.74
-    tokens                  A       10.104.10.74
+    ec2                     A       10.104.10.74
+    compute                 CNAME   ec2
+    elasticloadbalancing    A       10.104.10.74
+    loadbalancing           CNAME   elasticloadbalancing
+    iam                     A       10.104.10.74
+    euare                   CNAME   iam
+    monitoring              A       10.104.10.74
+    cloudwatch              CNAME   monitoring
+    properties              A       10.104.10.74
+    reporting               A       10.104.10.74
+    s3                      A       10.104.10.74
+    objectstorage           CNAME   s3
+    sts                     A       10.104.10.74
+    tokens                  CNAME   sts
 
-    cloud                   NS      ns1
-    lb                      NS      ns1
-    ```
-
-10. Confirm DNS resolution for Services
-
-    Confirm new DNS-based service URLs in refreshed eucarc resolve
-
-    ```bash
-    dig +short compute.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short objectstorage.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short euare.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short tokens.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short autoscaling.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short cloudformation.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short cloudwatch.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-
-    dig +short loadbalancing.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN
-    ```
-
-11. Confirm API commands work with new URLs
-
-    Confirm service describe commands still work
-
-    ```bash
-    euca-describe-regions
-
-    euca-describe-availability-zones
-
-    euca-describe-keypairs
-
-    euca-describe-images
-
-    euca-describe-instance-types
-
-    euca-describe-instances
-
-    euca-describe-instance-status
-
-    euca-describe-groups
-
-    euca-describe-volumes
-
-    euca-describe-snapshots
-
-    eulb-describe-lbs
-
-    euform-describe-stacks
-
-    euscale-describe-auto-scaling-groups
-
-    euscale-describe-launch-configs
-
-    euscale-describe-auto-scaling-instances
-
-    euscale-describe-policies
-
-    euwatch-describe-alarms
+    cloud                   NS      ufs
+    lb                      NS      ufs
     ```
 
