@@ -5,11 +5,17 @@ This document describes the manual procedure to configure AWSCLI, after Eucalypt
 via the FastStart installer. This script assumes the reverse-proxy script has been run, so that
 Eucalyptus can be accessed via HTTPS endpoints via the proxy.
 
+Please note that this procedure is not a supported configuration, as the use of Python pip changes
+Python modules installed via RPM on which Eucalyptus depends to unknown later versions outside of
+the RPM package management system. Use this procedure on any host running Eucalyptus at your own
+risk! This procedure can be used to install AWSCLI on a separate management workstation, avoiding
+this support problem.
+
 This variant is meant to be run as root
 
 This procedure is based on the hp-pal20a-1 demo environment running on host dl580gen8a
-in the Palo Alto EBC. It uses **hp-pal20a-1** as the AWS_DEFAULT_REGION, and **hpccc.com** as the
-AWS_DEFAULT_DOMAIN.
+in the Palo Alto EBC. It uses **hp-pal20a-1** as the **REGION**, and **hpccc.com** as the
+**DOMAIN**.
 
 This is using the following host in the HP Palo Alto EBC:
 - dl580gen8a.hpccc.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -30,44 +36,55 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-pal20a-1
-    export AWS_DEFAULT_DOMAIN=hpccc.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=172.0.1.64-172.0.1.254
+    export DOMAIN=hpccc.com
+    export REGION=hp-pal20a-1
     ```
 
 ### Configure AWSCLI
 
-1. Use Eucalyptus Administrator credentials
-
-    Eucalyptus Administrator credentials should have been moved from the default location
-    where they are downloaded to the hierarchical directory structure used for all demos,
-    in the location shown below, as part of the prior faststart manual install procedure.
-
-    ```bash
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    ```
-
-2. Install Python Pip
+1. Install Python Pip
 
     This step assumes the EPEL repo has been configured.
 
     ```bash
     yum install -y python-pip
+
+    pip install --upgrade pip
     ```
 
-3. Install AWSCLI
+2. Install AWSCLI
 
     ```bash
     pip install awscli
     ```
 
-4. Configure AWSCLI to trust the HP EBC PKI Infrastructure
+3. Fix Eucalyptus Console dependencies broken by pip
+
+    pip overwrites a version of a python module required by eucaconsole so we must revert back to
+    the required version.
+
+    This problem is likely to be a moving target, until a recent usable version of AWSCLI is
+    packaged as an RPM compatible with CentOS/RHEL and/or EPEL, so it can be installed without
+    pip. Whenever pip is used on any Eucalyptus host, there is a potential for pip to break
+    dependencies. You can explicitly start eucaconsole on the command line to determine if this
+    is happening, and identify the module affected.
+
+    ```bash
+    pip uninstall -y python-dateutil
+    yum reinstall -y python-dateutil
+    ```
+
+4. Configure AWSCLI Command Completion
+
+    ```bash
+    cat << EOF >> /etc/profile.d/aws.sh
+    complete -C '/usr/bin/aws_completer' aws
+    EOF
+
+    source /etc/profile.d/aws.sh
+    ```
+
+5. Configure AWSCLI to trust the HP EBC PKI Infrastructure
 
     We will use the HP EBC Root Certification Authority to sign SSL certificates.
     Certificates issued by this CA are not trusted by default.
@@ -78,7 +95,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This format was constructed by hand to match the existing certificates.
 
     ```bash
-    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
+    cp -a /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+          /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
+
+    cat << EOF >> /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local
 
     # Issuer: DC=com, DC=hpccc, CN=hpccc-DC1A-CA
     # Subject: DC=com, DC=hpccc, CN=hpccc-DC1A-CA
@@ -110,9 +130,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     3hyLaqkOlbnIuxMLe4X041c3cZ+PI7wm
     -----END CERTIFICATE-----
     EOF
+
+    mv /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem \
+       /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.orig
+
+    ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
-5. Configure AWS CLI to support local Eucalyptus region
+6. Configure AWSCLI to support local Eucalyptus region
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
     within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region endpoints.
@@ -124,267 +149,280 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     cat << EOF > /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl
     {
-      \"_default\":[
+      "_default":[
         {
-          \"uri\":\"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://{service}.{region}.${DOMAIN}",
+          "constraints":[
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ],
-          \"properties\": {
-              \"signatureVersion\": \"v4\"
+          "properties": {
+              "signatureVersion": "v4"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"ec2\": [
+      "ec2": [
         {
-          \"uri\":\"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\": [
-            [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://compute.{region}.${DOMAIN}",
+          "constraints": [
+            ["region","startsWith","${REGION%-*}-"]
           ]
         }
       ],
-      \"elasticloadbalancing\": [
+      "elasticloadbalancing": [
        {
-        \"uri\":\"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN\",
-        \"constraints\": [
-          [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+        "uri":"{scheme}://loadbalancing.{region}.${DOMAIN}",
+        "constraints": [
+          ["region","startsWith","${REGION%-*}-"]
         ]
        }
       ],
-      \"monitoring\":[
+      "monitoring":[
         {
-          \"uri\":\"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\": [
-           [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://cloudwatch.{region}.${DOMAIN}",
+          "constraints": [
+           ["region","startsWith","${REGION%-*}-"]
           ]
         }
       ],
-      \"swf\":[
+      "swf":[
        {
-        \"uri\":\"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN\",
-        \"constraints\": [
-         [\"region\",\"startsWith\",\"${AWS_DEFAULT_REGION%-*}-\"]
+        "uri":"{scheme}://simpleworkflow.{region}.${DOMAIN}",
+        "constraints": [
+         ["region","startsWith","${REGION%-*}-"]
         ]
        }
       ],
-      \"iam\":[
+      "iam":[
         {
-          \"uri\":\"https://euare.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"https://euare.{region}.${DOMAIN}",
+          "constraints":[
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"https://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.us-gov.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"us-gov\"]
+          "uri":"https://{service}.us-gov.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
           ]
         },
         {
-          \"uri\":\"https://iam.amazonaws.com\",
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "uri":"https://iam.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"sdb\":[
+      "sdb":[
         {
-          \"uri\":\"https://sdb.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://sdb.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
           ]
         }
       ],
-      \"sts\":[
+      "sts":[
         {
-          \"uri\":\"https://tokens.{region}.$AWS_DEFAULT_DOMAIN\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"https://tokens.{region}.${DOMAIN}",
+          "constraints":[
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{service}.{region}.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"us-gov\"]
+          "uri":"https://{service}.{region}.amazonaws.com",
+          "constraints":[
+            ["region", "startsWith", "us-gov"]
           ]
         },
         {
-          \"uri\":\"https://sts.amazonaws.com\",
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "uri":"https://sts.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"s3\":[
+      "s3":[
         {
-          \"uri\":\"{scheme}://s3.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"oneOf\", [\"us-east-1\", null]]
+          "uri":"{scheme}://s3.amazonaws.com",
+          "constraints":[
+            ["region", "oneOf", ["us-east-1", null]]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         },
         {
-          \"uri\":\"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//\",
-          \"constraints\": [
-            [\"region\", \"startsWith\", \"${AWS_DEFAULT_REGION%-*}-\"]
+          "uri":"{scheme}://objectstorage.{region}.${DOMAIN}//",
+          "constraints": [
+            ["region", "startsWith", "${REGION%-*}-"]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3\"
+          "properties": {
+            "signatureVersion": "s3"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\",
-          \"constraints\": [
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com.cn",
+          "constraints": [
+            ["region", "startsWith", "cn-"]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3v4\"
+          "properties": {
+            "signatureVersion": "s3v4"
           }
         },
         {
-          \"uri\":\"{scheme}://{service}-{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"oneOf\", [\"us-east-1\", \"ap-northeast-1\", \"sa-east-1\",
-                                 \"ap-southeast-1\", \"ap-southeast-2\", \"us-west-2\",
-                                 \"us-west-1\", \"eu-west-1\", \"us-gov-west-1\",
-                                 \"fips-us-gov-west-1\"]]
+          "uri":"{scheme}://{service}-{region}.amazonaws.com",
+          "constraints": [
+            ["region", "oneOf", ["us-east-1", "ap-northeast-1", "sa-east-1",
+                                 "ap-southeast-1", "ap-southeast-2", "us-west-2",
+                                 "us-west-1", "eu-west-1", "us-gov-west-1",
+                                 "fips-us-gov-west-1"]]
           ]
         },
         {
-          \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"{scheme}://{service}.{region}.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ],
-          \"properties\": {
-            \"signatureVersion\": \"s3v4\"
+          "properties": {
+            "signatureVersion": "s3v4"
           }
         }
       ],
-      \"rds\":[
+      "rds":[
         {
-          \"uri\":\"https://rds.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://rds.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
           ]
         }
       ],
-      \"route53\":[
+      "route53":[
         {
-          \"uri\":\"https://route53.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://route53.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ]
         }
       ],
-      \"elasticmapreduce\":[
+      "waf":[
         {
-          \"uri\":\"https://elasticmapreduce.cn-north-1.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
-          ]
-        },
-        {
-          \"uri\":\"https://elasticmapreduce.eu-central-1.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"eu-central-1\"]
-          ]
-        },
-        {
-          \"uri\":\"https://elasticmapreduce.us-east-1.amazonaws.com\",
-          \"constraints\":[
-            [\"region\", \"equals\", \"us-east-1\"]
-          ]
-        },
-        {
-          \"uri\":\"https://{region}.elasticmapreduce.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"https://waf.amazonaws.com",
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
+            }
+          },
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ]
         }
       ],
-      \"sqs\":[
+      "elasticmapreduce":[
         {
-          \"uri\":\"https://queue.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"us-east-1\"]
+          "uri":"https://elasticmapreduce.{region}.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
           ]
         },
         {
-          \"uri\":\"https://{region}.queue.amazonaws.com.cn\",
-          \"constraints\":[
-            [\"region\", \"startsWith\", \"cn-\"]
+          "uri":"https://elasticmapreduce.eu-central-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "eu-central-1"]
           ]
         },
         {
-          \"uri\":\"https://{region}.queue.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notEquals\", null]
+          "uri":"https://elasticmapreduce.us-east-1.amazonaws.com",
+          "constraints":[
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.elasticmapreduce.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"importexport\": [
+      "sqs":[
         {
-          \"uri\":\"https://importexport.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://queue.amazonaws.com",
+          "constraints": [
+            ["region", "equals", "us-east-1"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com.cn",
+          "constraints":[
+            ["region", "startsWith", "cn-"]
+          ]
+        },
+        {
+          "uri":"https://{region}.queue.amazonaws.com",
+          "constraints": [
+            ["region", "notEquals", null]
           ]
         }
       ],
-      \"cloudfront\":[
+      "importexport": [
         {
-          \"uri\":\"https://cloudfront.amazonaws.com\",
-          \"constraints\": [
-            [\"region\", \"notStartsWith\", \"cn-\"]
+          "uri":"https://importexport.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
+          ]
+        }
+      ],
+      "cloudfront":[
+        {
+          "uri":"https://cloudfront.amazonaws.com",
+          "constraints": [
+            ["region", "notStartsWith", "cn-"]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1"
             }
           }
         }
       ],
-      \"dynamodb\": [
+      "dynamodb": [
         {
-          \"uri\": \"http://localhost:8000\",
-          \"constraints\": [
-            [\"region\", \"equals\", \"local\"]
+          "uri": "http://localhost:8000",
+          "constraints": [
+            ["region", "equals", "local"]
           ],
-          \"properties\": {
-            \"credentialScope\": {
-                \"region\": \"us-east-1\",
-                \"service\": \"dynamodb\"
+          "properties": {
+            "credentialScope": {
+                "region": "us-east-1",
+                "service": "dynamodb"
             }
           }
         }
@@ -397,11 +435,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ln -s _endoints.json.local.ssl _endpoints.json
     ```
 
-6. Configure Default AWS credentials
+7. Configure Default AWS credentials
 
     This configures the Eucalyptus Administrator as the default and an explicit profile.
 
     ```bash
+    access_key=$(sed -n -e 's/AWSAccessKeyId=//p' ~/.creds/${REGION}/eucalyptus/admin/iamrc)
+    secret_key=$(sed -n -e 's/AWSSecretKey=//p' ~/.creds/${REGION}/eucalyptus/admin/iamrc)
+
     mkdir -p ~/.aws
 
     # cat << EOF > ~/.aws/config
@@ -410,11 +451,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     #
 
     [default]
-    region = $AWS_DEFAULT_REGION
+    region = ${REGION}
     output = text
 
-    [profile-$AWS_DEFAULT_REGION-admin]
-    region = $AWS_DEFAULT_REGION
+    [profile-${REGION}-admin]
+    region = ${REGION}
     output = text
 
     EOF
@@ -425,25 +466,33 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     #
     
     [default]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
+    aws_access_key_id = ${access_key}
+    aws_secret_access_key = ${secret_key}
 
-    [$AWS_DEFAULT_REGION-admin]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
+    [${REGION}-admin]
+    aws_access_key_id = ${access_key}
+    aws_secret_access_key = ${secret_key}
 
     EOF
 
     chmod -R og-rwx ~/.aws
     ```
 
-7. Test AWSCLI
+8. Display AWSCLI Configuration
+
+    ```bash
+    cat ~/.aws/config
+
+    cat ~/.aws/credentials
+    ```
+
+9. Confirm AWSCLI
 
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=defaults
+    aws ec2 describe-key-pairs --profile=default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-key-pairs --profile=${REGION}-admin
     ```
 

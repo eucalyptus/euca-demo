@@ -101,7 +101,7 @@ cd ~/src/eucalyptus/euca-demo/demo/demo-00-initialize/bin
 
 Demos have been created within the ~/src/eucalyptus/euca-demo/demos directory. Where
 possible, scripts and manual procedures have been created to run the demo via the Eucalyptus
-CLI or AWS CLI tools, or via the Eucalyptus Console.
+CLI or AWSCLI tools, or via the Eucalyptus Console.
 
 Demos as of this update can be found here:
 

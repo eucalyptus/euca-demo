@@ -1540,7 +1540,7 @@ Windows Jump Host in the admin account. This was done manually via Putty's SFTP 
 The credentials are stored under C:\Users\admin\Credentials\<account>\<user>.zip and
 C:\Users\admin\Credentials\<account>\<user>\
 
-In the future, these instructions will be updated to show how the AWS CLI client can be modified
+In the future, these instructions will be updated to show how the AWSCLI client can be modified
 to reference this additional "region", allowing their use from Windows for most Eucalyptus cloud
 management operations.
 

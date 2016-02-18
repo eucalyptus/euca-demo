@@ -1573,7 +1573,7 @@ ns1.mjc.prc.eucalyptus-systems.com.
     As a workaround, we can restrict the AWS_DEFAULT_REGION environment variable to the original
     AWS semantics where only the REGION is present, and pass the USER into Euca2ools via the
     AWS_DEFAULT_CREDENTIALS environment variable, which Euca2ools still recognizes but which
-    is no longer recognized by AWS CLI.
+    is no longer recognized by AWSCLI.
 
     ```bash
     access_key=$AWS_ACCESS_KEY_ID
@@ -2931,12 +2931,12 @@ Management Console first, and use of a later version of Nginx.
 
 ### Configure AWSCLI
 
-This installs and configures AWS CLI to work with this region directly on the CLC. Apparently this is
+This installs and configures AWSCLI to work with this region directly on the CLC. Apparently this is
 currently an unsupported configuration without the use of Python virtual environments as pip updates
 some of the python modules used by Eucalyptus, and this has not been tested. I haven't found this to
 cause any problems so far, but use at your own risk.
 
-To be safe, you might want to skip the installation of AWS CLI on the CLC+MC, and install it only on
+To be safe, you might want to skip the installation of AWSCLI on the CLC+MC, and install it only on
 a separate management workstation, or set this up within a Python virtual environment, either of which
 would be supported configurations.
 
@@ -2989,7 +2989,7 @@ would be supported configurations.
     service eucaconsole restart
     ```
 
-5. (CLC): Configure AWS CLI with Eucalyptus Region Native Endpoints
+5. (CLC): Configure AWSCLI with Eucalyptus Region Native Endpoints
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
     within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region native
@@ -3410,7 +3410,7 @@ would be supported configurations.
     ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
-9. (CLC): (Optional) Configure AWS CLI with Eucalyptus Region SSL Endpoints
+9. (CLC): (Optional) Configure AWSCLI with Eucalyptus Region SSL Endpoints
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
     within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region SSL

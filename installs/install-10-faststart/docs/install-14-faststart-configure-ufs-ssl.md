@@ -8,8 +8,8 @@ on the same host, as both attempt to use port 443.
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -30,13 +30,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
     ```
 
 ### Confirm Prerequisites
@@ -67,8 +62,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     password=<password_to_protect_pkcs12>
 
     openssl pkcs12 -export -name ufs \
-                   -inkey /etc/pki/tls/private/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.key \
-                   -in /etc/pki/tls/certs/star.$AWS_DEFAULT_REGION.$AWS_DEFAULT_DOMAIN.crt \
+                   -inkey /etc/pki/tls/private/star.${REGION}.${DOMAIN}.key \
+                   -in /etc/pki/tls/certs/star.${REGION}.${DOMAIN}.crt \
                    -out /var/tmp/ufs.p12 \
                    -password pass:$password
 
@@ -102,56 +97,129 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
             -keystore /var/lib/eucalyptus/keys/euca.p12 -storetype pkcs12 \
             -storepass eucalyptus
 
-    euca-modify-property -p bootstrap.webservices.ssl.server_alias=ufs
-    euca-modify-property -p bootstrap.webservices.ssl.server_password=$password
+    euctl bootstrap.webservices.ssl.server_alias=ufs
+    euctl bootstrap.webservices.ssl.server_password=$password
 
-    euca-modify-property -p bootstrap.webservices.port=443
+    euctl bootstrap.webservices.port=443
 
     service eucalyptus-cloud restart
     ```
 
-3. Refresh Administrator Credentials
+3. Configure Euca2ools Region with HTTPS Endpoints
 
-    The first section of code waits for services to become available after restart.
+    We can now switch to HTTPS.
+
+    Note we copy the cloud certificate from the default location to the same directory used for
+    other cloud certificates, giving it a similar name. This allows us to centralize multiple
+    regions onto a single management workstation.
 
     ```bash
-    while true; do
-        echo -n "Testing services... "
-        if curl -s https://$(hostname -i)/services/User-API | grep -s -q 404; then
-            echo " Started"
-            break
-        else
-            echo " Not yet running"
-            echo -n "Waiting another 15 seconds..."
-            sleep 15
-            echo " Done"
-        fi
-    done
+    cat << EOF > /etc/euca2ools/conf.d/${REGION}.ini
+    ; Eucalyptus Region ${REGION}
 
-    mkdir -p ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin
+    [region ${REGION}]
+    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}/
+    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}/
+    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}/
+    ec2-url = https://ec2.${REGION}.${DOMAIN}/
+    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}/
+    iam-url = https://iam.${REGION}.${DOMAIN}/
+    monitoring-url = https://monitoring.${REGION}.${DOMAIN}/
+    properties-url = https://properties.${REGION}.${DOMAIN}/
+    reporting-url = https://reporting.${REGION}.${DOMAIN}/
+    s3-url = https://s3.${REGION}.${DOMAIN}/
+    sts-url = https://sts.${REGION}.${DOMAIN}/
+    user = ${REGION}-admin
 
-    rm -f ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    certificate = /usr/share/euca2ools/certs/cert-${REGION}.pem
+    verify-ssl = true
+    EOF
 
-    euca-get-credentials -u admin ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip
+    cp /var/lib/eucalyptus/keys/cloud-cert.pem /usr/share/euca2ools/certs/cert-${REGION}.pem
+    chmod 0644 /usr/share/euca2ools/certs/cert-${REGION}.pem
+    ```
 
-    unzip -uo ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin.zip -d ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/
+4. Display Euca2ools Configuration
 
-    if ! grep -s -q "export EC2_PRIVATE_KEY=" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc; then
-        pk_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-pk.pem | tail -1)
-        cert_pem=$(ls -1 ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/euca2-admin-*-cert.pem | tail -1)
-        sed -i -e "/EUSTORE_URL=/aexport EC2_PRIVATE_KEY=\${EUCA_KEY_DIR}/${pk_pem##*/}\nexport EC2_CERT=\${EUCA_KEY_DIR}/${cert_pem##*/}" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-        sed -i -e "/WARN: Certificate credentials not present./d" \
-               -e "/WARN: Review authentication.credential_download_generate_certificate and/d" \
-               -e "/WARN: authentication.signing_certificates_limit properties for current/d" \
-               -e "/WARN: certificate download limits./d" ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    fi
+    This is an example of the configuration which should result from the logic in the last step.
 
-    if [ -r /root/eucarc ]; then
-        cp -a ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc /root/eucarc
-    fi
+    * The ${REGION} Region should still be the default.
+    * The ${REGION} Region should be configured with Custom DNS HTTPS URLs. It can be used from
+      other hosts.
+    * The localhost Region should still be configured with the default direct URLs. It can only
+      be used from the FastStart host.
+    * The ${REGION} and localhost Regions should each have the same single Eucalyptus Administrator
+      User.
 
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    ~/.euca/global.ini
+    ```bash
+    ; Eucalyptus Global
 
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
+    [global]
+    default-region = ${REGION}
+    ```
+
+    /etc/euca2ools/conf.d/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [region ${REGION}]
+    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}/
+    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}/
+    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}/
+    ec2-url = https://ec2.${REGION}.${DOMAIN}/
+    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}/
+    iam-url = https://iam.${REGION}.${DOMAIN}/
+    monitoring-url = https://monitoring.${REGION}.${DOMAIN}/
+    properties-url = https://properties.${REGION}.${DOMAIN}/
+    reporting-url = https://reporting.${REGION}.${DOMAIN}/
+    s3-url = https://s3.${REGION}.${DOMAIN}/
+    sts-url = https://sts.${REGION}.${DOMAIN}/
+    user = ${REGION}-admin
+
+    certificate = /usr/share/euca2ools/certs/cert-${REGION}.pem
+    verify-ssl = true
+    ```
+
+    /etc/euca2ools/conf.d/localhost.ini
+    ```bash
+    ; Eucalyptus (all user services on localhost)
+
+    [region localhost]
+    autoscaling-url = http://127.0.0.1:8773/services/AutoScaling/
+    cloudformation-url = http://127.0.0.1:8773/services/CloudFormation/
+    ec2-url = http://127.0.0.1:8773/services/compute/
+    elasticloadbalancing-url = http://127.0.0.1:8773/services/LoadBalancing/
+    iam-url = http://127.0.0.1:8773/services/Euare/
+    monitoring-url = http://127.0.0.1:8773/services/CloudWatch/
+    s3-url = http://127.0.0.1:8773/services/objectstorage/
+    sts-url = http://127.0.0.1:8773/services/Tokens/
+    user = localhost-admin
+
+    bootstrap-url = http://127.0.0.1:8773/services/Empyrean/
+    properties-url = http://127.0.0.1:8773/services/Properties/
+    reporting-url = http://127.0.0.1:8773/services/Reporting/
+
+    certificate = /var/lib/eucalyptus/keys/cloud-cert.pem
+    ```
+
+    ~/.euca/${REGION}.ini
+    ```bash
+    ; Eucalyptus Region ${REGION}
+
+    [user ${REGION}-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
+    ```
+
+    ~/.euca/localhost.ini
+    ```bash
+    ; Eucalyptus Region localhost
+
+    [user localhost-admin]
+    key-id = AKIAATYHPHEMVRQ46T43
+    secret-key = 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
+    account-id = 000987072445
     ```
 

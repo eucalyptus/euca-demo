@@ -1,7 +1,7 @@
-# Setup AWS CLI to access Eucalyptus Regions
+# Setup AWSCLI to access Eucalyptus Regions
 
 ### Overview
-Some quick and dirty instructions to setup AWS CLI (actually botocore) so that 
+Some quick and dirty instructions to setup AWSCLI (actually botocore) so that 
 Eucalyptus regions are supported.  This supports all the regions created by MCrawford
 using the naming convention "hp-gol01-tn", where "t"=type (f=faststart, c=course, d=demo)
 and "n" is the instance within the type. All such regions are subdomains of the custom
@@ -9,7 +9,7 @@ DNS parent domain created by MCrawford for testing: mjc/prc/eucalyptus-systems.c
 is useful to stick with predictable conventions like these to simplify the modifications
 which must be made to the botocore _endpoints.json file.
 
-### Install AWS CLI (Linux)
+### Install AWSCLI (Linux)
 This assumes the EPEL yum repository has been configured.
 
 ```bash
@@ -304,7 +304,7 @@ EOF
 ln -s _endpoints-local-ssl.json _endpoints.json
 ```
 
-### Configure AWS CLI (Linux)
+### Configure AWSCLI (Linux)
 
 These instructions show an example of the data from the `hp-gol01-f1` faststart example.
 The credentials data can be obtained from the eucarc files of the users contained within.
@@ -367,9 +367,9 @@ EOF
 
 ```
 
-### Use AWS CLI (Linux)
+### Use AWSCLI (Linux)
 
-By default, the AWS CLI will use the `default` profile. Usually this is duplicated from one of the
+By default, the AWSCLI will use the `default` profile. Usually this is duplicated from one of the
 named profiles which are below in the configuration files. 
 
 You can specify a different profile to use via the AWS_DEFAULT_PROFILE environment variable, such as:
@@ -378,7 +378,7 @@ You can specify a different profile to use via the AWS_DEFAULT_PROFILE environme
 export AWS_DEFAULT_PROFILE=hp-gol01-f1-demo-admin
 ```
 
-Confirm the AWS CLI version
+Confirm the AWSCLI version
 
 ```bash
 aws --version
@@ -390,9 +390,9 @@ Describe a user's key pairs
 aws ec2 describe-key-pairs
 ```
 
-### Install AWS CLI (Windows)
+### Install AWSCLI (Windows)
 
-Download the AWS CLI MSI installer for Windows (64-bit)
+Download the AWSCLI MSI installer for Windows (64-bit)
 - https://s3.amazonaws.com/aws-cli/AWSCLI64.msi
 
 Double-click the installer to install

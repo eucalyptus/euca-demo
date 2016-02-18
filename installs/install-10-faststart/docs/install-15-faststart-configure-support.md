@@ -6,8 +6,8 @@ Eucalyptus has been installed via the FastStart installer.
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -28,30 +28,15 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
     ```
 
 ### Configure Eucalyptus Support
 
-1. Use Eucalyptus Administrator credentials
+1. Configure Support Keypair
 
-    Eucalyptus Administrator credentials should have been moved from the default location
-    where they are downloaded to the hierarchical directory structure used for all demos,
-    in the location shown below, as part of the prior faststart manual install procedure.
-
-    ```bash
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    ```
-
-2. Import Eucalyptus Administrator Support Keypair
+    This key is insecure, and should not be used with sites exposed to the Internet.
 
     ```bash
     cat << EOF > ~/.ssh/support_id_rsa
@@ -98,17 +83,35 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     8uE5v925bxkgHk+Hk95YdnfMqJfG8qGtC3tfE6bTOkweLjmiadY+Qz4QBv67\
      support@hpcloud.com
     EOF
-
-    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
     ```
 
-3. Configure Service Image Login
+2. Import Eucalyptus Imaging Service Support Keypair
 
     ```bash
-    euca-modify-property -p services.database.worker.keyname=support
+    imaging_arn=$(euare-rolelistbypath --path-prefix '/imaging' --as-account '(eucalyptus)imaging')
+    eval $(euare-assumerole $imaging_arn)
 
-    euca-modify-property -p services.imaging.worker.keyname=support
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
 
-    euca-modify-property -p services.loadbalancing.worker.keyname=support
+    eval $(euare-releaserole)
+    ```
+
+3. Import Eucalyptus LoadBalancing Service Support Keypair
+
+    ```bash
+    loadbalancing_arn=$(euare-rolelistbypath --path-prefix '/loadbalancing' --as-account '(eucalyptus)loadbalancing')
+    eval $(euare-assumerole $loadbalancing_arn)
+
+    euca-import-keypair -f ~/.ssh/support_id_rsa.pub support
+
+    eval $(euare-releaserole)
+    ```
+
+4. Configure Service Image Login
+
+    ```bash
+    euctl services.imaging.worker.keyname=support
+
+    euctl services.loadbalancing.worker.keyname=support
     ```
 

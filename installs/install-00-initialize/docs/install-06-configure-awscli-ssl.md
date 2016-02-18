@@ -1,4 +1,4 @@
-Extra stuff I need to fix later to get AWS CLI working with Eucalyptus when
+Extra stuff I need to fix later to get AWSCLI working with Eucalyptus when
 we use an Nginx proxy for SSL, which uses a wildcard SSL certificate signed
 by my internal Root CA:
 

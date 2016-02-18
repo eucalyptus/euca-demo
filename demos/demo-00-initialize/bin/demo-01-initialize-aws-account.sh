@@ -2,13 +2,13 @@
 #
 # This script initializes a Management Workstation for Demos which also use AWS, including:
 # - Configures Euca2ools for the AWS Account Administrator
-# - Configures AWS CLI for the AWS Account Administrator
+# - Configures AWSCLI for the AWS Account Administrator
 #
 # The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
 # to running this script.
 #
 # This script should be run by the AWS Account Administrator next, to move the Credentials obtained
-# during manual AWS Account creation into the Euca2ools and AWS CLI configuration file in a
+# during manual AWS Account creation into the Euca2ools and AWSCLI configuration file in a
 # standard way.
 #
 # Then the demo-02-initialize-aws-account-administrator.sh script should be run by the AWS Account
@@ -323,8 +323,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator AWS CLI Profile"
-echo "    - This allows the AWS Account Administrator to run AWS CLI commands"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator AWSCLI Profile"
+echo "    - This allows the AWS Account Administrator to run AWSCLI commands"
 echo
 echo "============================================================"
 echo
@@ -516,7 +516,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
     echo
     echo "============================================================"
     echo

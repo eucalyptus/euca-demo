@@ -326,10 +326,10 @@ ns1.mjc.prc.eucalyptus-systems.com.
     to explicitly specify the User and Region, this adds a lot of typing.
 
     While Euca2ools accepts a "USER@REGION" value in the AWS_DEFAULT_REGION environment variable
-    to avoid having to pass these values on every command, this breaks AWS CLI which cannot handle
+    to avoid having to pass these values on every command, this breaks AWSCLI which cannot handle
     this extension to the variable format.
 
-    By setting the variables defined below, both Euca2ools and AWS CLI can be used interchangably.
+    By setting the variables defined below, both Euca2ools and AWSCLI can be used interchangably.
 
     Add these lines to your ~/.bash_profile:
     ```bash 

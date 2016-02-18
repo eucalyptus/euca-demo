@@ -6,9 +6,9 @@
 # - Creates the Demo Account Administrator Login Profile
 # - Downloads the Demo Account Administrator Credentials
 # - Configures Euca2ools for the Demo Account Administrator
-# - Configures AWS CLI for the Demo Account Administrator
+# - Configures AWSCLI for the Demo Account Administrator
 # - Authorizes use of the CentOS 6 Generic image by the Demo Account
-# - Authorizes use of the CentOS 6 CFN + AWS CLI image by the Demo Account
+# - Authorizes use of the CentOS 6 CFN + AWSCLI image by the Demo Account
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
 # running this script, as this script references images it installs.
@@ -198,7 +198,7 @@ fi
 profile=$region-admin
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWS CLI profile!"
+    echo "Could not find Eucalyptus ($region) Region Eucalyptus Administrator AWSCLI profile!"
     echo "Expected to find: [profile $profile] in ~/.aws/config"
     exit 51
 fi
@@ -425,8 +425,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator AWS CLI Profile"
-echo "    - This allows the Demo Account Administrator to run AWS CLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator AWSCLI Profile"
+echo "    - This allows the Demo Account Administrator to run AWSCLI commands"
 echo
 echo "============================================================"
 echo
@@ -550,7 +550,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CFN + AWS CLI Image"
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CFN + AWSCLI Image"
 echo
 echo "============================================================"
 echo
@@ -678,7 +678,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
     echo
     echo "============================================================"
     echo

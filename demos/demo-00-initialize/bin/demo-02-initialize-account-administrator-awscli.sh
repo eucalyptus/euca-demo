@@ -9,20 +9,20 @@
 # - Creates the administrator User Login Profile
 # - Creates the administrator User Access Key
 # - Configures Euca2ools for the administrator User
-# - Configures AWS CLI for the administrator User
+# - Configures AWSCLI for the administrator User
 # - Lists Demo Account Resources
 # - Displays Euca2ools Configuration
-# - Displays AWS CLI Configuration
+# - Displays AWSCLI Configuration
 #
 # This is a variant of the demo-02-initialize-account-administrator.sh script which primarily uses
-# the AWS CLI
+# the AWSCLI
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
 # running this script, as this script references images it installs.
 #
 # Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
 # to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
-# into a standard Euca2ools and AWS CLI storage onvention. This is optional, but required for the
+# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
 # next script to be run.
 #
 # Then the demo-02-initialize-account-administrator.sh script should be run by the Eucalyptus
@@ -220,7 +220,7 @@ fi
 profile=$region-$account-$user
 
 if ! grep -s -q "\[profile $profile]" ~/.aws/config; then
-    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User AWS CLI profile!"
+    echo "Could not find Eucalyptus ($region) Region Demo ($account) Account Administrator ($user) User AWSCLI profile!"
     echo "Expected to find: [profile $profile] in ~/.aws/config"
     exit 51
 fi
@@ -576,8 +576,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator ($new_user) User AWS CLI Profile"
-echo "    - This allows the Demo Account Administrator User to run AWS CLI commands"
+echo "$(printf '%2d' $step). Create Demo ($account) Account Administrator ($new_user) User AWSCLI Profile"
+echo "    - This allows the Demo Account Administrator User to run AWSCLI commands"
 echo
 echo "============================================================"
 echo
@@ -762,7 +762,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
     echo
     echo "============================================================"
     echo

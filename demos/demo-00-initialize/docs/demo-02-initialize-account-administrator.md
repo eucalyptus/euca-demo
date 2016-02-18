@@ -7,7 +7,7 @@ This document describes the manual procedure to initialize an administrator with
 This variant must be run by root on the Eucalyptus CLC host.
 
 It assumes the environment was installed via FastStart and the additional scripts needed to
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done.
 
@@ -123,9 +123,9 @@ The steps below are automated in the [demo-02-initialize-account-administrator.s
     euca-describe-availability-zones --region $REGION-demo-mcrawford@$REGION
     ```
 
-8. Create Demo (demo) Account Administrator (mcrawford) User AWS CLI Profile
+8. Create Demo (demo) Account Administrator (mcrawford) User AWSCLI Profile
 
-    This allows the Demo Account Administrator User to run AWS CLI commands.
+    This allows the Demo Account Administrator User to run AWSCLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -169,7 +169,7 @@ The steps below are automated in the [demo-02-initialize-account-administrator.s
     cat ~/.euca/$REGION.ini
     ```
 
-11. Display AWS CLI Configuration
+11. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config

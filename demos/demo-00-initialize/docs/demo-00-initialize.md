@@ -7,7 +7,7 @@ This document describes the manual procedure to initialize a new Eucalyptus Regi
 This variant must be run by root on the Eucalyptus CLC host. 
  
 It assumes the environment was installed via FastStart and the additional scripts needed to 
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as 
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as 
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done. 
 
@@ -113,9 +113,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     euca-describe-availability-zones verbose --region $USER_REGION
     ```
 
-4. Create Eucalyptus Administrator AWS CLI Profile
+4. Create Eucalyptus Administrator AWSCLI Profile
 
-    This allows the Eucalyptus Administrator to run API commands via AWS CLI.
+    This allows the Eucalyptus Administrator to run API commands via AWSCLI.
 
     ```bash
     mkdir -p ~/.aws
@@ -245,9 +245,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
                        --region $USER_REGION
     ```
 
-10. Download Demo CFN + AWS CLI Image (CentOS 6.6)
+10. Download Demo CFN + AWSCLI Image (CentOS 6.6)
 
-    This is a Generic Cloud Image modified to add CFN tools and AWS CLI.
+    This is a Generic Cloud Image modified to add CFN tools and AWSCLI.
 
     ```bash
     wget http://images-euca.s3-website-us-east-1.amazonaws.com/CentOS-6-x86_64-CFN-AWSCLI.raw.xz \
@@ -256,11 +256,11 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     xz -v -d /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw.xz
     ```
 
-11. Install Demo CFN + AWS CLI Image
+11. Install Demo CFN + AWSCLI Image
 
     ```bash
     euca-install-image --name centos6-cfn-init \
-                       --description "Centos 6 Cloud Image with CloudFormation and AWS CLI" \
+                       --description "Centos 6 Cloud Image with CloudFormation and AWSCLI" \
                        --bucket images \
                        --arch x86_64 \
                        --image /var/tmp/CentOS-6-x86_64-CFN-AWSCLI.raw \
@@ -299,7 +299,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
     cat ~/.euca/$REGION.ini
     ```
 
-15. Display AWS CLI Configuration
+15. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config

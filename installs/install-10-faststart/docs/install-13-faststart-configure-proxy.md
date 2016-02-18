@@ -694,27 +694,28 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
 21. Configure Euca2ools Region with HTTPS Endpoints
 
-    We can now switch to HTTPS via the Separate Nginx Proxy. Note we copy the cloud certificate
-    from the default location to the same directory used for other cloud certificates, giving
-    it a similar name. This allows us to centralize multiple regions onto a single management
-    workstation.
+    We can now switch to HTTPS via the Separate Nginx Proxy.
+
+    Note we copy the cloud certificate from the default location to the same directory used for 
+    other cloud certificates, giving it a similar name. This allows us to centralize multiple 
+    regions onto a single management workstation.
 
     ```bash
     cat << EOF > /etc/euca2ools/conf.d/${REGION}.ini
     ; Eucalyptus Region ${REGION}
 
     [region ${REGION}]
-    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}:8773/
-    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}:8773/
-    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}:8773/
-    ec2-url = https://ec2.${REGION}.${DOMAIN}:8773/
-    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}:8773/
-    iam-url = https://iam.${REGION}.${DOMAIN}:8773/
-    monitoring-url = https://monitoring.${REGION}.${DOMAIN}:8773/
-    properties-url = https://properties.${REGION}.${DOMAIN}:8773/
-    reporting-url = https://reporting.${REGION}.${DOMAIN}:8773/
-    s3-url = https://s3.${REGION}.${DOMAIN}:8773/
-    sts-url = https://sts.${REGION}.${DOMAIN}:8773/
+    autoscaling-url = https://autoscaling.${REGION}.${DOMAIN}/
+    bootstrap-url = https://bootstrap.${REGION}.${DOMAIN}/
+    cloudformation-url = https://cloudformation.${REGION}.${DOMAIN}/
+    ec2-url = https://ec2.${REGION}.${DOMAIN}/
+    elasticloadbalancing-url = https://elasticloadbalancing.${REGION}.${DOMAIN}/
+    iam-url = https://iam.${REGION}.${DOMAIN}/
+    monitoring-url = https://monitoring.${REGION}.${DOMAIN}/
+    properties-url = https://properties.${REGION}.${DOMAIN}/
+    reporting-url = https://reporting.${REGION}.${DOMAIN}/
+    s3-url = https://s3.${REGION}.${DOMAIN}/
+    sts-url = https://sts.${REGION}.${DOMAIN}/
     user = ${REGION}-admin
 
     certificate = /usr/share/euca2ools/certs/cert-${REGION}.pem

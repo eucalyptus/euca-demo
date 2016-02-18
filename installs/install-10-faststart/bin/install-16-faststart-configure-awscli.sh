@@ -1,6 +1,6 @@
 #/bin/bash
 #
-# This script configures the AWS CLI to access the local Eucalyptus instance after a Faststart installation
+# This script configures the AWSCLI to access the local Eucalyptus instance after a Faststart installation
 # - This variant uses the Helion Eucalyptus Development Root Certification Authority
 #
 # This should be run after the Faststart Reverse Proxy configuration script
@@ -223,7 +223,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Install AWS CLI"
+echo "$(printf '%2d' $step). Install AWSCLI"
 echo
 echo "================================================================================"
 echo
@@ -286,7 +286,7 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Configure AWS CLI Command Completion"
+echo "$(printf '%2d' $step). Configure AWSCLI Command Completion"
 echo
 echo "================================================================================"
 echo
@@ -329,11 +329,11 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Configure AWS CLI to trust local Certificate Authority"
+echo "$(printf '%2d' $step). Configure AWSCLI to trust local Certificate Authority"
 echo "    - We will use the Helion Eucalyptus Development Root Certification Authority"
 echo "      to sign SSL certificates"
 echo "    - We must add this CA cert to the trusted root certificate authorities"
-echo "      used by botocore on all clients where AWS CLI is run"
+echo "      used by botocore on all clients where AWSCLI is run"
 echo
 echo "================================================================================"
 echo
@@ -548,9 +548,9 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Configure AWS CLI to support local Eucalyptus region"
+echo "$(printf '%2d' $step). Configure AWSCLI to support local Eucalyptus region"
 echo "    - This creates a modified version of the _endpoints.json file which the"
-echo "      botocore Python module within AWS CLI uses to configure AWS endpoints,"
+echo "      botocore Python module within AWSCLI uses to configure AWS endpoints,"
 echo "      adding the new local Eucalyptus region endpoints"
 echo "    - We then rename the original _endpoints.json file with the .orig extension,"
 echo "      then create a symlink with the original name pointing to our version"
@@ -1024,7 +1024,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
     echo
     echo "============================================================"
     echo
@@ -1056,7 +1056,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "================================================================================"
     echo
-    echo "$(printf '%2d' $step). Confirm AWS CLI"
+    echo "$(printf '%2d' $step). Confirm AWSCLI"
     echo
     echo "================================================================================"
     echo
@@ -1091,7 +1091,7 @@ end=$(date +%s)
 echo
 case $(uname) in
   Darwin)
-    echo "Eucalyptus AWS CLI configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
+    echo "Eucalyptus AWSCLI configuration complete (time: $(date -u -r $((end-start)) +"%T"))";;
   *)
-    echo "Eucalyptus AWS CLI configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
+    echo "Eucalyptus AWSCLI configuration complete (time: $(date -u -d @$((end-start)) +"%T"))";;
 esac

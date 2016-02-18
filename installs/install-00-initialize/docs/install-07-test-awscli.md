@@ -1,10 +1,10 @@
-# Test AWS CLI with Eucalyptus Regions
+# Test AWSCLI with Eucalyptus Regions
 
 ### Overview
-You must first setup AWS CLI to access the Eucalyptus region endpoints, described in a
+You must first setup AWSCLI to access the Eucalyptus region endpoints, described in a
 separate procedure.
 
-This page contains statements which can be used to test various aspects of the AWS CLI
+This page contains statements which can be used to test various aspects of the AWSCLI
 against both AWS and Euca Regions. It assumes you have setup your ~/.aws/config and
 ~/.aws/credentials files appropriately, and have set your AWS_DEFAULT_PROFILE environment
 variable to the appropriate profile.

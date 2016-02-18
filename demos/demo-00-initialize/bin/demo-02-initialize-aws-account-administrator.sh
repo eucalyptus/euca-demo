@@ -9,17 +9,17 @@
 # - Creates the administrator User Login Profile
 # - Creates the administrator User Access Key
 # - Configures Euca2ools for the administrator User
-# - Configures AWS CLI for the administrator User
+# - Configures AWSCLI for the administrator User
 # - Lists AWS Account Resources
 # - Displays Euca2ools Configuration
-# - Displays AWS CLI Configuration
+# - Displays AWSCLI Configuration
 #
 # The demo-00-initialize-aws.sh script should be run by the AWS Account Administrator once prior
 # to running this script.
 #
 # Then the demo-01-initialize-aws-account.sh script should be run by the AWS Account Administrator
 # to move AWS Account-level Credentials downloaded during the manual AWS Account creation process
-# into a standard Euca2ools and AWS CLI storage onvention. This is optional, but required for the
+# into a standard Euca2ools and AWSCLI storage onvention. This is optional, but required for the
 # next script to be run.
 #
 # Then this script should be run by the AWS Account Administrator as many times as needed to
@@ -575,8 +575,8 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User AWS CLI Profile"
-echo "    - This allows the AWS Account Administrator User to run AWS CLI commands"
+echo "$(printf '%2d' $step). Create AWS ($account) Account Administrator ($new_user) User AWSCLI Profile"
+echo "    - This allows the AWS Account Administrator User to run AWSCLI commands"
 echo
 echo "============================================================"
 echo
@@ -812,7 +812,7 @@ if [ $verbose = 1 ]; then
     echo
     echo "============================================================"
     echo
-    echo "$(printf '%2d' $step). Display AWS CLI Configuration"
+    echo "$(printf '%2d' $step). Display AWSCLI Configuration"
     echo
     echo "============================================================"
     echo

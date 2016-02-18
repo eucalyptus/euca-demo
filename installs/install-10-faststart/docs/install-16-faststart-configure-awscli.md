@@ -5,11 +5,17 @@ This document describes the manual procedure to configure AWSCLI, after Eucalypt
 via the FastStart installer. This script assumes the reverse-proxy script has been run, so that
 Eucalyptus can be accessed via HTTPS endpoints via the proxy.
 
+Please note that this procedure is not a supported configuration, as the use of Python pip changes
+Python modules installed via RPM on which Eucalyptus depends to unknown later versions outside of
+the RPM package management system. Use this procedure on any host running Eucalyptus at your own
+risk! This procedure can be used to install AWSCLI on a separate management workstation, avoiding
+this support problem.
+
 This variant is meant to be run as root
 
 This procedure is based on the hp-gol01-f1 demo/test environment running on host odc-f-32 in the PRC.
-It uses **hp-gol01-f1** as the AWS_DEFAULT_REGION, and **mjc.prc.eucalyptus-systems.com** as the
-AWS_DEFAULT_DOMAIN. Note that this domain only resolves inside the HP Goleta network.
+It uses **hp-gol01-f1** as the **REGION**, and **mjc.prc.eucalyptus-systems.com** as the **DOMAIN**.
+Note that this domain only resolves inside the HP Goleta network.
 
 This is using the following host in the HP Goleta server room:
 - odc-f-32.prc.eucalyptus-systems.com: CLC+UFS+MC+Walrus+CC+SC+NC
@@ -30,44 +36,55 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     DNS server. Adjust the variables in this section to your environment.
 
     ```bash
-    export AWS_DEFAULT_REGION=hp-gol01-f1
-    export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
-
-    export EUCA_DNS_INSTANCE_SUBDOMAIN=.cloud
-    export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
-
-    export EUCA_PUBLIC_IP_RANGE=10.104.45.1-10.104.45.126
+    export DOMAIN=mjc.prc.eucalyptus-systems.com
+    export REGION=hp-gol01-f1
     ```
 
 ### Configure AWSCLI
 
-1. Use Eucalyptus Administrator credentials
-
-    Eucalyptus Administrator credentials should have been moved from the default location
-    where they are downloaded to the hierarchical directory structure used for all demos,
-    in the location shown below, as part of the prior faststart manual install procedure.
-
-    ```bash
-    cat ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-
-    source ~/.creds/$AWS_DEFAULT_REGION/eucalyptus/admin/eucarc
-    ```
-
-2. Install Python Pip
+1. Install Python Pip
 
     This step assumes the EPEL repo has been configured.
 
     ```bash
     yum install -y python-pip
+
+    pip install --upgrade pip
     ```
 
-3. Install AWSCLI
+2. Install AWSCLI
 
     ```bash
     pip install awscli
     ```
 
-4. Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
+3. Fix Eucalyptus Console dependencies broken by pip
+
+    pip overwrites a version of a python module required by eucaconsole so we must revert back to
+    the required version.
+
+    This problem is likely to be a moving target, until a recent usable version of AWSCLI is
+    packaged as an RPM compatible with CentOS/RHEL and/or EPEL, so it can be installed without
+    pip. Whenever pip is used on any Eucalyptus host, there is a potential for pip to break
+    dependencies. You can explicitly start eucaconsole on the command line to determine if this
+    is happening, and identify the module affected.
+
+    ```bash
+    pip uninstall -y python-dateutil
+    yum reinstall -y python-dateutil
+    ```
+
+4. Configure AWSCLI Command Completion
+
+    ```bash
+    cat << EOF >> /etc/profile.d/aws.sh
+    complete -C '/usr/bin/aws_completer' aws
+    EOF
+
+    source /etc/profile.d/aws.sh
+    ```
+
+5. Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
 
     We will use the Helion Eucalyptus Development Root Certification Authority to sign SSL
     certificates. Certificates issued by this CA are not trusted by default.
@@ -135,7 +152,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ln -s cacert.pem.local /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem
     ```
 
-5. Configure AWS CLI to support local Eucalyptus region
+6. Configure AWSCLI to support local Eucalyptus region
 
     This creates a modified version of the _endpoints.json file which the botocore Python module
     within AWSCLI uses to configure AWS endpoints, adding the new local Eucalyptus region endpoints.
@@ -149,9 +166,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     {
       "_default":[
         {
-          "uri":"{scheme}://{service}.{region}.$AWS_DEFAULT_DOMAIN",
+          "uri":"{scheme}://{service}.{region}.${DOMAIN}",
           "constraints":[
-            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
@@ -172,41 +189,41 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
       ],
       "ec2": [
         {
-          "uri":"{scheme}://compute.{region}.$AWS_DEFAULT_DOMAIN",
+          "uri":"{scheme}://compute.{region}.${DOMAIN}",
           "constraints": [
-            ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+            ["region","startsWith","${REGION%-*}-"]
           ]
         }
       ],
       "elasticloadbalancing": [
        {
-        "uri":"{scheme}://loadbalancing.{region}.$AWS_DEFAULT_DOMAIN",
+        "uri":"{scheme}://loadbalancing.{region}.${DOMAIN}",
         "constraints": [
-          ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+          ["region","startsWith","${REGION%-*}-"]
         ]
        }
       ],
       "monitoring":[
         {
-          "uri":"{scheme}://cloudwatch.{region}.$AWS_DEFAULT_DOMAIN",
+          "uri":"{scheme}://cloudwatch.{region}.${DOMAIN}",
           "constraints": [
-           ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+           ["region","startsWith","${REGION%-*}-"]
           ]
         }
       ],
       "swf":[
        {
-        "uri":"{scheme}://simpleworkflow.{region}.$AWS_DEFAULT_DOMAIN",
+        "uri":"{scheme}://simpleworkflow.{region}.${DOMAIN}",
         "constraints": [
-         ["region","startsWith","${AWS_DEFAULT_REGION%-*}-"]
+         ["region","startsWith","${REGION%-*}-"]
         ]
        }
       ],
       "iam":[
         {
-          "uri":"https://euare.{region}.$AWS_DEFAULT_DOMAIN",
+          "uri":"https://euare.{region}.${DOMAIN}",
           "constraints":[
-            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
@@ -240,9 +257,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
       ],
       "sts":[
         {
-          "uri":"https://tokens.{region}.$AWS_DEFAULT_DOMAIN",
+          "uri":"https://tokens.{region}.${DOMAIN}",
           "constraints":[
-            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+            ["region", "startsWith", "${REGION%-*}-"]
           ]
         },
         {
@@ -279,9 +296,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
           }
         },
         {
-          "uri":"{scheme}://objectstorage.{region}.$AWS_DEFAULT_DOMAIN//",
+          "uri":"{scheme}://objectstorage.{region}.${DOMAIN}//",
           "constraints": [
-            ["region", "startsWith", "${AWS_DEFAULT_REGION%-*}-"]
+            ["region", "startsWith", "${REGION%-*}-"]
           ],
           "properties": {
             "signatureVersion": "s3"
@@ -433,11 +450,14 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ln -s _endoints.json.local.ssl _endpoints.json
     ```
 
-6. Configure Default AWS credentials
+7. Configure Default AWS credentials
 
     This configures the Eucalyptus Administrator as the default and an explicit profile.
 
     ```bash
+    access_key=$(sed -n -e 's/AWSAccessKeyId=//p' ~/.creds/${REGION}/eucalyptus/admin/iamrc)
+    secret_key=$(sed -n -e 's/AWSSecretKey=//p' ~/.creds/${REGION}/eucalyptus/admin/iamrc)
+
     mkdir -p ~/.aws
 
     # cat << EOF > ~/.aws/config
@@ -446,11 +466,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     #
 
     [default]
-    region = $AWS_DEFAULT_REGION
+    region = ${REGION}
     output = text
 
-    [profile-$AWS_DEFAULT_REGION-admin]
-    region = $AWS_DEFAULT_REGION
+    [profile-${REGION}-admin]
+    region = ${REGION}
     output = text
 
     EOF
@@ -461,25 +481,33 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     #
     
     [default]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
+    aws_access_key_id = ${access_key}
+    aws_secret_access_key = ${secret_key}
 
-    [$AWS_DEFAULT_REGION-admin]
-    aws_access_key_id = $AWS_ACCESS_KEY
-    aws_secret_access_key = $AWS_SECRET_KEY
+    [${REGION}-admin]
+    aws_access_key_id = ${access_key}
+    aws_secret_access_key = ${secret_key}
 
     EOF
 
     chmod -R og-rwx ~/.aws
     ```
 
-7. Test AWSCLI
+8. Display AWSCLI Configuration
+
+    ```bash
+    cat ~/.aws/config
+
+    cat ~/.aws/credentials
+    ```
+
+9. Confirm AWSCLI
 
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=defaults
+    aws ec2 describe-key-pairs --profile=default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-key-pairs --profile=${REGION}-admin
     ```
 

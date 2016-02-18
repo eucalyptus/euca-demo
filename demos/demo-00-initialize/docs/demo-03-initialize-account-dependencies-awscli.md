@@ -1,14 +1,14 @@
-# Demo Initialize: Initialize Demo Account Dependencies (via AWS CLI)
+# Demo Initialize: Initialize Demo Account Dependencies (via AWSCLI)
 
 This document describes the manual procedure to initialize additional dependencies within the demo
-account, using the AWS CLI whenever possible.
+account, using the AWSCLI whenever possible.
 
 ### Prerequisites
 
 This variant must be run by root on the Eucalyptus CLC host.
 
 It assumes the environment was installed via FastStart and the additional scripts needed to
-initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWS CLI, as
+initialize DNS, PKI, SSL reverse-proxy and the initialization of Euca2ools and AWSCLI, as
 described in the [FastStart Install](../../../installs/install-10-faststart) section, have
 been run, or equivalent manual configuration has been done.
 
@@ -37,7 +37,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     export PROFILE=$REGION-$ACCOUNT-$USER
     ```
 
-This script also assumes you have additionally configured AWS CLI tools with appropriate region entries.
+This script also assumes you have additionally configured AWSCLI tools with appropriate region entries.
 
 ### Initialize Demo Account Dependencies
 
@@ -373,9 +373,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-demo@$REGION
     ```
 
-19. Create Demo (demo) Account Demo (demo) User AWS CLI Profile
+19. Create Demo (demo) Account Demo (demo) User AWSCLI Profile
 
-    This allows the Demo Account Demo User to run AWS CLI commands.
+    This allows the Demo Account Demo User to run AWSCLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -451,9 +451,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-developer@$REGION
     ```
 
-25. Create Demo (demo) Account Developer (developer) User AWS CLI Profile
+25. Create Demo (demo) Account Developer (developer) User AWSCLI Profile
 
-    This allows the Demo Account Developer User to run AWS CLI commands.
+    This allows the Demo Account Developer User to run AWSCLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -529,9 +529,9 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     euca-describe-availability-zones --region $REGION-demo-user@$REGION
     ```
 
-31. Create Demo (demo) Account User (user) User AWS CLI Profile
+31. Create Demo (demo) Account User (user) User AWSCLI Profile
 
-    This allows the Demo Account Demo User to run AWS CLI commands.
+    This allows the Demo Account Demo User to run AWSCLI commands.
 
     ```bash
     cat << EOF >> ~/.aws/config
@@ -581,7 +581,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     cat ~/.euca/$REGION.ini
     ```
 
-34. Display AWS CLI Configuration
+34. Display AWSCLI Configuration
 
     ```bash
     cat ~/.aws/config
