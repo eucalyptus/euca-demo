@@ -315,6 +315,12 @@ if ! which lynx > /dev/null; then
     exit 98
 fi
 
+# Prevent certain environment variables from breaking commands
+unset AWS_DEFAULT_PROFILE
+unset AWS_CREDENTIAL_FILE
+unset EC2_PRIVATE_KEY
+unset EC2_CERT
+
 
 #  5. Run Demo
 
