@@ -303,7 +303,7 @@ echo "Commands:"
 echo
 echo "mkdir -p ~/.creds/$region/$account/admin"
 echo
-echo "euare-useraddkey --as-account demo --region $user_region admin"
+echo "euare-useraddkey --as-account $account --region $user_region admin"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/admin/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
@@ -329,8 +329,8 @@ else
         mkdir -p ~/.creds/$region/$account/admin
         pause
 
-        echo "# euare-useraddkey --as-account demo --region $user_region admin"
-        result=$(euare-useraddkey --as-account demo --region $user_region admin) && echo $result
+        echo "# euare-useraddkey --as-account $account --region $user_region admin"
+        result=$(euare-useraddkey --as-account $account --region $user_region admin) && echo $result
         read access_key secret_key <<< $result
         pause
 
