@@ -505,8 +505,14 @@ if [ $mode = e -o $mode = b ]; then
     if [ $choice = y ]; then
         echo "# sed -i -e \"/\\\"$euca_region\\\" *: { \\\"PV64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVM64\\\" : \\\"emi-[0-9a-f]*\\\", \\\"HVMG2\\\" : \\\".*\\\" *},/d\" \\"
         echo ">        /var/tmp/WordPress_Single_Instance_Eucalyptus.template"
-        sed -i "" -e "/\"$euca_region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
-               /var/tmp/WordPress_Single_Instance_Eucalyptus.template
+        case $(uname) in
+          Darwin)
+            sed -i "" -e "/\"$euca_region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
+                   /var/tmp/WordPress_Single_Instance_Eucalyptus.template;;
+          *)
+            sed -i -e "/\"$euca_region\" *: { \"PV64\" : \"emi-[0-9a-f]*\", \"HVM64\" : \"emi-[0-9a-f]*\", \"HVMG2\" : \".*\" *},/d" \
+                   /var/tmp/WordPress_Single_Instance_Eucalyptus.template;;
+        esac
         pause
 
         echo "# sed -i -e \"/^    \\\"AWSRegionArch2AMI\\\" : {\$/a\\"
