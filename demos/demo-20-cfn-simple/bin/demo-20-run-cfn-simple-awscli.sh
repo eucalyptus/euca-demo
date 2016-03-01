@@ -232,7 +232,7 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo "                        --profile $profile --region $region | cut -f1,3,4"
+    echo "                        --profile $profile --region $region | cut -f1,4,5"
     echo
     echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
     echo "                           --profile $profile --region $region"
@@ -241,9 +241,9 @@ if [ $verbose = 1 ]; then
 
     echo
     echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo ">                         --profile $profile --region $region | cut -f1,3,4"
+    echo ">                         --profile $profile --region $region | cut -f1,4,5"
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region | cut -f1,3,4  | grep  "$image_name" || demo_initialized=n
+                            --profile $profile --region $region | cut -f1,4,5  | grep  "$image_name" || demo_initialized=n
     pause
 
     echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
@@ -255,7 +255,7 @@ if [ $verbose = 1 ]; then
 
 else
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region | cut -f1,3,4  | grep -s -q  "$image_name" || demo_initialized=n
+                            --profile $profile --region $region | cut -f1,4,5  | grep -s -q  "$image_name" || demo_initialized=n
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
                                --profile $profile --region $region | grep -s -q "demo" || demo_initialized=n
 fi

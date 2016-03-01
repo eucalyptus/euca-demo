@@ -370,7 +370,7 @@ if [ $mode = e -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-        echo "                        --profile $euca_profile --region $euca_region | cut -f1,3,4"
+        echo "                        --profile $euca_profile --region $euca_region | cut -f1,4,5"
         echo
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
         echo "                           --profile $euca_profile --region $euca_region"
@@ -379,9 +379,9 @@ if [ $mode = e -o $mode = b ]; then
 
         echo
         echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-        echo ">                         --profile $euca_profile --region $euca_region | cut -f1,3,4"
+        echo ">                         --profile $euca_profile --region $euca_region | cut -f1,4,5"
         aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                --profile $euca_profile --region $euca_region | cut -f1,3,4  | grep "$image_name" || euca_demo_initialized=n
+                                --profile $euca_profile --region $euca_region | cut -f1,4,5  | grep "$image_name" || euca_demo_initialized=n
         pause
 
         echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
@@ -392,7 +392,7 @@ if [ $mode = e -o $mode = b ]; then
         next
     else
         aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                --profile $euca_profile --region $euca_region | cut -f1,3,4  | grep -s -q "$image_name" || euca_demo_initialized=n
+                                --profile $euca_profile --region $euca_region | cut -f1,4,5  | grep -s -q "$image_name" || euca_demo_initialized=n
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
                                    --profile $euca_profile --region $euca_region | grep -s -q "demo" || euca_demo_initialized=n
     fi
