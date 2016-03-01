@@ -277,7 +277,7 @@ if ! grep -s -q "\[profile $aws_profile]" ~/.aws/config; then
     exit 53
 fi
 
-euca_cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/services\/CloudFormation\/$/\1/p" /etc/euca2ools/conf.d/$euca_region.ini)
+euca_cloudformation_url=$(sed -n -e "s/cloudformation-url = \(.*\)\/$/\1/p" /etc/euca2ools/conf.d/$euca_region.ini)
 aws_cloudformation_url=https://cloudformation.$aws_region.amazonaws.com
 
 if [ -z $euca_cloudformation_url ]; then
@@ -1269,7 +1269,7 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
         if [ $choice = y ]; then
 
             echo "# lynx -dump $aws_wordpress_url"
-            lynx -dump $aws_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+            lynx -dump $aws_wordpress_url | sed -e '1,/Skip to content/d' -e '/^Recent Posts/,$ d' -e 's/\[[0-9]*\]//g' -e 's/Author.*Posted/Posted/' -e '/Search for:/d'
 
             next 50
 
@@ -1405,7 +1405,7 @@ if [ $mode = e -o $mode = b -o $mode = m ]; then
     if [ $choice = y ]; then
 
         echo "# lynx -dump $euca_wordpress_url"
-        lynx -dump $euca_wordpress_url | sed -e '1,/^  . WordPress.org$/d' -e 's/^\(Posted on [A-Za-z]* [0-9]*, 20..\).*$/\1/'
+        lynx -dump $euca_wordpress_url | sed -e '1,/Skip to content/d' -e '/^Recent Posts/,$ d' -e 's/\[[0-9]*\]//g' -e 's/Author.*Posted/Posted/' -e '/Search for:/d'
 
         next 50
 
