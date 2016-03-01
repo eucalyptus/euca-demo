@@ -225,10 +225,12 @@ echo "euscale-update-auto-scaling-group --min-size 0 --max-size 0 --desired-capa
 echo "                                  --region $user_region \\"
 echo "                                  DemoASG"
 echo
-echo "euca-describe-instances --region $user_region \\"
-echo "                        $instance_ids | \\"
-echo "    grep \"^INSTANCE\" | cut -f2,6"
-echo
+if [ -n "$instance_ids" ]; then
+    echo "euca-describe-instances --region $user_region \\"
+    echo "                        $instance_ids | \\"
+    echo "    grep \"^INSTANCE\" | cut -f2,6"
+    echo
+fi
 echo "euscale-delete-auto-scaling-group --region $user_region DemoASG"
 
 if ! euscale-describe-auto-scaling-groups --region $user_region DemoASG 2> /dev/null | grep -s -q "^AUTO-SCALING-GROUP"; then
