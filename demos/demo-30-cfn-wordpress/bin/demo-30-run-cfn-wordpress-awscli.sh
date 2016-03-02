@@ -326,21 +326,25 @@ if [ $mode = a -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
-        echo "                           --profile $aws_profile --region $aws_region"
+        echo "                           --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+        echo "                           --profile $aws_profile --region $aws_region --output text"
 
         next 50
 
         echo
         echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\"\\"
-        echo ">                            --profile $aws_profile --region $aws_region"
+        echo ">                            --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+        echo ">                            --profile $aws_profile --region $aws_region --output text"
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                                   --profile $aws_profile --region $aws_region | grep "demo" || aws_demo_initialized=n
+                                   --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                                   --profile $aws_profile --region $aws_region --output text | grep "demo" || aws_demo_initialized=n
 
         next
 
     else
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                                   --profile $aws_profile --region $aws_region | grep -s -q "demo" || aws_demo_initialized=n
+                                   --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                                   --profile $aws_profile --region $aws_region --output text | grep -s -q "demo" || aws_demo_initialized=n
     fi
 
     if [ $aws_demo_initialized = n ]; then
@@ -370,31 +374,40 @@ if [ $mode = e -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-        echo "                        --profile $euca_profile --region $euca_region | cut -f1,4,5"
+        echo "                        --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+        echo "                        --profile $euca_profile --region $euca_region --output text"
         echo
         echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
-        echo "                           --profile $euca_profile --region $euca_region"
+        echo "                           --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+        echo "                           --profile $euca_profile --region $euca_region --output text"
 
         next 50
 
         echo
         echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-        echo ">                         --profile $euca_profile --region $euca_region | cut -f1,4,5"
+        echo ">                         --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+        echo ">                         --profile $euca_profile --region $euca_region --output text"
         aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                --profile $euca_profile --region $euca_region | cut -d$'\t' -f1,4,5  | grep "$image_name" || euca_demo_initialized=n
+                                --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                                --profile $euca_profile --region $euca_region --output text | grep "$image_name" || euca_demo_initialized=n
         pause
 
         echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
-        echo ">                            --profile $euca_profile --region $euca_region"
+        echo ">                            --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+        echo ">                            --profile $euca_profile --region $euca_region --output text"
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                                   --profile $euca_profile --region $euca_region | grep "demo" || euca_demo_initialized=n
+                                   --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                                   --profile $euca_profile --region $euca_region --output text | grep "demo" || euca_demo_initialized=n
 
-        next
+        next 50
+
     else
         aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                --profile $euca_profile --region $euca_region | cut -d$'\t' -f1,4,5  | grep -s -q "$image_name" || euca_demo_initialized=n
+                                --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                                --profile $euca_profile --region $euca_region --output text | grep -s -q "$image_name" || euca_demo_initialized=n
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                                   --profile $euca_profile --region $euca_region | grep -s -q "demo" || euca_demo_initialized=n
+                                   --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                                   --profile $euca_profile --region $euca_region --output text | grep -s -q "demo" || euca_demo_initialized=n
     fi
 
     if [ $euca_demo_initialized = n ]; then
@@ -499,20 +512,20 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text"
         echo
-        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
-            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region
+            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text"
+            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text
             pause
 
-            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region"
-            aws ec2 describe-instances --profile $aws_profile --region $aws_region
+            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text"
+            aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text
 
             next
         fi
@@ -534,14 +547,14 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+        echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
-            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region
+            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text"
+            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text
 
             next
         fi
@@ -570,9 +583,9 @@ if [ $mode = a -o $mode = b ]; then
     echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
     echo "                                             ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \\"
     echo "                                --capabilities CAPABILITY_IAM \\"
-    echo "                                --profile $aws_profile --region $aws_region"
+    echo "                                --profile $aws_profile --region $aws_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -594,7 +607,7 @@ if [ $mode = a -o $mode = b ]; then
             echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
             echo ">                                              ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \\"
             echo ">                                 --capabilities CAPABILITY_IAM \\"
-            echo ">                                 --profile $aws_profile --region $aws_region"
+            echo ">                                 --profile $aws_profile --region $aws_region --output text"
             aws cloudformation create-stack --stack-name=WordPressDemoStack \
                                             --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                             --parameters ParameterKey=KeyName,ParameterValue=$aws_ssh_key \
@@ -604,7 +617,7 @@ if [ $mode = a -o $mode = b ]; then
                                                          ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
                                                          ParameterKey=EndPoint,ParameterValue=$aws_cloudformation_url \
                                             --capabilities CAPABILITY_IAM \
-                                            --profile $aws_profile --region $aws_region
+                                            --profile $aws_profile --region $aws_region --output text
 
             aws_stack_created=y
 
@@ -627,12 +640,12 @@ if [ $mode = a -o $mode = b ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
+    echo "aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text"
     echo
     echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
-    echo "                                         --profile $aws_profile --region $aws_region"
+    echo "                                         --profile $aws_profile --region $aws_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Complete!"
@@ -645,8 +658,8 @@ if [ $mode = a -o $mode = b ]; then
 
         if [ $choice = y ]; then
             echo
-            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region"
-            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region
+            echo "# aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text"
+            aws cloudformation describe-stacks --profile $aws_profile --region $aws_region --output text
             pause
 
             attempt=0
@@ -654,11 +667,11 @@ if [ $mode = a -o $mode = b ]; then
             while ((attempt++ <= create_attempts)); do
                 echo
                 echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
-                echo ">                                          --profile $aws_profile --region $aws_region"
+                echo ">                                          --profile $aws_profile --region $aws_region --output text"
                 aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
-                                                         --profile $aws_profile --region $aws_region
+                                                         --profile $aws_profile --region $aws_region --output text
 
-                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region 2> /dev/null | grep "^STACKS" | cut -f7)
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                     break
                 else
@@ -689,20 +702,20 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
+        echo "aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text"
         echo
-        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region"
+        echo "aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region"
-            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region
+            echo "# aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text"
+            aws ec2 describe-security-groups --profile $aws_profile --region $aws_region --output text
             pause
 
-            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region"
-            aws ec2 describe-instances --profile $aws_profile --region $aws_region
+            echo "# aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text"
+            aws ec2 describe-instances --profile $aws_profile --region $aws_region --output text
 
             next
         fi
@@ -723,40 +736,49 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-    echo "                                                               --profile=$aws_profile --region=$aws_region | cut -f4)"
+    echo "                                                               --query 'StackResources[].PhysicalResourceId' \\"
+    echo "                                                               --profile=$aws_profile --region=$aws_region)"
     echo "aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo "                                              --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+    echo "                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo "                                              --profile=$aws_profile --region=$aws_region)"
     echo "aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo "                                            --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+    echo "                                            --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo "                                            --profile=$aws_profile --region=$aws_region)"
     echo
     echo "aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-    echo "                                                        --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo "                                                        --query 'Stacks[].Outputs[?OutputKey==\`WebsiteURL\`].{OutputValue:OutputValue}' \\"
     echo "                                                        --profile=$aws_profile --region=$aws_region 2> /dev/null)"
 
     next 50
 
     echo
     echo "# aws_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-    echo ">                                                                --profile=$aws_profile --region=$aws_region | cut -f4)"
+    echo ">                                                                --query 'StackResources[].PhysicalResourceId' \\"
+    echo ">                                                                --profile=$aws_profile --region=$aws_region)"
     aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                  --profile=$aws_profile --region=$aws_region | cut -f4)
+                                                                  --query 'StackResources[].PhysicalResourceId' \
+                                                                  --profile=$aws_profile --region=$aws_region)
     echo "$aws_instance_id"
     echo "#"
     echo "# aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo ">                                               --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f11)"
+    echo ">                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo ">                                               --profile=$aws_profile --region=$aws_region)"
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+                                                 --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                 --profile=$aws_profile --region=$aws_region)
     echo "$aws_public_name"
     echo "#"
     echo "# aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo ">                                             --profile=$aws_profile --region=$aws_region | grep \"^INSTANCES\" | cut -f12)"
+    echo ">                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo ">                                             --profile=$aws_profile --region=$aws_region)"
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                               --profile=$aws_profile --region=$aws_region)
     echo "$aws_public_ip"
     pause
 
     echo "# aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-    echo ">                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo ">                                                         --query 'Stacks[].Outputs[?OutputKey==\`WebsiteURL\`].{OutputValue:OutputValue}' \\"
     echo ">                                                         --profile=$aws_profile --region=$aws_region 2> /dev/null)"
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
@@ -766,11 +788,14 @@ if [ $verbose = 1 ]; then
     next
 else
     aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                  --profile=$aws_profile --region=$aws_region | cut -f4)
+                                                                  --query 'StackResources[].PhysicalResourceId' \
+                                                                  --profile=$aws_profile --region=$aws_region)
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f11)
+                                                 --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                 --profile=$aws_profile --region=$aws_region)
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --profile=$aws_profile --region=$aws_region | grep "^INSTANCES" | cut -f12)
+                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                               --profile=$aws_profile --region=$aws_region)
 
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
@@ -962,20 +987,20 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text"
         echo
-        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
-            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
+            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text"
+            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text
             pause
 
-            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
-            aws ec2 describe-instances --profile $euca_profile --region $euca_region
+            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text"
+            aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text
 
             next
         fi
@@ -997,14 +1022,14 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+        echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
-            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
+            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text"
+            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text
 
             next
         fi
@@ -1033,9 +1058,9 @@ if [ $mode = e -o $mode = b ]; then
     echo "                                             ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
     echo "                                             ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \\"
     echo "                                --capabilities CAPABILITY_IAM \\"
-    echo "                                --profile $euca_profile --region $euca_region"
+    echo "                                --profile $euca_profile --region $euca_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -1057,7 +1082,7 @@ if [ $mode = e -o $mode = b ]; then
             echo ">                                              ParameterKey=DBRootPassword,ParameterValue=$mysql_password \\"
             echo ">                                              ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \\"
             echo ">                                 --capabilities CAPABILITY_IAM \\"
-            echo ">                                 --profile $euca_profile --region $euca_region"
+            echo ">                                 --profile $euca_profile --region $euca_region --output text"
             aws cloudformation create-stack --stack-name=WordPressDemoStack \
                                             --template-body file://$tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                                             --parameters ParameterKey=KeyName,ParameterValue=$euca_ssh_key \
@@ -1067,7 +1092,7 @@ if [ $mode = e -o $mode = b ]; then
                                                          ParameterKey=DBRootPassword,ParameterValue=$mysql_password \
                                                          ParameterKey=EndPoint,ParameterValue=$euca_cloudformation_url \
                                             --capabilities CAPABILITY_IAM \
-                                            --profile $euca_profile --region $euca_region
+                                            --profile $euca_profile --region $euca_region --output text
 
             euca_stack_created=y
 
@@ -1090,10 +1115,10 @@ if [ $mode = e -o $mode = b ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
+    echo "aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text"
     echo
     echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
-    echo "                                         --profile $euca_profile --region $euca_region"
+    echo "                                         --profile $euca_profile --region $euca_region --output text"
 
         echo
         tput rev
@@ -1107,8 +1132,8 @@ if [ $mode = e -o $mode = b ]; then
 
         if [ $choice = y ]; then
             echo
-            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region"
-            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region
+            echo "# aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text"
+            aws cloudformation describe-stacks --profile $euca_profile --region $euca_region --output text
             pause
 
             attempt=0
@@ -1116,11 +1141,11 @@ if [ $mode = e -o $mode = b ]; then
             while ((attempt++ <= create_attempts)); do
                 echo
                 echo "# aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
-                echo ">                                          --profile $euca_profile --region $euca_region"
+                echo ">                                          --profile $euca_profile --region $euca_region --output text"
                 aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
-                                                         --profile $euca_profile --region $euca_region
+                                                         --profile $euca_profile --region $euca_region --output text
 
-                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region 2> /dev/null | grep "^STACKS" | cut -f7)
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                     break
                 else
@@ -1151,20 +1176,20 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
+        echo "aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text"
         echo
-        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region"
+        echo "aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region"
-            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region
+            echo "# aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text"
+            aws ec2 describe-security-groups --profile $euca_profile --region $euca_region --output text
             pause
 
-            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region"
-            aws ec2 describe-instances --profile $euca_profile --region $euca_region
+            echo "# aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text"
+            aws ec2 describe-instances --profile $euca_profile --region $euca_region --output text
 
             next
         fi
@@ -1185,40 +1210,49 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-    echo "                                                                --profile=$euca_profile --region=$euca_region | cut -f4)"
+    echo "                                                                --query 'StackResources[].PhysicalResourceId' \\"
+    echo "                                                                --profile=$euca_profile --region=$euca_region)"
     echo "euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo "                                               --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+    echo "                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo "                                               --profile=$euca_profile --region=$euca_region)"
     echo "euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo "                                             --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+    echo "                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo "                                             --profile=$euca_profile --region=$euca_region)"
     echo
     echo "euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-    echo "                                                         --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo "                                                         --query 'Stacks[].Outputs[?OutputKey==\`WebsiteURL\`].{OutputValue:OutputValue}' \\"
     echo "                                                         --profile=$euca_profile --region=$euca_region 2> /dev/null)"
 
     next 50
 
     echo
     echo "# euca_instance_id=\$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \\"
-    echo ">                                                                 --profile=$euca_profile --region=$euca_region | cut -f4)"
+    echo ">                                                                --query 'StackResources[].PhysicalResourceId' \\"
+    echo ">                                                                 --profile=$euca_profile --region=$euca_region)"
     euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                   --profile=$euca_profile --region=$euca_region | cut -f4)
+                                                                   --query 'StackResources[].PhysicalResourceId' \
+                                                                   --profile=$euca_profile --region=$euca_region)
     echo "$euca_instance_id"
     echo "#"
     echo "# euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo ">                                                --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f11)"
+    echo ">                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo ">                                                --profile=$euca_profile --region=$euca_region)"
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+                                                  --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                  --profile=$euca_profile --region=$euca_region)
     echo "$euca_public_name"
     echo "#"
     echo "# euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo ">                                              --profile=$euca_profile --region=$euca_region | grep \"^INSTANCES\" | cut -f12)"
+    echo ">                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo ">                                              --profile=$euca_profile --region=$euca_region)"
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
+                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                                --profile=$euca_profile --region=$euca_region)
     echo "$euca_public_ip"
     pause
 
     echo "# euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
-    echo ">                                                          --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \\"
+    echo ">                                                          --query 'Stacks[].Outputs[?OutputKey==\`WebsiteURL\`].{OutputValue:OutputValue}' \\"
     echo ">                                                          --profile=$euca_profile --region=$euca_region 2> /dev/null)"
     euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                             --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
@@ -1228,11 +1262,14 @@ if [ $verbose = 1 ]; then
     next
 else
     euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
-                                                                   --profile=$euca_profile --region=$euca_region | cut -f4)
+                                                                   --query 'StackResources[].PhysicalResourceId' \
+                                                                   --profile=$euca_profile --region=$euca_region)
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f11)
+                                                  --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                  --profile=$euca_profile --region=$euca_region)
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --profile=$euca_profile --region=$euca_region | grep "^INSTANCES" | cut -f12)
+                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                                --profile=$euca_profile --region=$euca_region)
 
     euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                             --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \

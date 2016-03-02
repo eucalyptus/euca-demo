@@ -232,32 +232,40 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo "                        --profile $profile --region $region | cut -f1,4,5"
+    echo "                        --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+    echo "                        --profile $profile --region $region --output text"
     echo
     echo "aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
-    echo "                           --profile $profile --region $region"
+    echo "                           --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+    echo "                           --profile $profile --region $region --output text"
 
-    next
+    next 50
 
     echo
     echo "# aws ec2 describe-images --filter \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo ">                         --profile $profile --region $region | cut -f1,4,5"
+    echo ">                         --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+    echo ">                         --profile $profile --region $region --output text"
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region | cut -d$'\t' -f1,4,5  | grep  "$image_name" || demo_initialized=n
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $profile --region $region --output text | grep  "$image_name" || demo_initialized=n
     pause
 
     echo "# aws ec2 describe-key-pairs --filter \"Name=key-name,Values=demo\" \\"
-    echo ">                            --profile $profile --region $region"
+    echo ">                            --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
+    echo ">                            --profile $profile --region $region --output text"
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $profile --region $region | grep "demo" || demo_initialized=n
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                               --profile $profile --region $region --output text | grep "demo" || demo_initialized=n
 
-    next
+    next 50
 
 else
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region | cut -d$'\t' -f1,4,5  | grep -s -q  "$image_name" || demo_initialized=n
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $profile --region $region --output text | grep -s -q  "$image_name" || demo_initialized=n
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $profile --region $region | grep -s -q "demo" || demo_initialized=n
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
+                               --profile $profile --region $region --output text | grep -s -q "demo" || demo_initialized=n
 fi
 
 if [ $demo_initialized = n ]; then
@@ -327,20 +335,20 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo 
-    echo "aws ec2 describe-security-groups --profile $profile --region $region"
+    echo "aws ec2 describe-security-groups --profile $profile --region $region --output text"
     echo
-    echo "aws ec2 describe-instances --profile $profile --region $region"
+    echo "aws ec2 describe-instances --profile $profile --region $region --output text"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# aws ec2 describe-security-groups --profile $profile --region $region"
-        aws ec2 describe-security-groups --profile $profile --region $region
+        echo "# aws ec2 describe-security-groups --profile $profile --region $region --output text"
+        aws ec2 describe-security-groups --profile $profile --region $region --output text
         pause
 
-        echo "# aws ec2 describe-instances --profile $profile --region $region"
-        aws ec2 describe-instances --profile $profile --region $region
+        echo "# aws ec2 describe-instances --profile $profile --region $region --output text"
+        aws ec2 describe-instances --profile $profile --region $region --output text
     
         next
     fi
@@ -360,14 +368,14 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws cloudformation describe-stacks --profile $profile --region $region"
+    echo "aws cloudformation describe-stacks --profile $profile --region $region --output text"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# aws cloudformation describe-stacks --profile $profile --region $region"
-        aws cloudformation describe-stacks --profile $profile --region $region
+        echo "# aws cloudformation describe-stacks --profile $profile --region $region --output text"
+        aws cloudformation describe-stacks --profile $profile --region $region --output text
 
         next
     fi
@@ -376,7 +384,7 @@ fi
 
 ((++step))
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                   --profile $profile --region $region | cut -d$'\t' -f4)
+                                   --profile $profile --region $region --output text | cut -d$'\t' -f4)
 
 clear
 echo
@@ -391,10 +399,10 @@ echo
 echo "aws cloudformation create-stack --stack-name SimpleDemoStack \\"
 echo "                                --template-body file://$templatesdir/Simple.template \\"
 echo "                                --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\" 
-echo "                                --profile $profile --region $region"
+echo "                                --profile $profile --region $region --output text"
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                           --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+                                           --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -410,11 +418,11 @@ else
         echo "# aws cloudformation create-stack --stack-name SimpleDemoStack \\"
         echo ">                                 --template-body file://$templatesdir/Simple.template \\"
         echo ">                                 --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \\"
-        echo ">                                 --profile $profile --region $region"
+        echo ">                                 --profile $profile --region $region --output text"
         aws cloudformation create-stack --stack-name SimpleDemoStack \
                                         --template-body file://$templatesdir/Simple.template \
                                         --parameters ParameterKey=DemoImageId,ParameterValue=$image_id \
-                                        --profile $profile --region $region
+                                        --profile $profile --region $region --output text
 
         next
     fi
@@ -433,13 +441,13 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws cloudformation describe-stacks --profile $profile --region $region"
+echo "aws cloudformation describe-stacks --profile $profile --region $region --output text"
 echo
 echo "aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \\"
-echo "                                         --profile $profile --region $region"
+echo "                                         --profile $profile --region $region --output text"
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                           --profile $profile --region $region | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+                                           --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -452,8 +460,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws cloudformation describe-stacks --profile $profile --region $region"
-        aws cloudformation describe-stacks --profile $profile --region $region
+        echo "# aws cloudformation describe-stacks --profile $profile --region $region --output text"
+        aws cloudformation describe-stacks --profile $profile --region $region --output text
         pause
 
         attempt=0
@@ -461,12 +469,12 @@ else
         while ((attempt++ <= create_attempts)); do
             echo
             echo "# aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \\"
-            echo ">                                          --profile $profile --region $region"
+            echo ">                                          --profile $profile --region $region --output text"
             aws cloudformation describe-stack-events --stack-name SimpleDemoStack --max-items 5 \
-                                                     --profile $profile --region $region
+                                                     --profile $profile --region $region --output text
 
             status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                                        --profile $profile --region $region | grep "^STACKS" | cut -f7)
+                                                        --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -495,20 +503,20 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws ec2 describe-security-groups --profile $profile --region $region"
+    echo "aws ec2 describe-security-groups --profile $profile --region $region --output text"
     echo
-    echo "aws ec2 describe-instances --profile $profile --region $region"
+    echo "aws ec2 describe-instances --profile $profile --region $region --output text"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# aws ec2 describe-security-groups --profile $profile --region $region"
-        aws ec2 describe-security-groups --profile $profile --region $region
+        echo "# aws ec2 describe-security-groups --profile $profile --region $region --output text"
+        aws ec2 describe-security-groups --profile $profile --region $region --output text
         pause
 
-        echo "# aws ec2 describe-instances --profile $profile --region $region"
-        aws ec2 describe-instances --profile $profile --region $region
+        echo "# aws ec2 describe-instances --profile $profile --region $region --output text"
+        aws ec2 describe-instances --profile $profile --region $region --output text
 
         next
     fi
@@ -517,11 +525,11 @@ fi
 
 ((++step))
 instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance \
-                                                          --profile $profile --region $region | cut -f4)
+                                                          --profile $profile --region $region --output text | cut -f4)
 public_name=$(aws ec2 describe-instances --instance-ids $instance_id 
-                                         --profile $profile --region $region | grep "^INSTANCES" | cut -f11)
+                                         --profile $profile --region $region --output text | grep "^INSTANCES" | cut -f11)
 public_ip=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                       --profile $profile --region $region | grep "^INSTANCES" | cut -f12)
+                                       --profile $profile --region $region --output text | grep "^INSTANCES" | cut -f12)
 ssh_user=centos
 ssh_key=demo
 

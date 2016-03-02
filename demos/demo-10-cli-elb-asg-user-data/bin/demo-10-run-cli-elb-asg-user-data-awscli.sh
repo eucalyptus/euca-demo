@@ -254,31 +254,39 @@ if [ $verbose = 1 ]; then
     echo "Commands:"
     echo
     echo "aws ec2 describe-images --filters \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo "                        --profile $profile --region $region --output text | cut -f1,4,5"
+    echo "                        --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+    echo "                        --profile $profile --region $region --output text"
     echo
     echo "aws ec2 describe-key-pairs --filters \"Name=key-name,Values=demo\" \\"
+    echo "                           --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
     echo "                           --profile $profile --region $region --output text"
 
-    next
+    next 50
 
     echo
     echo "# aws ec2 describe-images --filters \"Name=manifest-location,Values=images/$image_name.raw.manifest.xml\" \\"
-    echo ">                         --profile $profile --region $region --output text | cut -f1,4,5"
+    echo ">                         --query 'Images[].[Name, ImageId, ImageLocation, Description]' \\"
+    echo ">                         --profile $profile --region $region --output text"
     aws ec2 describe-images --filters "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region --output text | cut -d$'\t' -f1,4,5  | grep  "$image_name" || demo_initialized=n
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $profile --region $region --output text | grep  "$image_name" || demo_initialized=n
     pause
 
     echo "# aws ec2 describe-key-pairs --filters \"Name=key-name,Values=demo\" \\"
+    echo ">                            --query 'KeyPairs[].[KeyName, KeyFingerprint]' \\"
     echo ">                            --profile $profile --region $region --output text"
     aws ec2 describe-key-pairs --filters "Name=key-name,Values=demo" \
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
                                --profile $profile --region $region --output text | grep "demo" || demo_initialized=n
 
-    next
+    next 50
 
 else
     aws ec2 describe-images --filters "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                            --profile $profile --region $region --output text | cut -d$'\t' -f1,4,5  | grep -s -q  "$image_name" || demo_initialized=n
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $profile --region $region --output text | grep -s -q  "$image_name" || demo_initialized=n
     aws ec2 describe-key-pairs --filters "Name=key-name,Values=demo" \
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
                                --profile $profile --region $region --output text | grep -s -q "demo" || demo_initialized=n
 fi
 

@@ -251,9 +251,9 @@ echo
 echo "Commands:"
 echo
 echo "aws iam create-group --group-name $group \\"
-echo "                     --profile $profile --region $region"
+echo "                     --profile $profile --region $region --output text"
 
-if aws iam list-groups --profile $profile --region $region | grep -s -q ":group/$group"; then
+if aws iam list-groups --profile $profile --region $region --output text | grep -s -q ":group/$group"; then
     echo
     tput rev
     echo "Already Created!"
@@ -267,9 +267,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws iam create-group --group-name $groups \\"
-        echo ">                      --profile $profile --region $region"
+        echo ">                      --profile $profile --region $region --output text"
         aws iam create-group --group-name $group \
-                             --profile $profile --region $region
+                             --profile $profile --region $region --output text
 
         next
     fi
@@ -294,10 +294,10 @@ echo "EOF"
 echo
 echo "aws iam put-group-policy --group-name $group --policy-name ${group}Policy \\"
 echo "                         --policy-document file://$tmpdir/$account/${group}GroupPolicy.json \\"
-echo "                         --profile $profile --region $region"
+echo "                         --profile $profile --region $region --output text"
 
 if aws iam list-group-policies --group-name $group \
-                               --profile $profile --region $region | grep -s -q "${group}Policy$"; then
+                               --profile $profile --region $region --output text | grep -s -q "${group}Policy$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -318,10 +318,10 @@ else
 
         echo "# aws iam put-group-policy --group-name $group --policy-name ${group}Policy \\"
         echo ">                          --policy-document file://$tmpdir/$account/${group}GroupPolicy.json \\"
-        echo ">                          --profile $profile --region $region"
+        echo ">                          --profile $profile --region $region --output text"
         aws iam put-group-policy --group-name $group --policy-name ${group}Policy \
                                  --policy-document file://$tmpdir/$account/${group}GroupPolicy.json \
-                                 --profile $profile --region $region
+                                 --profile $profile --region $region --output text
 
         next
     fi
@@ -340,9 +340,9 @@ echo
 echo "Commands:"
 echo
 echo "aws iam create-user --user-name $new_user \\"
-echo "                    --profile $profile --region $region"
+echo "                    --profile $profile --region $region --output text"
 
-if aws iam list-users --profile $profile --region $region | grep -s -q ":user/$new_user"; then
+if aws iam list-users --profile $profile --region $region --output text | grep -s -q ":user/$new_user"; then
     echo
     tput rev
     echo "Already Created!"
@@ -356,9 +356,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws iam create-user --user-name $new_user \\"
-        echo ">                     --profile $profile --region $region"
+        echo ">                     --profile $profile --region $region --output text"
         aws iam create-user --user-name $new_user \
-                            --profile $profile --region $region
+                            --profile $profile --region $region --output text
 
         next
     fi
@@ -377,10 +377,10 @@ echo
 echo "Commands:"
 echo
 echo "aws iam add-user-to-group --group-name $group --user-name $new_user \\"
-echo "                          --profile $profile --region $region"
+echo "                          --profile $profile --region $region --output text"
 
 if aws iam get-group --group-name $group \
-                     --profile $profile --region $region | grep -s -q ":user/$new_user"; then
+                     --profile $profile --region $region --output text | grep -s -q ":user/$new_user"; then
     echo
     tput rev
     echo "Already Added!"
@@ -394,9 +394,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws iam add-user-to-group --group-name $group --user-name $new_user \\"
-        echo ">                           --profile $profile --region $region"
+        echo ">                           --profile $profile --region $region --output text"
         aws iam add-user-to-group --group-name $group --user-name $new_user \
-                                  --profile $profile --region $region
+                                  --profile $profile --region $region --output text
 
         next
     fi
@@ -416,10 +416,10 @@ echo
 echo "Commands:"
 echo
 echo "aws iam create-login-profile --user-name $new_user --password $password \\"
-echo "                             --profile $profile --region $region"
+echo "                             --profile $profile --region $region --output text"
 
 if aws iam get-login-profile --user-name $new_user \
-                             --profile $profile --region $region &> /dev/null; then
+                             --profile $profile --region $region --output text &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -433,9 +433,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws iam create-login-profile --user-name $new_user --password $password \\"
-        echo ">                              --profile $profile --region $region"
+        echo ">                              --profile $profile --region $region --output text"
         aws iam create-login-profile --user-name $new_user --password $password \
-                                     --profile $profile --region $region
+                                     --profile $profile --region $region --output text
 
         next
     fi
@@ -457,7 +457,7 @@ echo
 echo "mkdir -p ~/.creds/$region/$account/$new_user"
 echo
 echo "aws iam create-access-key --user-name $new_user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \\"
-echo "                          --profile $profile --region $region"
+echo "                          --profile $profile --region $region --output text"
 echo
 echo "cat << EOF > ~/.creds/$region/$account/$new_user/iamrc"
 echo "AWSAccessKeyId=<generated_access_key>"
@@ -484,9 +484,9 @@ else
         pause
 
         echo "# aws iam create-access-key --user-name $new_user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \\"
-        echo ">                           --profile $profile --region $region"
+        echo ">                           --profile $profile --region $region --output text"
         result=$(aws iam create-access-key --user-name $new_user --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \
-                                           --profile $profile --region $region) && echo $result
+                                           --profile $profile --region $region --output text) && echo $result
         read access_key secret_key <<< $result
         pause
 
@@ -597,7 +597,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region"
+echo "aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region --output text"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $region-$account-$new_user]" ~/.aws/config; then
     echo
@@ -640,8 +640,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region"
-        aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region
+        echo "# aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region --output text"
+        aws ec2 describe-availability-zones --profile=$region-$account-$new_user --region $region --output text
 
         next
     fi
@@ -660,41 +660,41 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws ec2 describe-images --profile $profile --region $region"
+    echo "aws ec2 describe-images --profile $profile --region $region --output text"
     echo
-    echo "aws ec2 describe-key-pairs --profile $profile --region $region"
+    echo "aws ec2 describe-key-pairs --profile $profile --region $region --output text"
     echo
-    echo "aws iam list-groups --profile $profile --region $region"
+    echo "aws iam list-groups --profile $profile --region $region --output text"
     echo
-    echo "aws iam list-users --profile $profile --region $region"
+    echo "aws iam list-users --profile $profile --region $region --output text"
     echo
     echo "aws iam get-group --group-name $group \\"
-    echo "                  --profile $profile --region $region"
+    echo "                  --profile $profile --region $region --output text"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# aws ec2 describe-images --profile $profile --region $region"
-        aws ec2 describe-images --profile $profile --region $region
+        echo "# aws ec2 describe-images --profile $profile --region $region --output text"
+        aws ec2 describe-images --profile $profile --region $region --output text
         pause
 
-        echo "# aws ec2 describe-key-pairs --profile $profile --region $region"
-        aws ec2 describe-key-pairs --profile $profile --region $region
+        echo "# aws ec2 describe-key-pairs --profile $profile --region $region --output text"
+        aws ec2 describe-key-pairs --profile $profile --region $region --output text
         pause
 
-        echo "# aws iam list-groups --profile $profile --region $region"
-        aws iam list-groups --profile $profile --region $region
+        echo "# aws iam list-groups --profile $profile --region $region --output text"
+        aws iam list-groups --profile $profile --region $region --output text
         pause
 
-        echo "# aws iam list-users --profile $profile --region $region"
-        aws iam list-users --profile $profile --region $region
+        echo "# aws iam list-users --profile $profile --region $region --output text"
+        aws iam list-users --profile $profile --region $region --output text
         pause
 
         echo "# aws iam get-group --group-name $group \\"
-        echo ">                   --profile $profile --region $region"
+        echo ">                   --profile $profile --region $region --output text"
         aws iam get-group --group-name $group \
-                          --profile $profile --region $region
+                          --profile $profile --region $region --output text
 
         next 200
     fi

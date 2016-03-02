@@ -257,7 +257,7 @@ if [ $verbose = 1 ]; then
     echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
     echo "                       --region $user_region"
 
-    next
+    next 50
 
     echo
     echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
@@ -271,7 +271,7 @@ if [ $verbose = 1 ]; then
     euca-describe-keypairs --filter "key-name=demo" \
                            --region $user_region | grep "demo" || euca_demo_initialized=n
 
-    next
+    next 50
 
 else
     euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \

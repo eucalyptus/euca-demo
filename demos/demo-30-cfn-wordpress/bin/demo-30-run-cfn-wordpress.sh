@@ -352,7 +352,7 @@ if [ $mode = a -o $mode = b ]; then
         euca-describe-keypairs --filter "key-name=demo" \
                                --region=$aws_user_region | grep "demo" || aws_demo_initialized=n
 
-        next
+        next 50
 
     else
         euca-describe-keypairs --filter "key-name=demo" \
@@ -405,7 +405,7 @@ if [ $mode = e -o $mode = b ]; then
         euca-describe-keypairs --filter "key-name=demo" \
                                --region=$euca_user_region | grep "demo" || euca_demo_initialized=n
 
-        next
+        next 50
 
     else
         euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
