@@ -3319,9 +3319,9 @@ would be supported configurations.
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=default
+    aws ec2 describe-key-pairs --profile default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-key-pairs --profile $AWS_DEFAULT_REGION-admin
     ```
 
 8. (CLC): (Optional) Configure AWSCLI to trust the Helion Eucalyptus Development PKI Infrastructure
@@ -3696,9 +3696,9 @@ would be supported configurations.
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=default
+    aws ec2 describe-key-pairs --profile default
 
-    aws ec2 describe-key-pairs --profile=$AWS_DEFAULT_REGION-admin
+    aws ec2 describe-key-pairs --profile $AWS_DEFAULT_REGION-admin
     ```
 
 ### Configure for Demos

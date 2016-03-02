@@ -62,7 +62,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $AWS_PROFILE --region $AWS_REGION
+                               --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 2. Confirm existence of Eucalyptus Demo depencencies (Optional)
@@ -73,10 +73,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-CFN-AWSCLI.raw.manifest.xml" \
-                            --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f1,3,4
+                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1,3,4
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $EUCA_PROFILE --region $EUCA_REGION
+                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 3. Download WordPress CloudFormation Template from AWS S3 Bucket
@@ -84,7 +84,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     aws s3 cp s3://demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
            /var/tmp/WordPress_Single_Instance_Eucalyptus.template \
-           --profile $AWS_PROFILE --region $AWS_REGION
+           --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 4. Display WordPress CloudFormation Template (Optional)
@@ -112,9 +112,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws ec2 describe-security-groups --profile $AWS_PROFILE --region $AWS_REGION
+    aws ec2 describe-security-groups --profile $AWS_PROFILE --region $AWS_REGION --output text
 
-    aws ec2 describe-instances --profile $AWS_PROFILE --region $AWS_REGION
+    aws ec2 describe-instances --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 6. List existing AWS CloudFormation Stacks (Optional)
@@ -122,7 +122,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws cloudformation describe-stacks --profile $AWS_PROFILE --region $AWS_REGION
+    aws cloudformation describe-stacks --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 7. Create the AWS Stack
@@ -137,7 +137,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
                                                  ParameterKey=DBRootPassword,ParameterValue=password \
                                                  ParameterKey=EndPoint,ParameterValue=https://cloudformation.$AWS_REGION.amazonaws.com \
                                     --capabilities CAPABILITY_IAM \
-                                    --profile $AWS_PROFILE --region $AWS_REGION
+                                    --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 8. Monitor AWS Stack creation
@@ -147,10 +147,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    aws cloudformation describe-stacks --profile $AWS_PROFILE --region $AWS_REGION
+    aws cloudformation describe-stacks --profile $AWS_PROFILE --region $AWS_REGION --output text
 
     aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
-                                             --profile $AWS_PROFILE --region $AWS_REGION
+                                             --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 9. List updated AWS Resources (Optional)
@@ -158,9 +158,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note addition of new group and instance
 
     ```bash
-    aws ec2 describe-security-groups --profile $AWS_PROFILE --region $AWS_REGION
+    aws ec2 describe-security-groups --profile $AWS_PROFILE --region $AWS_REGION --output text
 
-    aws ec2 describe-instances --profile $AWS_PROFILE --region $AWS_REGION
+    aws ec2 describe-instances --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 10. Obtain AWS Instance and Blog Details
@@ -170,20 +170,20 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack \
                                                                   --logical-resource-id WebServer \
-                                                                  --profile=$AWS_PROFILE --region=$AWS_REGION | cut -f4)
+                                                                  --profile $AWS_PROFILE --region $AWS_REGION --output text | cut -f4)
     $aws_instance_id
 
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --profile=$AWS_PROFILE --region=$AWS_REGION | grep "^INSTANCES" | cut -f11)
+                                                 --profile $AWS_PROFILE --region $AWS_REGION --output text | grep "^INSTANCES" | cut -f11)
     $aws_public_name
 
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --profile=$AWS_PROFILE --region=$AWS_REGION | grep "^INSTANCES" | cut -f12)
+                                               --profile $AWS_PROFILE --region $AWS_REGION --output text | grep "^INSTANCES" | cut -f12)
     $aws_public_ip
 
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                           --profile=$AWS_PROFILE --region=$AWS_REGION 2> /dev/null)
+                                                           --profile $AWS_PROFILE --region $AWS_REGION --output text 2> /dev/null)
     $aws_wordpress_url
     ```
 
@@ -243,9 +243,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 15. List existing Eucalyptus CloudFormation Stacks (Optional)
@@ -253,7 +253,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 16. Create the Eucalyptus Stack
@@ -268,7 +268,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
                                                  ParameterKey=DBRootPassword,ParameterValue=password \
                                                  ParameterKey=EndPoint,ParameterValue=https://cloudformation.$EUCA_REGION.$EUCA_DOMAIN \
                                     --capabilities CAPABILITY_IAM \
-                                    --profile $EUCA_PROFILE --region $EUCA_REGION
+                                    --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 17. Monitor Eucalyptus Stack creation
@@ -278,10 +278,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
     aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
-                                             --profile $EUCA_PROFILE --region $EUCA_REGION
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 18. List updated Eucalyptus Resources (Optional)
@@ -289,9 +289,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note addition of new group and instance
 
     ```bash
-    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 19. Obtain Eucalyptus Instance and Blog Details
@@ -301,20 +301,20 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack \
                                                                    --logical-resource-id WebServer \
-                                                                   --profile=$EUCA_PROFILE --region=$EUCA_REGION | cut -f4)
+                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f4)
     $euca_instance_id
 
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --profile=$EUCA_PROFILE --region=$EUCA_REGION | grep "^INSTANCES" | cut -f11)
+                                                  --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f11)
     $euca_public_name
 
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --profile=$EUCA_PROFILE --region=$EUCA_REGION | grep "^INSTANCES" | cut -f12)
+                                                --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f12)
     $euca_public_ip
 
     euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                             --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
-                                                            --profile=$EUCA_PROFILE --region=$EUCA_REGION 2> /dev/null)
+                                                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text 2> /dev/null)
     $euca_wordpress_url
     ```
 

@@ -107,7 +107,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     We must use a non-Euca2ools method, as Euca2ools does not currently support S3.
 
     ```bash
-    aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION
+    aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION --output text
     ```
 
 6. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
@@ -385,7 +385,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION --output text
     ```
 
 20. Create Demo (demo) Account Developer (developer) User
@@ -459,7 +459,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION --output text
     ```
 
 26. Create Demo (demo) Account User (user) User
@@ -532,7 +532,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies.sh
     
     EOF
     
-    aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION --output text
     ```
 
 32. List Demo Resources

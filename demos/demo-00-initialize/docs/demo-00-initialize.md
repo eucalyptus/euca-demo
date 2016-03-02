@@ -151,9 +151,9 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 
     EOF
 
-    aws ec2 describe-availability-zones --profile default --region $REGION
+    aws ec2 describe-availability-zones --profile default --region $REGION --output text
 
-    aws ec2 describe-availability-zones --profile $PROFILE --region $REGION
+    aws ec2 describe-availability-zones --profile $PROFILE --region $REGION --output text
     ```
 
 5. Configure Demo Keypair
@@ -216,7 +216,7 @@ The steps below are automated in the [demo-00-initialize.sh](../bin/demo-00-init
 
     ```bash
     aws s3api create-bucket --bucket sample-templates --acl public-read
-                            --profile $PROFILE --region=$REGION
+                            --profile $PROFILE --region $REGION --output text
     ```
 
 8. Download Demo Generic Image (CentOS 6)

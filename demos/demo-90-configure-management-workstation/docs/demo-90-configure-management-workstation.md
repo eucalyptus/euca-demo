@@ -1622,13 +1622,13 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     the same script or program.
 
     ```bash
-    aws ec2 describe-regions --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-regions --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
-    aws ec2 describe-availability-zones --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-availability-zones --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
-    aws ec2 describe-key-pairs --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-key-pairs --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
-    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
     ```
 
 20. List AWS Account Resources via AWSCLI
@@ -1651,13 +1651,13 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Via explicit --profile and --region parameters:
 
     ```bash
-    aws ec2 describe-regions --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-regions --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
-    aws ec2 describe-availability-zones --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-availability-zones --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
-    aws ec2 describe-key-pairs --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-key-pairs --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
-    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
     ```
 
 21. List Eucalytptus Account Resources via both Euca2ools and AWSCLI
@@ -1686,16 +1686,16 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     euca-describe-regions --region ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER}@${EUCA_REGION}
-    aws ec2 describe-regions --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-regions --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
     euca-describe-availability-zones --region ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER}@${EUCA_REGION}
-    aws ec2 describe-availability-zones --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-availability-zones --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
     euca-describe-keypairs --region ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER}@${EUCA_REGION}
-    aws ec2 describe-key-pairs --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-key-pairs --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
     euca-describe-instances --region ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER}@${EUCA_REGION}
-    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
     ```
 
 22. List AWS Account Resources via both Euca2ools and AWSCLI
@@ -1724,16 +1724,16 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     euca-describe-regions --region aws-${AWS_ACCOUNT}-${AWS_USER}@${AWS_REGION}
-    aws ec2 describe-regions --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-regions --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
     euca-describe-availability-zones --region aws-${AWS_ACCOUNT}-${AWS_USER}@${AWS_REGION}
-    aws ec2 describe-availability-zones --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-availability-zones --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
     euca-describe-keypairs --region aws-${AWS_ACCOUNT}-${AWS_USER}@${AWS_REGION}
-    aws ec2 describe-key-pairs --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-key-pairs --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
 
     euca-describe-instances --region aws-${AWS_ACCOUNT}-${AWS_USER}@${AWS_REGION}
-    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
     ```
 
 23. List both Eucalytptus and AWS Account Resources via both Euca2ools and AWSCLI
@@ -1749,9 +1749,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     unset AWS_SECRET_KEY
 
     euca-describe-instances --region ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER}@${EUCA_REGION}
-    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION}
+    aws ec2 describe-instances --profile ${EUCA_REGION}-${EUCA_ACCOUNT}-${EUCA_USER} --region ${EUCA_REGION} --output text
 
     euca-describe-instances --region aws-${AWS_ACCOUNT}-${AWS_USER}@${AWS_REGION}
-    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION}
+    aws ec2 describe-instances --profile ${AWS_ACCOUNT}-${AWS_USER} --region ${AWS_REGION} --output text
     ```
 

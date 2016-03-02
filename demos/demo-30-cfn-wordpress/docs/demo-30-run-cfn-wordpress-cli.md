@@ -89,7 +89,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     aws s3 cp s3://demo-$AWS_ACCOUNT/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
            /var/tmp/WordPress_Single_Instance_Eucalyptus.template \
-           --profile $AWS_PROFILE --region $AWS_REGION
+           --profile $AWS_PROFILE --region $AWS_REGION --output text
     ```
 
 4. Display WordPress CloudFormation Template (Optional)
@@ -172,16 +172,16 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note these values for future use.
 
     ```bash
-    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$AWS_USER_REGION | cut -f3)
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $AWS_USER_REGION | cut -f3)
     echo $aws_instance_id
 
-    aws_public_name=$(euca-describe-instances --region=$AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    aws_public_name=$(euca-describe-instances --region $AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f4)
     echo $aws_public_name
 
-    aws_public_ip=$(euca-describe-instances --region=$AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    aws_public_ip=$(euca-describe-instances --region $AWS_USER_REGION $aws_instance_id | grep "^INSTANCE" | cut -f17)
     echo $aws_public_ip
 
-    aws_wordpress_url=$(euform-describe-stacks --region=$AWS_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    aws_wordpress_url=$(euform-describe-stacks --region $AWS_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo $aws_wordpress_url
     ```
 
@@ -296,16 +296,16 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note these values for future use.
 
     ```bash
-    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$EUCA_USER_REGION | cut -f3)
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $EUCA_USER_REGION | cut -f3)
     echo $euca_instance_id
 
-    euca_public_name=$(euca-describe-instances --region=$EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    euca_public_name=$(euca-describe-instances --region $EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f4)
     echo $euca_public_name
 
-    euca_public_ip=$(euca-describe-instances --region=$EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    euca_public_ip=$(euca-describe-instances --region $EUCA_USER_REGION $euca_instance_id | grep "^INSTANCE" | cut -f17)
     echo $euca_public_ip
 
-    euca_wordpress_url=$(euform-describe-stacks --region=$EUCA_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    euca_wordpress_url=$(euform-describe-stacks --region $EUCA_USER_REGION WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo $euca_wordpress_url
     ```
 

@@ -46,7 +46,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 2. List Images available to Demo (demo) Account Administrator
 
     ```bash
-    aws ec2 describe-images --profile $PROFILE --region $REGION
+    aws ec2 describe-images --profile $PROFILE --region $REGION --output text
     ```
 
 3. Configure Demo Keypair
@@ -100,13 +100,13 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
     ```bash
     aws ec2 import-key-pair --key-name=demo \
                             --public-key-material file://~/.ssh/demo_id_rsa.pub \
-                            --profile $PROFILE --region $REGION
+                            --profile $PROFILE --region $REGION --output text
     ```
 
 5. Create Demo (demo) Account Demo (demo-demo) Bucket
 
     ```bash
-    aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION
+    aws s3 mb s3://demo-demo --profile $PROFILE --region $REGION --output text
     ```
 
 6. Create Demo (demo) Account Demos (Demos) Role and associated InstanceProfile
@@ -129,13 +129,13 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws iam create-role --role-name Demos \
                         --assume-role-policy-document file:///var/tmp/demo/DemosRoleTrustPolicy.json \
-                        --profile $PROFILE --region $REGION
+                        --profile $PROFILE --region $REGION --output text
 
     aws iam create-instance-profile --instance-profile-name Demos \
-                                    --profile $PROFILE --region $REGION
+                                    --profile $PROFILE --region $REGION --output text
 
     aws iam add-role-to-instance-profile --instance-profile-name Demos --role-name Demos \
-                                         --profile $PROFILE --region $REGION
+                                         --profile $PROFILE --region $REGION --output text
     ```
 
 7. Create Demo (demo) Account Demos (Demos) Role Policy
@@ -192,7 +192,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws iam put-role-policy --role-name Demos --policy-name DemosPolicy \
                             --policy-document file:///var/tmp/demo/DemosRolePolicy.json \
-                            --profile $PROFILE --region $REGION
+                            --profile $PROFILE --region $REGION --output text
     ```
 
 8. Create Demo (demo) Account Demos (Demos) Group
@@ -201,7 +201,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-group --group-name Demos \
-                         --profile $PROFILE --region $REGION
+                         --profile $PROFILE --region $REGION --output text
     ```
 
 9. Create Demo (demo) Account Demos (Demos) Group Policy
@@ -226,7 +226,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws iam put-group-policy --group-name Demos --policy-name DemosPolicy \
                              --policy-document file:///var/tmp/demo/DemosGroupPolicy.json \
-                             --profile $PROFILE --region $REGION
+                             --profile $PROFILE --region $REGION --output text
     ```
 
 10. Create Demo (demo) Account Developers (Developers) Group
@@ -235,7 +235,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-group --group-name Developers \
-                         --profile $PROFILE --region $REGION
+                         --profile $PROFILE --region $REGION --output text
     ```
 
 11. Create Demo (demo) Account Developers (Developers) Group Policy
@@ -258,7 +258,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws iam put-group-policy --group-name Developers --policy-name DevelopersPolicy \
                              --policy-document file:///var/tmp/demo/DevelopersGroupPolicy.json \
-                             --profile $PROFILE --region $REGION
+                             --profile $PROFILE --region $REGION --output text
     ```
 
 12. Create Demo (demo) Account Users (Users) Group
@@ -267,7 +267,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-group --group-name Users \
-                         --profile $PROFILE --region $REGION
+                         --profile $PROFILE --region $REGION --output text
     ```
 
 13. Create Demo (demo) Account Users (Users) Group Policy
@@ -314,21 +314,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws iam put-group-policy --group-name Users --policy-name UsersPolicy \
                              --policy-document file:///var/tmp/demo/UsersGroupPolicy.json \
-                             --profile $PROFILE --region $REGION
+                             --profile $PROFILE --region $REGION --output text
     ```
 
 14. Create Demo (demo) Account Demo (demo) User
 
     ```bash
     aws iam create-user --user-name demo \
-                        --profile $PROFILE --region $REGION
+                        --profile $PROFILE --region $REGION --output text
     ```
 
 15. Add Demo (demo) Account Demo (demo) User to Demos (Demos) Group
 
     ```bash
     aws iam add-user-to-group --group-name Demos --user-name demo \
-                              --profile $PROFILE --region $REGION
+                              --profile $PROFILE --region $REGION --output text
     ```
 
 16. Create Demo (demo) Account Demo (demo) User Login Profile
@@ -337,7 +337,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-login-profile --user-name demo --password demo123-demo \
-                                 --profile $PROFILE --region $REGION
+                                 --profile $PROFILE --region $REGION --output text
     ```
 
 17. Create Demo (demo) Account Demo (demo) User Access Key
@@ -349,7 +349,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     result=$(aws iam create-access-key --user-name demo \
                                        --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \
-                                       --profile $PROFILE --region $REGION)
+                                       --profile $PROFILE --region $REGION --output text)
     read access_key secret_key <<< $result
 
     cat << EOF > ~/.creds/$REGION/demo/demo/iamrc
@@ -392,21 +392,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-demo --region $REGION --output text
     ```
 
 20. Create Demo (demo) Account Developer (developer) User
 
     ```bash
     aws iam create-user --user-name developer \
-                        --profile $PROFILE --region $REGION
+                        --profile $PROFILE --region $REGION --output text
     ```
 
 21. Add Demo (demo) Account Developer (developer) User to Developers (Developers) Group
 
     ```bash
     aws iam add-user-to-group --group-name Developers --user-name developer \
-                              --profile $PROFILE --region $REGION
+                              --profile $PROFILE --region $REGION --output text
     ```
 
 22. Create Demo (demo) Account Developer (developer) User Login Profile
@@ -415,7 +415,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-login-profile --user-name developer --password demo123-developer \
-                                 --profile $PROFILE --region $REGION
+                                 --profile $PROFILE --region $REGION --output text
     ```
 
 23. Create Demo (demo) Account Developer (developer) User Access Key
@@ -427,7 +427,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     result=$(aws iam create-access-key --user-name developer \
                                        --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \
-                                       --profile $PROFILE --region $REGION)
+                                       --profile $PROFILE --region $REGION --output text)
     read access_key secret_key <<< $result
 
     cat << EOF > ~/.creds/$REGION/demo/developer/iamrc
@@ -470,21 +470,21 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-developer --region $REGION --output text
     ```
 
 26. Create Demo (demo) Account User (user) User
 
     ```bash
     aws iam create-user --user-name user \
-                        --profile $PROFILE --region $REGION
+                        --profile $PROFILE --region $REGION --output text
     ```
 
 27. Add Demo (demo) Account User (user) User to Users (Users) Group
 
     ```bash
     aws iam add-user-to-group --group-name Users --user-name user \
-                              --profile $PROFILE --region $REGION
+                              --profile $PROFILE --region $REGION --output text
     ```
 
 28. Create Demo (demo) Account User (user) User Login Profile
@@ -493,7 +493,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     ```bash
     aws iam create-login-profile --user-name user --password demo123-user \
-                                 --profile $PROFILE --region $REGION
+                                 --profile $PROFILE --region $REGION --output text
     ```
 
 29. Create Demo (demo) Account User (user) User Access Key
@@ -505,7 +505,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     result=$(aws iam create-access-key --user-name user \
                                        --query 'AccessKey.{AccessKeyId:AccessKeyId,SecretAccessKey:SecretAccessKey}' \
-                                       --profile $PROFILE --region $REGION)
+                                       --profile $PROFILE --region $REGION --output text)
     read access_key secret_key <<< "$result"
 
     cat << EOF > ~/.creds/$REGION/demo/user/iamrc
@@ -548,7 +548,7 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-user --region $REGION --output text
     ```
 
 32. List Demo Resources
@@ -558,17 +558,17 @@ The steps below are automated in the [demo-03-initialize-account-dependencies-aw
 
     aws ec2 describe-key-pairs
 
-    aws iam list-roles --profile $PROFILE --region $REGION
-    aws iam list-instance-profiles --profile $PROFILE --region $REGION
-    aws iam get-instance-profile --instance-profile-name Demos --profile $PROFILE --region $REGION
+    aws iam list-roles --profile $PROFILE --region $REGION --output text
+    aws iam list-instance-profiles --profile $PROFILE --region $REGION --output text
+    aws iam get-instance-profile --instance-profile-name Demos --profile $PROFILE --region $REGION --output text
 
-    aws iam list-groups --profile $PROFILE --region $REGION
+    aws iam list-groups --profile $PROFILE --region $REGION --output text
 
-    aws iam list-users --profile $PROFILE --region $REGION
+    aws iam list-users --profile $PROFILE --region $REGION --output text
 
-    aws iam get-group --group-name Demos --profile $PROFILE --region $REGION
-    aws iam get-group --group-name Developers --profile $PROFILE --region $REGION
-    aws iam get-group --group-name Users --profile $PROFILE --region $REGION
+    aws iam get-group --group-name Demos --profile $PROFILE --region $REGION --output text
+    aws iam get-group --group-name Developers --profile $PROFILE --region $REGION --output text
+    aws iam get-group --group-name Users --profile $PROFILE --region $REGION --output text
     ```
 
 33. Display Euca2ools Configuration

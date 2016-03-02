@@ -57,10 +57,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                            --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f1,3,4
+                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1,3,4
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $EUCA_PROFILE --region $EUCA_REGION
+                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 2. Display ELB CloudFormation template (Optional)
@@ -79,11 +79,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws elb describe-load-balancers --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws elb describe-load-balancers --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-instances --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 4. List existing CloudFormation Stacks (Optional)
@@ -91,7 +91,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     So we can compare with what this demo creates
 
     ```bash
-    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 5. Create the Stack
@@ -101,12 +101,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f3)
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
 
     aws cloudformation create-stack --stack-name ELBDemoStack \
                                     --template-body file://~/src/eucalyptus/euca-demo/demos/demo-21-cfn-elb/templates/ELB.template \
                                     --parameters ParameterKey=WebServerImageId,ParameterValue=$image_id \
-                                    --profile $EUCA_PROFILE --region $EUCA_REGION
+                                    --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 6. Monitor Stack creation
@@ -116,10 +116,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Run either of these commands as desired to monitor Stack progress.
 
     ```bash
-    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws cloudformation describe-stacks --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
     aws cloudformation describe-stack-events --stack-name ELBDemoStack --max-items 5 \
-                                             --profile $EUCA_PROFILE --region $EUCA_REGION
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 7. List updated Resources (Optional)
@@ -127,11 +127,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note addition of new Security Group, ELB and Instances
 
     ```bash
-    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-security-groups --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws elb describe-load-balancers --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws elb describe-load-balancers --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
-    aws ec2 describe-instance --profile $EUCA_PROFILE --region $EUCA_REGION
+    aws ec2 describe-instance --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 8. Confirm ability to login to Instance
@@ -143,9 +143,9 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     instance_id=$(aws cloudformation describe-stack-resources --stack-name ELBDemoStack \
                                                               --logical-resource-id WebServerInstance1 \
-                                                              --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f4)
+                                                              --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f4)
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                             --profile $EUCA_PROFILE --region $EUCA_REGION | grep "^INSTANCES" | cut -f11)
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f11)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

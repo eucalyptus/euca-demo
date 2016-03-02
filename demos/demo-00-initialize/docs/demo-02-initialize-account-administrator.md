@@ -142,7 +142,7 @@ The steps below are automated in the [demo-02-initialize-account-administrator.s
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-mcrawford --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-mcrawford --region $REGION --output text
     ```
 
 9. List Demo Resources

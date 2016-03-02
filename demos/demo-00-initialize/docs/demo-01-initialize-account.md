@@ -102,7 +102,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     EOF
 
-    aws ec2 describe-availability-zones --profile $REGION-demo-admin --region $REGION
+    aws ec2 describe-availability-zones --profile $REGION-demo-admin --region $REGION --output text
     ```
 
 6. Authorize Demo (demo) Account use of Demo Generic Image

@@ -491,8 +491,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     aws ec2 describe-key-pairs
 
-    aws ec2 describe-key-pairs --profile=default
+    aws ec2 describe-key-pairs --profile default
 
-    aws ec2 describe-key-pairs --profile=${REGION}-admin
+    aws ec2 describe-key-pairs --profile ${REGION}-admin
     ```
 

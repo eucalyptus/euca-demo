@@ -58,10 +58,10 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                            --profile $EUCA_PROFILE --region $EUCA_REGION | cut -f1,3,4
+                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1,3,4
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
-                               --profile $EUCA_PROFILE --region $EUCA_REGION
+                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
 2. List Existing Resources (Optional)
@@ -158,7 +158,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                        --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
-    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION | cut -d ':' -f5)
+    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -d ':' -f5)
     instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                    --profile $EUCA_PROFILE --region $EUCA_REGION --output text | \
                                                                    tr "\t" "\n" | grep $account_id | grep "Demos$")
@@ -375,7 +375,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                        --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
-    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION | cut -d ':' -f5)
+    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -d ':' -f5)
     instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                    --profile $EUCA_PROFILE --region $EUCA_REGION --output text | \
                                tr "\t" "\n" | grep $account_id | grep "Demos$")
