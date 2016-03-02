@@ -391,8 +391,9 @@ echo
 echo "aws ec2 describe-security-groups --filters \"Name=group-name,Values=DemoSG\" \\"
 echo "                                 --profile $profile --region $region --output text"
 
-if aws ec2 describe-security-groups --filters "Name=group-name,Values=DemoSG" \
-                                    --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^SECURITYGROUPS"; then
+if [ "$(aws ec2 describe-security-groups --filters "Name=group-name,Values=DemoSG" \
+                                         --query 'SecurityGroups[].GroupName' \
+                                         --profile $profile --region $region --output text 2> /dev/null)" = "DemoSG" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -440,7 +441,8 @@ fi
 
 
 ((++step))
-zone=$(aws ec2 describe-availability-zones --profile $profile --region $region --output text | head -1 | cut -f4)
+zone=$(aws ec2 describe-availability-zones --query 'AvailabilityZones[0].ZoneName' \
+                                           --profile $profile --region $region --output text)
 
 clear
 echo
@@ -467,9 +469,9 @@ echo
 echo "aws elb describe-load-balancers --load-balancer-names DemoELB \\"
 echo "                                --profile $profile --region $region --output text"
 
-if aws elb describe-load-balancers --load-balancer-names DemoELB \
-                                   --query 'LoadBalancerDescriptions[].LoadBalancerName' \
-                                   --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^DemoELB$"; then
+if [ "$(aws elb describe-load-balancers --load-balancer-names DemoELB \
+                                        --query 'LoadBalancerDescriptions[].LoadBalancerName' \
+                                        --profile $profile --region $region --output text 2> /dev/null)" = "DemoELB" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -576,14 +578,11 @@ fi
 
 ((++step))
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                   --profile $profile --region $region --output text | cut -d$'\t' -f4)
-# Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region --output text | cut -d ':' -f5)
-instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-                                                               --profile $profile --region $region --output text | \
-                                                               tr "\t" "\n" | grep $account_id | grep "Demos$")
-#instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-#                                                               --profile $profile --region $region --output text)
+                                   --query 'Images[].ImageId' \
+                                   --profile $profile --region $region --output text)
+instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos \
+                                                               --query 'InstanceProfiles[?ends_with(Arn, `/Demos`) == `true`].Arn' \
+                                                               --profile $profile --region $region --output text)
 ssh_key=demo
 
 clear
@@ -608,8 +607,9 @@ echo
 echo "aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC \\"
 echo "                                               --profile $profile --region $region --output text"
 
-if aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC \
-                                                  --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^LAUNCHCONFIGURATIONS"; then
+if [ "$(aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC \
+                                                       --query 'LaunchConfigurations[].LaunchConfigurationName' \
+                                                       --profile $profile --region $region --output text 2> /dev/null)" = "DemoLC" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -649,7 +649,8 @@ fi
 
 
 ((++step))
-zone=$(aws ec2 describe-availability-zones --profile $profile --region $region --output text | head -1 | cut -f4)
+zone=$(aws ec2 describe-availability-zones --query 'AvailabilityZones[0].ZoneName' \
+                                           --profile $profile --region $region --output text)
 
 clear
 echo
@@ -681,9 +682,9 @@ echo
 echo "aws elb describe-instance-health --load-balancer-name DemoELB \\"
 echo "                                 --profile $profile --region $region --output text"
 
-if aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \
-                                                --query 'AutoScalingGroups[].AutoScalingGroupName' \
-                                                --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^DemoASG"; then
+if [ "$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \
+                                                     --query 'AutoScalingGroups[].AutoScalingGroupName' \
+                                                     --profile $profile --region $region --output text 2> /dev/null)" = "DemoASG" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -983,8 +984,8 @@ fi
 
 ((++step))
 instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \
-                                                           --query 'AutoScalingGroups[].Instances[].InstanceId' \
-                                                           --profile $profile --region $region --output text | cut -f1)
+                                                           --query 'AutoScalingGroups[].Instances[0].InstanceId' \
+                                                           --profile $profile --region $region --output text)
 public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
                                          --query 'Reservations[].Instances[].PublicDnsName' \
                                          --profile $profile --region $region --output text)
@@ -1189,14 +1190,11 @@ fi
 
 ((++step))
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                   --profile $profile --region $region --output text | cut -d$'\t' -f4)
-# Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region --output text | cut -d ':' -f5)
-instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-                                                               --profile $profile --region $region --output text | \
-                                                               tr "\t" "\n" | grep $account_id | grep "Demos$")
-#instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-#                                                               --profile $profile --region $region --output text)
+                                   --query 'Images[].ImageId' \
+                                   --profile $profile --region $region --output text)
+instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos \
+                                                               --query 'InstanceProfiles[?ends_with(Arn, `/Demos`) == `true`].Arn' \
+                                                               --profile $profile --region $region --output text)
 ssh_key=demo
 
 clear
@@ -1222,8 +1220,9 @@ echo
 echo "aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC DemoLC-2 \\"
 echo "                                               --profile $profile --region $region --output text"
 
-if aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC-2 \
-                                                  --profile $profile --region $region --output text 2> /dev/null | grep -s -q "^LAUNCHCONFIGURATIONS"; then
+if [ "$(aws autoscaling describe-launch-configurations --launch-configuration-names DemoLC-2 \
+                                                       --query 'LaunchConfigurations[].LaunchConfigurationName' \
+                                                       --profile $profile --region $region --output text 2> /dev/null)" = "DemoLC-2" ]; then
     echo
     tput rev
     echo "Already Created!"

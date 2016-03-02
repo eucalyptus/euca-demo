@@ -160,10 +160,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                     --region $EUCA_USER_REGION | cut -f2)
-    account_id=$(euare-usergetattributes --region $EUCA_USER_REGION | grep "^arn" | cut -d ':' -f5)
     instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos \
-                                                            --region $EUCA_USER_REGION | \
-                               grep $account_id | grep "Demos$")
+                                                            --region $EUCA_USER_REGION | grep "/Demos$")
 
     euscale-create-launch-config --image-id $image_id --key=demo \
                                  --group=DemoSG \
@@ -356,10 +354,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     image_id=$(euca-describe-images --filter "manifest-location=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
                                     --region $EUCA_USER_REGION | cut -f2)
-    account_id=$(euare-usergetattributes --region $EUCA_USER_REGION | grep "^arn" | cut -d ':' -f5)
     instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos \
-                                                            --region $EUCA_USER_REGION | \
-                               grep $account_id | grep "Demos$")
+                                                            --region $EUCA_USER_REGION | grep "/Demos$")
 
     euscale-create-launch-config --image-id $image_id --key=demo \
                                  --group=DemoSG \

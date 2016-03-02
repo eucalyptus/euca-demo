@@ -573,10 +573,7 @@ fi
 ((++step))
 image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
                                 --region $user_region | cut -f2)
-# Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(euare-usergetattributes --region $user_region | grep "^arn" | cut -d ':' -f5)
-instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep $account_id | grep "Demos$")
-#instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep "Demos$")
+instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep "/Demos$")
 ssh_key=demo
 
 clear
@@ -1133,10 +1130,7 @@ fi
 ((++step))
 image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
                                 --region $user_region | cut -f2)
-# Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(euare-usergetattributes --region $user_region | grep "^arn" | cut -d ':' -f5)
-instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep $account_id | grep "Demos$")
-#instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep "Demos$")
+instance_profile_arn=$(euare-instanceprofilelistforrole --role-name Demos --region $user_region | grep "/Demos$")
 ssh_key=demo
 
 clear

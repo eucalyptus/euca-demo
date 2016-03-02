@@ -384,7 +384,8 @@ fi
 
 ((++step))
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
-                                   --profile $profile --region $region --output text | cut -d$'\t' -f4)
+                                   --query 'Images[].ImageId' \
+                                   --profile $profile --region $region --output text)
 
 clear
 echo
@@ -402,7 +403,8 @@ echo "                                --parameters ParameterKey=DemoImageId,Para
 echo "                                --profile $profile --region $region --output text"
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                           --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+                                           --query 'Stacks[].StackName' \
+                                           --profile $profile --region $region --output text)" = "SimpleDemoStack" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -447,7 +449,8 @@ echo "aws cloudformation describe-stack-events --stack-name SimpleDemoStack --ma
 echo "                                         --profile $profile --region $region --output text"
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                           --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+                                           --query 'Stacks[].StackStatus' \
+                                           --profile $profile --region $region --output text)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -474,7 +477,8 @@ else
                                                      --profile $profile --region $region --output text
 
             status=$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
-                                                        --profile $profile --region $region --output text | grep "^STACKS" | cut -f7)
+                                                        --query 'Stacks[].StackStatus' \
+                                                        --profile $profile --region $region --output text 2> /dev/null)
             if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                 break
             else
@@ -525,11 +529,14 @@ fi
 
 ((++step))
 instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDemoStack --logical-resource-id DemoInstance \
-                                                          --profile $profile --region $region --output text | cut -f4)
-public_name=$(aws ec2 describe-instances --instance-ids $instance_id 
-                                         --profile $profile --region $region --output text | grep "^INSTANCES" | cut -f11)
+                                                          --query 'StackResources[].PhysicalResourceId' \
+                                                          --profile $profile --region $region --output text)
+public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
+                                         --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                         --profile $profile --region $region --output text)
 public_ip=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                       --profile $profile --region $region --output text | grep "^INSTANCES" | cut -f12)
+                                       --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                       --profile $profile --region $region --output text)
 ssh_user=centos
 ssh_key=demo
 

@@ -57,9 +57,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1,3,4
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
                                --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
@@ -101,7 +103,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
+                                       --query 'Images[].ImageId' \
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     aws cloudformation create-stack --stack-name ELBDemoStack \
                                     --template-body file://~/src/eucalyptus/euca-demo/demos/demo-21-cfn-elb/templates/ELB.template \
@@ -141,11 +144,12 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     It can take 20 to 40 seconds after the Stack creation is complete before login is possible.
 
     ```bash
-    instance_id=$(aws cloudformation describe-stack-resources --stack-name ELBDemoStack \
-                                                              --logical-resource-id WebServerInstance1 \
-                                                              --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f4)
+    instance_id=$(aws cloudformation describe-stack-resources --stack-name ELBDemoStack --logical-resource-id WebServerInstance1 \
+                                                              --query 'StackResources[].PhysicalResourceId' \
+                                                              --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f11)
+                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name
     ```

@@ -58,9 +58,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1,3,4
+                            --query 'Images[].[Name, ImageId, ImageLocation, Description]' \
+                            --profile $EUCA_PROFILE --region $EUCA_REGION --output text
 
     aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
+                               --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
                                --profile $EUCA_PROFILE --region $EUCA_REGION --output text
     ```
 
@@ -115,8 +117,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     This can take 100 - 140 seconds.
 
     ```bash
-    zone=$(aws ec2 describe-availability-zones --profile $EUCA_PROFILE --region $EUCA_REGION --output text | \
-              head -1 | cut -f4)
+    zone=$(aws ec2 describe-availability-zones --query 'AvailabilityZones[0].ZoneName' \
+                                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     aws elb create-load-balancer --load-balancer-name DemoELB \
                                  --listeners "Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80" \
@@ -157,11 +159,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
-    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -d ':' -f5)
-    instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text | \
-                                                                   tr "\t" "\n" | grep $account_id | grep "Demos$")
+                                       --query 'Images[].ImageId' \
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
+    instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos \
+                                                                   --query 'InstanceProfiles[?ends_with(Arn, `/Demos`) == `true`].Arn' \
+                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     aws autoscaling create-launch-configuration --launch-configuration-name DemoLC \
                                                 --image-id $image_id --key-name=demo \
@@ -184,7 +186,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note there are two methods of checking Instance status.
 
     ```bash
-    zone=$(aws ec2 describe-availability-zones --profile $EUCA_PROFILE --region $EUCA_REGION --output text | head -1 | cut -f4)
+    zone=$(aws ec2 describe-availability-zones --query 'AvailabilityZones[0].ZoneName' \
+                                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     aws autoscaling create-auto-scaling-group --auto-scaling-group-name DemoASG \
                                               --launch-configuration-name DemoLC \
@@ -292,8 +295,8 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names DemoASG \
-                                                               --query 'AutoScalingGroups[].Instances[].InstanceId' \
-                                                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f1)
+                                                               --query 'AutoScalingGroups[].Instances[0].InstanceId' \
+                                                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
                                              --query 'Reservations[].Instances[].PublicDnsName' \
                                              --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
@@ -374,11 +377,11 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
 
     ```bash
     image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/CentOS-6-x86_64-GenericCloud.raw.manifest.xml" \
-                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f3)
-    account_id=$(aws iam get-user --query 'User.Arn' --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -d ':' -f5)
-    instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
-                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text | \
-                               tr "\t" "\n" | grep $account_id | grep "Demos$")
+                                       --query 'Images[].ImageId' \
+                                       --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
+    instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos \
+                                                                   --query 'InstanceProfiles[?ends_with(Arn, `/Demos`) == `true`].Arn' \
+                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text) 
 
     aws autoscaling create-launch-configuration --launch-configuration-name DemoLC-2 \
                                                 --image-id $image_id --key-name=demo \

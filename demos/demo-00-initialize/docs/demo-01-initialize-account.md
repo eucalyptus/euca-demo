@@ -124,7 +124,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     ```bash
     account_id=$(euare-accountlist --region $USER_REGION | grep "^demo" | cut -f2)
     image_id=$(euca-describe-images --filter manifest-location=images/CentOS-6-x86_64-CFN-AWSCLI.raw.manifest.xml \
-                                     --region $USER_REGION | cut -f2)
+                                    --region $USER_REGION | cut -f2)
 
     euca-modify-image-attribute --launch-permission --add $account_id --region $USER_REGION $image_id
     ```

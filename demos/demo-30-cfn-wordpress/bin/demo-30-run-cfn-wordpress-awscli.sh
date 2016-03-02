@@ -339,7 +339,7 @@ if [ $mode = a -o $mode = b ]; then
                                    --query 'KeyPairs[].[KeyName, KeyFingerprint]' \
                                    --profile $aws_profile --region $aws_region --output text | grep "demo" || aws_demo_initialized=n
 
-        next
+        next 50
 
     else
         aws ec2 describe-key-pairs --filter "Name=key-name,Values=demo" \
@@ -585,7 +585,9 @@ if [ $mode = a -o $mode = b ]; then
     echo "                                --capabilities CAPABILITY_IAM \\"
     echo "                                --profile $aws_profile --region $aws_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                               --query 'Stacks[].StackName' \
+                                               --profile $aws_profile --region $aws_region --output text)" = "WordPressDemoStack" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -645,7 +647,9 @@ if [ $mode = a -o $mode = b ]; then
     echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
     echo "                                         --profile $aws_profile --region $aws_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                               --query 'Stacks[].StackStatus' \
+                                               --profile $aws_profile --region $aws_region --output text)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Complete!"
@@ -671,7 +675,9 @@ if [ $mode = a -o $mode = b ]; then
                 aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
                                                          --profile $aws_profile --region $aws_region --output text
 
-                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                            --query 'Stacks[].StackStatus' \
+                                                            --profile $aws_profile --region $aws_region --output text 2> /dev/null)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                     break
                 else
@@ -786,6 +792,7 @@ if [ $verbose = 1 ]; then
     echo "$aws_wordpress_url"
 
     next
+
 else
     aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
                                                                   --query 'StackResources[].PhysicalResourceId' \
@@ -1060,7 +1067,9 @@ if [ $mode = e -o $mode = b ]; then
     echo "                                --capabilities CAPABILITY_IAM \\"
     echo "                                --profile $euca_profile --region $euca_region --output text"
 
-    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)" = "CREATE_COMPLETE" ]; then
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                               --query 'Stacks[].StackName' \
+                                               --profile $euca_profile --region $euca_region --output text)" = "WordPressDemoStack" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -1120,6 +1129,9 @@ if [ $mode = e -o $mode = b ]; then
     echo "aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \\"
     echo "                                         --profile $euca_profile --region $euca_region --output text"
 
+    if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                               --query 'Stacks[].StackStatus' \
+                                               --profile $euca_profile --region $euca_region --output text)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Complete!"
@@ -1145,7 +1157,9 @@ if [ $mode = e -o $mode = b ]; then
                 aws cloudformation describe-stack-events --stack-name WordPressDemoStack --max-items 5 \
                                                          --profile $euca_profile --region $euca_region --output text
 
-                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack --profile $euca_profile --region $euca_region --output text 2> /dev/null | grep "^STACKS" | cut -f7)
+                status=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
+                                                            --query 'Stacks[].StackStatus' \
+                                                            --profile $euca_profile --region $euca_region --output text 2> /dev/null)
                 if [ -z "$status" -o "$status" = "CREATE_COMPLETE" -o "$status" = "CREATE_FAILED" -o "$status" = "ROLLBACK_COMPLETE" ]; then
                     break
                 else
@@ -1260,6 +1274,7 @@ if [ $verbose = 1 ]; then
     echo "$euca_wordpress_url"
 
     next
+
 else
     euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
                                                                    --query 'StackResources[].PhysicalResourceId' \
