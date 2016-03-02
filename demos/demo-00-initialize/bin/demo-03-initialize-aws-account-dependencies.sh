@@ -377,9 +377,9 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "aws s3 mb s3://demo-$account --profile $profile --region=$region"
+echo "aws s3 mb s3://demo-$account --profile $profile --region $region --output text"
 
-if aws s3 ls --profile $profile --region=$region 2> /dev/null | grep -s -q " demo-$account$"; then
+if aws s3 ls --profile $profile --region $region --output text 2> /dev/null | grep -s -q " demo-$account$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -392,8 +392,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# aws s3 mb s3://demo-$account --profile $profile --region=$region"
-        aws s3 mb s3://demo-$account --profile $profile --region=$region
+        echo "# aws s3 mb s3://demo-$account --profile $profile --region $region --output text"
+        aws s3 mb s3://demo-$account --profile $profile --region $region --output text
 
         next
     fi
@@ -968,7 +968,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_demo@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_demo]" ~/.euca/$federation.ini; then
     echo
@@ -998,8 +998,8 @@ else
         echo                                          >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_demo@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_demo@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_demo@$region
 
         next
     fi
@@ -1036,7 +1036,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $account-$user_demo --region $region"
+echo "aws ec2 describe-availability-zones --profile $account-$user_demo --region $region --output text"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_demo]" ~/.aws/config; then
     echo
@@ -1079,8 +1079,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $account-$user_demo --region $region"
-        aws ec2 describe-availability-zones --profile $account-$user_demo --region $region
+        echo "# aws ec2 describe-availability-zones --profile $account-$user_demo --region $region --output text"
+        aws ec2 describe-availability-zones --profile $account-$user_demo --region $region --output text
 
         next
     fi
@@ -1274,7 +1274,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_developer@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_developer]" ~/.euca/$federation.ini; then
     echo
@@ -1304,8 +1304,8 @@ else
         echo                                               >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_developer@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_developer@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_developer@$region
 
         next
     fi
@@ -1342,7 +1342,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $account-$user_developer --region $region"
+echo "aws ec2 describe-availability-zones --profile $account-$user_developer --region $region --output text"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_developer]" ~/.aws/config; then
     echo
@@ -1385,8 +1385,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $account-$user_developer --region $region"
-        aws ec2 describe-availability-zones --profile $account-$user_developer --region $region
+        echo "# aws ec2 describe-availability-zones --profile $account-$user_developer --region $region --output text"
+        aws ec2 describe-availability-zones --profile $account-$user_developer --region $region --output text
 
         next
     fi
@@ -1580,7 +1580,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_user@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_user]" ~/.euca/$federation.ini; then
     echo
@@ -1610,8 +1610,8 @@ else
         echo                                          >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_user@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_user@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_user@$region
 
         next
     fi
@@ -1648,7 +1648,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $account-$user_user --region $region"
+echo "aws ec2 describe-availability-zones --profile $account-$user_user --region $region --output text"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$user_user]" ~/.aws/config; then
     echo
@@ -1691,8 +1691,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $account-$user_user --region $region"
-        aws ec2 describe-availability-zones --profile $account-$user_user --region $region
+        echo "# aws ec2 describe-availability-zones --profile $account-$user_user --region $region --output text"
+        aws ec2 describe-availability-zones --profile $account-$user_user --region $region --output text
 
         next
     fi

@@ -313,21 +313,21 @@ if [ $mode = a -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo "                       --region=$aws_user_region"
+        echo "                       --region $aws_user_region"
 
         next
 
         echo
         echo "# euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo ">                        --region=$aws_user_region"
+        echo ">                        --region $aws_user_region"
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$aws_user_region | grep "demo" || aws_demo_initialized=n
+                               --region $aws_user_region | grep "demo" || aws_demo_initialized=n
 
         next
 
     else
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$aws_user_region | grep -s -q "demo" || aws_demo_initialized=n
+                               --region $aws_user_region | grep -s -q "demo" || aws_demo_initialized=n
     fi
 
     if [ $aws_demo_initialized = n ]; then
@@ -357,32 +357,32 @@ if [ $mode = e -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-        echo "                     --region=$euca_user_region | cut -f1,2,3"
+        echo "                     --region $euca_user_region | cut -f1,2,3"
         echo
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo "                       --region=$euca_user_region"
+        echo "                       --region $euca_user_region"
 
         next
 
         echo
         echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-        echo ">                      --region=$euca_user_region | cut -f1,2,3"
+        echo ">                      --region $euca_user_region | cut -f1,2,3"
         euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                             --region=$euca_user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
+                             --region $euca_user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
         pause
 
         echo "# euca-describe-keypairs --filter \"key-name=demo\"\\"
-        echo ">                      --region=$euca_user_region"
+        echo ">                      --region $euca_user_region"
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$euca_user_region | grep "demo" || euca_demo_initialized=n
+                               --region $euca_user_region | grep "demo" || euca_demo_initialized=n
 
         next
 
     else
         euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                             --region=$euca_user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
+                             --region $euca_user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$euca_user_region | grep -s -q "demo" || euca_demo_initialized=n
+                               --region $euca_user_region | grep -s -q "demo" || euca_demo_initialized=n
     fi
 
     if [ $euca_demo_initialized = n ]; then
@@ -414,9 +414,9 @@ echo "Commands:"
 echo
 echo "aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --acl public-read --profile $aws_profile --region=$aws_region"
+echo "          --acl public-read --profile $aws_profile --region $aws_region --output text"
 
-if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region=$aws_region 2> /dev/null | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
+if aws s3 ls s3://demo-$aws_account/demo-30-cfn-wordpress/ --profile $aws_profile --region $aws_region --output text 2> /dev/null | grep -s -q " WordPress_Single_Instance_Eucalyptus.template$"; then
     echo
     tput rev
     echo "Already Uploaded!"
@@ -431,10 +431,10 @@ else
         echo
         echo "# aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --acl public-read --profile $aws_profile --region=$aws_region"
+        echo ">           --acl public-read --profile $aws_profile --region $aws_region --output text"
         aws s3 cp $templatesdir/WordPress_Single_Instance_Eucalyptus.template \
                   s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --acl public-read --profile $aws_profile --region=$aws_region
+                  --acl public-read --profile $aws_profile --region $aws_region --output text
 
         next
     fi
@@ -455,7 +455,7 @@ echo "Commands:"
 echo
 echo "aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --profile $aws_profile --region=$aws_region"
+echo "          --profile $aws_profile --region $aws_region --output text"
 
 run 50
 
@@ -463,10 +463,10 @@ if [ $choice = y ]; then
     echo
     echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
     echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo ">           --profile $aws_profile --region=$aws_region"
+    echo ">           --profile $aws_profile --region $aws_region --output text"
     aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
               $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-              --profile $aws_profile --region=$aws_region
+              --profile $aws_profile --region $aws_region --output text
 
     next
 fi
@@ -474,7 +474,7 @@ fi
 
 ((++step))
 if [ $mode = e -o $mode = b ]; then
-    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region=$euca_user_region | cut -f2)
+    image_id=$(euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" --region $euca_user_region | cut -f2)
 
     clear
     echo
@@ -591,7 +591,7 @@ if [ $mode = e -o $mode = b ]; then
     echo
     echo "aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
     echo "          s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo "          --acl public-read --profile $aws_profile --region=$aws_region"
+    echo "          --acl public-read --profile $aws_profile --region $aws_region --output text"
 
     run 50
 
@@ -599,10 +599,10 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "# aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
         echo ">           s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
-        echo ">           --acl public-read --profile $aws_profile --region=$aws_region"
+        echo ">           --acl public-read --profile $aws_profile --region $aws_region --output text"
         aws s3 cp $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
                   s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
-                  --acl public-read --profile $aws_profile --region=$aws_region
+                  --acl public-read --profile $aws_profile --region $aws_region --output text
 
         next
     fi
@@ -623,20 +623,20 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euca-describe-groups --region=$aws_user_region"
+        echo "euca-describe-groups --region $aws_user_region"
         echo
-        echo "euca-describe-instances --region=$aws_user_region"
+        echo "euca-describe-instances --region $aws_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euca-describe-groups --region=$aws_user_region"
-            euca-describe-groups --region=$aws_user_region
+            echo "# euca-describe-groups --region $aws_user_region"
+            euca-describe-groups --region $aws_user_region
             pause
 
-            echo "# euca-describe-instances --region=$aws_user_region"
-            euca-describe-instances --region=$aws_user_region
+            echo "# euca-describe-instances --region $aws_user_region"
+            euca-describe-instances --region $aws_user_region
 
             next
         fi
@@ -658,14 +658,14 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euform-describe-stacks --region=$aws_user_region"
+        echo "euform-describe-stacks --region $aws_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euform-describe-stacks --region=$aws_user_region"
-            euform-describe-stacks --region=$aws_user_region
+            echo "# euform-describe-stacks --region $aws_user_region"
+            euform-describe-stacks --region $aws_user_region
 
             next
         fi
@@ -687,20 +687,20 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euca-describe-groups --region=$euca_user_region"
+        echo "euca-describe-groups --region $euca_user_region"
         echo
-        echo "euca-describe-instances --region=$euca_user_region"
+        echo "euca-describe-instances --region $euca_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euca-describe-groups --region=$euca_user_region"
-            euca-describe-groups --region=$euca_user_region
+            echo "# euca-describe-groups --region $euca_user_region"
+            euca-describe-groups --region $euca_user_region
             pause
 
-            echo "# euca-describe-instances --region=$euca_user_region"
-            euca-describe-instances --region=$euca_user_region
+            echo "# euca-describe-instances --region $euca_user_region"
+            euca-describe-instances --region $euca_user_region
 
             next
         fi
@@ -722,14 +722,14 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euform-describe-stacks --region=$euca_user_region"
+        echo "euform-describe-stacks --region $euca_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euform-describe-stacks --region=$euca_user_region"
-            euform-describe-stacks --region=$euca_user_region
+            echo "# euform-describe-stacks --region $euca_user_region"
+            euform-describe-stacks --region $euca_user_region
 
             next
         fi

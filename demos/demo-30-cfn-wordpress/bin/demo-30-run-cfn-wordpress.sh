@@ -342,21 +342,21 @@ if [ $mode = a -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo "                       --region=$aws_user_region"
+        echo "                       --region $aws_user_region"
 
         next 50
 
         echo
         echo "# euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo ">                        --region=$aws_user_region"
+        echo ">                        --region $aws_user_region"
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$aws_user_region | grep "demo" || aws_demo_initialized=n
+                               --region $aws_user_region | grep "demo" || aws_demo_initialized=n
 
         next 50
 
     else
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$aws_user_region | grep -s -q "demo" || aws_demo_initialized=n
+                               --region $aws_user_region | grep -s -q "demo" || aws_demo_initialized=n
     fi
 
     if [ $aws_demo_initialized = n ]; then
@@ -386,32 +386,32 @@ if [ $mode = e -o $mode = b ]; then
         echo "Commands:"
         echo
         echo "euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-        echo "                     --region=$euca_user_region | cut -f1,2,3"
+        echo "                     --region $euca_user_region | cut -f1,2,3"
         echo
         echo "euca-describe-keypairs --filter \"key-name=demo\" \\"
-        echo "                       --region=$euca_user_region"
+        echo "                       --region $euca_user_region"
 
         next 50
 
         echo
         echo "# euca-describe-images --filter \"manifest-location=images/$image_name.raw.manifest.xml\" \\"
-        echo ">                      --region=$euca_user_region | cut -f1,2,3"
+        echo ">                      --region $euca_user_region | cut -f1,2,3"
         euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                             --region=$euca_user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
+                             --region $euca_user_region | cut -f1,2,3 | grep "$image_name" || euca_demo_initialized=n
         pause
 
         echo "# euca-describe-keypairs --filter \"key-name=demo\"\\"
-        echo ">                      --region=$euca_user_region"
+        echo ">                      --region $euca_user_region"
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$euca_user_region | grep "demo" || euca_demo_initialized=n
+                               --region $euca_user_region | grep "demo" || euca_demo_initialized=n
 
         next 50
 
     else
         euca-describe-images --filter "manifest-location=images/$image_name.raw.manifest.xml" \
-                             --region=$euca_user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
+                             --region $euca_user_region | cut -f1,2,3 | grep -s -q "$image_name" || euca_demo_initialized=n
         euca-describe-keypairs --filter "key-name=demo" \
-                               --region=$euca_user_region | grep -s -q "demo" || euca_demo_initialized=n
+                               --region $euca_user_region | grep -s -q "demo" || euca_demo_initialized=n
     fi
 
     if [ $euca_demo_initialized = n ]; then
@@ -439,7 +439,7 @@ echo "Commands:"
 echo
 echo "aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
 echo "          $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-echo "          --profile $aws_profile --region=$aws_region"
+echo "          --profile $aws_profile --region $aws_region --output text"
 
 run 50
 
@@ -447,10 +447,10 @@ if [ $choice = y ]; then
     echo
     echo "# aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \\"
     echo ">           $tmpdir/WordPress_Single_Instance_Eucalyptus.template \\"
-    echo ">           --profile $aws_profile --region=$aws_region"
+    echo ">           --profile $aws_profile --region $aws_region --output text"
     aws s3 cp s3://demo-$aws_account/demo-30-cfn-wordpress/WordPress_Single_Instance_Eucalyptus.template \
               $tmpdir/WordPress_Single_Instance_Eucalyptus.template \
-              --profile $aws_profile --region=$aws_region
+              --profile $aws_profile --region $aws_region --output text
 
     next
 fi
@@ -516,20 +516,20 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euca-describe-groups --region=$aws_user_region"
+        echo "euca-describe-groups --region $aws_user_region"
         echo
-        echo "euca-describe-instances --region=$aws_user_region"
+        echo "euca-describe-instances --region $aws_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euca-describe-groups --region=$aws_user_region"
-            euca-describe-groups --region=$aws_user_region
+            echo "# euca-describe-groups --region $aws_user_region"
+            euca-describe-groups --region $aws_user_region
             pause
 
-            echo "# euca-describe-instances --region=$aws_user_region"
-            euca-describe-instances --region=$aws_user_region
+            echo "# euca-describe-instances --region $aws_user_region"
+            euca-describe-instances --region $aws_user_region
 
             next
         fi
@@ -551,14 +551,14 @@ if [ $mode = a -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euform-describe-stacks --region=$aws_user_region"
+        echo "euform-describe-stacks --region $aws_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euform-describe-stacks --region=$aws_user_region"
-            euform-describe-stacks --region=$aws_user_region
+            echo "# euform-describe-stacks --region $aws_user_region"
+            euform-describe-stacks --region $aws_user_region
 
             next
         fi
@@ -736,39 +736,39 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)"
-    echo "aws_public_name=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    echo "aws_public_ip=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    echo "aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)"
+    echo "aws_public_name=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    echo "aws_public_ip=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
     echo
-    echo "aws_wordpress_url=\$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "aws_wordpress_url=\$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
 
     next 50
 
     echo
-    echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)"
-    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
+    echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)"
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)
     echo "$aws_instance_id"
     echo "#"
-    echo "# aws_public_name=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    echo "# aws_public_name=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    aws_public_name=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
     echo "$aws_public_name"
     echo "#"
-    echo "# aws_public_ip=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
-    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    echo "# aws_public_ip=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    aws_public_ip=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
     echo "$aws_public_ip"
     pause
 
-    echo "# aws_wordpress_url=\$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
-    aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo "# aws_wordpress_url=\$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    aws_wordpress_url=$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$aws_wordpress_url"
 
     next
 else
-    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
-    aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
-    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)
+    aws_public_name=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    aws_public_ip=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
 
-    aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    aws_wordpress_url=$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
 sed -i -e "/$aws_public_name/d" ~/.ssh/known_hosts 2> /dev/null
@@ -956,20 +956,20 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euca-describe-groups --region=$euca_user_region"
+        echo "euca-describe-groups --region $euca_user_region"
         echo
-        echo "euca-describe-instances --region=$euca_user_region"
+        echo "euca-describe-instances --region $euca_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euca-describe-groups --region=$euca_user_region"
-            euca-describe-groups --region=$euca_user_region
+            echo "# euca-describe-groups --region $euca_user_region"
+            euca-describe-groups --region $euca_user_region
             pause
 
-            echo "# euca-describe-instances --region=$euca_user_region"
-            euca-describe-instances --region=$euca_user_region
+            echo "# euca-describe-instances --region $euca_user_region"
+            euca-describe-instances --region $euca_user_region
 
             next
         fi
@@ -991,14 +991,14 @@ if [ $mode = e -o $mode = b ]; then
         echo
         echo "Commands:"
         echo
-        echo "euform-describe-stacks --region=$euca_user_region"
+        echo "euform-describe-stacks --region $euca_user_region"
 
         run 50
 
         if [ $choice = y ]; then
             echo
-            echo "# euform-describe-stacks --region=$euca_user_region"
-            euform-describe-stacks --region=$euca_user_region
+            echo "# euform-describe-stacks --region $euca_user_region"
+            euform-describe-stacks --region $euca_user_region
 
             next
         fi
@@ -1176,40 +1176,40 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)"
-    echo "euca_public_name=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    echo "euca_public_ip=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    echo "euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)"
+    echo "euca_public_name=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    echo "euca_public_ip=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
     echo
-    echo "euca_wordpress_url=\$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "euca_wordpress_url=\$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     echo
 
     next 50
 
     echo
-    echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)"
-    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)
+    echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)"
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)
     echo "$euca_instance_id"
     echo "#"
-    echo "# euca_public_name=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    euca_public_name=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    echo "# euca_public_name=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    euca_public_name=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
     echo "$euca_public_name"
     echo "#"
-    echo "# euca_public_ip=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
-    euca_public_ip=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    echo "# euca_public_ip=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    euca_public_ip=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
     echo "$euca_public_ip"
     pause
 
-    echo "# euca_wordpress_url=\$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
-    euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo "# euca_wordpress_url=\$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    euca_wordpress_url=$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$euca_wordpress_url"
 
     next
 else
-    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)
-    euca_public_name=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
-    euca_public_ip=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)
+    euca_public_name=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    euca_public_ip=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
 
-    euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    euca_wordpress_url=$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
 sed -i -e "/$euca_public_name/d" ~/.ssh/known_hosts 2> /dev/null

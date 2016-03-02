@@ -355,10 +355,10 @@ echo
 echo "Commands:"
 echo
 echo "aws s3api create-bucket --bucket sample-templates --acl public-read \\"
-echo "                        --profile $profile --region=$region"
+echo "                        --profile $profile --region$region --output text"
 
 # work around pipe bug
-if aws s3 ls --profile $profile --region=$region 2> /dev/null | grep -s -q " sample-templates$"; then
+if aws s3 ls --profile $profile --region $region --output text 2> /dev/null | grep -s -q " sample-templates$"; then
     echo
     tput rev
     echo "Already Created!"
@@ -372,9 +372,9 @@ else
     if [ $choice = y ]; then
         echo
         echo "# aws s3api create-bucket --bucket sample-templates --acl public-read \\"
-        echo ">                         --profile $profile --region=$region"
+        echo ">                         --profile $profile --region $region --output text"
         aws s3api create-bucket --bucket sample-templates --acl public-read \
-                                --profile $profile --region=$region
+                                --profile $profile --region $region --output text
 
         next
     fi

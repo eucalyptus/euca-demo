@@ -578,7 +578,7 @@ fi
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
                                    --profile $profile --region $region --output text | cut -d$'\t' -f4)
 # Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region | cut -d ':' -f5)
+account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region --output text | cut -d ':' -f5)
 instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                --profile $profile --region $region --output text | \
                                                                tr "\t" "\n" | grep $account_id | grep "Demos$")
@@ -1191,7 +1191,7 @@ fi
 image_id=$(aws ec2 describe-images --filter "Name=manifest-location,Values=images/$image_name.raw.manifest.xml" \
                                    --profile $profile --region $region --output text | cut -d$'\t' -f4)
 # Workaround 4.1.2 bug EUCA-11052, to prevent multiple arns in the result, must filter by account number
-account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region | cut -d ':' -f5)
+account_id=$(aws iam get-user --query 'User.Arn' --profile $profile --region $region --output text | cut -d ':' -f5)
 instance_profile_arn=$(aws iam list-instance-profiles-for-role --role-name Demos --query 'InstanceProfiles[].Arn' \
                                                                --profile $profile --region $region --output text | \
                                                                tr "\t" "\n" | grep $account_id | grep "Demos$")

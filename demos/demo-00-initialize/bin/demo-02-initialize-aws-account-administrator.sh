@@ -518,7 +518,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$new_user@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$new_user@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$new_user]" ~/.euca/$federation.ini; then
     echo
@@ -558,8 +558,8 @@ else
         echo                                         >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$new_user@$region"
-        euca-describe-availability-zones --region=$federation-$account-$new_user@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$new_user@$region"
+        euca-describe-availability-zones --region $federation-$account-$new_user@$region
 
         next
     fi
@@ -614,7 +614,7 @@ echo "aws_secret_access_key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "aws ec2 describe-availability-zones --profile $account-$new_user --region $region"
+echo "aws ec2 describe-availability-zones --profile $account-$new_user --region $region --output text"
 
 if [ -r ~/.aws/config ] && grep -s -q "\[profile $account-$new_user]" ~/.aws/config; then
     echo
@@ -685,8 +685,8 @@ else
         echo                                       >> ~/.aws/credentials
         pause
 
-        echo "# aws ec2 describe-availability-zones --profile $account-$new_user --region $region"
-        aws ec2 describe-availability-zones --profile $account-$new_user --region $region
+        echo "# aws ec2 describe-availability-zones --profile $account-$new_user --region $region --output text"
+        aws ec2 describe-availability-zones --profile $account-$new_user --region $region --output text
 
         next
     fi
