@@ -68,10 +68,12 @@ euca_region=${AWS_DEFAULT_REGION#*@}
 euca_account=${AWS_ACCOUNT_NAME:-demo}
 euca_user=${AWS_USER_NAME:-admin}
 euca_ssh_user=root
+euca_ssh_key=demo
 aws_region=us-east-1
 aws_account=euca
 aws_user=demo
 aws_ssh_user=ec2-user
+aws_ssh_key=demo
 
 
 #  2. Define functions
@@ -587,7 +589,7 @@ if [ $mode = a -o $mode = b ]; then
 
     if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                --query 'Stacks[].StackName' \
-                                               --profile $aws_profile --region $aws_region --output text)" = "WordPressDemoStack" ]; then
+                                               --profile $aws_profile --region $aws_region --output text 2> /dev/null)" = "WordPressDemoStack" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -649,7 +651,7 @@ if [ $mode = a -o $mode = b ]; then
 
     if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                --query 'Stacks[].StackStatus' \
-                                               --profile $aws_profile --region $aws_region --output text)" = "CREATE_COMPLETE" ]; then
+                                               --profile $aws_profile --region $aws_region --output text 2> /dev/null)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Complete!"
@@ -745,10 +747,10 @@ if [ $verbose = 1 ]; then
     echo "                                                               --query 'StackResources[].PhysicalResourceId' \\"
     echo "                                                               --profile $aws_profile --region $aws_region --output text)"
     echo "aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo "                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo "                                              --query 'Reservations[].Instances[].PublicDnsName' \\"
     echo "                                              --profile $aws_profile --region $aws_region --output text)"
     echo "aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo "                                            --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo "                                            --query 'Reservations[].Instances[].PublicIpAddress' \\"
     echo "                                            --profile $aws_profile --region $aws_region --output text)"
     echo
     echo "aws_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
@@ -767,18 +769,18 @@ if [ $verbose = 1 ]; then
     echo "$aws_instance_id"
     echo "#"
     echo "# aws_public_name=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo ">                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo ">                                              --query 'Reservations[].Instances[].PublicDnsName' \\"
     echo ">                                               --profile $aws_profile --region $aws_region --output text)"
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                 --query 'Reservations[].Instances[].PublicDnsName' \
                                                  --profile $aws_profile --region $aws_region --output text)
     echo "$aws_public_name"
     echo "#"
     echo "# aws_public_ip=\$(aws ec2 describe-instances --instance-ids $aws_instance_id \\"
-    echo ">                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo ">                                             --query 'Reservations[].Instances[].PublicIpAddress' \\"
     echo ">                                             --profile $aws_profile --region $aws_region --output text)"
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                               --query 'Reservations[].Instances[].PublicIpAddress' \
                                                --profile $aws_profile --region $aws_region --output text)
     echo "$aws_public_ip"
     pause
@@ -798,10 +800,10 @@ else
                                                                   --query 'StackResources[].PhysicalResourceId' \
                                                                   --profile $aws_profile --region $aws_region --output text)
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                 --query 'Reservations[].Instances[].PublicDnsName' \
                                                  --profile $aws_profile --region $aws_region --output text)
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                               --query 'Reservations[].Instances[].PublicIpAddress' \
                                                --profile $aws_profile --region $aws_region --output text)
 
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
@@ -1069,7 +1071,7 @@ if [ $mode = e -o $mode = b ]; then
 
     if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                --query 'Stacks[].StackName' \
-                                               --profile $euca_profile --region $euca_region --output text)" = "WordPressDemoStack" ]; then
+                                               --profile $euca_profile --region $euca_region --output text 2> /dev/null)" = "WordPressDemoStack" ]; then
         echo
         tput rev
         echo "Already Created!"
@@ -1131,7 +1133,7 @@ if [ $mode = e -o $mode = b ]; then
 
     if [ "$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                --query 'Stacks[].StackStatus' \
-                                               --profile $euca_profile --region $euca_region --output text)" = "CREATE_COMPLETE" ]; then
+                                               --profile $euca_profile --region $euca_region --output text 2> /dev/null)" = "CREATE_COMPLETE" ]; then
         echo
         tput rev
         echo "Already Complete!"
@@ -1227,10 +1229,10 @@ if [ $verbose = 1 ]; then
     echo "                                                                --query 'StackResources[].PhysicalResourceId' \\"
     echo "                                                                --profile $euca_profile --region $euca_region --output text)"
     echo "euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo "                                               --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo "                                               --query 'Reservations[].Instances[].PublicDnsName' \\"
     echo "                                               --profile $euca_profile --region $euca_region --output text)"
     echo "euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo "                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo "                                             --query 'Reservations[].Instances[].PublicIpAddress' \\"
     echo "                                             --profile $euca_profile --region $euca_region --output text)"
     echo
     echo "euca_wordpress_url=\$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \\"
@@ -1249,18 +1251,18 @@ if [ $verbose = 1 ]; then
     echo "$euca_instance_id"
     echo "#"
     echo "# euca_public_name=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo ">                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \\"
+    echo ">                                                --query 'Reservations[].Instances[].PublicDnsName' \\"
     echo ">                                                --profile $euca_profile --region $euca_region --output text)"
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                  --query 'Reservations[].Instances[].PublicDnsName' \
                                                   --profile $euca_profile --region $euca_region --output text)
     echo "$euca_public_name"
     echo "#"
     echo "# euca_public_ip=\$(aws ec2 describe-instances --instance-ids $euca_instance_id \\"
-    echo ">                                              --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \\"
+    echo ">                                              --query 'Reservations[].Instances[].PublicIpAddress' \\"
     echo ">                                              --profile $euca_profile --region $euca_region --output text)"
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                                --query 'Reservations[].Instances[].PublicIpAddress' \
                                                 --profile $euca_profile --region $euca_region --output text)
     echo "$euca_public_ip"
     pause
@@ -1280,10 +1282,10 @@ else
                                                                    --query 'StackResources[].PhysicalResourceId' \
                                                                    --profile $euca_profile --region $euca_region --output text)
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                                  --query 'Reservations[].Instances[].PublicDnsName' \
                                                   --profile $euca_profile --region $euca_region --output text)
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                                --query 'Reservations[].Instances[].PublicIpAddress' \
                                                 --profile $euca_profile --region $euca_region --output text)
 
     euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \

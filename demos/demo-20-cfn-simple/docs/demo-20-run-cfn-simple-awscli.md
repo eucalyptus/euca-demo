@@ -144,7 +144,7 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
                                                               --query 'StackResources[].PhysicalResourceId' \
                                                               --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
     public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                             --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                             --query 'Reservations[].Instances[].PublicDnsName' \
                                              --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
 
     ssh -i ~/.ssh/demo_id_rsa centos@$public_name

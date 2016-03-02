@@ -404,7 +404,7 @@ echo "                                --profile $profile --region $region --outp
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
                                            --query 'Stacks[].StackName' \
-                                           --profile $profile --region $region --output text)" = "SimpleDemoStack" ]; then
+                                           --profile $profile --region $region --output text 2> /dev/null)" = "SimpleDemoStack" ]; then
     echo
     tput rev
     echo "Already Created!"
@@ -450,7 +450,7 @@ echo "                                         --profile $profile --region $regi
 
 if [ "$(aws cloudformation describe-stacks --stack-name SimpleDemoStack \
                                            --query 'Stacks[].StackStatus' \
-                                           --profile $profile --region $region --output text)" = "CREATE_COMPLETE" ]; then
+                                           --profile $profile --region $region --output text 2> /dev/null)" = "CREATE_COMPLETE" ]; then
     echo
     tput rev
     echo "Already Complete!"
@@ -532,10 +532,10 @@ instance_id=$(aws cloudformation describe-stack-resources --stack-name SimpleDem
                                                           --query 'StackResources[].PhysicalResourceId' \
                                                           --profile $profile --region $region --output text)
 public_name=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                         --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicDnsName' \
+                                         --query 'Reservations[].Instances[].PublicDnsName' \
                                          --profile $profile --region $region --output text)
 public_ip=$(aws ec2 describe-instances --instance-ids $instance_id \
-                                       --query 'Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp' \
+                                       --query 'Reservations[].Instances[].PublicIpAddress' \
                                        --profile $profile --region $region --output text)
 ssh_user=centos
 ssh_key=demo

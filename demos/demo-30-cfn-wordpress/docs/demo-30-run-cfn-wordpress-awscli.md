@@ -168,33 +168,37 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note these values for future use.
 
     ```bash
-    aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack \
-                                                                  --logical-resource-id WebServer \
-                                                                  --profile $AWS_PROFILE --region $AWS_REGION --output text | cut -f4)
-    $aws_instance_id
+    aws_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                  --query 'StackResources[].PhysicalResourceId' \
+                                                                  --profile $AWS_PROFILE --region $AWS_REGION --output text)
+    echo $aws_instance_id
 
     aws_public_name=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                                 --profile $AWS_PROFILE --region $AWS_REGION --output text | grep "^INSTANCES" | cut -f11)
-    $aws_public_name
+                                                 --query 'Reservations[].Instances[].PublicDnsName' \
+                                                 --profile $AWS_PROFILE --region $AWS_REGION --output text)
+    echo $aws_public_name
 
     aws_public_ip=$(aws ec2 describe-instances --instance-ids $aws_instance_id \
-                                               --profile $AWS_PROFILE --region $AWS_REGION --output text | grep "^INSTANCES" | cut -f12)
-    $aws_public_ip
+                                               --query 'Reservations[].Instances[].PublicIpAddress' \
+                                               --profile $AWS_PROFILE --region $AWS_REGION --output text)
+    echo $aws_public_ip
 
     aws_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                            --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
                                                            --profile $AWS_PROFILE --region $AWS_REGION --output text 2> /dev/null)
-    $aws_wordpress_url
+    echo $aws_wordpress_url
     ```
 
 11. Install WordPress Command-Line Tools on AWS Instance (Optional)
 
-    These can be used to automate WordPress Initialization and Management, but are optional if
+    These tools can be used to automate WordPress Initialization and Management, but are optional if
     you will instead perform these actions via the WordPress website.
 
+    ```bash
     ssh -t -i ~/.ssh/demo_id_rsa ec2-user@$aws_public_name \
         "sudo curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp; \
          sudo chmod +x /usr/local/bin/wp"
+    ```
 
 12. Initialize WordPress on AWS Instance
 
@@ -299,23 +303,25 @@ will be pasted into each ssh session, and which can then adjust the behavior of 
     Note these values for future use.
 
     ```bash
-    euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack \
-                                                                   --logical-resource-id WebServer \
-                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text | cut -f4)
-    $euca_instance_id
+    euca_instance_id=$(aws cloudformation describe-stack-resources --stack-name WordPressDemoStack --logical-resource-id WebServer \
+                                                                   --query 'StackResources[].PhysicalResourceId' \
+                                                                   --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
+    echo $euca_instance_id
 
     euca_public_name=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                  --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f11)
-    $euca_public_name
+                                                  --query 'Reservations[].Instances[].PublicDnsName' \
+                                                  --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
+    echo $euca_public_name
 
     euca_public_ip=$(aws ec2 describe-instances --instance-ids $euca_instance_id \
-                                                --profile $EUCA_PROFILE --region $EUCA_REGION --output text | grep "^INSTANCES" | cut -f12)
-    $euca_public_ip
+                                                --query 'Reservations[].Instances[].PublicIpAddress' \
+                                                --profile $EUCA_PROFILE --region $EUCA_REGION --output text)
+    echo $euca_public_ip
 
     euca_wordpress_url=$(aws cloudformation describe-stacks --stack-name WordPressDemoStack \
                                                             --query 'Stacks[].Outputs[?OutputKey==`WebsiteURL`].{OutputValue:OutputValue}' \
                                                             --profile $EUCA_PROFILE --region $EUCA_REGION --output text 2> /dev/null)
-    $euca_wordpress_url
+    echo $euca_wordpress_url
     ```
 
 20. View WordPress on AWS Instance (Optional)

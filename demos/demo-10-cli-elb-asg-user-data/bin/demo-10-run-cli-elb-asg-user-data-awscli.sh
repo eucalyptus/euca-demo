@@ -1094,7 +1094,7 @@ echo "aws elb describe-instance-health --load-balancer-name DemoELB \\"
 echo "                                 --profile $profile --region $region --output text"
 for instance_public_name in $instance_public_names; do
     echo
-    echo "lynx -dump http://$instance_public_name";;
+    echo "lynx -dump http://$instance_public_name"
 done
 if [ -n "$lb_public_ip" ]; then
     echo
@@ -1136,7 +1136,7 @@ if [ $choice = y ]; then
         echo "# lynx -dump http://$lb_public_name"
         lynx -dump http://$lb_public_name
         echo "# lynx -dump http://$lb_public_name"
-        lynx -dump http://$lb_public_name;;
+        lynx -dump http://$lb_public_name
     fi
 
     next
@@ -1424,12 +1424,12 @@ echo
 echo "Commands:"
 for instance_public_name in $instance_public_names; do
     echo
-    echo "lynx -dump http://$instance_public_name";;
+    echo "lynx -dump http://$instance_public_name"
 done
 if [ -n "$lb_public_ip" ]; then
     echo
     echo "lynx -dump http://$lb_public_name"
-    echo "lynx -dump http://$lb_public_name";;
+    echo "lynx -dump http://$lb_public_name"
 fi
 
 run 50
@@ -1438,14 +1438,14 @@ if [ $choice = y ]; then
     echo
     for instance_public_name in $instance_public_names; do
         echo "# lynx -dump http://$instance_public_name"
-        lynx -dump http://$instance_public_name;;
+        lynx -dump http://$instance_public_name
         pause
     done
     if [ -n "$lb_public_ip" ]; then
         echo "# lynx -dump http://$lb_public_name"
         lynx -dump http://$lb_public_name
         echo "# lynx -dump http://$lb_public_name"
-        lynx -dump http://$lb_public_name;;
+        lynx -dump http://$lb_public_name
     fi
 
     next
