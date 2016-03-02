@@ -294,70 +294,70 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)"
-    echo "aws_public_name=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    echo "aws_public_ip=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    echo "aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)"
+    echo "aws_public_name=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    echo "aws_public_ip=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
     echo
-    echo "aws_wordpress_url=\$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "aws_wordpress_url=\$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     echo
-    echo "euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)"
-    echo "euca_public_name=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    echo "euca_public_ip=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    echo "euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)"
+    echo "euca_public_name=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    echo "euca_public_ip=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
     echo
-    echo "euca_wordpress_url=\$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    echo "euca_wordpress_url=\$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
     echo
 
     next
 
     echo
-    echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)"
-    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
+    echo "# aws_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)"
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)
     echo "$aws_instance_id"
     echo "#"
-    echo "# aws_public_name=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    echo "# aws_public_name=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    aws_public_name=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
     echo "$aws_public_name"
     echo "#"
-    echo "# aws_public_ip=\$(euca-describe-instances --region=$aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
-    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    echo "# aws_public_ip=\$(euca-describe-instances --region $aws_user_region \$aws_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    aws_public_ip=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
     echo "$aws_public_ip"
     pause
 
-    echo "# aws_wordpress_url=/$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
-    aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo "# aws_wordpress_url=/$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    aws_wordpress_url=$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$aws_wordpress_url"
     pause
 
-    echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)"
-    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)
+    echo "# euca_instance_id=\$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)"
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)
     echo "$euca_instance_id"
     echo "#"
-    echo "# euca_public_name=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
-    euca_public_name=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    echo "# euca_public_name=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f4)"
+    euca_public_name=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
     echo "$euca_public_name"
     echo "#"
-    echo "# euca_public_ip=\$(euca-describe-instances --region=$euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
-    euca_public_ip=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    echo "# euca_public_ip=\$(euca-describe-instances --region $euca_user_region \$euca_instance_id | grep \"^INSTANCE\" | cut -f17)"
+    euca_public_ip=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
     echo "$euca_public_ip"
     pause
 
-    echo "# euca_wordpress_url=/$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
-    euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    echo "# euca_wordpress_url=/$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep \"^OUTPUT.WebsiteURL\" | cut -f3)"
+    euca_wordpress_url=$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
     echo "$euca_wordpress_url"
 
     next
 else
-    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$aws_user_region | cut -f3)
-    aws_public_name=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
-    aws_public_ip=$(euca-describe-instances --region=$aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
+    aws_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $aws_user_region | cut -f3)
+    aws_public_name=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f4)
+    aws_public_ip=$(euca-describe-instances --region $aws_user_region $aws_instance_id | grep "^INSTANCE" | cut -f17)
 
-    aws_wordpress_url=$(euform-describe-stacks --region=$aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    aws_wordpress_url=$(euform-describe-stacks --region $aws_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 
-    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region=$euca_user_region | cut -f3)
-    euca_public_name=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
-    euca_public_ip=$(euca-describe-instances --region=$euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
+    euca_instance_id=$(euform-describe-stack-resources -n WordPressDemoStack -l WebServer --region $euca_user_region | cut -f3)
+    euca_public_name=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f4)
+    euca_public_ip=$(euca-describe-instances --region $euca_user_region $euca_instance_id | grep "^INSTANCE" | cut -f17)
 
-    euca_wordpress_url=$(euform-describe-stacks --region=$euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
+    euca_wordpress_url=$(euform-describe-stacks --region $euca_user_region WordPressDemoStack | grep "^OUTPUT.WebsiteURL" | cut -f3)
 fi
 
 

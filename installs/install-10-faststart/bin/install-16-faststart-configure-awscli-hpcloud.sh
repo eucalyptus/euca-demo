@@ -1366,9 +1366,9 @@ if [ $verbose = 1 ]; then
     echo
     echo "aws ec2 describe-key-pairs"
     echo
-    echo "aws ec2 describe-key-pairs --profile=default"
+    echo "aws ec2 describe-key-pairs --profile default"
     echo
-    echo "aws ec2 describe-key-pairs --profile=$region-admin"
+    echo "aws ec2 describe-key-pairs --profile $region-admin"
 
     run 50
 
@@ -1377,11 +1377,11 @@ if [ $verbose = 1 ]; then
         echo "# aws ec2 describe-key-pairs"
         aws ec2 describe-key-pairs
         echo "#"
-        echo "# aws ec2 describe-key-pairs --profile=default"
-        aws ec2 describe-key-pairs --profile=default
+        echo "# aws ec2 describe-key-pairs --profile default"
+        aws ec2 describe-key-pairs --profile default
         echo "#"
-        echo "# aws ec2 describe-key-pairs --profile=$region-admin"
-        aws ec2 describe-key-pairs --profile=$region-admin
+        echo "# aws ec2 describe-key-pairs --profile $region-admin"
+        aws ec2 describe-key-pairs --profile $region-admin
 
         next 50
     fi

@@ -985,7 +985,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_demo@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_demo]" ~/.euca/$federation.ini; then
     echo
@@ -1015,8 +1015,8 @@ else
         echo                                          >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_demo@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_demo@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_demo@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_demo@$region
 
         next
     fi
@@ -1305,7 +1305,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_developer@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_developer]" ~/.euca/$federation.ini; then
     echo
@@ -1335,8 +1335,8 @@ else
         echo                                               >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_developer@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_developer@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_developer@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_developer@$region
 
         next
     fi
@@ -1625,7 +1625,7 @@ echo "secret-key = $secret_key"
 echo
 echo "EOF"
 echo
-echo "euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
+echo "euca-describe-availability-zones --region $federation-$account-$user_user@$region"
 
 if [ -r ~/.euca/$federation.ini ] && grep -s -q "\[user $federation-$account-$user_user]" ~/.euca/$federation.ini; then
     echo
@@ -1655,8 +1655,8 @@ else
         echo                                          >> ~/.euca/$federation.ini
         pause
 
-        echo "# euca-describe-availability-zones --region=$federation-$account-$user_user@$region"
-        euca-describe-availability-zones --region=$federation-$account-$user_user@$region
+        echo "# euca-describe-availability-zones --region $federation-$account-$user_user@$region"
+        euca-describe-availability-zones --region $federation-$account-$user_user@$region
 
         next
     fi
