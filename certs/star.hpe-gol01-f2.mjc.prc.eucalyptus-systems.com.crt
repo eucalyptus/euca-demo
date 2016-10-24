@@ -1,0 +1,111 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 21 (0x15)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=US, ST=California, L=Goleta, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=Helion Eucalyptus Development Root Certification Authority
+        Validity
+            Not Before: Oct 24 22:12:12 2016 GMT
+            Not After : Oct 24 22:12:12 2019 GMT
+        Subject: C=US, ST=California, O=Hewlett-Packard, OU=Helion Eucalyptus Development, CN=*.hpe-gol01-f2.mjc.prc.eucalyptus-systems.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:b1:a9:dc:26:bc:9a:88:7f:c5:7a:6c:48:aa:46:
+                    60:fc:55:25:de:9a:43:7b:73:3c:5e:61:6d:76:7c:
+                    09:36:63:48:de:ac:48:fc:5c:ab:35:4a:1a:80:42:
+                    7b:34:86:87:c9:7e:ac:3f:60:ab:9f:d0:e9:3f:0d:
+                    fc:2a:fc:be:77:d7:b2:9f:d7:fd:87:b3:01:fa:a8:
+                    f0:ec:4b:bf:14:6f:35:c5:28:5e:20:13:af:b4:db:
+                    04:91:d1:8d:53:e9:3d:96:6c:b1:bf:49:fd:8f:34:
+                    f9:67:7b:74:74:f4:93:92:e4:e8:12:21:a2:71:98:
+                    07:0a:dc:84:61:ab:f7:b4:76:52:3e:fc:4a:94:6f:
+                    fa:fa:46:28:95:7a:e8:c5:6a:44:12:f4:0c:c1:34:
+                    2f:55:cb:1a:9b:0c:d8:3a:26:ac:6d:1c:2b:64:bb:
+                    45:a4:3e:f3:ec:cf:4c:33:89:89:9d:18:35:d8:ae:
+                    67:fc:ab:ce:ce:90:be:97:32:09:50:cd:89:25:8f:
+                    38:8d:98:0d:6c:5c:b5:10:93:00:e4:7c:ea:1e:8b:
+                    1b:00:f5:02:4b:bf:54:61:bd:06:4a:11:96:86:86:
+                    fa:ec:60:b7:33:33:0b:40:6d:0a:95:55:ca:44:ad:
+                    24:50:7b:a1:fc:40:a8:9b:4d:ba:07:ee:4e:bf:4b:
+                    d8:7d
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Key Usage: critical
+                Digital Signature, Key Encipherment
+            X509v3 Authority Key Identifier: 
+                keyid:36:42:85:36:90:BA:3A:A6:E4:2E:05:59:A0:50:13:13:E4:D2:DB:58
+
+            X509v3 Subject Alternative Name: 
+                DNS:*.hpe-gol01-f2.mjc.prc.eucalyptus-systems.com, DNS:hpe-gol01-f2.mjc.prc.eucalyptus-systems.com, DNS:console-hpe-gol01-f2.mjc.prc.eucalyptus-systems.com
+            X509v3 Subject Key Identifier: 
+                C4:BE:15:D0:4B:FD:04:2A:00:99:01:A8:23:EB:07:E4:8C:73:21:30
+    Signature Algorithm: sha256WithRSAEncryption
+         ac:41:46:d4:cd:9b:5b:5f:c8:5e:5b:2a:49:36:50:3f:59:c2:
+         21:7a:c3:c2:7f:24:36:08:60:29:6e:1b:2b:bf:e8:7e:72:88:
+         d3:1b:f3:b8:e7:19:1d:02:87:78:8e:34:41:02:a3:e7:49:b6:
+         ad:46:7c:71:9a:5e:d2:96:86:b3:31:a8:6c:a6:99:1a:8d:af:
+         9f:01:39:b8:e6:6f:23:2c:7c:90:d5:12:dc:10:7b:33:00:cc:
+         af:79:c7:49:7c:eb:8c:64:47:2f:79:b3:da:43:da:0b:f2:04:
+         89:c1:b2:3b:f0:bf:a6:cd:5c:6d:54:fb:98:62:09:94:3b:d3:
+         b1:82:b3:0f:e4:88:59:03:73:7d:6c:18:cc:c5:1f:46:8f:93:
+         59:e2:2e:b3:51:bc:d0:e3:dd:38:79:a1:01:fb:7e:a1:4b:86:
+         1a:d7:4d:9d:4e:7d:8f:64:60:b2:43:0f:42:a4:d3:24:02:f1:
+         43:c3:84:e9:7f:da:57:8d:fb:07:1d:a0:48:44:ac:fb:67:28:
+         6c:f4:ad:01:a6:e1:bf:91:98:f0:c3:3a:79:83:93:c6:27:e8:
+         fd:91:bb:d3:bb:f7:b0:1f:48:1c:9a:8e:91:a2:4d:a0:37:e9:
+         a6:16:0f:a9:9a:ba:65:29:65:8e:f3:b9:77:fe:e1:5b:66:64:
+         29:72:4f:d1:c3:be:a5:00:a5:b4:e5:5f:8c:22:32:0f:93:2b:
+         cd:9a:39:a4:41:54:d7:15:b1:ee:f5:4e:a1:69:f0:1c:c1:b6:
+         c3:7d:bb:fb:5e:59:bb:0d:39:f3:93:43:be:f4:ef:3f:f8:50:
+         a4:e2:47:db:af:5f:68:26:51:0f:ae:ce:cf:94:f7:6c:45:97:
+         f2:4a:bd:8e:89:86:6f:c0:9b:37:d9:fd:91:9e:35:f4:ba:5c:
+         9c:bf:dd:e7:84:f7:50:ae:27:43:0f:86:04:c0:8b:42:fd:80:
+         90:30:b8:42:0f:d3:13:3f:50:ad:77:96:a5:9c:de:0f:25:58:
+         a9:18:43:52:f7:35:37:8a:54:ba:b5:24:ec:fe:72:d2:55:12:
+         32:55:89:39:cb:78:27:35:9b:a8:e5:ac:cd:4d:17:66:94:c4:
+         81:31:59:45:0f:0f:c3:90:7c:e4:c0:bf:bd:01:7f:00:9e:81:
+         b9:4d:68:5b:95:33:e0:48:01:6e:4d:04:4a:32:97:60:47:3d:
+         06:5c:b2:b5:8b:50:28:ec:7a:61:fd:40:95:c5:ad:b5:50:ba:
+         96:ca:ea:d3:a8:bd:50:91:c6:5a:08:2e:5d:cb:79:69:e3:4c:
+         79:19:1a:19:1f:8e:3f:08:cb:f9:34:82:ad:84:2d:a2:81:dc:
+         b1:1c:a8:cd:96:f5:ac:e0
+-----BEGIN CERTIFICATE-----
+MIIF9TCCA92gAwIBAgIBFTANBgkqhkiG9w0BAQsFADCBujELMAkGA1UEBhMCVVMx
+EzARBgNVBAgMCkNhbGlmb3JuaWExDzANBgNVBAcMBkdvbGV0YTEYMBYGA1UECgwP
+SGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVjYWx5cHR1cyBEZXZl
+bG9wbWVudDFDMEEGA1UEAww6SGVsaW9uIEV1Y2FseXB0dXMgRGV2ZWxvcG1lbnQg
+Um9vdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNjEwMjQyMjEyMTJaFw0x
+OTEwMjQyMjEyMTJaMIGcMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5p
+YTEYMBYGA1UECgwPSGV3bGV0dC1QYWNrYXJkMSYwJAYDVQQLDB1IZWxpb24gRXVj
+YWx5cHR1cyBEZXZlbG9wbWVudDE2MDQGA1UEAwwtKi5ocGUtZ29sMDEtZjIubWpj
+LnByYy5ldWNhbHlwdHVzLXN5c3RlbXMuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAsancJryaiH/FemxIqkZg/FUl3ppDe3M8XmFtdnwJNmNI3qxI
+/FyrNUoagEJ7NIaHyX6sP2Crn9DpPw38Kvy+d9eyn9f9h7MB+qjw7Eu/FG81xShe
+IBOvtNsEkdGNU+k9lmyxv0n9jzT5Z3t0dPSTkuToEiGicZgHCtyEYav3tHZSPvxK
+lG/6+kYolXroxWpEEvQMwTQvVcsamwzYOiasbRwrZLtFpD7z7M9MM4mJnRg12K5n
+/KvOzpC+lzIJUM2JJY84jZgNbFy1EJMA5HzqHosbAPUCS79UYb0GShGWhob67GC3
+MzMLQG0KlVXKRK0kUHuh/ECom026B+5Ov0vYfQIDAQABo4IBIDCCARwwDAYDVR0T
+AQH/BAIwADAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDgYDVR0PAQH/
+BAQDAgWgMB8GA1UdIwQYMBaAFDZChTaQujqm5C4FWaBQExPk0ttYMIGcBgNVHREE
+gZQwgZGCLSouaHBlLWdvbDAxLWYyLm1qYy5wcmMuZXVjYWx5cHR1cy1zeXN0ZW1z
+LmNvbYIraHBlLWdvbDAxLWYyLm1qYy5wcmMuZXVjYWx5cHR1cy1zeXN0ZW1zLmNv
+bYIzY29uc29sZS1ocGUtZ29sMDEtZjIubWpjLnByYy5ldWNhbHlwdHVzLXN5c3Rl
+bXMuY29tMB0GA1UdDgQWBBTEvhXQS/0EKgCZAagj6wfkjHMhMDANBgkqhkiG9w0B
+AQsFAAOCAgEArEFG1M2bW1/IXlsqSTZQP1nCIXrDwn8kNghgKW4bK7/ofnKI0xvz
+uOcZHQKHeI40QQKj50m2rUZ8cZpe0paGszGobKaZGo2vnwE5uOZvIyx8kNUS3BB7
+MwDMr3nHSXzrjGRHL3mz2kPaC/IEicGyO/C/ps1cbVT7mGIJlDvTsYKzD+SIWQNz
+fWwYzMUfRo+TWeIus1G80OPdOHmhAft+oUuGGtdNnU59j2RgskMPQqTTJALxQ8OE
+6X/aV437Bx2gSESs+2cobPStAabhv5GY8MM6eYOTxifo/ZG707v3sB9IHJqOkaJN
+oDfpphYPqZq6ZSlljvO5d/7hW2ZkKXJP0cO+pQCltOVfjCIyD5MrzZo5pEFU1xWx
+7vVOoWnwHMG2w327+15Zuw0585NDvvTvP/hQpOJH269faCZRD67Oz5T3bEWX8kq9
+jomGb8CbN9n9kZ419LpcnL/d54T3UK4nQw+GBMCLQv2AkDC4Qg/TEz9QrXeWpZze
+DyVYqRhDUvc1N4pUurUk7P5y0lUSMlWJOct4JzWbqOWszU0XZpTEgTFZRQ8Pw5B8
+5MC/vQF/AJ6BuU1oW5Uz4EgBbk0ESjKXYEc9BlyytYtQKOx6Yf1AlcWttVC6lsrq
+06i9UJHGWgguXct5aeNMeRkaGR+OPwjL+TSCrYQtooHcsRyozZb1rOA=
+-----END CERTIFICATE-----

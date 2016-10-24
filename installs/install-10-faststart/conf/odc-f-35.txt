@@ -6,7 +6,7 @@
 #
 ## Change these environment variables to match your host ####################
 
-export AWS_DEFAULT_REGION=hp-gol01-f4
+export AWS_DEFAULT_REGION=hpe-gol01-f4
 export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
 
 export EUCA_DNS_INSTANCE_SUBDOMAIN=.vm
