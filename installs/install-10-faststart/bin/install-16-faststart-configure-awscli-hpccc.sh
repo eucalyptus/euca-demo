@@ -338,7 +338,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
+echo "pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
 echo
 if [ ! -r cacert.pem.local ]; then
     echo "cp -a cacert.pem cacert.pem.local"
@@ -388,7 +388,7 @@ if [ -r cacert.pem.local ]; then
 fi
 echo "popd"
 
-if grep -q -s "CE:5B:A4:F9:73:73:6D:84:79:EA:4B:01:AF:65:55:EE" /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local; then
+if grep -q -s "CE:5B:A4:F9:73:73:6D:84:79:EA:4B:01:AF:65:55:EE" /usr/lib/python2.7/site-packages/botocore/vendored/requests/cacert.pem.local; then
     echo
     tput rev
     echo "Already Configured!"
@@ -401,8 +401,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
-        pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests &> /dev/null
+        echo "# pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
+        pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests &> /dev/null
         pause
 
         if [ ! -r cacert.pem.local ]; then
@@ -516,7 +516,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cd /usr/lib/python2.6/site-packages/botocore/data"
+echo "cd /usr/lib/python2.7/site-packages/botocore/data"
 echo "cat << EOF > _endpoints.json.local.ssl"
 echo "    .... too long to list ...."
 echo "EOF"
@@ -525,7 +525,7 @@ echo "mv _endpoints.json _endpoints.json.orig"
 echo
 echo "ln -s _endoints.json.local.ssl _endpoints.json"
 
-if grep -q -s "$region" /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl; then
+if grep -q -s "$region" /usr/lib/python2.7/site-packages/botocore/data/_endpoints.json.local.ssl; then
     echo
     tput rev
     echo "Already Configured!"
@@ -538,8 +538,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "pushd /usr/lib/python2.6/site-packages/botocore/data"
-        pushd /usr/lib/python2.6/site-packages/botocore/data &> /dev/null
+        echo "pushd /usr/lib/python2.7/site-packages/botocore/data"
+        pushd /usr/lib/python2.7/site-packages/botocore/data &> /dev/null
         echo "#"
         echo "# cat << EOF > _endpoints.json.local.ssl"
         echo ">     ... too long to list ..."

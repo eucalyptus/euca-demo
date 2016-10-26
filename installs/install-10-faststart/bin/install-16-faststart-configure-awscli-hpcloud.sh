@@ -339,7 +339,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
+echo "pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
 echo
 if [ ! -r cacert.pem.local ]; then
     echo "cp -a cacert.pem cacert.pem.local"
@@ -386,7 +386,7 @@ if [ -r cacert.pem.local ]; then
 fi
 echo "popd"
 
-if grep -q -s "8F:41:5C:6C:29:D9:EA:DD:FE:A4:4C:8D:90:17:73:C1" /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local; then
+if grep -q -s "8F:41:5C:6C:29:D9:EA:DD:FE:A4:4C:8D:90:17:73:C1" /usr/lib/python2.7/site-packages/botocore/vendored/requests/cacert.pem.local; then
     echo
     tput rev
     echo "Already Configured!"
@@ -399,8 +399,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
-        pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests &> /dev/null
+        echo "# pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
+        pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests &> /dev/null
         pause
 
         if [ ! -r cacert.pem.local ]; then
@@ -504,7 +504,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
+echo "pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
 echo
 if [ ! -r cacert.pem.local ]; then
     echo "cp -a cacert.pem cacert.pem.local"
@@ -557,7 +557,7 @@ if [ -r cacert.pem.local ]; then
 fi
 echo "popd"
 
-if grep -q -s "DD:45:88:0B:59:38:B9:12:4B:66:CA:F3:76:58:F6:5A" /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local; then
+if grep -q -s "DD:45:88:0B:59:38:B9:12:4B:66:CA:F3:76:58:F6:5A" /usr/lib/python2.7/site-packages/botocore/vendored/requests/cacert.pem.local; then
     echo
     tput rev
     echo "Already Configured!"
@@ -570,8 +570,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
-        pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests &> /dev/null
+        echo "# pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
+        pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests &> /dev/null
         pause
 
         if [ ! -r cacert.pem.local ]; then
@@ -687,7 +687,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
+echo "pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
 echo
 if [ ! -r cacert.pem.local ]; then
     echo "cp -a cacert.pem cacert.pem.local"
@@ -741,7 +741,7 @@ if [ -r cacert.pem.local ]; then
 fi
 echo "popd"
 
-if grep -q -s "95:A3:20:FD:C8:5C:D9:3A:E6:DD:6A:91:40:E2:3A:78" /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local; then
+if grep -q -s "95:A3:20:FD:C8:5C:D9:3A:E6:DD:6A:91:40:E2:3A:78" /usr/lib/python2.7/site-packages/botocore/vendored/requests/cacert.pem.local; then
     echo
     tput rev
     echo "Already Configured!"
@@ -754,8 +754,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
-        pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests &> /dev/null
+        echo "# pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
+        pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests &> /dev/null
         pause
 
         if [ ! -r cacert.pem.local ]; then
@@ -877,7 +877,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cd /usr/lib/python2.6/site-packages/botocore/data"
+echo "cd /usr/lib/python2.7/site-packages/botocore/data"
 echo "cat << EOF > _endpoints.json.local.ssl"
 echo "    .... too long to list ...."
 echo "EOF"
@@ -886,7 +886,7 @@ echo "mv _endpoints.json _endpoints.json.orig"
 echo
 echo "ln -s _endoints.json.local.ssl _endpoints.json"
 
-if grep -q -s "$region" /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl; then
+if grep -q -s "$region" /usr/lib/python2.7/site-packages/botocore/data/_endpoints.json.local.ssl; then
     echo
     tput rev
     echo "Already Configured!"
@@ -899,8 +899,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "pushd /usr/lib/python2.6/site-packages/botocore/data"
-        pushd /usr/lib/python2.6/site-packages/botocore/data &> /dev/null
+        echo "pushd /usr/lib/python2.7/site-packages/botocore/data"
+        pushd /usr/lib/python2.7/site-packages/botocore/data &> /dev/null
         echo "#"
         echo "# cat << EOF > _endpoints.json.local.ssl"
         echo ">     ... too long to list ..."

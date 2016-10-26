@@ -205,13 +205,13 @@ if [ ! -f /etc/eucaconsole/console.ini.faststart ]; then
     echo "\cp -a /etc/eucaconsole/console.ini /etc/eucaconsole/console.ini.faststart"
     echo
 fi
-echo "sed -i -e \"/^ufshost = localhost\$/s/localhost/ufs.$region.$domain/\" /etc/eucaconsole/console.ini"
+echo "sed -i -e \"/^ufshost = localhost\$/s/localhost/ec2.$region.$domain/\" /etc/eucaconsole/console.ini"
 echo
 echo "sed -i -e \"/^session.secure/a\\"
 echo "sslcert=/etc/pki/tls/certs/star.$region.$domain.crt\\\\"
 echo "sslkey=/etc/pki/tls/private/star.$region.$domain.key\" /etc/eucaconsole/console.ini"
 
-if grep -s -q "ufshost = ufs.$region.$domain" /etc/eucaconsole/console.ini; then
+if grep -s -q "ufshost = ec2.$region.$domain" /etc/eucaconsole/console.ini; then
     echo
     tput rev
     echo "Already Configured!"
@@ -230,8 +230,8 @@ else
             pause
         fi
 
-        echo "# sed -i -e \"/^ufshost = localhost\$/s/localhost/ufs.$region.$domain/\" /etc/eucaconsole/console.ini"
-        sed -i -e "/^ufshost = localhost$/s/localhost/ufs.$region.$domain/" /etc/eucaconsole/console.ini
+        echo "# sed -i -e \"/^ufshost = localhost\$/s/localhost/ec2.$region.$domain/\" /etc/eucaconsole/console.ini"
+        sed -i -e "/^ufshost = localhost$/s/localhost/ec2.$region.$domain/" /etc/eucaconsole/console.ini
         pause
 
         echo "# sed -i -e \"/^session.secure/a\\"
@@ -331,7 +331,7 @@ if [ $verbose = 1 ]; then
     echo "      dump only the headers of long content. This is usually enough to detect"
     echo "      configuration problems."
     echo "    - For a more comprehensive test, open the following URLs in a GUI Browser:"
-    echo "      - https://console.$region.$domain/"
+    echo "      - https://console-$region.$domain/"
     echo "    - Confirm no SSL configuration errors. A GUI Browser should show the trusted"
     echo "      lock icon, assuming you have configured your workstation to trust the"
     echo "      Root CA which issued the SSL Certificate."
@@ -340,17 +340,41 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "lynx --dump --head https://console.$region.$domain/"
+    echo "lynx --dump --head https://console-$region.$domain/"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# lynx --dump --head https://console.$region.$domain/"
-        lynx --dump --head https://console.$region.$domain/
+        echo "# lynx --dump --head https://console-$region.$domain/"
+        lynx --dump --head https://console-$region.$domain/
 
         next 50
     fi
+fi
+
+
+((++step))
+clear
+echo
+echo "================================================================================"
+echo
+echo "$(printf '%2d' $step). Stop Eucalyptus Console"
+echo
+echo "================================================================================"
+echo
+echo "Commands:"
+echo
+echo "service eucaconsole stop"
+
+run 50
+
+if [ $choice = y ]; then
+    echo
+    echo "# service eucaconsole stop"
+    service eucaconsole stop
+
+    next 50
 fi
 
 
@@ -396,21 +420,20 @@ clear
 echo
 echo "================================================================================"
 echo
-echo "$(printf '%2d' $step). Restart Eucalyptus Console"
-echo "    - You should see the Embedded Nginx Proxy stop, but not restart"
+echo "$(printf '%2d' $step). Start Eucalyptus Console"
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "service eucaconsole restart"
+echo "service eucaconsole start"
 
 run 50
 
 if [ $choice = y ]; then
     echo
-    echo "# service eucaconsole restart"
-    service eucaconsole restart
+    echo "# service eucaconsole start"
+    service eucaconsole start
 
     next 50
 fi
@@ -1510,23 +1533,23 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cat << EOF > /etc/nginx/server.d/console.$region.$domain.conf"
+echo "cat << EOF > /etc/nginx/server.d/console-$region.$domain.conf"
 echo "#"
 echo "# Eucalyptus Console"
 echo "#"
 echo
 echo "server {"
 echo "    listen       80;"
-echo "    server_name  console.$region.$domain;"
+echo "    server_name  console-$region.$domain;"
 echo "    return       301 https://\$server_name\$request_uri;"
 echo "}"
 echo
 echo "server {"
 echo "    listen       443 ssl;"
-echo "    server_name  console.$region.$domain;"
+echo "    server_name  console-$region.$domain;"
 echo
-echo "    access_log  /var/log/nginx/console.$region.$domain-access.log;"
-echo "    error_log   /var/log/nginx/console.$region.$domain-error.log;"
+echo "    access_log  /var/log/nginx/console-$region.$domain-access.log;"
+echo "    error_log   /var/log/nginx/console-$region.$domain-error.log;"
 echo
 echo "    charset  utf-8;"
 echo
@@ -1561,9 +1584,9 @@ echo "    }"
 echo "}"
 echo "EOF"
 echo
-echo "chmod 644 /etc/nginx/server.d/console.$region.$domain.conf"
+echo "chmod 644 /etc/nginx/server.d/console-$region.$domain.conf"
 
-if [ -r /etc/nginx/server.d/console.$region.$domain.conf ]; then
+if [ -r /etc/nginx/server.d/console-$region.$domain.conf ]; then
     echo
     tput rev
     echo "Already Configured!"
@@ -1576,24 +1599,24 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# cat << EOF > /etc/nginx/server.d/console.$region.$domain.conf"
+        echo "# cat << EOF > /etc/nginx/server.d/console-$region.$domain.conf"
         echo "> #"
         echo "> # Eucalyptus Console"
         echo "> #"
         echo ">"
         echo "> server {"
         echo ">     listen       80;"
-        echo ">     server_name  console.$region.$domain;"
+        echo ">     server_name  console-$region.$domain;"
         echo ">     return       301 https://\$server_name\$request_uri;"
         echo "> }"
         echo ">"
         echo "> server {"
         echo ">     listen       80;"
         echo ">     listen       443 ssl;"
-        echo ">     server_name  console.$region.$domain;"
+        echo ">     server_name  console-$region.$domain;"
         echo ">"
-        echo ">     access_log  /var/log/nginx/console.$region.$domain-access.log;"
-        echo ">     error_log   /var/log/nginx/console.$region.$domain-error.log;"
+        echo ">     access_log  /var/log/nginx/console-$region.$domain-access.log;"
+        echo ">     error_log   /var/log/nginx/console-$region.$domain-error.log;"
         echo ">"
         echo ">     charset  utf-8;"
         echo ">"
@@ -1628,57 +1651,57 @@ else
         echo "> }"
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "#"                                                                           > /etc/nginx/server.d/console.$region.$domain.conf
-        echo "# Eucalyptus Console"                                                       >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "#"                                                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "server {"                                                                   >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    listen       80;"                                                       >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    server_name  console.$region.$domain;"                                  >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    return       301 https://\$server_name\$request_uri;"                   >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "}"                                                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "server {"                                                                   >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    listen       443 ssl;"                                                  >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    server_name  console.$region.$domain;"                                  >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    access_log  /var/log/nginx/console.$region.$domain-access.log;"         >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    error_log   /var/log/nginx/console.$region.$domain-error.log;"          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    charset  utf-8;"                                                        >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                            >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    ssl_certificate      /etc/pki/tls/certs/star.$region.$domain.crt;"      >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    ssl_certificate_key  /etc/pki/tls/private/star.$region.$domain.key;"    >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    keepalive_timeout  70;"                                                 >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    client_max_body_size 100M;"                                             >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    client_body_buffer_size 128K;"                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    location / {"                                                           >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_pass            http://console;"                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_redirect        default;"                                     >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_next_upstream   error timeout invalid_header http_500;"       >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_connect_timeout 30;"                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_send_timeout    90;"                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_read_timeout    90;"                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_buffering       on;"                                          >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_buffer_size     128K;"                                        >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_buffers         4 256K;"                                      >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_busy_buffers_size 256K;"                                      >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_temp_file_write_size 512K;"                                   >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo                                                                              >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_set_header      Host \$host;"                                 >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                    >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                  >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "    }"                                                                      >> /etc/nginx/server.d/console.$region.$domain.conf
-        echo "}"                                                                          >> /etc/nginx/server.d/console.$region.$domain.conf
+        echo "#"                                                                           > /etc/nginx/server.d/console-$region.$domain.conf
+        echo "# Eucalyptus Console"                                                       >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "#"                                                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "server {"                                                                   >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    listen       80;"                                                       >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    server_name  console-$region.$domain;"                                  >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    return       301 https://\$server_name\$request_uri;"                   >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "}"                                                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "server {"                                                                   >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    listen       443 ssl;"                                                  >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    server_name  console-$region.$domain;"                                  >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    access_log  /var/log/nginx/console-$region.$domain-access.log;"         >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    error_log   /var/log/nginx/console-$region.$domain-error.log;"          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    charset  utf-8;"                                                        >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    ssl_protocols        TLSv1 TLSv1.1 TLSv1.2;"                            >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    ssl_certificate      /etc/pki/tls/certs/star.$region.$domain.crt;"      >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    ssl_certificate_key  /etc/pki/tls/private/star.$region.$domain.key;"    >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    keepalive_timeout  70;"                                                 >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    client_max_body_size 100M;"                                             >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    client_body_buffer_size 128K;"                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    location / {"                                                           >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_pass            http://console;"                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_redirect        default;"                                     >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_next_upstream   error timeout invalid_header http_500;"       >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_connect_timeout 30;"                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_send_timeout    90;"                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_read_timeout    90;"                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_buffering       on;"                                          >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_buffer_size     128K;"                                        >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_buffers         4 256K;"                                      >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_busy_buffers_size 256K;"                                      >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_temp_file_write_size 512K;"                                   >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo                                                                              >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_set_header      Host \$host;"                                 >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_set_header      X-Real-IP  \$remote_addr;"                    >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_set_header      X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "        proxy_set_header      X-Forwarded-Proto \$scheme;"                  >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "    }"                                                                      >> /etc/nginx/server.d/console-$region.$domain.conf
+        echo "}"                                                                          >> /etc/nginx/server.d/console-$region.$domain.conf
         echo "#"
-        echo "# chmod 644 /etc/nginx/server.d/console.$region.$domain.conf"
-        chmod 644 /etc/nginx/server.d/console.$region.$domain.conf
+        echo "# chmod 644 /etc/nginx/server.d/console-$region.$domain.conf"
+        chmod 644 /etc/nginx/server.d/console-$region.$domain.conf
 
         next
     fi
@@ -1772,20 +1795,20 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "lynx --dump https://compute.$region.$domain/"
+    echo "lynx --dump https://ec2.$region.$domain/"
     echo
-    echo "lynx --dump --head https://console.$region.$domain/"
+    echo "lynx --dump --head https://console-$region.$domain/"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# lynx --dump https://compute.$region.$domain/"
-        lynx --dump https://compute.$region.$domain/
+        echo "# lynx --dump https://ec2.$region.$domain/"
+        lynx --dump https://ec2.$region.$domain/
         pause
 
-        echo "# lynx --dump --head https://console.$region.$domain/"
-        lynx --dump --head https://console.$region.$domain/
+        echo "# lynx --dump --head https://console-$region.$domain/"
+        lynx --dump --head https://console-$region.$domain/
 
         next 50
     fi

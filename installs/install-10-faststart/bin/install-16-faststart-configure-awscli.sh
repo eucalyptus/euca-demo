@@ -224,12 +224,14 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Install AWSCLI"
+echo "    - We install a specific version of AWSCLI so the modifications to the"
+echo "      endpoints.json configuration file made below are consistent"
 echo
 echo "================================================================================"
 echo
 echo "Commands:"
 echo
-echo "pip install awscli"
+echo "pip install awscli==1.11.10"
 
 if hash aws 2>/dev/null; then
     echo
@@ -244,8 +246,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pip install awscli"
-        pip install awscli
+        echo "# pip install awscli==1.11.10"
+        pip install awscli==1.11.10
 
         next 50
     fi
@@ -339,7 +341,7 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
+echo "pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
 echo
 if [ ! -r cacert.pem.local ]; then
     echo "cp -a cacert.pem cacert.pem.local"
@@ -404,7 +406,7 @@ if [ -r cacert.pem.local ]; then
 fi
 echo "popd"
 
-if grep -q -s "95:b3:42:d3:1d:78:05:3a:17:c3:01:47:24:df:ce:12" /usr/lib/python2.6/site-packages/botocore/vendored/requests/cacert.pem.local; then
+if grep -q -s "95:b3:42:d3:1d:78:05:3a:17:c3:01:47:24:df:ce:12" /usr/lib/python2.7/site-packages/botocore/vendored/requests/cacert.pem.local; then
     echo
     tput rev
     echo "Already Configured!"
@@ -417,8 +419,8 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests"
-        pushd /usr/lib/python2.6/site-packages/botocore/vendored/requests &> /dev/null
+        echo "# pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests"
+        pushd /usr/lib/python2.7/site-packages/botocore/vendored/requests &> /dev/null
         pause
 
         if [ ! -r cacert.pem.local ]; then
@@ -549,10 +551,10 @@ echo
 echo "================================================================================"
 echo
 echo "$(printf '%2d' $step). Configure AWSCLI to support local Eucalyptus region"
-echo "    - This creates a modified version of the _endpoints.json file which the"
+echo "    - This creates a modified version of the endpoints.json file which the"
 echo "      botocore Python module within AWSCLI uses to configure AWS endpoints,"
 echo "      adding the new local Eucalyptus region endpoints"
-echo "    - We then rename the original _endpoints.json file with the .orig extension,"
+echo "    - We then rename the original endpoints.json file with the .orig extension,"
 echo "      then create a symlink with the original name pointing to our version"
 echo "    - The files created are too long to display - view it in the location"
 echo "      shown below. You can compare with the original to see what changes have"
@@ -562,16 +564,17 @@ echo "==========================================================================
 echo
 echo "Commands:"
 echo
-echo "cd /usr/lib/python2.6/site-packages/botocore/data"
-echo "cat << EOF > _endpoints.json.local.ssl"
+echo "cd /usr/lib/python2.7/site-packages/botocore/data"
+echo "sed -e :a -e '$d;N;2,3ba' -e 'P;D' endpoints.json > endpoints.json.local.ssl"
+echo "cat << EOF >> endpoints.json.local.ssl"
 echo "    .... too long to list ...."
 echo "EOF"
 echo
-echo "mv _endpoints.json _endpoints.json.orig"
+echo "mv endpoints.json endpoints.json.orig"
 echo
-echo "ln -s _endoints.json.local.ssl _endpoints.json"
+echo "ln -s endoints.json.local.ssl endpoints.json"
 
-if grep -q -s "$region" /usr/lib/python2.6/site-packages/botocore/data/_endpoints.json.local.ssl; then
+if grep -q -s "$region" /usr/lib/python2.7/site-packages/botocore/data/endpoints.json.local.ssl; then
     echo
     tput rev
     echo "Already Configured!"
@@ -584,300 +587,131 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "pushd /usr/lib/python2.6/site-packages/botocore/data"
-        pushd /usr/lib/python2.6/site-packages/botocore/data &> /dev/null
+        echo "pushd /usr/lib/python2.7/site-packages/botocore/data"
+        pushd /usr/lib/python2.7/site-packages/botocore/data &> /dev/null
         echo "#"
-        echo "# cat << EOF > _endpoints.json.local.ssl"
+        echo "# sed -e :a -e '$d;N;2,3ba' -e 'P;D' endpoints.json > endpoints.json.local.ssl"
+        sed -e :a -e '$d;N;2,3ba' -e 'P;D' endpoints.json > endpoints.json.local.ssl
+
+        echo "#"
+        echo "# cat << EOF >> endpoints.json.local.ssl"
         echo ">     ... too long to list ..."
         echo "> EOF"
         # Use echo instead of cat << EOF to better show indentation
-        echo "{"                                                                                    > _endpoints.json.local.ssl
-        echo "  \"_default\":["                                                                    >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.$domain\","                            >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"${region%-*}-\"]"                             >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\","                   >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "          \"signatureVersion\": \"v4\""                                              >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\","                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notEquals\", null]"                                           >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"ec2\": ["                                                                        >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://compute.{region}.$domain\","                              >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\",\"startsWith\",\"${region%-*}-\"]"                               >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"elasticloadbalancing\": ["                                                       >> _endpoints.json.local.ssl
-        echo "   {"                                                                                >> _endpoints.json.local.ssl
-        echo "    \"uri\":\"{scheme}://loadbalancing.{region}.$domain\","                          >> _endpoints.json.local.ssl
-        echo "    \"constraints\": ["                                                              >> _endpoints.json.local.ssl
-        echo "      [\"region\",\"startsWith\",\"${region%-*}-\"]"                                 >> _endpoints.json.local.ssl
-        echo "    ]"                                                                               >> _endpoints.json.local.ssl
-        echo "   }"                                                                                >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"monitoring\":["                                                                  >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://cloudwatch.{region}.$domain\","                           >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "       [\"region\",\"startsWith\",\"${region%-*}-\"]"                                >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"swf\":["                                                                         >> _endpoints.json.local.ssl
-        echo "   {"                                                                                >> _endpoints.json.local.ssl
-        echo "    \"uri\":\"{scheme}://simpleworkflow.{region}.$domain\","                         >> _endpoints.json.local.ssl
-        echo "    \"constraints\": ["                                                              >> _endpoints.json.local.ssl
-        echo "     [\"region\",\"startsWith\",\"${region%-*}-\"]"                                  >> _endpoints.json.local.ssl
-        echo "    ]"                                                                               >> _endpoints.json.local.ssl
-        echo "   }"                                                                                >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"iam\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://euare.{region}.$domain\","                                   >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"${region%-*}-\"]"                             >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{service}.{region}.amazonaws.com.cn\","                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{service}.us-gov.amazonaws.com\","                           >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"us-gov\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://iam.amazonaws.com\","                                        >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"sdb\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://sdb.amazonaws.com\","                                        >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"us-east-1\"]"                                     >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"sts\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://tokens.{region}.$domain\","                                  >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"${region%-*}-\"]"                             >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\","                   >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{service}.{region}.amazonaws.com\","                         >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"us-gov\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://sts.amazonaws.com\","                                        >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"s3\":["                                                                          >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://s3.amazonaws.com\","                                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"oneOf\", [\"us-east-1\", null]]"                              >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://objectstorage.{region}.$domain//\","                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"${region%-*}-\"]"                             >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"signatureVersion\": \"s3\""                                                >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.amazonaws.com.cn\","                   >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"signatureVersion\": \"s3v4\""                                              >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}-{region}.amazonaws.com\","                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"oneOf\", [\"us-east-1\", \"ap-northeast-1\", \"sa-east-1\","  >> _endpoints.json.local.ssl
-        echo "                             \"ap-southeast-1\", \"ap-southeast-2\", \"us-west-2\"," >> _endpoints.json.local.ssl
-        echo "                             \"us-west-1\", \"eu-west-1\", \"us-gov-west-1\","       >> _endpoints.json.local.ssl
-        echo "                             \"fips-us-gov-west-1\"]]"                               >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"{scheme}://{service}.{region}.amazonaws.com\","                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notEquals\", null]"                                           >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"signatureVersion\": \"s3v4\""                                              >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"rds\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://rds.amazonaws.com\","                                        >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"us-east-1\"]"                                     >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"route53\":["                                                                     >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://route53.amazonaws.com\","                                    >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notStartsWith\", \"cn-\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"waf\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://waf.amazonaws.com\","                                        >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      },"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notStartsWith\", \"cn-\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"elasticmapreduce\":["                                                            >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://elasticmapreduce.{region}.amazonaws.com.cn\","               >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://elasticmapreduce.eu-central-1.amazonaws.com\","              >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"eu-central-1\"]"                                  >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://elasticmapreduce.us-east-1.amazonaws.com\","                 >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"us-east-1\"]"                                     >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{region}.elasticmapreduce.amazonaws.com\","                  >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notEquals\", null]"                                           >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"sqs\":["                                                                         >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://queue.amazonaws.com\","                                      >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"us-east-1\"]"                                     >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{region}.queue.amazonaws.com.cn\","                          >> _endpoints.json.local.ssl
-        echo "      \"constraints\":["                                                             >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"startsWith\", \"cn-\"]"                                       >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    },"                                                                              >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://{region}.queue.amazonaws.com\","                             >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notEquals\", null]"                                           >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"importexport\": ["                                                               >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://importexport.amazonaws.com\","                               >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notStartsWith\", \"cn-\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ]"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"cloudfront\":["                                                                  >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\":\"https://cloudfront.amazonaws.com\","                                 >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"notStartsWith\", \"cn-\"]"                                    >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ],"                                                                                >> _endpoints.json.local.ssl
-        echo "  \"dynamodb\": ["                                                                   >> _endpoints.json.local.ssl
-        echo "    {"                                                                               >> _endpoints.json.local.ssl
-        echo "      \"uri\": \"http://localhost:8000\","                                           >> _endpoints.json.local.ssl
-        echo "      \"constraints\": ["                                                            >> _endpoints.json.local.ssl
-        echo "        [\"region\", \"equals\", \"local\"]"                                         >> _endpoints.json.local.ssl
-        echo "      ],"                                                                            >> _endpoints.json.local.ssl
-        echo "      \"properties\": {"                                                             >> _endpoints.json.local.ssl
-        echo "        \"credentialScope\": {"                                                      >> _endpoints.json.local.ssl
-        echo "            \"region\": \"us-east-1\","                                              >> _endpoints.json.local.ssl
-        echo "            \"service\": \"dynamodb\""                                               >> _endpoints.json.local.ssl
-        echo "        }"                                                                           >> _endpoints.json.local.ssl
-        echo "      }"                                                                             >> _endpoints.json.local.ssl
-        echo "    }"                                                                               >> _endpoints.json.local.ssl
-        echo "  ]"                                                                                 >> _endpoints.json.local.ssl
-        echo "}"                                                                                   >> _endpoints.json.local.ssl
+        echo "    },"                                                                            >> endpoints.json.local.ssl
+        echo "    {"                                                                             >> endpoints.json.local.ssl
+        echo "      \"partition\": \"$region\","                                                 >> endpoints.json.local.ssl
+        echo "      \"partitionName\": \"$(echo ${region//-/ } | awk '{print toupper($0)}')\","  >> endpoints.json.local.ssl
+        echo "      \"dnsSuffix\": \"$domain\","                                                 >> endpoints.json.local.ssl
+        echo "      \"regionRegex\": \"^${region//-/\\\\-}$\","                                  >> endpoints.json.local.ssl
+        echo "      \"defaults\": {"                                                             >> endpoints.json.local.ssl
+        echo "        \"hostname\": \"{service}.{region}.{dnsSuffix}\","                         >> endpoints.json.local.ssl
+        echo "        \"protocols\": ["                                                          >> endpoints.json.local.ssl
+        echo "          \"https\""                                                               >> endpoints.json.local.ssl
+        echo "        ],"                                                                        >> endpoints.json.local.ssl
+        echo "        \"signatureVersions\": ["                                                  >> endpoints.json.local.ssl
+        echo "          \"v4\""                                                                  >> endpoints.json.local.ssl
+        echo "        ]"                                                                         >> endpoints.json.local.ssl
+        echo "      },"                                                                          >> endpoints.json.local.ssl
+        echo "      \"regions\": {"                                                              >> endpoints.json.local.ssl
+        echo "        \"$region\": {"                                                            >> endpoints.json.local.ssl
+        echo "          \"description\": \"$(echo ${region//-/ } | awk '{print toupper($0)}')\"" >> endpoints.json.local.ssl
+        echo "        }"                                                                         >> endpoints.json.local.ssl
+        echo "      },"                                                                          >> endpoints.json.local.ssl
+        echo "      \"services\": {"                                                             >> endpoints.json.local.ssl
+        echo "        \"autoscaling\": {"                                                        >> endpoints.json.local.ssl
+        echo "          \"defaults\": {"                                                         >> endpoints.json.local.ssl
+        echo "            \"protocols\": ["                                                      >> endpoints.json.local.ssl
+        echo "              \"http\","                                                           >> endpoints.json.local.ssl
+        echo "              \"https\""                                                           >> endpoints.json.local.ssl
+        echo "            ]"                                                                     >> endpoints.json.local.ssl
+        echo "          },"                                                                      >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"cloudformation\": {"                                                     >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"ec2\": {"                                                                >> endpoints.json.local.ssl
+        echo "          \"defaults\": {"                                                         >> endpoints.json.local.ssl
+        echo "            \"protocols\": ["                                                      >> endpoints.json.local.ssl
+        echo "              \"http\","                                                           >> endpoints.json.local.ssl
+        echo "              \"https\""                                                           >> endpoints.json.local.ssl
+        echo "            ]"                                                                     >> endpoints.json.local.ssl
+        echo "          },"                                                                      >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"elasticloadbalancing\": {"                                               >> endpoints.json.local.ssl
+        echo "          \"defaults\": {"                                                         >> endpoints.json.local.ssl
+        echo "            \"protocols\": ["                                                      >> endpoints.json.local.ssl
+        echo "              \"http\","                                                           >> endpoints.json.local.ssl
+        echo "              \"https\""                                                           >> endpoints.json.local.ssl
+        echo "            ]"                                                                     >> endpoints.json.local.ssl
+        echo "          },"                                                                      >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"iam\": {"                                                                >> endpoints.json.local.ssl
+        echo "          \"partitionEndpoint\": \"${region%-*}-global\","                         >> endpoints.json.local.ssl
+        echo "          \"isRegionalized\": false,"                                              >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"${region%-*}-global\": {"                                            >> endpoints.json.local.ssl
+        echo "              \"hostname\": \"iam.$region.$domain\","                              >> endpoints.json.local.ssl
+        echo "              \"credentialScope\": {"                                              >> endpoints.json.local.ssl
+        echo "                \"region\": \"$region\""                                           >> endpoints.json.local.ssl
+        echo "              }"                                                                   >> endpoints.json.local.ssl
+        echo "            }"                                                                     >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"monitoring\": {"                                                         >> endpoints.json.local.ssl
+        echo "          \"defaults\": {"                                                         >> endpoints.json.local.ssl
+        echo "            \"protocols\": ["                                                      >> endpoints.json.local.ssl
+        echo "              \"http\","                                                           >> endpoints.json.local.ssl
+        echo "              \"https\""                                                           >> endpoints.json.local.ssl
+        echo "            ]"                                                                     >> endpoints.json.local.ssl
+        echo "          },"                                                                      >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"s3\": {"                                                                 >> endpoints.json.local.ssl
+        echo "          \"defaults\": {"                                                         >> endpoints.json.local.ssl
+        echo "            \"protocols\": ["                                                      >> endpoints.json.local.ssl
+        echo "              \"http\","                                                           >> endpoints.json.local.ssl
+        echo "              \"https\""                                                           >> endpoints.json.local.ssl
+        echo "            ],"                                                                    >> endpoints.json.local.ssl
+        echo "            \"signatureVersions\": ["                                              >> endpoints.json.local.ssl
+        echo "              \"s3\""                                                              >> endpoints.json.local.ssl
+        echo "            ]"                                                                     >> endpoints.json.local.ssl
+        echo "          },"                                                                      >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {"                                                        >> endpoints.json.local.ssl
+        echo "              \"hostname\": \"s3.$region.$domain//\""                              >> endpoints.json.local.ssl
+        echo "            }"                                                                     >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        },"                                                                        >> endpoints.json.local.ssl
+        echo "        \"sts\": {"                                                                >> endpoints.json.local.ssl
+        echo "          \"endpoints\": {"                                                        >> endpoints.json.local.ssl
+        echo "            \"$region\": {}"                                                       >> endpoints.json.local.ssl
+        echo "          }"                                                                       >> endpoints.json.local.ssl
+        echo "        }"                                                                         >> endpoints.json.local.ssl
+        echo "      }"                                                                           >> endpoints.json.local.ssl
+        echo "    }"                                                                             >> endpoints.json.local.ssl
+        echo "  ]"                                                                               >> endpoints.json.local.ssl
+        echo "}"                                                                                 >> endpoints.json.local.ssl
         pause
 
-        echo "# mv _endpoints.json _endpoints.json.orig"
-        mv _endpoints.json _endpoints.json.orig
+        echo "# mv endpoints.json endpoints.json.orig"
+        mv endpoints.json endpoints.json.orig
         echo "#"
-        echo "# ln -s _endpoints.json.local.ssl _endpoints.json"
-        ln -s _endpoints.json.local.ssl _endpoints.json
+        echo "# ln -s endpoints.json.local.ssl endpoints.json"
+        ln -s endpoints.json.local.ssl endpoints.json
         echo "#"
         echo "# popd"
         popd &> /dev/null
