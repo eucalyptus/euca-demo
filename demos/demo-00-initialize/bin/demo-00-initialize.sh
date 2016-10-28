@@ -9,8 +9,14 @@
 # - Creates the Demo Keypair
 # - Imports the Demo Keypair
 # - Creates the sample-templates Bucket
-# - Downloads a CentOS 6 Generic image
-# - Installs the CentOS 6 Generic image
+# - Downloads the CentOS 6 Cloud image
+# - Installs the CentOS 6 Cloud image
+# - Downloads the CentOS 7 Cloud image
+# - Installs the CentOS 7 Cloud image
+# - Downloads the Ubuntu Trusty Cloud image
+# - Installs the Ubuntu Trusty Cloud image
+# - Downloads the Ubuntu Xenial Cloud image
+# - Installs the Ubuntu Xenial Cloud image
 # - Downloads a CentOS 6 with cfn-init and awscli image
 # - Installs the CentOS 6 with cfn-init and awscli image
 #
@@ -36,12 +42,25 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
-external_mirror=cloud.centos.org
+external_centos_mirror=cloud.centos.org
+external_ubuntu_mirror=cloud-images.ubuntu.com
 internal_mirror=mirror.mjc.prc.eucalyptus-systems.com
 
-generic_image=CentOS-6-x86_64-GenericCloud
-external_generic_image_url=http://$external_mirror/centos/6/images/$generic_image.qcow2.xz
-internal_generic_image_url=http://$internal_mirror/centos/6/images/$generic_image.qcow2.xz
+centos6_image=CentOS-6-x86_64-GenericCloud
+external_centos6_image_url=http://$external_centos_mirror/centos/6/images/$centos6_image.qcow2.xz
+internal_centos6_image_url=http://$internal_mirror/centos/6/images/$centos6_image.qcow2.xz
+
+centos7_image=CentOS-7-x86_64-GenericCloud
+external_centos7_image_url=http://$external_centos_mirror/centos/7/images/$centos7_image.qcow2.xz
+internal_centos7_image_url=http://$internal_mirror/centos/7/images/$centos7_image.qcow2.xz
+
+ubuntu_trusty_image=trusty-server-cloudimg-amd64-disk1
+external_ubuntu_trusty_image_url=http://$external_ubuntu_mirror/trusty/current/$ubuntu_trusty_image.img
+internal_ubuntu_trusty_image_url=http://$internal_mirror/ubuntu/dists/trusty-images/$ubuntu_trusty_image.img
+
+ubuntu_xenial_image=xenial-server-cloudimg-amd64-disk1
+external_ubuntu_xenial_image_url=http://$external_ubuntu_mirror/xenial/current/$ubuntu_xenial_image.img
+internal_ubuntu_xenial_image_url=http://$internal_mirror/ubuntu/dists/xenial-images/$ubuntu_xenial_image.img
 
 cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
@@ -220,17 +239,41 @@ unset EC2_PRIVATE_KEY
 unset EC2_CERT
 
 if [ $local = 1 ]; then
-    generic_image_url=$internal_generic_image_url
+    centos6_image_url=$internal_centos6_image_url
+    centos7_image_url=$internal_centos7_image_url
+    ubuntu_trusty_image_url=$internal_ubuntu_trusty_image_url
+    ubuntu_xenial_image_url=$internal_ubuntu_xenial_image_url
     cfn_awscli_image_url=$internal_cfn_awscli_image_url
 else
-    generic_image_url=$external_generic_image_url
+    centos6_image_url=$external_centos6_image_url
+    centos7_image_url=$external_centos7_image_url
+    ubuntu_trusty_image_url=$external_ubuntu_trusty_image_url
+    ubuntu_xenial_image_url=$external_ubuntu_xenial_image_url
     cfn_awscli_image_url=$external_cfn_awscli_image_url
 fi
-generic_image_file=${generic_image_url##*/}
+centos6_image_file=${centos6_image_url##*/}
+centos7_image_file=${centos7_image_url##*/}
+ubuntu_trusty_image_file=${ubuntu_trusty_image_url##*/}
+ubuntu_xenial_image_file=${ubuntu_xenial_image_url##*/}
 cfn_awscli_image_file=${cfn_awscli_image_url##*/}
 
-if ! curl -s --head $generic_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
-    echo "$generic_image_url invalid: attempts to reach this URL failed"
+if ! curl -s --head $centos6_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$centos6_image_url invalid: attempts to reach this URL failed"
+    exit 5
+fi
+ 
+if ! curl -s --head $centos7_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$centos7_image_url invalid: attempts to reach this URL failed"
+    exit 5
+fi
+ 
+if ! curl -s --head $ubuntu_trusty_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$ubuntu_trusty_image_url invalid: attempts to reach this URL failed"
+    exit 5
+fi
+ 
+if ! curl -s --head $ubuntu_xenial_image_url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null; then
+    echo "$ubuntu_xenial_image_url invalid: attempts to reach this URL failed"
     exit 5
 fi
  
@@ -239,7 +282,7 @@ if ! curl -s --head $cfn_awscli_image_url | head -n 1 | grep "HTTP/1.[01] [23]..
     exit 5
 fi
  
-if ! rpm -q --quiet qemu-img-rhev; then
+if ! rpm -q --quiet qemu-img-ev; then
     echo "qemu-img missing: This script uses the qemu-img utility to convert images from qcow2 to raw format"
     exit 97
 fi
@@ -386,20 +429,20 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Download Demo Generic Image (CentOS 6)"
+echo "$(printf '%2d' $step). Download Demo CentOS 6 Cloud Image"
 echo "    - Decompress and convert image to raw format"
 echo
 echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "wget $generic_image_url -O $tmpdir/$generic_image_file"
+echo "wget $centos6_image_url -O $tmpdir/$centos6_image_file"
 echo
-echo "xz -v -d $tmpdir/$generic_image_file"
+echo "xz -v -d $tmpdir/$centos6_image_file"
 echo
-echo "qemu-img convert -f qcow2 -O raw $tmpdir/${generic_image_file%%.*}.qcow2 $tmpdir/${generic_image_file%%.*}.raw"
+echo "qemu-img convert -f qcow2 -O raw $tmpdir/${centos6_image_file%%.*}.qcow2 $tmpdir/${centos6_image_file%%.*}.raw"
 
-if [ -r $tmpdir/${generic_image_file%%.*}.raw ]; then
+if [ -r $tmpdir/${centos6_image_file%%.*}.raw ]; then
     echo
     tput rev
     echo "Already Downloaded!"
@@ -412,16 +455,16 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# wget $generic_image_url -O $tmpdir/$generic_image_file"
-        wget $generic_image_url -O $tmpdir/$generic_image_file
+        echo "# wget $centos6_image_url -O $tmpdir/$centos6_image_file"
+        wget $centos6_image_url -O $tmpdir/$centos6_image_file
         pause
 
-        echo "# xz -v -d $tmpdir/$generic_image_file"
-        xz -v -d $tmpdir/$generic_image_file
+        echo "# xz -v -d $tmpdir/$centos6_image_file"
+        xz -v -d $tmpdir/$centos6_image_file
         pause
 
-        echo "# qemu-img convert -f qcow2 -O raw $tmpdir/${generic_image_file%%.*}.qcow2 $tmpdir/${generic_image_file%%.*}.raw"
-        qemu-img convert -f qcow2 -O raw $tmpdir/${generic_image_file%%.*}.qcow2 $tmpdir/${generic_image_file%%.*}.raw
+        echo "# qemu-img convert -f qcow2 -O raw $tmpdir/${centos6_image_file%%.*}.qcow2 $tmpdir/${centos6_image_file%%.*}.raw"
+        qemu-img convert -f qcow2 -O raw $tmpdir/${centos6_image_file%%.*}.qcow2 $tmpdir/${centos6_image_file%%.*}.raw
 
         next
     fi
@@ -433,7 +476,7 @@ clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Install Demo Generic Image"
+echo "$(printf '%2d' $step). Install Demo CentOS 6 Cloud Image"
 echo "    - NOTE: This can take a couple minutes..."
 echo
 echo "============================================================"
@@ -441,14 +484,14 @@ echo
 echo "Commands:"
 echo
 echo "euca-install-image --name centos6 \\"
-echo "                   --description \"Centos 6 Generic Cloud Image\" \\"
+echo "                   --description \"Centos 6 Cloud Image\" \\"
 echo "                   --bucket images \\"
 echo "                   --arch x86_64 \\"
-echo "                   --image $tmpdir/${generic_image_file%%.*}.raw \\"
+echo "                   --image $tmpdir/${centos6_image_file%%.*}.raw \\"
 echo "                   --virtualization-type hvm \\"
 echo "                   --region $user_region"
 
-if euca-describe-images | grep -s -q "${generic_image_file%%.*}.raw.manifest.xml"; then
+if euca-describe-images | grep -s -q "${centos6_image_file%%.*}.raw.manifest.xml"; then
     echo
     tput rev
     echo "Already Installed!"
@@ -462,17 +505,305 @@ else
     if [ $choice = y ]; then
         echo
         echo "# euca-install-image --name centos6 \\"
-        echo ">                    --description \"Centos 6 Generic Cloud Image\" \\"
+        echo ">                    --description \"Centos 6 Cloud Image\" \\"
         echo ">                    --bucket images \\"
         echo ">                    --arch x86_64 \\"
-        echo ">                    --image $tmpdir/${generic_image_file%%.*}.raw \\"
+        echo ">                    --image $tmpdir/${centos6_image_file%%.*}.raw \\"
         echo ">                    --virtualization-type hvm \\"
         echo ">                    --region $user_region"
         euca-install-image --name centos6 \
-                           --description "Centos 6 Generic Cloud Image" \
+                           --description "Centos 6 Cloud Image" \
                            --bucket images \
                            --arch x86_64 \
-                           --image $tmpdir/${generic_image_file%%.*}.raw \
+                           --image $tmpdir/${centos6_image_file%%.*}.raw \
+                           --virtualization-type hvm \
+                           --region $user_region
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo CentOS 7 Cloud Image"
+echo "    - Decompress and convert image to raw format"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "wget $centos7_image_url -O $tmpdir/$centos7_image_file"
+echo
+echo "xz -v -d $tmpdir/$centos7_image_file"
+echo
+echo "qemu-img convert -f qcow2 -O raw $tmpdir/${centos7_image_file%%.*}.qcow2 $tmpdir/${centos7_image_file%%.*}.raw"
+
+if [ -r $tmpdir/${centos7_image_file%%.*}.raw ]; then
+    echo
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# wget $centos7_image_url -O $tmpdir/$centos7_image_file"
+        wget $centos7_image_url -O $tmpdir/$centos7_image_file
+        pause
+
+        echo "# xz -v -d $tmpdir/$centos7_image_file"
+        xz -v -d $tmpdir/$centos7_image_file
+        pause
+
+        echo "# qemu-img convert -f qcow2 -O raw $tmpdir/${centos7_image_file%%.*}.qcow2 $tmpdir/${centos7_image_file%%.*}.raw"
+        qemu-img convert -f qcow2 -O raw $tmpdir/${centos7_image_file%%.*}.qcow2 $tmpdir/${centos7_image_file%%.*}.raw
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Install Demo CentOS 7 Cloud Image"
+echo "    - NOTE: This can take a couple minutes..."
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-install-image --name centos7 \\"
+echo "                   --description \"Centos 7 Cloud Image\" \\"
+echo "                   --bucket images \\"
+echo "                   --arch x86_64 \\"
+echo "                   --image $tmpdir/${centos7_image_file%%.*}.raw \\"
+echo "                   --virtualization-type hvm \\"
+echo "                   --region $user_region"
+
+if euca-describe-images | grep -s -q "${centos7_image_file%%.*}.raw.manifest.xml"; then
+    echo
+    tput rev
+    echo "Already Installed!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-install-image --name centos7 \\"
+        echo ">                    --description \"Centos 7 Cloud Image\" \\"
+        echo ">                    --bucket images \\"
+        echo ">                    --arch x86_64 \\"
+        echo ">                    --image $tmpdir/${centos7_image_file%%.*}.raw \\"
+        echo ">                    --virtualization-type hvm \\"
+        echo ">                    --region $user_region"
+        euca-install-image --name centos7 \
+                           --description "Centos 7 Cloud Image" \
+                           --bucket images \
+                           --arch x86_64 \
+                           --image $tmpdir/${centos7_image_file%%.*}.raw \
+                           --virtualization-type hvm \
+                           --region $user_region
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo Ubuntu Trusty Cloud Image"
+echo "    - Already in raw format, so just rename"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "wget $ubuntu_trusty_image_url -O $tmpdir/$ubuntu_trusty_image_file"
+echo
+echo "qemu-img convert -O raw $tmpdir/${ubuntu_trusty_image_file%%.*}.img $tmpdir/${ubuntu_trusty_image_file%%.*}.raw"
+
+if [ -r $tmpdir/${ubuntu_trusty_image_file%%.*}.raw ]; then
+    echo
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# wget $ubuntu_trusty_image_url -O $tmpdir/$ubuntu_trusty_image_file"
+        wget $ubuntu_trusty_image_url -O $tmpdir/$ubuntu_trusty_image_file
+        pause
+
+        echo "# qemu-img convert -O raw $tmpdir/${ubuntu_trusty_image_file%%.*}.img $tmpdir/${ubuntu_trusty_image_file%%.*}.raw"
+        qemu-img convert -O raw $tmpdir/${ubuntu_trusty_image_file%%.*}.img $tmpdir/${ubuntu_trusty_image_file%%.*}.raw
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Install Demo Ubuntu Trusty Cloud Image"
+echo "    - NOTE: This can take a couple minutes..."
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-install-image --name ubuntu1404 \\"
+echo "                   --description \"Ubuntu Trusty Cloud Image\" \\"
+echo "                   --bucket images \\"
+echo "                   --arch x86_64 \\"
+echo "                   --image $tmpdir/${ubuntu_trusty_image_file%%.*}.raw \\"
+echo "                   --virtualization-type hvm \\"
+echo "                   --region $user_region"
+
+if euca-describe-images | grep -s -q "${ubuntu_trusty_image_file%%.*}.raw.manifest.xml"; then
+    echo
+    tput rev
+    echo "Already Installed!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-install-image --name ubuntu1404 \\"
+        echo ">                    --description \"Ubuntu Trusty Cloud Image\" \\"
+        echo ">                    --bucket images \\"
+        echo ">                    --arch x86_64 \\"
+        echo ">                    --image $tmpdir/${ubuntu_trusty_image_file%%.*}.raw \\"
+        echo ">                    --virtualization-type hvm \\"
+        echo ">                    --region $user_region"
+        euca-install-image --name ubuntu1404 \
+                           --description "Ubuntu Trusty Cloud Image" \
+                           --bucket images \
+                           --arch x86_64 \
+                           --image $tmpdir/${ubuntu_trusty_image_file%%.*}.raw \
+                           --virtualization-type hvm \
+                           --region $user_region
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Download Demo Ubuntu Xenial Cloud Image"
+echo "    - Already in raw format, so just rename"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "wget $ubuntu_xenial_image_url -O $tmpdir/$ubuntu_xenial_image_file"
+echo
+echo "qemu-img convert -O raw $tmpdir/${ubuntu_xenial_image_file%%.*}.img $tmpdir/${ubuntu_xenial_image_file%%.*}.raw"
+
+if [ -r $tmpdir/${ubuntu_xenial_image_file%%.*}.raw ]; then
+    echo
+    tput rev
+    echo "Already Downloaded!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# wget $ubuntu_xenial_image_url -O $tmpdir/$ubuntu_xenial_image_file"
+        wget $ubuntu_xenial_image_url -O $tmpdir/$ubuntu_xenial_image_file
+        pause
+
+        echo "# qemu-img convert -O raw $tmpdir/${ubuntu_xenial_image_file%%.*}.img $tmpdir/${ubuntu_xenial_image_file%%.*}.raw"
+        qemu-img convert -O raw $tmpdir/${ubuntu_xenial_image_file%%.*}.img $tmpdir/${ubuntu_xenial_image_file%%.*}.raw
+
+        next
+    fi
+fi
+
+
+((++step))
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Install Demo Ubuntu Xenial Cloud Image"
+echo "    - NOTE: This can take a couple minutes..."
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-install-image --name ubuntu1604 \\"
+echo "                   --description \"Ubuntu Xenial Cloud Image\" \\"
+echo "                   --bucket images \\"
+echo "                   --arch x86_64 \\"
+echo "                   --image $tmpdir/${ubuntu_xenial_image_file%%.*}.raw \\"
+echo "                   --virtualization-type hvm \\"
+echo "                   --region $user_region"
+
+if euca-describe-images | grep -s -q "${ubuntu_xenial_image_file%%.*}.raw.manifest.xml"; then
+    echo
+    tput rev
+    echo "Already Installed!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-install-image --name ubuntu1604 \\"
+        echo ">                    --description \"Ubuntu Xenial Cloud Image\" \\"
+        echo ">                    --bucket images \\"
+        echo ">                    --arch x86_64 \\"
+        echo ">                    --image $tmpdir/${ubuntu_xenial_image_file%%.*}.raw \\"
+        echo ">                    --virtualization-type hvm \\"
+        echo ">                    --region $user_region"
+        euca-install-image --name ubuntu1604 \
+                           --description "Ubuntu Xenial Cloud Image" \
+                           --bucket images \
+                           --arch x86_64 \
+                           --image $tmpdir/${ubuntu_xenial_image_file%%.*}.raw \
                            --virtualization-type hvm \
                            --region $user_region
 

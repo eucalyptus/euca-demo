@@ -7,7 +7,10 @@
 # - Downloads the Demo Account Administrator Credentials
 # - Configures Euca2ools for the Demo Account Administrator
 # - Configures AWSCLI for the Demo Account Administrator
-# - Authorizes use of the CentOS 6 Generic image by the Demo Account
+# - Authorizes use of the CentOS 6 Cloud image by the Demo Account
+# - Authorizes use of the CentOS 7 Cloud image by the Demo Account
+# - Authorizes use of the Ubuntu Trusty Cloud image by the Demo Account
+# - Authorizes use of the Ubuntu Xenial Cloud image by the Demo Account
 # - Authorizes use of the CentOS 6 CFN + AWSCLI image by the Demo Account
 #
 # The demo-00-initialize.sh script should be run by the Eucalyptus Administrator once prior to
@@ -33,7 +36,10 @@ bindir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 keysdir=${bindir%/*/*/*}/keys
 tmpdir=/var/tmp
 
-generic_image=CentOS-6-x86_64-GenericCloud
+centos6_image=CentOS-6-x86_64-GenericCloud
+centos7_image=CentOS-7-x86_64-GenericCloud
+ubuntu_trusty_image=trusty-server-cloudimg-amd64-disk1
+ubuntu_xenial_image=xenial-server-cloudimg-amd64-disk1
 cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 
 step=0
@@ -260,7 +266,7 @@ echo "============================================================"
 echo
 echo "Commands:"
 echo
-echo "euare-usermodloginprofile --password $password --as-account $account \\"
+echo "euare-useraddloginprofile --password $password --as-account $account \\"
 echo "                          --region $user_region \\"
 echo "                          admin"
 
@@ -277,10 +283,10 @@ else
 
     if [ $choice = y ]; then
         echo
-        echo "# euare-usermodloginprofile --password $password --as-account $account \\"
+        echo "# euare-useraddloginprofile --password $password --as-account $account \\"
         echo ">                           --region $user_region \\"
         echo ">                           admin"
-        euare-usermodloginprofile --password $password --as-account $account \
+        euare-useraddloginprofile --password $password --as-account $account \
                                   --region $user_region \
                                   admin
 
@@ -499,14 +505,14 @@ fi
 
 ((++step))
 account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
-generic_image_id=$(euca-describe-images --filter manifest-location=images/$generic_image.raw.manifest.xml \
+centos6_image_id=$(euca-describe-images --filter manifest-location=images/$centos6_image.raw.manifest.xml \
                                         --region $user_region | cut -f2)
 
 clear
 echo
 echo "============================================================"
 echo
-echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Generic Image"
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CentOS 6 Cloud Image"
 echo
 echo "============================================================"
 echo
@@ -514,9 +520,9 @@ echo "Commands:"
 echo
 echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
 echo "                            --region $user_region \\"
-echo "                            $generic_image_id"
+echo "                            $centos6_image_id"
 
-if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $generic_image_id; then
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $centos6_image_id; then
     echo
     tput rev
     echo "Already Authorized!"
@@ -531,10 +537,142 @@ else
         echo
         echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
         echo ">                             --region $user_region \\"
-        echo ">                             $generic_image_id"
+        echo ">                             $centos6_image_id"
         euca-modify-image-attribute --launch-permission --add $account_id \
                                     --region $user_region \
-                                    $generic_image_id
+                                    $centos6_image_id
+
+        next
+    fi
+fi
+
+
+((++step))
+account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
+centos7_image_id=$(euca-describe-images --filter manifest-location=images/$centos7_image.raw.manifest.xml \
+                                        --region $user_region | cut -f2)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo CentOS 7 Cloud Image"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
+echo "                            --region $user_region \\"
+echo "                            $centos7_image_id"
+
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $centos7_image_id; then
+    echo
+    tput rev
+    echo "Already Authorized!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
+        echo ">                             --region $user_region \\"
+        echo ">                             $centos7_image_id"
+        euca-modify-image-attribute --launch-permission --add $account_id \
+                                    --region $user_region \
+                                    $centos7_image_id
+
+        next
+    fi
+fi
+
+
+((++step))
+account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
+ubuntu_trusty_image_id=$(euca-describe-images --filter manifest-location=images/$ubuntu_trusty_image.raw.manifest.xml \
+                                              --region $user_region | cut -f2)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Ubuntu Trusty Cloud Image"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
+echo "                            --region $user_region \\"
+echo "                            $ubuntu_trusty_image_id"
+
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $ubuntu_trusty_image_id; then
+    echo
+    tput rev
+    echo "Already Authorized!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
+        echo ">                             --region $user_region \\"
+        echo ">                             $ubuntu_trusty_image_id"
+        euca-modify-image-attribute --launch-permission --add $account_id \
+                                    --region $user_region \
+                                    $ubuntu_trusty_image_id
+
+        next
+    fi
+fi
+
+
+((++step))
+account_id=$(euare-accountlist --region $user_region | grep "^$account" | cut -f2)
+ubuntu_xenial_image_id=$(euca-describe-images --filter manifest-location=images/$ubuntu_xenial_image.raw.manifest.xml \
+                                              --region $user_region | cut -f2)
+
+clear
+echo
+echo "============================================================"
+echo
+echo "$(printf '%2d' $step). Authorize Demo ($account) Account use of Demo Ubuntu Xenial Cloud Image"
+echo
+echo "============================================================"
+echo
+echo "Commands:"
+echo
+echo "euca-modify-image-attribute --launch-permission --add $account_id \\"
+echo "                            --region $user_region \\"
+echo "                            $ubuntu_xenial_image_id"
+
+if euca-describe-images --executable-by $account_id --region $user_region | grep -s -q $ubuntu_xenial_image_id; then
+    echo
+    tput rev
+    echo "Already Authorized!"
+    tput sgr0
+
+    next 50
+
+else
+    run 50
+
+    if [ $choice = y ]; then
+        echo
+        echo "# euca-modify-image-attribute --launch-permission --add $account_id \\"
+        echo ">                             --region $user_region \\"
+        echo ">                             $ubuntu_xenial_image_id"
+        euca-modify-image-attribute --launch-permission --add $account_id \
+                                    --region $user_region \
+                                    $ubuntu_xenial_image_id
 
         next
     fi
