@@ -1195,7 +1195,7 @@ echo "aws iam create-login-profile --user-name $user_developer --password $user_
 echo "                             --profile $profile --region $region --output text"
 
 if aws iam get-login-profile --user-name $user_developer \
-                             --profile $profile --region --output text $region &> /dev/null; then
+                             --profile $profile --region $region --output text &> /dev/null; then
     echo
     tput rev
     echo "Already Created!"
@@ -1788,7 +1788,7 @@ if [ $verbose = 1 ]; then
         echo "# aws iam list-instance-profiles --profile $profile --region $region --output text"
         aws iam list-instance-profiles --profile $profile --region $region --output text
         echo "#"
-        echo "# aws iam get-instance-profile --instance-profile-name $role_demos \\
+        echo "# aws iam get-instance-profile --instance-profile-name $role_demos \\"
         echo ">                              --profile $profile --region $region --output text"
         aws iam get-instance-profile --instance-profile-name $role_demos \
                                      --profile $profile --region $region --output text
@@ -1829,11 +1829,6 @@ if [ $verbose = 1 ]; then
     echo "============================================================"
     echo
     echo "$(printf '%2d' $step). Display Euca2ools Configuration"
-    echo "    - The $region Region should be the default."
-    echo "    - The $region Region should be configured with Custom"
-    echo "      DNS HTTPS URLs. It can be used from other hosts."
-    echo "    - The localhost Region should be configured with direct"
-    echo "      URLs. It can be used only from this host."
     echo "    - The $federation Federation should be configured with"
     echo "      AWS HTTPS URLs and Federated Identity Users."
     echo
@@ -1841,48 +1836,12 @@ if [ $verbose = 1 ]; then
     echo
     echo "Commands:"
     echo
-    echo "cat ~/.euca/global.ini"
-    echo
-    echo "cat /etc/euca2ools/conf.d/$region.ini"
-    echo
-    echo "cat /etc/euca2ools/conf.d/localhost.ini"
-    echo
-    echo "cat /etc/euca2ools/conf.d/$federation.ini"
-    echo
-    echo "cat ~/.euca/$region.ini"
-    echo
-    echo "cat ~/.euca/localhost.ini"
-    echo
     echo "cat ~/.euca/$federation.ini"
 
     run 50
 
     if [ $choice = y ]; then
         echo
-        echo "# cat ~/.euca/global.ini"
-        cat ~/.euca/global.ini
-        pause
-
-        echo "# cat /etc/euca2ools/conf.d/$region.ini"
-        cat /etc/euca2ools/conf.d/$region.ini
-        pause
-
-        echo "# cat /etc/euca2ools/conf.d/localhost.ini"
-        cat /etc/euca2ools/conf.d/localhost.ini
-        pause
-
-        echo "# cat /etc/euca2ools/conf.d/$federation.ini"
-        cat /etc/euca2ools/conf.d/$federation.ini 
-        pause
-
-        echo "# cat ~/.euca/$region.ini"
-        cat ~/.euca/$region.ini 
-        pause
-
-        echo "# cat ~/.euca/localhost.ini"
-        cat ~/.euca/localhost.ini
-        pause
-
         echo "# cat ~/.euca/$federation.ini"
         cat ~/.euca/$federation.ini 2>/dev/null
 
