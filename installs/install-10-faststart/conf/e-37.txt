@@ -1,0 +1,17 @@
+#
+# This file is for the MCrawford Test 1 Environment
+#
+# This environment consists of the following hosts:
+# - e-37: CLC, UFS, MC, CC, SC, OSP, NC1
+#
+## Change these environment variables to match your host ####################
+
+export AWS_DEFAULT_REGION=hpe-gol01-t1
+export AWS_DEFAULT_DOMAIN=mjc.prc.eucalyptus-systems.com
+
+export EUCA_DNS_INSTANCE_SUBDOMAIN=.vm
+export EUCA_DNS_LOADBALANCER_SUBDOMAIN=lb
+export EUCA_DNS_PARENT_HOST=ns1.$AWS_DEFAULT_DOMAIN
+export EUCA_DNS_PARENT_IP=10.104.10.80
+
+export EUCA_PUBLIC_IP_RANGE=10.111.60.64-10.111.60.191
