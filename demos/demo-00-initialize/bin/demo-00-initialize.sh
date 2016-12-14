@@ -48,11 +48,11 @@ internal_mirror=mirror.mjc.prc.eucalyptus-systems.com
 
 centos6_image=CentOS-6-x86_64-GenericCloud
 external_centos6_image_url=http://$external_centos_mirror/centos/6/images/$centos6_image.qcow2.xz
-internal_centos6_image_url=http://$internal_mirror/centos/6/images/$centos6_image.qcow2.xz
+internal_centos6_image_url=http://$internal_mirror/centos/6/images/x86_64/$centos6_image.qcow2.xz
 
 centos7_image=CentOS-7-x86_64-GenericCloud
 external_centos7_image_url=http://$external_centos_mirror/centos/7/images/$centos7_image.qcow2.xz
-internal_centos7_image_url=http://$internal_mirror/centos/7/images/$centos7_image.qcow2.xz
+internal_centos7_image_url=http://$internal_mirror/centos/7/images/x86_64/$centos7_image.qcow2.xz
 
 ubuntu_trusty_image=trusty-server-cloudimg-amd64-disk1
 external_ubuntu_trusty_image_url=http://$external_ubuntu_mirror/trusty/current/$ubuntu_trusty_image.img
@@ -64,7 +64,7 @@ internal_ubuntu_xenial_image_url=http://$internal_mirror/ubuntu/dists/xenial-ima
 
 cfn_awscli_image=CentOS-6-x86_64-CFN-AWSCLI
 external_cfn_awscli_image_url=http://images-euca.s3-website-us-east-1.amazonaws.com/$cfn_awscli_image.raw.xz
-internal_cfn_awscli_image_url=http://$internal_mirror/centos/6/images/$cfn_awscli_image.raw.xz
+internal_cfn_awscli_image_url=http://$internal_mirror/centos/6/images/x86_64/$cfn_awscli_image.raw.xz
 
 step=0
 speed_max=400
